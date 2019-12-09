@@ -36,11 +36,11 @@
 #include "pnetcdf.h"
 
 /* Identifier for the pass-through VOL connector */
-#define H5VL_NCMPI  (H5VL_ncmpi_register())
+#define H5VL_log  (H5VL_log_register())
 #ifdef __cplusplus
 extern "C" {
 #endif
-H5_DLL hid_t H5VL_ncmpi_register(void);
+H5_DLL hid_t H5VL_log_register(void);
 #ifdef __cplusplus
 }
 #endif
@@ -107,12 +107,14 @@ H5_DLL hid_t H5VL_ncmpi_register(void);
 /************/
 
 /* Pass-through VOL connector info */
-typedef struct H5VL_ncmpi_info_t {
+typedef struct H5VL_H5VL_log_info_t {
+    hid_t under_vol_id;         /* VOL ID for under VOL */
+    void *under_vol_info;       /* VOL info for under VOL */
     MPI_Comm comm;
-} H5VL_ncmpi_info_t;
+} H5VL_H5VL_log_info_t;
 
 /* The pass through VOL info object */
-typedef struct H5VL_ncmpi_file_t {
+typedef struct H5VL_log_file_t {
     int objtype;
 
     hid_t fcpl_id;
@@ -125,10 +127,10 @@ typedef struct H5VL_ncmpi_file_t {
 
     int rank;
     int ncid;
-} H5VL_ncmpi_file_t;
+} H5VL_log_file_t;
 
 /* The pass through VOL info object */
-typedef struct H5VL_ncmpi_group_t {
+typedef struct H5VL_log_group_t {
     int objtype;
 
     hid_t lcpl_id;
@@ -139,12 +141,12 @@ typedef struct H5VL_ncmpi_group_t {
     char *path;
     char *name;
 
-    struct H5VL_ncmpi_group_t *gp;
-    H5VL_ncmpi_file_t *fp;
-} H5VL_ncmpi_group_t;
+    struct H5VL_log_group_t *gp;
+    H5VL_log_file_t *fp;
+} H5VL_log_group_t;
 
 /* The pass through VOL info object */
-typedef struct H5VL_ncmpi_dataset_t {
+typedef struct H5VL_log_dataset_t {
     int objtype;
 
     hid_t dcpl_id;
@@ -158,12 +160,12 @@ typedef struct H5VL_ncmpi_dataset_t {
     char *path;
     char *name;
 
-    H5VL_ncmpi_group_t *gp;
-    H5VL_ncmpi_file_t *fp;
-} H5VL_ncmpi_dataset_t;
+    H5VL_log_group_t *gp;
+    H5VL_log_file_t *fp;
+} H5VL_log_dataset_t;
 
 /* The pass through VOL info object */
-typedef struct H5VL_ncmpi_attr_t {
+typedef struct H5VL_log_attr_t {
     int objtype;
     
     hid_t acpl_id;
@@ -178,10 +180,10 @@ typedef struct H5VL_ncmpi_attr_t {
     char *path;
     char *name;
 
-    H5VL_ncmpi_dataset_t *dp;
-    H5VL_ncmpi_group_t *gp;
-    H5VL_ncmpi_file_t *fp;
-} H5VL_ncmpi_attr_t;
+    H5VL_log_dataset_t *dp;
+    H5VL_log_group_t *gp;
+    H5VL_log_file_t *fp;
+} H5VL_log_attr_t;
 
 extern MPI_Datatype h5t_to_mpi_type(hid_t type_id);
 extern nc_type h5t_to_nc_type(hid_t type_id);
@@ -193,15 +195,15 @@ extern void mergereq(int ndim, hssize_t *len, MPI_Offset **starts, MPI_Offset **
 extern void sortblock(int ndim, hssize_t len, hsize_t **starts);
 extern bool hlessthan(int ndim, hsize_t *a, hsize_t *b);
 
-extern int enter_data_mode(H5VL_ncmpi_file_t *fp);
-extern int enter_define_mode(H5VL_ncmpi_file_t *fp);
-extern int enter_indep_mode(H5VL_ncmpi_file_t *fp);
-extern int enter_coll_mode(H5VL_ncmpi_file_t *fp);
+extern int enter_data_mode(H5VL_log_file_t *fp);
+extern int enter_define_mode(H5VL_log_file_t *fp);
+extern int enter_indep_mode(H5VL_log_file_t *fp);
+extern int enter_coll_mode(H5VL_log_file_t *fp);
 
-extern const H5VL_file_class_t H5VL_ncmpi_file_g;
-extern const H5VL_dataset_class_t H5VL_ncmpi_dataset_g;
-extern const H5VL_attr_class_t H5VL_ncmpi_attr_g;
-extern const H5VL_group_class_t H5VL_ncmpi_group_g;
-extern const H5VL_class_t H5VL_ncmpi_g;
+extern const H5VL_file_class_t H5VL_log_file_g;
+extern const H5VL_dataset_class_t H5VL_log_dataset_g;
+extern const H5VL_attr_class_t H5VL_log_attr_g;
+extern const H5VL_group_class_t H5VL_log_group_g;
+extern const H5VL_class_t H5VL_log_g;
 
 #endif

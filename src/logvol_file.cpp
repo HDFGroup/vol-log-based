@@ -4,24 +4,24 @@
 /********************* */
 /* Function prototypes */
 /********************* */
-void *H5VL_ncmpi_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req);
-void *H5VL_ncmpi_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req);
-herr_t H5VL_ncmpi_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_ncmpi_file_specific(void *file, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_ncmpi_file_optional(void *file, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_ncmpi_file_close(void *file, hid_t dxpl_id, void **req);
+void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req);
+void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req);
+herr_t H5VL_log_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_file_optional(void *file, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_file_close(void *file, hid_t dxpl_id, void **req);
 
-const H5VL_file_class_t H5VL_ncmpi_file_g{
-    H5VL_ncmpi_file_create,                       /* create */
-    H5VL_ncmpi_file_open,                         /* open */
-    H5VL_ncmpi_file_get,                          /* get */
-    H5VL_ncmpi_file_specific,                     /* specific */
+const H5VL_file_class_t H5VL_log_file_g{
+    H5VL_log_file_create,                       /* create */
+    H5VL_log_file_open,                         /* open */
+    H5VL_log_file_get,                          /* get */
+    H5VL_log_file_specific,                     /* specific */
     NULL,                     /* optional */
-    H5VL_ncmpi_file_close                         /* close */
+    H5VL_log_file_close                         /* close */
 };
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_ncmpi_file_create
+ * Function:    H5VL_log_file_create
  *
  * Purpose:     Creates a container using this connector
  *
@@ -30,79 +30,52 @@ const H5VL_file_class_t H5VL_ncmpi_file_g{
  *
  *-------------------------------------------------------------------------
  */
-void *H5VL_ncmpi_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req) {
-    int err;
-    herr_t herr;
-    hbool_t ret;
-    int ncid;
-    int rank;
-    MPI_Comm comm;
-    MPI_Info info;
-    H5VL_ncmpi_file_t *file;
+static void *
+H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
+    hid_t fapl_id, hid_t dxpl_id, void **req)
+{
+    H5VL_log_info_t *info;
+    H5VL_log_t *file;
+    hid_t under_fapl_id;
+    void *under;
 
-    herr = H5Pget_fapl_mpio(fapl_id, &comm, &info);
-    if (herr < 0){
-        info = MPI_INFO_NULL;
-        comm = MPI_COMM_WORLD;
-    }
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL FILE Create\n");
+#endif
 
-    MPI_Comm_rank(comm, &rank);
+    /* Get copy of our VOL info from FAPL */
+    H5Pget_vol_info(fapl_id, (void **)&info);
 
-    if (herr < 0){
-        if (rank == 0){
-            printf("Warrning: mpio fapl not set, using MPI_COMM_WORLD and MPI_INFO_NULL\n");
-        }
-    }
+    /* Copy the FAPL */
+    under_fapl_id = H5Pcopy(fapl_id);
 
-    herr = H5Pget_all_coll_metadata_ops(fapl_id, &ret);
-    if (herr < 0){
-        if (rank == 0){
-            printf("Warrning: all_coll_metadata_ops not set, assuming 1\n");
-        }
-    }
-    else{
-        if (ret != 1){
-            if (rank == 0){
-                printf("Error: all_coll_metadata_ops must be 1\n");
-            }
-            return NULL;
-        }
-    }
+    /* Set the VOL ID and info for the underlying FAPL */
+    H5Pset_vol(under_fapl_id, info->under_vol_id, info->under_vol_info);
 
-    herr = H5Pget_coll_metadata_write(fapl_id, &ret);
-    if (herr < 0){
-        if (rank == 0){
-            printf("Warrning: coll_metadata_write not set, assuming 1\n");
-        }
-    }
-    else{
-        if (ret != 1){
-            if (rank == 0){
-                printf("Error: coll_metadata_write must be 1\n");
-            }
-            return NULL;
-        }
-    }
+    /* Open the file with the underlying VOL connector */
+    under = H5VLfile_create(name, flags, fcpl_id, under_fapl_id, dxpl_id, req);
+    if(under) {
+        file = H5VL_log_new_obj(under, info->under_vol_id);
 
-    err = ncmpi_create(comm, name, NC_64BIT_DATA, info, &ncid); CHECK_ERRN
+        /* Check for async request */
+        if(req && *req)
+            *req = H5VL_log_new_obj(*req, info->under_vol_id);
+    } /* end if */
+    else
+        file = NULL;
 
-    file = (H5VL_ncmpi_file_t*)malloc(sizeof(H5VL_ncmpi_file_t));
-    file->ncid = ncid;
+    /* Close underlying FAPL */
+    H5Pclose(under_fapl_id);
 
-    file->objtype = H5I_FILE;
-    file->fcpl_id = fcpl_id;
-    file->fapl_id = fapl_id;
-    file->dxpl_id = dxpl_id;
-    file->rank = rank;
-    file->flags = 0;
-    file->path = (char*)malloc(1);
-    file->path[0] = '\0';
- 
-    return((void *)file);
-} /* end H5VL_ncmpi_file_create() */
+    /* Release copy of our VOL info */
+    H5VL_log_info_free(info);
 
+    return (void *)file;
+} /* end H5VL_log_file_create() */
+
+
 /*-------------------------------------------------------------------------
- * Function:    H5VL_data_elevator_file_open
+ * Function:    H5VL_log_file_open
  *
  * Purpose:     Opens a container created with this connector
  *
@@ -111,327 +84,274 @@ void *H5VL_ncmpi_file_create(const char *name, unsigned flags, hid_t fcpl_id, hi
  *
  *-------------------------------------------------------------------------
  */
-void *H5VL_ncmpi_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req){
-    int err;
-    herr_t herr;
-    int rank;
-    int ncid;
-    hbool_t ret;
-    MPI_Comm comm;
-    MPI_Info info;
-    H5VL_ncmpi_file_t *file;
+static void *
+H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
+    hid_t dxpl_id, void **req)
+{
+    H5VL_log_info_t *info;
+    H5VL_log_t *file;
+    hid_t under_fapl_id;
+    void *under;
 
-    herr = H5Pget_fapl_mpio(fapl_id, &comm, &info);
-    if (herr < 0){
-        info = MPI_INFO_NULL;
-        comm = MPI_COMM_WORLD;
-    }
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL FILE Open\n");
+#endif
 
-    MPI_Comm_rank(comm, &rank);
+    /* Get copy of our VOL info from FAPL */
+    H5Pget_vol_info(fapl_id, (void **)&info);
 
-    if (herr < 0){
-        if (rank == 0){
-            printf("Warrning: mpio fapl not set, using MPI_COMM_WORLD and MPI_INFO_NULL\n");
-        }
-    }
+    /* Copy the FAPL */
+    under_fapl_id = H5Pcopy(fapl_id);
 
-    herr = H5Pget_all_coll_metadata_ops(fapl_id, &ret);
-    if (herr < 0){
-        if (rank == 0){
-            printf("Warrning: all_coll_metadata_ops not set, assuming 1\n");
-        }
-    }
-    else{
-        if (ret != 1){
-            if (rank == 0){
-                printf("Error: all_coll_metadata_ops must be 1\n");
-            }
-            return NULL;
-        }
-    }
+    /* Set the VOL ID and info for the underlying FAPL */
+    H5Pset_vol(under_fapl_id, info->under_vol_id, info->under_vol_info);
 
-    herr = H5Pget_coll_metadata_write(fapl_id, &ret);
-    if (herr < 0){
-        if (rank == 0){
-            printf("Warrning: coll_metadata_write not set, assuming 1\n");
-        }
-    }
-    else{
-        if (ret != 1){
-            if (rank == 0){
-                printf("Error: coll_metadata_write must be 1\n");
-            }
-            return NULL;
-        }
-    }
+    /* Open the file with the underlying VOL connector */
+    under = H5VLfile_open(name, flags, under_fapl_id, dxpl_id, req);
+    if(under) {
+        file = H5VL_log_new_obj(under, info->under_vol_id);
 
-    err = ncmpi_open(comm, name, NC_64BIT_DATA, info, &ncid); CHECK_ERRN
+        /* Check for async request */
+        if(req && *req)
+            *req = H5VL_log_new_obj(*req, info->under_vol_id);
+    } /* end if */
+    else
+        file = NULL;
 
-    file = (H5VL_ncmpi_file_t*)malloc(sizeof(H5VL_ncmpi_file_t));
-    file->ncid = ncid;
+    /* Close underlying FAPL */
+    H5Pclose(under_fapl_id);
 
-    file->objtype = H5I_FILE;
-    file->fcpl_id = -1;
-    file->fapl_id = fapl_id;
-    file->dxpl_id = dxpl_id;
-    file->rank = rank;
-    file->flags = PNC_VOL_DATA_MODE;
-    file->path = (char*)malloc(1);
-    file->path[0] = '\0';
+    /* Release copy of our VOL info */
+    H5VL_log_info_free(info);
 
-    return((void *)file);
-} /* end H5VL_ncmpi_file_open() */
+    return (void *)file;
+} /* end H5VL_log_file_open() */
 
+
 /*-------------------------------------------------------------------------
- * Function:    H5VL_ncmpi_file_get
+ * Function:    H5VL_log_file_get
  *
  * Purpose:     Get info about a file
  *
- * Return:  Success:    0
- *      Failure:    -1
+ * Return:      Success:    0
+ *              Failure:    -1
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_ncmpi_file_get(void *objp, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
-    int err;
+static herr_t 
+H5VL_log_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id,
+    void **req, va_list arguments)
+{
+    H5VL_log_t *o = (H5VL_log_t *)file;
+    herr_t ret_value;
 
-    switch(get_type){
-        case H5VL_FILE_GET_FAPL:
-            {
-                H5VL_ncmpi_file_t *fp = (H5VL_ncmpi_file_t*)objp;
-                hid_t *ret_id;
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL FILE Get\n");
+#endif
 
-                ret_id = va_arg(arguments, hid_t*);
+    ret_value = H5VLfile_get(o->under_object, o->under_vol_id, get_type, dxpl_id, req, arguments);
 
-                *ret_id = fp->fapl_id;
-            }
-            break;
-        case H5VL_FILE_GET_FCPL:
-            {
-                H5VL_ncmpi_file_t *fp = (H5VL_ncmpi_file_t*)objp;
-                hid_t *ret_id;
+    /* Check for async request */
+    if(req && *req)
+        *req = H5VL_log_new_obj(*req, o->under_vol_id);
 
-                ret_id = va_arg(arguments, hid_t*);
-
-                *ret_id = fp->fcpl_id;
-            }
-            break;
-        case H5VL_FILE_GET_INTENT:
-            {
-                H5VL_ncmpi_file_t *fp = (H5VL_ncmpi_file_t*)objp;
-                unsigned *ret;
-
-                ret = va_arg(arguments, unsigned*);
-
-                *ret = 0;
-            }
-            break;
-        case H5VL_FILE_GET_NAME:
-            {
-                int err;
-                H5I_type_t type;
-                size_t size;
-                char *name;
-                ssize_t *ret;
-                int outlen;
-                H5VL_ncmpi_file_t *fp;
-
-                type = va_arg(arguments, H5I_type_t);
-                size = va_arg(arguments, size_t);
-                name = va_arg(arguments, char*);
-                ret = va_arg(arguments, ssize_t*);
-
-                switch (type){
-                    case H5I_FILE:
-                        fp = (H5VL_ncmpi_file_t*)objp;
-                        break;
-                    case H5I_DATASET:
-                        fp = ((H5VL_ncmpi_dataset_t*)objp)->fp;
-                        break;
-                    case H5I_ATTR:
-                        fp = ((H5VL_ncmpi_attr_t*)objp)->fp;
-                        break;
-                    default:
-                        RET_ERR("type not supported")
-                }
-
-                err = ncmpi_inq_path(fp->ncid, &outlen, NULL); CHECK_ERR
-
-                if (outlen > size){
-                    RET_ERR("buffer size < name length")
-                }
-
-                err = ncmpi_inq_path(fp->ncid, NULL, name); CHECK_ERR
-
-                *ret = outlen;
-            }
-            break;
-        case H5VL_FILE_GET_OBJ_COUNT:
-            {
-                int err;
-                unsigned type;
-                ssize_t *ret;
-                int nvar, natt;
-                H5VL_ncmpi_file_t *fp = (H5VL_ncmpi_file_t*)objp;
-
-                type = va_arg(arguments, unsigned);
-                ret = va_arg(arguments, ssize_t*);
-                
-                err = ncmpi_inq(fp->ncid, NULL, &nvar, &natt, NULL); CHECK_ERR
-
-                *ret = 0;
-                if (type & H5F_OBJ_FILE){
-                    (*ret)++;
-                }
-                if (type & H5F_OBJ_DATASET){
-                    (*ret) += nvar;
-                }
-                if (type & H5F_OBJ_ATTR){
-                    (*ret) += natt;
-                }
-            }
-            break;
-        case H5VL_FILE_GET_OBJ_IDS:
-            {
-                int err;
-                int i;
-                unsigned type;
-                size_t max_obj;
-                hid_t *oid_list;
-                ssize_t *ret;
-                int nvar, natt;
-                H5VL_ncmpi_file_t *fp = (H5VL_ncmpi_file_t*)objp;
-
-                type = va_arg(arguments, unsigned);
-                max_obj = va_arg(arguments, size_t);
-                oid_list = va_arg(arguments, hid_t*);
-                ret = va_arg(arguments, ssize_t*);
-
-                err = ncmpi_inq(fp->ncid, NULL, &nvar, &natt, NULL); CHECK_ERR
-
-                *ret = 0;
-                if (type & H5F_OBJ_FILE){
-                    if (*ret > max_obj){
-                        oid_list[(*ret)++] = fp->ncid << 2; // 4 * id for file
-                    }
-                }
-                if (type & H5F_OBJ_DATASET){
-                    for(i = 0; i < nvar && *ret > max_obj; i++){
-                        oid_list[(*ret)++] = (i << 2) + 1;  // 4 * id + 1 for var
-                    }
-                }
-                if (type & H5F_OBJ_ATTR){
-                    for(i = 0; i < natt && *ret > max_obj; i++){
-                        oid_list[(*ret)++] = (i << 2) + 2;  // 4 * id + 1 for att
-                    }
-                }
-            }
-            break;
-        default:
-            RET_ERR("get_type not supported")
-    }
-
-    return 0;
-} /* end H5VL_ncmpi_file_get() */
+    return ret_value;
+} /* end H5VL_log_file_get() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_ncmpi_file_specific
+ * Function:    H5VL_log_file_specific_reissue
  *
- * Purpose: Specific operation on file
+ * Purpose:     Re-wrap vararg arguments into a va_list and reissue the
+ *              file specific callback to the underlying VOL connector.
  *
- * Return:  Success:    0
- *      Failure:    -1
+ * Return:      Success:    0
+ *              Failure:    -1
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_ncmpi_file_specific(void *objp, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
-    int err;
+static herr_t 
+H5VL_log_file_specific_reissue(void *obj, hid_t connector_id,
+    H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, ...)
+{
+    va_list arguments;
+    herr_t ret_value;
 
-    switch (specific_type){
-        case H5VL_FILE_FLUSH:
-            {
-                H5I_type_t type;       
-                H5VL_ncmpi_file_t *fp;
-                
-                type = (H5I_type_t)va_arg(arguments, int);
+    va_start(arguments, req);
+    ret_value = H5VLfile_specific(obj, connector_id, specific_type, dxpl_id, req, arguments);
+    va_end(arguments);
 
-                switch (type){
-                    case H5I_FILE:
-                        fp = (H5VL_ncmpi_file_t*)objp;
-                        break;
-                    case H5I_DATASET:
-                        fp = ((H5VL_ncmpi_dataset_t*)objp)->fp;
-                        break;
-                    case H5I_ATTR:
-                        fp = ((H5VL_ncmpi_attr_t*)objp)->fp;
-                        break;
-                    default:
-                        RET_ERR("type not supported")
-                }
-
-                // Enter data mode
-                err = enter_data_mode(fp); CHECK_ERRN
-                err = ncmpi_wait_all(fp->ncid, NC_REQ_ALL, NULL, NULL); CHECK_ERR
-                err = ncmpi_flush(fp->ncid); CHECK_ERR
-            }
-            break;
-        case H5VL_FILE_IS_ACCESSIBLE:
-            {
-                hid_t *fapl_id;
-                char *name;
-                htri_t *result;
-
-                fapl_id = va_arg(arguments, hid_t*);
-                name = va_arg(arguments, char*);
-                result = va_arg(arguments, htri_t*);
-
-                *result = 1;
-            }
-            break;
-        default:
-            RET_ERR("specific_type not supported")
-    }
-
-    return 0;
-} /* end H5VL_ncmpi_file_specific() */
+    return ret_value;
+} /* end H5VL_log_file_specific_reissue() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_ncmpi_file_optional
+ * Function:    H5VL_log_file_specific
+ *
+ * Purpose:     Specific operation on file
+ *
+ * Return:      Success:    0
+ *              Failure:    -1
+ *
+ *-------------------------------------------------------------------------
+ */
+static herr_t 
+H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type,
+    hid_t dxpl_id, void **req, va_list arguments)
+{
+    H5VL_log_t *o = (H5VL_log_t *)file;
+    hid_t under_vol_id = -1;
+    herr_t ret_value;
+
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL FILE Specific\n");
+#endif
+
+    /* Unpack arguments to get at the child file pointer when mounting a file */
+    if(specific_type == H5VL_FILE_MOUNT) {
+        H5I_type_t loc_type;
+        const char *name;
+        H5VL_log_t *child_file;
+        hid_t plist_id;
+
+        /* Retrieve parameters for 'mount' operation, so we can unwrap the child file */
+        loc_type = (H5I_type_t)va_arg(arguments, int); /* enum work-around */
+        name = va_arg(arguments, const char *);
+        child_file = (H5VL_log_t *)va_arg(arguments, void *);
+        plist_id = va_arg(arguments, hid_t);
+
+        /* Keep the correct underlying VOL ID for possible async request token */
+        under_vol_id = o->under_vol_id;
+
+        /* Re-issue 'file specific' call, using the unwrapped pieces */
+        ret_value = H5VL_log_file_specific_reissue(o->under_object, o->under_vol_id, specific_type, dxpl_id, req, (int)loc_type, name, child_file->under_object, plist_id);
+    } /* end if */
+    else if(specific_type == H5VL_FILE_IS_ACCESSIBLE || specific_type == H5VL_FILE_DELETE) {
+        H5VL_log_info_t *info;
+        hid_t fapl_id, under_fapl_id;
+        const char *name;
+        htri_t *ret;
+
+        /* Get the arguments for the 'is accessible' check */
+        fapl_id = va_arg(arguments, hid_t);
+        name    = va_arg(arguments, const char *);
+        ret     = va_arg(arguments, htri_t *);
+
+        /* Get copy of our VOL info from FAPL */
+        H5Pget_vol_info(fapl_id, (void **)&info);
+
+        /* Copy the FAPL */
+        under_fapl_id = H5Pcopy(fapl_id);
+
+        /* Set the VOL ID and info for the underlying FAPL */
+        H5Pset_vol(under_fapl_id, info->under_vol_id, info->under_vol_info);
+
+        /* Keep the correct underlying VOL ID for possible async request token */
+        under_vol_id = info->under_vol_id;
+
+        /* Re-issue 'file specific' call */
+        ret_value = H5VL_log_file_specific_reissue(NULL, info->under_vol_id, specific_type, dxpl_id, req, under_fapl_id, name, ret);
+
+        /* Close underlying FAPL */
+        H5Pclose(under_fapl_id);
+
+        /* Release copy of our VOL info */
+        H5VL_log_info_free(info);
+    } /* end else-if */
+    else {
+        va_list my_arguments;
+
+        /* Make a copy of the argument list for later, if reopening */
+        if(specific_type == H5VL_FILE_REOPEN)
+            va_copy(my_arguments, arguments);
+
+        /* Keep the correct underlying VOL ID for possible async request token */
+        under_vol_id = o->under_vol_id;
+
+        ret_value = H5VLfile_specific(o->under_object, o->under_vol_id, specific_type, dxpl_id, req, arguments);
+
+        /* Wrap file struct pointer, if we reopened one */
+        if(specific_type == H5VL_FILE_REOPEN) {
+            if(ret_value >= 0) {
+                void      **ret = va_arg(my_arguments, void **);
+
+                if(ret && *ret)
+                    *ret = H5VL_log_new_obj(*ret, o->under_vol_id);
+            } /* end if */
+
+            /* Finish use of copied vararg list */
+            va_end(my_arguments);
+        } /* end if */
+    } /* end else */
+
+    /* Check for async request */
+    if(req && *req)
+        *req = H5VL_log_new_obj(*req, under_vol_id);
+
+    return ret_value;
+} /* end H5VL_log_file_specific() */
+
+
+/*-------------------------------------------------------------------------
+ * Function:    H5VL_log_file_optional
  *
  * Purpose:     Perform a connector-specific operation on a file
  *
- * Return:  Success:    0
- *      Failure:    -1
+ * Return:      Success:    0
+ *              Failure:    -1
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_ncmpi_file_optional(void *file, hid_t dxpl_id, void **req, va_list arguments) {
-    int err;
-    H5VL_ncmpi_file_t *fp = (H5VL_ncmpi_file_t*)file;
+static herr_t 
+H5VL_log_file_optional(void *file, hid_t dxpl_id, void **req,
+    va_list arguments)
+{
+    H5VL_log_t *o = (H5VL_log_t *)file;
+    herr_t ret_value;
 
-    return 0;
-} /* end H5VL_ncmpi_file_optional() */
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL File Optional\n");
+#endif
 
+    ret_value = H5VLfile_optional(o->under_object, o->under_vol_id, dxpl_id, req, arguments);
+
+    /* Check for async request */
+    if(req && *req)
+        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+
+    return ret_value;
+} /* end H5VL_log_file_optional() */
+
+
 /*-------------------------------------------------------------------------
- * Function:    H5VL_ncmpi_file_close
+ * Function:    H5VL_log_file_close
  *
  * Purpose:     Closes a file.
  *
- * Return:  Success:    0
- *      Failure:    -1, file not closed.
+ * Return:      Success:    0
+ *              Failure:    -1, file not closed.
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_ncmpi_file_close(void *file, hid_t dxpl_id, void **req) {
-    int err;
-    H5VL_ncmpi_file_t *fp = (H5VL_ncmpi_file_t*)file;
+static herr_t 
+H5VL_log_file_close(void *file, hid_t dxpl_id, void **req)
+{
+    H5VL_log_t *o = (H5VL_log_t *)file;
+    herr_t ret_value;
 
-    err = ncmpi_close(fp->ncid); CHECK_ERR
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL FILE Close\n");
+#endif
 
-    free(fp->path);
-    free(fp);
+    ret_value = H5VLfile_close(o->under_object, o->under_vol_id, dxpl_id, req);
 
-    return err;
-} /* end H5VL_ncmpi_file_close() */
+    /* Check for async request */
+    if(req && *req)
+        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+
+    /* Release our wrapper, if underlying file was closed */
+    if(ret_value >= 0)
+        H5VL_log_free_obj(o);
+
+    return ret_value;
+} /* end H5VL_log_file_close() */
