@@ -5,221 +5,224 @@
 /* Function prototypes */
 /********************* */
 
-void *H5VL_ncmpi_group_create(void *obj, const H5VL_loc_params_t *loc_params, const char *name, hid_t lcpl_id, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req);
-void *H5VL_ncmpi_group_open(void *obj, const H5VL_loc_params_t *loc_params, const char *name, hid_t gapl_id, hid_t dxpl_id, void **req);
-herr_t H5VL_ncmpi_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_ncmpi_group_specific(void *obj, H5VL_group_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_ncmpi_group_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_ncmpi_group_close(void *grp, hid_t dxpl_id, void **req);
+void *H5VL_log_group_create(void *obj, const H5VL_loc_params_t *loc_params, const char *name, hid_t lcpl_id, hid_t gcpl_id, hid_t gapl_id, hid_t dxpl_id, void **req);
+void *H5VL_log_group_open(void *obj, const H5VL_loc_params_t *loc_params, const char *name, hid_t gapl_id, hid_t dxpl_id, void **req);
+herr_t H5VL_log_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_group_specific(void *obj, H5VL_group_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_group_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_group_close(void *grp, hid_t dxpl_id, void **req);
 
-const H5VL_group_class_t H5VL_ncmpi_group_g{
-    H5VL_ncmpi_group_create,                /* create       */
-    H5VL_ncmpi_group_open,                  /* open       */
-    H5VL_ncmpi_group_get,                   /* get          */
-    H5VL_ncmpi_group_specific,              /* specific     */
-    H5VL_ncmpi_group_optional,              /* optional     */
-    H5VL_ncmpi_group_close                  /* close        */
+const H5VL_group_class_t H5VL_log_group_g{
+    H5VL_log_group_create,                /* create       */
+    H5VL_log_group_open,                  /* open       */
+    H5VL_log_group_get,                   /* get          */
+    H5VL_log_group_specific,              /* specific     */
+    H5VL_log_group_optional,              /* optional     */
+    H5VL_log_group_close                  /* close        */
 };
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_ncmpi_group_create
+ * Function:    H5VL_log_group_create
  *
- * Purpose:     Handles the group create callback
+ * Purpose:     Creates a group inside a container
  *
- * Return:      Success:    group pointer
+ * Return:      Success:    Pointer to a group object
  *              Failure:    NULL
  *
  *-------------------------------------------------------------------------
  */
-void *H5VL_ncmpi_group_create(  void *obj, const H5VL_loc_params_t *loc_params, const char *name,
-                                hid_t lcpl_id, hid_t gcpl_id, hid_t  gapl_id,
-                                hid_t  dxpl_id, void  **req) {
-    int err;
-    int i;
-    char tmp[1024];
-    char *ppath;
-    H5VL_ncmpi_group_t *grup;
-    H5VL_ncmpi_group_t *gp;
-    H5VL_ncmpi_file_t *fp;
+static void *
+H5VL_log_group_create(void *obj, const H5VL_loc_params_t *loc_params,
+    const char *name, hid_t lcpl_id, hid_t gcpl_id, hid_t gapl_id,
+    hid_t dxpl_id, void **req)
+{
+    H5VL_log_t *group;
+    H5VL_log_t *o = (H5VL_log_t *)obj;
+    void *under;
 
-    /* Check arguments */
-    if((loc_params->obj_type != H5I_FILE) && (loc_params->obj_type != H5I_GROUP))   RET_ERRN("container not a file or group")
-    if(loc_params->type != H5VL_OBJECT_BY_SELF) RET_ERRN("loc_params->type is not H5VL_OBJECT_BY_SELF")
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL GROUP Create\n");
+#endif
 
-    if (loc_params->obj_type == H5I_FILE){
-        fp = (H5VL_ncmpi_file_t*)obj;
-        gp = NULL;
-        ppath = NULL;
-    }
-    else {
-        gp = (H5VL_ncmpi_group_t*)obj;
-        fp = gp->fp;
-        ppath = gp->path;
-    }
+    under = H5VLgroup_create(o->under_object, loc_params, o->under_vol_id, name, lcpl_id, gcpl_id,  gapl_id, dxpl_id, req);
+    if(under) {
+        group = H5VL_log_new_obj(under, o->under_vol_id);
 
-    // Enter define mode
-    err = enter_define_mode(fp); CHECK_ERRN
+        /* Check for async request */
+        if(req && *req)
+            *req = H5VL_log_new_obj(*req, o->under_vol_id);
+    } /* end if */
+    else
+        group = NULL;
 
-    grup = (H5VL_ncmpi_group_t*)malloc(sizeof(H5VL_ncmpi_group_t));
-    grup->objtype = H5I_GROUP;
-    grup->lcpl_id = lcpl_id;
-    grup->gcpl_id = gcpl_id;
-    grup->gapl_id = gapl_id;
-    grup->dxpl_id = dxpl_id;
-    grup->fp = fp;
-    grup->gp = gp;
-    if (ppath == NULL){
-        grup->path = (char*)malloc(strlen(name) + 1);
-        sprintf(grup->path, "%s", name);
-        grup->name = grup->path;
-    }
-    else{
-        grup->path = (char*)malloc(strlen(ppath) + strlen(name) + 2);
-        sprintf(grup->path, "%s_%s", ppath, name);
-        grup->name = grup->path + strlen(ppath) + 1;
-    }
-    sprintf(tmp, "_group_%s", grup->path);
-    i = 0;
-    err = ncmpi_put_att(fp->ncid, NC_GLOBAL, tmp, NC_INT, 1, &i); CHECK_ERRJ
-
-    return (void *)grup;
-
-errout:
-    free(grup->path);
-    free(grup);
-
-    return NULL;
-} /* end H5VL_ncmpi_group_create() */
+    return (void *)group;
+} /* end H5VL_log_group_create() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_ncmpi_group_open
+ * Function:    H5VL_log_group_open
  *
- * Purpose:     Handles the group open callback
+ * Purpose:     Opens a group inside a container
  *
- * Return:      Success:    group pointer
+ * Return:      Success:    Pointer to a group object
  *              Failure:    NULL
  *
  *-------------------------------------------------------------------------
  */
-void *H5VL_ncmpi_group_open(    void *obj, const H5VL_loc_params_t *loc_params, const char *name, 
-                                hid_t  gapl_id, hid_t  dxpl_id, void  **req) {
-    int err;
-    int i;
-    char tmp[1024];
-    char *ppath;
-    H5VL_ncmpi_group_t *grup;
-    H5VL_ncmpi_group_t *gp;
-    H5VL_ncmpi_file_t *fp;
+static void *
+H5VL_log_group_open(void *obj, const H5VL_loc_params_t *loc_params,
+    const char *name, hid_t gapl_id, hid_t dxpl_id, void **req)
+{
+    H5VL_log_t *group;
+    H5VL_log_t *o = (H5VL_log_t *)obj;
+    void *under;
 
-    /* Check arguments */
-    if((loc_params->obj_type != H5I_FILE) && (loc_params->obj_type != H5I_GROUP))   RET_ERRN("container not a file or group")
-    if(loc_params->type != H5VL_OBJECT_BY_SELF) RET_ERRN("loc_params->type is not H5VL_OBJECT_BY_SELF")
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL GROUP Open\n");
+#endif
 
-    if (loc_params->obj_type == H5I_FILE){
-        fp = (H5VL_ncmpi_file_t*)obj;
-        gp = NULL;
-        ppath = NULL;
-    }
-    else {
-        gp = (H5VL_ncmpi_group_t*)obj;
-        fp = gp->fp;
-        ppath = gp->path;
-    }
+    under = H5VLgroup_open(o->under_object, loc_params, o->under_vol_id, name, gapl_id, dxpl_id, req);
+    if(under) {
+        group = H5VL_log_new_obj(under, o->under_vol_id);
 
-    grup = (H5VL_ncmpi_group_t*)malloc(sizeof(H5VL_ncmpi_group_t));
-    grup->objtype = H5I_GROUP;
-    grup->lcpl_id = -1;
-    grup->gcpl_id = -1;
-    grup->gapl_id = gapl_id;
-    grup->dxpl_id = dxpl_id;
-    grup->fp = fp;
-    grup->gp = gp;
-    if (ppath == NULL){
-        grup->path = (char*)malloc(strlen(name) + 1);
-        sprintf(grup->path, "%s", name);
-        grup->name = grup->path;
-    }
-    else{
-        grup->path = (char*)malloc(strlen(ppath) + strlen(name) + 2);
-        sprintf(grup->path, "%s_%s", ppath, name);
-        grup->name = grup->path + strlen(ppath) + 1;
-    }
+        /* Check for async request */
+        if(req && *req)
+            *req = H5VL_log_new_obj(*req, o->under_vol_id);
+    } /* end if */
+    else
+        group = NULL;
 
-    sprintf(tmp, "_group_%s", grup->path);
-    err = ncmpi_inq_attid(fp->ncid, NC_GLOBAL, tmp, &i); CHECK_ERRJ
-
-    return (void *)grup;
-
-errout:
-    free(grup->path);
-    free(grup);
-
-    return NULL;
-} /* end H5VL_ncmpi_group_open() */
+    return (void *)group;
+} /* end H5VL_log_group_open() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_ncmpi_group_get
+ * Function:    H5VL_log_group_get
  *
- * Purpose:     Handles the group get callback
+ * Purpose:     Get info about a group
  *
- * Return:      SUCCEED/FAIL
+ * Return:      Success:    0
+ *              Failure:    -1
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_ncmpi_group_get(    void *obj, H5VL_group_get_t get_type,
-                                hid_t  dxpl_id, void  **req, va_list arguments) {
-    return 0;
-} /* end H5VL_ncmpi_group_get() */
+static herr_t 
+H5VL_log_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id,
+    void **req, va_list arguments)
+{
+    H5VL_log_t *o = (H5VL_log_t *)obj;
+    herr_t ret_value;
+
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL GROUP Get\n");
+#endif
+
+    ret_value = H5VLgroup_get(o->under_object, o->under_vol_id, get_type, dxpl_id, req, arguments);
+
+    /* Check for async request */
+    if(req && *req)
+        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+
+    return ret_value;
+} /* end H5VL_log_group_get() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_ncmpi_group_specific
+ * Function:    H5VL_log_group_specific
  *
- * Purpose:     Handles the group specific callback
+ * Purpose:     Specific operation on a group
  *
- * Return:      SUCCEED/FAIL
+ * Return:      Success:    0
+ *              Failure:    -1
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_ncmpi_group_specific(   void *obj, H5VL_group_specific_t specific_type, 
-                                    hid_t  dxpl_id, void  **req, va_list arguments) {
-    return 0;
-} /* end H5VL_ncmpi_group_specific() */
+static herr_t 
+H5VL_log_group_specific(void *obj, H5VL_group_specific_t specific_type,
+    hid_t dxpl_id, void **req, va_list arguments)
+{
+    H5VL_log_t *o = (H5VL_log_t *)obj;
+    hid_t under_vol_id;
+    herr_t ret_value;
+
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL GROUP Specific\n");
+#endif
+
+    // Save copy of underlying VOL connector ID and prov helper, in case of
+    // refresh destroying the current object
+    under_vol_id = o->under_vol_id;
+
+    ret_value = H5VLgroup_specific(o->under_object, o->under_vol_id, specific_type, dxpl_id, req, arguments);
+
+    /* Check for async request */
+    if(req && *req)
+        *req = H5VL_log_new_obj(*req, under_vol_id);
+
+    return ret_value;
+} /* end H5VL_log_group_specific() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_ncmpi_group_optional
+ * Function:    H5VL_log_group_optional
  *
- * Purpose:     Handles the group optional callback
+ * Purpose:     Perform a connector-specific operation on a group
  *
- * Return:      SUCCEED/FAIL
+ * Return:      Success:    0
+ *              Failure:    -1
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_ncmpi_group_optional(   void *obj, hid_t  dxpl_id,
-                                    void  **req, va_list arguments) {
-    return 0;
-} /* end H5VL_ncmpi_group_optional() */
+static herr_t 
+H5VL_log_group_optional(void *obj, hid_t dxpl_id, void **req,
+    va_list arguments)
+{
+    H5VL_log_t *o = (H5VL_log_t *)obj;
+    herr_t ret_value;
+
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL GROUP Optional\n");
+#endif
+
+    ret_value = H5VLgroup_optional(o->under_object, o->under_vol_id, dxpl_id, req, arguments);
+
+    /* Check for async request */
+    if(req && *req)
+        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+
+    return ret_value;
+} /* end H5VL_log_group_optional() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_ncmpi_group_close
+ * Function:    H5VL_log_group_close
  *
- * Purpose:     Handles the group close callback
+ * Purpose:     Closes a group.
  *
- * Return:      Success:    SUCCEED
- *              Failure:    FAIL (group will not be closed)
+ * Return:      Success:    0
+ *              Failure:    -1, group not closed.
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_ncmpi_group_close(void *grp, hid_t  dxpl_id, void  **req) {
-    H5VL_ncmpi_group_t *gp = (H5VL_ncmpi_group_t*)grp;
+static herr_t 
+H5VL_log_group_close(void *grp, hid_t dxpl_id, void **req)
+{
+    H5VL_log_t *o = (H5VL_log_t *)grp;
+    herr_t ret_value;
 
-    free(gp->path);
-    free(gp);
+#ifdef ENABLE_PASSTHRU_LOGGING 
+    printf("------- PASS THROUGH VOL H5Gclose\n");
+#endif
 
-    return 0;
-} /* end H5VL_ncmpi_group_close() */
+    ret_value = H5VLgroup_close(o->under_object, o->under_vol_id, dxpl_id, req);
 
+    /* Check for async request */
+    if(req && *req)
+        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+
+    /* Release our wrapper, if underlying file was closed */
+    if(ret_value >= 0)
+        H5VL_log_free_obj(o);
+
+    return ret_value;
+} /* end H5VL_log_group_close() */
