@@ -7,11 +7,11 @@
 SUFFIXES = .cpp .hpp .o
 
 AM_CPPFLAGS = -I.
-if PH5CONCAT_DEBUG
-   AM_CPPFLAGS += -DDEBUG=1
+if LOGVOL_DEBUG
+   AM_CPPFLAGS += -DLOGVOL_DEBUG=1
 endif
-if PH5CONCAT_PROFILING
-   AM_CPPFLAGS += -DPROFILE=1
+if LOGVOL_PROFILING
+   AM_CPPFLAGS += -DLOGVOL_PROFILING=1
 endif
 
 noinst_PROGRAMS = ph5_concat
@@ -31,8 +31,8 @@ EXTRA_DIST = ph5_concat.hpp \
              list.txt
 
 dist-hook:
-	$(SED_I) -e "s|RELEASE_DATE|@PH5CONCAT_RELEASE_DATE@|g" $(distdir)/main.cpp
-	$(SED_I) -e "1,10s|_PH5CONCAT_RELEASE_DATE_|@PH5CONCAT_RELEASE_DATE@|" $(distdir)/RELEASE_NOTES.md
-	$(SED_I) -e "1,10s|_PH5CONCAT_VERSION_|$(PH5CONCAT_VERSION)|" $(distdir)/RELEASE_NOTES.md
+	$(SED_I) -e "s|RELEASE_DATE|@LOGVOL_RELEASE_DATE@|g" $(distdir)/main.cpp
+	$(SED_I) -e "1,10s|_LOGVOL_RELEASE_DATE_|@LOGVOL_RELEASE_DATE@|" $(distdir)/RELEASE_NOTES.md
+	$(SED_I) -e "1,10s|_LOGVOL_VERSION_|$(LOGVOL_VERSION)|" $(distdir)/RELEASE_NOTES.md
 
 .PHONY:
