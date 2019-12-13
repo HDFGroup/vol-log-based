@@ -1,4 +1,4 @@
-#include "ncmpi_vol.h"
+#include "logvol.h"
 #include "pnetcdf.h"
 
 /********************* */

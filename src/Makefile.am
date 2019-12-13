@@ -24,7 +24,7 @@ H_SRCS = logvol.h
 
 C_SRCS = 
 
-CXX_SOURCES = logvol.cpp \
+CXX_SRCS = logvol.cpp \
               logvol_att.cpp \
               logvol_dataset.cpp \
               logvol_file.cpp \
@@ -33,7 +33,7 @@ CXX_SOURCES = logvol.cpp \
               logvol_obj.cpp \
               logvol_req.cpp \
               logvol_type.cpp \
-              logvol_util.cpp \
+              logvol_util.cpp 
 
 EXTRA_DIST = ph5_concat.hpp \
              acinclude.m4 \
@@ -45,7 +45,7 @@ EXTRA_DIST = ph5_concat.hpp \
              list.txt
 
 
-liblogvol_la_SOURCES = $(C_SRCS) $(H_SRCS)
+liblogvol_la_SOURCES = $(C_SRCS) $(CXX_SRCS) $(H_SRCS)
 nodist_liblogvol_la_SOURCES = $(M4_SRCS:.m4=.c) $(M4H_SRCS:.m4h=.h)
 
 dist-hook:

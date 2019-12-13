@@ -9,7 +9,7 @@ dnl
 
 dnl autoconf v2.69 was released in 2012-04-24
 AC_PREREQ([2.69])
-AC_INIT([LOGVOL],[1.0.0],[],[LOGVOL],[])
+AC_INIT([logvol],[1.0.0],[],[logvol],[])
 
 AC_CONFIG_HEADERS([config.h])
 AH_TOP([/*
@@ -20,6 +20,9 @@ AH_TOP([/*
 AC_CONFIG_SRCDIR([src/logvol.h])
 
 AC_CONFIG_AUX_DIR([./scripts])
+
+LT_PREREQ([2.4.2])
+LT_INIT([disable-shared])
 
 AM_INIT_AUTOMAKE([foreign])
 AM_SILENT_RULES([yes])
@@ -36,7 +39,7 @@ AC_SUBST(LOGVOL_VERSION_SUB)
 AC_SUBST(LOGVOL_VERSION)
 
 dnl Note that command 'date' is not portable across Unix platforms.
-dnl But release date matters only to LOGVOL developers who make the releases.
+dnl But release date matters only to logvol developers who make the releases.
 LOGVOL_RELEASE_DATE="`date '+%B %-d, %Y'`"
 AC_SUBST(LOGVOL_RELEASE_DATE)
 LOGVOL_RELEASE_DATE_FULL="`date '+%Y-%m-%d'`"
@@ -60,14 +63,14 @@ AC_ARG_WITH(mpi,
    if test "x${withval}" = xno ; then
       AC_MSG_ERROR([
       -----------------------------------------------------------------------
-        LOGVOL is built on top of MPI. Configure option --without-mpi or
+        logvol is built on top of MPI. Configure option --without-mpi or
         --with-mpi=no should not be used. Abort.
       -----------------------------------------------------------------------])
    elif test "x${withval}" = x ; then
       AC_MSG_ERROR(--with-mpi is set but the value is NULL)
    elif test "x${withval}" != xyes && test ! -d "${withval}" ; then
       # user may use --with-mpi without an argument, which results in withval
-      # being "yes". This case is OK and we simply take no action, as LOGVOL
+      # being "yes". This case is OK and we simply take no action, as logvol
       # requires MPI compilers and will check them.
       AC_MSG_ERROR(Directory '${withval}' specified in --with-mpi does not exist or is not a directory)
    fi
@@ -129,7 +132,7 @@ if test "x${MPICC}" = x ; then
    AC_MSG_ERROR([
    -----------------------------------------------------------------------
      $ERR_MSG
-     LOGVOL requires a working MPI C compiler. Please specify the
+     logvol requires a working MPI C compiler. Please specify the
      location of an MPI C compiler, either in the MPICC environment
      variable (not CC variable) or through --with-mpi configure flag.
      Abort.
@@ -159,7 +162,7 @@ if test "x${MPICXX}" = x ; then
    AC_MSG_ERROR([
    -----------------------------------------------------------------------
      $ERR_MSG
-     LOGVOL requires a working MPI C++ compiler. Please specify the
+     logvol requires a working MPI C++ compiler. Please specify the
      location of an MPI C++ compiler, either in the MPICXX environment
      variable (not CXX variable) or through --with-mpi configure flag.
      Abort.
@@ -192,7 +195,7 @@ AC_CHECK_FUNC([MPI_File_open], [],
                    [AC_MSG_ERROR([
    -----------------------------------------------------------------------
      The underneath MPI implementation does not support MPI-IO.
-     LOGVOL requires MPI-IO support to work properly. Abort.
+     logvol requires MPI-IO support to work properly. Abort.
    -----------------------------------------------------------------------])
 ])])
 AC_LANG_POP(C++)
@@ -208,7 +211,7 @@ fi
 
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],
-                    [Enable LOGVOL internal debug mode.
+                    [Enable logvol internal debug mode.
                      @<:@default: disabled@:>@])],
     [debug=${enableval}], [debug=no]
 )
@@ -276,7 +279,7 @@ AC_CHECK_HEADER([hdf5.h], [have_hdf5=yes], [have_hdf5=no])
 if test "x$have_hdf5" = xno ; then
       AC_MSG_ERROR([
       -----------------------------------------------------------------------
-      Missing HDF5-header files 'hdf5.h' required to build LOGVOL. Use
+      Missing HDF5-header files 'hdf5.h' required to build logvol. Use
       configure command-line option --with-hdf5=/path/to/implementation
       to specify the location of HDF5 installation. Abort.
       -----------------------------------------------------------------------])
@@ -292,7 +295,7 @@ AC_MSG_RESULT([$hdf5_ge_1_10_4])
 if test x$hdf5_ge_1_10_4 = xno; then
    AC_MSG_ERROR([
    -----------------------------------------------------------------------
-     LOGVOL requires HDF5 1.10.4 and later. Abort.
+     logvol requires HDF5 1.10.4 and later. Abort.
    -----------------------------------------------------------------------])
 fi
 AC_MSG_CHECKING([whether HDF5 parallel I/O is enabled])
@@ -306,7 +309,7 @@ AC_MSG_RESULT([$hdf5_parallel_io])
 if test "x$hdf5_parallel_io" = xno ; then
    AC_MSG_ERROR([
    -----------------------------------------------------------------------
-     LOGVOL requires parallel I/O feature enabled in HDF5. Abort.
+     logvol requires parallel I/O feature enabled in HDF5. Abort.
    -----------------------------------------------------------------------])
 fi
 AC_LANG_POP(C++)
@@ -317,28 +320,9 @@ else
    LIBS="$LIBS -lhdf5"
 fi
 
-saved_cross_compiling=$cross_compiling
-cross_compiling="yes"
-# Below two check will try to link and run.
-AC_CHECK_SIZEOF([size_t])
-AC_CHECK_SIZEOF([hsize_t], [], [#include <hdf5.h>])
-cross_compiling=$saved_cross_compiling
-unset saved_cross_compiling
-if test "x$ac_cv_sizeof_size_t" = x0 ; then
-   AC_MSG_ERROR([
-   -----------------------------------------------------------------------
-     Cannot detect size of type 'size_t' Abort.
-   -----------------------------------------------------------------------])
-fi
-AC_CHECK_SIZEOF([hsize_t])
-if test "x$ac_cv_sizeof_hsize_t" = x0 ; then
-   AC_MSG_ERROR([
-   -----------------------------------------------------------------------
-     Cannot detect size of type 'hsize_t' Abort.
-   -----------------------------------------------------------------------])
-fi
-
-AC_CONFIG_FILES(Makefile src/Makefile)
+AC_CONFIG_FILES(Makefile \
+                src/Makefile \
+                )
 
 AC_OUTPUT
 echo "------------------------------------------------------------------------------"
