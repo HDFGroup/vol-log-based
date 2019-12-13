@@ -1,5 +1,5 @@
-#ifndef _ncmpi_VOL_H_
-#define _ncmpi_VOL_H_
+#ifndef _logVOL_H_
+#define _logVOL_H_
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright by The HDF Group.                                               *
@@ -33,7 +33,6 @@
 #include <string.h>
 #include <mpi.h>
 #include "hdf5.h"
-#include "pnetcdf.h"
 
 /* Identifier for the pass-through VOL connector */
 #define H5VL_log  (H5VL_log_register())
@@ -48,7 +47,7 @@ H5_DLL hid_t H5VL_log_register(void);
 #define CHECK_ERR { \
     if (err != NC_NOERR) { \
         printf("Error at line %d in %s: (%s)\n", \
-        __LINE__,__FILE__,ncmpi_strerrno(err)); \
+        __LINE__,__FILE__,logstrerrno(err)); \
         return -1; \
     } \
 }
@@ -56,7 +55,7 @@ H5_DLL hid_t H5VL_log_register(void);
 #define CHECK_ERRN { \
     if (err != NC_NOERR) { \
         printf("Error at line %d in %s: (%s)\n", \
-        __LINE__,__FILE__,ncmpi_strerrno(err)); \
+        __LINE__,__FILE__,logstrerrno(err)); \
         return NULL; \
     } \
 }
@@ -64,7 +63,7 @@ H5_DLL hid_t H5VL_log_register(void);
 #define CHECK_ERRJ { \
     if (err != NC_NOERR) { \
         printf("Error at line %d in %s: (%s)\n", \
-        __LINE__,__FILE__,ncmpi_strerrno(err)); \
+        __LINE__,__FILE__,logstrerrno(err)); \
         goto errout; \
     } \
 }

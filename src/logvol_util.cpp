@@ -1,4 +1,4 @@
-#include "ncmpi_vol.h"
+#include "logvol.h"
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL__H5VL_log_new_obj

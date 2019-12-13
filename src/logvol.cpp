@@ -1,4 +1,4 @@
-#include "ncmpi_vol.h"
+#include "logvol.h"
 
 /* Characteristics of the pass-through VOL connector */
 #define H5VL_log_NAME        "PnetCDF"
