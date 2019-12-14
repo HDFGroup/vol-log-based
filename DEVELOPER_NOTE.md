@@ -6,6 +6,171 @@ Log file strategy
 - [Logvol file format proposals](#characteristics-and-structure-of-neutrino-experimental-data)
 
 ---
+
+## The goal of the VOL
+  * Match the write performance of the ADIOS library
+    + ADIOS achieve it by using log-based storage layout
+      + Log-based storage layout for efficient write operations 
+      + data caching to reduce I/O and communication
+    + We want to catch ADIOS's write performance using a similar technique
+  * Enable log-based storage layout in HDF5
+    + Efficient write I/O pattern
+      + Contiguous in file space
+    + Delay organization of data until we need to read the dataset
+    + Trade read performance for write performance
+      + Not all files written are read later
+        + Checkpoint files for restart purpose is discarded
+  * Mitigate some performance issue of HDF5 
+    + Slow parallel write performance compared to ADIOS
+      + The overhead
+    + Heavy metadata operation
+      + Every data object needs to be located by walking the b-tree
+      + Expensive dataset creation
+    + No non-blocking operation
+---
+
+## VOL design 
+  * Turn every dataset into scalar datasets
+    + Original shape is stored as attributes under the scalar dataset
+    + The scalar dataset represents the original dataset
+    + Does not occupy (large) space in the HDF file
+    + the VOL store all dataset metadata as attributes in the scalar dataset
+  * Data of datasets are stored in special datasets along with metadata describing them
+    + Log-based data structure
+      + Optimize for write performance
+    + They are 1-dimensional datasets of type byte
+    + Log datasets need to have indefinitely large space
+      + Declare as a chunked dataset with unlimited size or reallocate when it is full
+    + They act as empty space in the file
+  * The VOL pass the operation unrelated to log I/O to the native VOL (default HDF5 VOL) (passthrough)
+    + Operations regarding non-dataset data objects are passed to the native VOL
+    + Operations on datasets that do not involve read, write, and dataspace query are performed on the scalar dataset by the native VOL
+      + If application adds an attribute to a dataset, it will be stored under the scalar dataset representing that dataset
+    + Dataset dataspace query must return the original shape instead of scalar
+      + The VOL reconstruct dataspace using the shape stored in the attribute
+
+### Accessing the log dataset
+
+    There are 3 approaches to access the log datasets. The most straight forward approach is to use existing high-level HDF5 API (native VOL).
+    We simply call the dataset reading/writing function of the native VOL. We reply on HDF5 to perform all caching and optimizations.
+    The second approach is to use low-level HDF5 functions that give more control to the VOL. The third is not using HDF5 functions at all.
+    We access the dataset directly using MPI-IO.
+    We discuss the pros and cons of each approach below.
+
+  * Use high-level HDF5 APIs
+    + Read/write log datasets using H5VLdataset_read and H5VLdataset_write with native VOL
+    + Enable raw chunk data caching
+      + **GOOD**: Serve as a form of aggregation
+      + **GOOD**: Reduce the number of I/O operation
+      + **GOOD**: Off the shelf, no additional work required
+      + **BAD**: We have no control on eviction policy
+        + There can be eviction even when there is enough space if the hash table collided
+    + Declare log datasets as chunked dataset of unlimited size
+      + Datalog has large chunk size
+      + Metadata log have medium chunk size
+      + Need to balance between allocation overhead and file size
+        + Small chunk size need a frequent allocation of new chunks
+        + Large chunk size may wastem space if there is not that much data
+        + Chunk size of data log can be estimate by total size of datasets.
+        + Hard to estimate chunk size for metadata log
+  * Use low-level HDF5 APIs
+    + H5VLdataset_read and H5VLdataset_write with native VOL
+    + Declare log datasets as chunked dataset of unlimited size
+    + We need to implement our own caching
+      + Can support it through non-blocking callback
+      + Aggregate request in memory
+      + **GOOD**: We have full control on cache behavior
+      + **BAD**: More work on the development
+  * Use MPI-IO
+    + Create the dataset using HDF5 API
+    + Most difficult to implement compared to other approaches
+      + **BAD**: Many works to do on development
+    + Perform I/O directly using MPI-IO
+      + **GOOD**: No additional overhead of HDF5 API and sanity check
+    + **BAD**: Need to maintain file consistency
+      + If HDF5 has internal status about the file, this will not work
+      + HDF5 profiling and accounting will be bypassed
+    + Need to store the dataset in contiguous layout
+      + Or the offset is hard to calculate
+      + Can't declare as unlimited size
+      + **BAD**: Must reallocate when it is full
+
+### Dataset to log mapping
+
+    There are three ways to organize logs. In all cases, we record write across all datasets in the same log datasets.
+    One approach is to have all processes sharing a log dataset.
+    Another is to have separate log datasets for each process.
+    The other one is to use sub-filing so that each process writes to one file.
+    We discuss the property of each approach below.
+
+1. **Strategy 1** Shared log
+   * Create only 2 special datasets per file
+     + A metadata log that store all metadata of write operations
+     + A data log that store all data written to datasets
+     + **GOOD**: Low initialization cost, only two additional datasets created
+   * Log is shared by all processes
+     + **BAD**: Need communication to prevent overwriting each other
+       + MPI_Scan on the offset of metadata and data
+     + **BAD**: Write operation needs to be collective
+   * Write operations across all datasets are mixed in the same log file
+     + **BAD**: Need additional field to record the dataset involved
+     + **BAD**: Datasets need to be assigned a fixed ID (IDs in HDF5 can change across runtime).
+   * Require the use of MPI VFL driver
+     + Required to access shared log datasets
+     + **BAD**: No chunk caching
+     + **GOOD**: Collective I/O reduces lock contention
+   * Only 2 datasets will be written
+     + **GOOD**: Higher (system) cache efficiency
+     + **GOOD**: Contiguous I/O pattern
+   
+2. 
+   **Strategy 2** Log per process
+   * Create 2 spefcial dataset per processes
+     + A metadata log for each process that store metadata of write operations from that process
+     + A data log for each process that store all data written by that process
+     + **BAD**: Initialization is not scalable
+       + The number of special datasets created is proportional to the number of processes
+       + Each dataset creation involves communication
+     + **BAD**: Higher metadata operation
+       + Increase in the number of dataset increase the size of B-Tree
+         + Need to walk more nodes in the file to reach the data object
+   * Every process has its own log
+     + **GOOD**: Does not need communication to write new records
+     + **GOOD**: Can do independent I/O
+   * Write operations across all datasets are mixed in the same log file
+     + **BAD**: Need additional field to record the dataset involved
+     + **BAD**: Datasets needs to be assigned a fixed ID (IDs in HDF5 can change across runtime)
+   * Possible to use POSIX driver
+     + **GOOD**: Chunk caching can be used
+       + Reduce the number of I/O operation
+   * Access pattern can be fragmented
+     + Datasets scattered in the file
+     + We don't know how they map to the OST
+     + **BAD**: Lock contention can happen since all datasets are in the same file.
+
+3. 
+   **Strategy 3** Log per process with sub-filing
+   * Every process/node has its own file
+     + **GOOD**: Does not need communication to write new records
+     + **GOOD**: Can do independent I/O
+     + **GOOD**: Alleviate initialization cost and metadata operation
+       + Each file contains only one additional dataset.
+       + **GOOD**: No (or less) communication to create dataset 
+       + **GOOD**: Size of B-Tree reduced
+     + **GOOD**: Reduce metadta operation 
+       + Smaller B-tree, fewer nodes to traverse
+     + **GOOD**: No lock contention
+     + **BAD**: Need to create many files
+       + Metadata server can bceome bottleneck
+   * Create 2 spefcial dataset per processes
+     + A metadata log for each process that store metadata of write operations from that process
+     + A data log for each process that store all data written by that process
+   * Map each subfile to a single OST
+     + Reduce the number of request on the file server
+     + Subfiles should be evenly distributed across OSTs
+        + Workload balancing
+---
+
 ## Log format proposal 
 
 We designed a file format for doing log-based I/O operation on HDF5 datasets.
