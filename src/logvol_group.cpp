@@ -31,7 +31,7 @@ const H5VL_group_class_t H5VL_log_group_g{
  *
  *-------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_group_create(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t lcpl_id, hid_t gcpl_id, hid_t gapl_id,
     hid_t dxpl_id, void **req)
@@ -69,7 +69,7 @@ H5VL_log_group_create(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_group_open(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t gapl_id, hid_t dxpl_id, void **req)
 {
@@ -106,7 +106,7 @@ H5VL_log_group_open(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id,
     void **req, va_list arguments)
 {
@@ -137,7 +137,7 @@ H5VL_log_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_group_specific(void *obj, H5VL_group_specific_t specific_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
@@ -173,7 +173,7 @@ H5VL_log_group_specific(void *obj, H5VL_group_specific_t specific_type,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_group_optional(void *obj, hid_t dxpl_id, void **req,
     va_list arguments)
 {
@@ -204,7 +204,7 @@ H5VL_log_group_optional(void *obj, hid_t dxpl_id, void **req,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_group_close(void *grp, hid_t dxpl_id, void **req)
 {
     H5VL_log_t *o = (H5VL_log_t *)grp;

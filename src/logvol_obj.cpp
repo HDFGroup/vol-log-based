@@ -40,7 +40,7 @@ const H5VL_file_class_t H5VL_log_file_g{
  *
  *-------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_object_open(void *obj, const H5VL_loc_params_t *loc_params,
     H5I_type_t *opened_type, hid_t dxpl_id, void **req)
 {
@@ -77,7 +77,7 @@ H5VL_log_object_open(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_object_copy(void *src_obj, const H5VL_loc_params_t *src_loc_params,
     const char *src_name, void *dst_obj, const H5VL_loc_params_t *dst_loc_params,
     const char *dst_name, hid_t ocpypl_id, hid_t lcpl_id, hid_t dxpl_id,
@@ -111,7 +111,7 @@ H5VL_log_object_copy(void *src_obj, const H5VL_loc_params_t *src_loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_object_get(void *obj, const H5VL_loc_params_t *loc_params, H5VL_object_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
     H5VL_log_t *o = (H5VL_log_t *)obj;
@@ -141,7 +141,7 @@ H5VL_log_object_get(void *obj, const H5VL_loc_params_t *loc_params, H5VL_object_
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_object_specific(void *obj, const H5VL_loc_params_t *loc_params,
     H5VL_object_specific_t specific_type, hid_t dxpl_id, void **req,
     va_list arguments)
@@ -178,7 +178,7 @@ H5VL_log_object_specific(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_object_optional(void *obj, hid_t dxpl_id, void **req,
     va_list arguments)
 {

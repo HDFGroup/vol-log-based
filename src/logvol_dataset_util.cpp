@@ -1,11 +1,10 @@
 #include "logvol.h"
-#include "pnetcdf.h"
 #include <algorithm>
 
 #define REQSWAP(A,B) {tmp = starts[A]; starts[A] = starts[B]; starts[B] = tmp; tmp = counts[A]; counts[A] = counts[B]; counts[B] = tmp;}
 #define BLKSWAP(A,B) {tmp = starts[A]; starts[A] = starts[B]; starts[B] = tmp;}
 
-static bool lessthan(int ndim, MPI_Offset *a, MPI_Offset *b){
+bool lessthan(int ndim, MPI_Offset *a, MPI_Offset *b){
     int i;
 
     for(i = 0; i < ndim; i++){

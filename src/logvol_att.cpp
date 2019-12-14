@@ -1,18 +1,17 @@
 #include "logvol.h"
-#include "pnetcdf.h"
 
 /********************* */
 /* Function prototypes */
 /********************* */
 
-H5_DLL void *H5VL_log_attr_create(void *obj, const H5VL_loc_params_t *loc_params, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req);
+void *H5VL_log_attr_create(void *obj, const H5VL_loc_params_t *loc_params, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req);
 void *H5VL_log_attr_open(void *obj, const H5VL_loc_params_t *loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req);
-H5_DLL herr_t H5VL_log_attr_read(void *attr, hid_t dtype_id, void *buf, hid_t dxpl_id, void **req);
-H5_DLL herr_t H5VL_log_attr_write(void *attr, hid_t dtype_id, const void *buf, hid_t dxpl_id, void **req);
-H5_DLL herr_t H5VL_log_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-H5_DLL herr_t H5VL_log_attr_specific(void *obj, const H5VL_loc_params_t *loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-H5_DLL herr_t H5VL_log_attr_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
-H5_DLL herr_t H5VL_log_attr_close(void *attr, hid_t dxpl_id, void **req);
+herr_t H5VL_log_attr_read(void *attr, hid_t dtype_id, void *buf, hid_t dxpl_id, void **req);
+herr_t H5VL_log_attr_write(void *attr, hid_t dtype_id, const void *buf, hid_t dxpl_id, void **req);
+herr_t H5VL_log_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_attr_specific(void *obj, const H5VL_loc_params_t *loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_attr_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_attr_close(void *attr, hid_t dxpl_id, void **req);
 
 const H5VL_attr_class_t H5VL_log_attr_g{
     H5VL_log_attr_create,                /* create       */
@@ -35,7 +34,7 @@ const H5VL_attr_class_t H5VL_log_attr_g{
  *
  *-------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_attr_create(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t type_id, hid_t space_id, hid_t acpl_id,
     hid_t aapl_id, hid_t dxpl_id, void **req)
@@ -73,7 +72,7 @@ H5VL_log_attr_create(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_attr_open(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t aapl_id, hid_t dxpl_id, void **req)
 {
@@ -110,7 +109,7 @@ H5VL_log_attr_open(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_attr_read(void *attr, hid_t mem_type_id, void *buf,
     hid_t dxpl_id, void **req)
 {
@@ -141,7 +140,7 @@ H5VL_log_attr_read(void *attr, hid_t mem_type_id, void *buf,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_attr_write(void *attr, hid_t mem_type_id, const void *buf,
     hid_t dxpl_id, void **req)
 {
@@ -172,7 +171,7 @@ H5VL_log_attr_write(void *attr, hid_t mem_type_id, const void *buf,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id,
     void **req, va_list arguments)
 {
@@ -203,7 +202,7 @@ H5VL_log_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_attr_specific(void *obj, const H5VL_loc_params_t *loc_params,
     H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments)
 {
@@ -234,7 +233,7 @@ H5VL_log_attr_specific(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_attr_optional(void *obj, hid_t dxpl_id, void **req,
     va_list arguments)
 {
@@ -265,7 +264,7 @@ H5VL_log_attr_optional(void *obj, hid_t dxpl_id, void **req,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_attr_close(void *attr, hid_t dxpl_id, void **req)
 {
     H5VL_log_t *o = (H5VL_log_t *)attr;

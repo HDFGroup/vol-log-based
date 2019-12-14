@@ -13,7 +13,7 @@
  *
  *-------------------------------------------------------------------------
  */
-static H5VL_log_t *
+H5VL_log_t *
 H5VL_log_new_obj(void *under_obj, hid_t under_vol_id)
 {
     H5VL_log_t *new_obj;
@@ -43,7 +43,7 @@ H5VL_log_new_obj(void *under_obj, hid_t under_vol_id)
  *
  *-------------------------------------------------------------------------
  */
-static herr_t
+herr_t
 H5VL_log_free_obj(H5VL_log_t *obj)
 {
     hid_t err_id;
@@ -97,7 +97,7 @@ H5VL_log_register(void)
  *
  *-------------------------------------------------------------------------
  */
-static herr_t
+herr_t
 H5VL_log_init(hid_t vipl_id)
 {
 #ifdef ENABLE_PASSTHRU_LOGGING
@@ -124,7 +124,7 @@ H5VL_log_init(hid_t vipl_id)
  *
  *---------------------------------------------------------------------------
  */
-static herr_t
+herr_t
 H5VL_log_term(void)
 {
 #ifdef ENABLE_PASSTHRU_LOGGING
@@ -148,7 +148,7 @@ H5VL_log_term(void)
  *
  *---------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_info_copy(const void *_info)
 {
     const H5VL_log_info_t *info = (const H5VL_log_info_t *)_info;
@@ -182,7 +182,7 @@ H5VL_log_info_copy(const void *_info)
  *
  *---------------------------------------------------------------------------
  */
-static herr_t
+herr_t
 H5VL_log_info_cmp(int *cmp_value, const void *_info1, const void *_info2)
 {
     const H5VL_log_info_t *info1 = (const H5VL_log_info_t *)_info1;
@@ -226,7 +226,7 @@ H5VL_log_info_cmp(int *cmp_value, const void *_info1, const void *_info2)
  *
  *---------------------------------------------------------------------------
  */
-static herr_t
+herr_t
 H5VL_log_info_free(void *_info)
 {
     H5VL_log_info_t *info = (H5VL_log_info_t *)_info;
@@ -262,7 +262,7 @@ H5VL_log_info_free(void *_info)
  *
  *---------------------------------------------------------------------------
  */
-static herr_t
+herr_t
 H5VL_log_info_to_str(const void *_info, char **str)
 {
     const H5VL_log_info_t *info = (const H5VL_log_info_t *)_info;
@@ -307,7 +307,7 @@ H5VL_log_info_to_str(const void *_info, char **str)
  *
  *---------------------------------------------------------------------------
  */
-static herr_t
+herr_t
 H5VL_log_str_to_info(const char *str, void **_info)
 {
     H5VL_log_info_t *info;
@@ -360,7 +360,7 @@ H5VL_log_str_to_info(const char *str, void **_info)
  *
  *---------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_get_object(const void *obj)
 {
     const H5VL_log_t *o = (const H5VL_log_t *)obj;
@@ -383,7 +383,7 @@ H5VL_log_get_object(const void *obj)
  *
  *---------------------------------------------------------------------------
  */
-static herr_t
+herr_t
 H5VL_log_get_wrap_ctx(const void *obj, void **wrap_ctx)
 {
     const H5VL_log_t *o = (const H5VL_log_t *)obj;
@@ -418,7 +418,7 @@ H5VL_log_get_wrap_ctx(const void *obj, void **wrap_ctx)
  *
  *---------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_wrap_object(void *obj, H5I_type_t obj_type, void *_wrap_ctx)
 {
     H5VL_log_wrap_ctx_t *wrap_ctx = (H5VL_log_wrap_ctx_t *)_wrap_ctx;
@@ -451,7 +451,7 @@ H5VL_log_wrap_object(void *obj, H5I_type_t obj_type, void *_wrap_ctx)
  *
  *---------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_unwrap_object(void *obj)
 {
     H5VL_log_t *o = (H5VL_log_t *)obj;
@@ -484,7 +484,7 @@ H5VL_log_unwrap_object(void *obj)
  *
  *---------------------------------------------------------------------------
  */
-static herr_t
+herr_t
 H5VL_log_free_wrap_ctx(void *_wrap_ctx)
 {
     H5VL_log_wrap_ctx_t *wrap_ctx = (H5VL_log_wrap_ctx_t *)_wrap_ctx;

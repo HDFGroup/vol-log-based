@@ -35,7 +35,7 @@ const H5VL_file_class_t H5VL_log_file_g{
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_request_wait(void *obj, uint64_t timeout,
     H5ES_status_t *status)
 {
@@ -68,7 +68,7 @@ H5VL_log_request_wait(void *obj, uint64_t timeout,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_request_notify(void *obj, H5VL_request_notify_t cb, void *ctx)
 {
     H5VL_log_t *o = (H5VL_log_t *)obj;
@@ -99,7 +99,7 @@ H5VL_log_request_notify(void *obj, H5VL_request_notify_t cb, void *ctx)
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_request_cancel(void *obj)
 {
     H5VL_log_t *o = (H5VL_log_t *)obj;
@@ -129,7 +129,7 @@ H5VL_log_request_cancel(void *obj)
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_request_specific_reissue(void *obj, hid_t connector_id,
     H5VL_request_specific_t specific_type, ...)
 {
@@ -154,7 +154,7 @@ H5VL_log_request_specific_reissue(void *obj, hid_t connector_id,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type, 
     va_list arguments)
 {
@@ -296,7 +296,7 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_request_optional(void *obj, va_list arguments)
 {
     H5VL_log_t *o = (H5VL_log_t *)obj;
@@ -323,7 +323,7 @@ H5VL_log_request_optional(void *obj, va_list arguments)
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_request_free(void *obj)
 {
     H5VL_log_t *o = (H5VL_log_t *)obj;

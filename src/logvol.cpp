@@ -87,7 +87,7 @@ const H5VL_class_t H5VL_log_g = {
 };
 
 /* The connector identification number, initialized at runtime */
-hid_t H5VL_log_g = H5I_INVALID_HID;
+hid_t H5VL_LOG_g = H5I_INVALID_HID;
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_init
