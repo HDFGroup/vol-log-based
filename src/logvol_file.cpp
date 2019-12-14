@@ -1,5 +1,4 @@
 #include "logvol.h"
-#include "pnetcdf.h"
 
 /********************* */
 /* Function prototypes */
@@ -30,7 +29,7 @@ const H5VL_file_class_t H5VL_log_file_g{
  *
  *-------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     hid_t fapl_id, hid_t dxpl_id, void **req)
 {
@@ -84,7 +83,7 @@ H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
  *
  *-------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     hid_t dxpl_id, void **req)
 {
@@ -138,7 +137,7 @@ H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id,
     void **req, va_list arguments)
 {
@@ -170,7 +169,7 @@ H5VL_log_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_file_specific_reissue(void *obj, hid_t connector_id,
     H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, ...)
 {
@@ -195,7 +194,7 @@ H5VL_log_file_specific_reissue(void *obj, hid_t connector_id,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
@@ -302,7 +301,7 @@ H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_file_optional(void *file, hid_t dxpl_id, void **req,
     va_list arguments)
 {
@@ -333,7 +332,7 @@ H5VL_log_file_optional(void *file, hid_t dxpl_id, void **req,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_file_close(void *file, hid_t dxpl_id, void **req)
 {
     H5VL_log_t *o = (H5VL_log_t *)file;

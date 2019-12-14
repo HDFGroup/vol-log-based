@@ -6,6 +6,7 @@ Log file strategy
 - [Logvol file format proposals](#characteristics-and-structure-of-neutrino-experimental-data)
 
 ---
+<<<<<<< 50b3613cb6a2f6ce30b2727a593aed253a963482
 
 ## The goal of the VOL
   * Match the write performance of the ADIOS library
@@ -170,6 +171,41 @@ Log file strategy
      + Subfiles should be evenly distributed across OSTs
         + Workload balancing
 ---
+=======
+## Possible solutions
+
+### Sol 1: Single log shared by all processes
+    * There are only 2 special dataset in a HDF5 file. One for metadta. One for data.
+        + The log datasets are shared by all processes.
+        + The log datasets are used by writes across all datasets.
+        + Record stacks one after another in the both log dataset.
+        + 
+    * Advantage
+    * Issue
+        
+      
+
+### Sol 2: Log per processes
+### Sol 3: Log per process using subfiling
+
+---
+
+* Shared log for all datasets *
+  * Benefits non-blocking operation (aggregation)
+    * Write one contiguous chunk per metadata and data log
+    * Read onc contiguous chunk for metadata
+    * Only one communication on offset and size of metadata and data
+  * Cache efficient, always writes to offset right after previous one
+  * Fewer dataset to create, faster initialization
+  * Slight disadvantage on blocking read
+    * Need to traverse more metadata
+    * Non-contiguous traversal 
+* Separate log for each dataset
+  * Better blocking read performance, read only one contiguous chunk
+  * Slight disadvantage over cache efficiency
+
+
+>>>>>>> add design options to dev note
 
 ## Log format proposal 
 

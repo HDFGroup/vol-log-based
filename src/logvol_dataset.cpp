@@ -1,5 +1,4 @@
 #include "logvol.h"
-#include "pnetcdf.h"
 
 /********************* */
 /* Function prototypes */
@@ -34,7 +33,7 @@ const H5VL_dataset_class_t H5VL_log_dataset_g{
  *
  *-------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_dataset_create(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t lcpl_id, hid_t type_id, hid_t space_id,
     hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req) 
@@ -72,7 +71,7 @@ H5VL_log_dataset_create(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_dataset_open(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t dapl_id, hid_t dxpl_id, void **req)
 {
@@ -109,7 +108,7 @@ H5VL_log_dataset_open(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id,
     hid_t file_space_id, hid_t plist_id, void *buf, void **req)
 {
@@ -140,7 +139,7 @@ H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id,
     hid_t file_space_id, hid_t plist_id, const void *buf, void **req)
 {
@@ -171,7 +170,7 @@ H5VL_log_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_dataset_get(void *dset, H5VL_dataset_get_t get_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
@@ -202,7 +201,7 @@ H5VL_log_dataset_get(void *dset, H5VL_dataset_get_t get_type,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
@@ -238,7 +237,7 @@ H5VL_log_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_dataset_optional(void *obj, hid_t dxpl_id, void **req,
     va_list arguments)
 {
@@ -269,7 +268,7 @@ H5VL_log_dataset_optional(void *obj, hid_t dxpl_id, void **req,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_dataset_close(void *dset, hid_t dxpl_id, void **req)
 {
     H5VL_log_t *o = (H5VL_log_t *)dset;

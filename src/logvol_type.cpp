@@ -32,7 +32,7 @@ const H5VL_type_class_t H5VL_log_type_g{
  *
  *-------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_datatype_commit(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id,
     hid_t dxpl_id, void **req)
@@ -70,7 +70,7 @@ H5VL_log_datatype_commit(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static void *
+void *
 H5VL_log_datatype_open(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t tapl_id, hid_t dxpl_id, void **req)
 {
@@ -107,7 +107,7 @@ H5VL_log_datatype_open(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_datatype_get(void *dt, H5VL_datatype_get_t get_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
@@ -138,7 +138,7 @@ H5VL_log_datatype_get(void *dt, H5VL_datatype_get_t get_type,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_datatype_specific(void *obj, H5VL_datatype_specific_t specific_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
@@ -174,7 +174,7 @@ H5VL_log_datatype_specific(void *obj, H5VL_datatype_specific_t specific_type,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_datatype_optional(void *obj, hid_t dxpl_id, void **req,
     va_list arguments)
 {
@@ -205,7 +205,7 @@ H5VL_log_datatype_optional(void *obj, hid_t dxpl_id, void **req,
  *
  *-------------------------------------------------------------------------
  */
-static herr_t 
+herr_t 
 H5VL_log_datatype_close(void *dt, hid_t dxpl_id, void **req)
 {
     H5VL_log_t *o = (H5VL_log_t *)dt;
