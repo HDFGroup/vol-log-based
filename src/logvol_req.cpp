@@ -1,5 +1,5 @@
 #include "logvol.h"
-#include "pnetcdf.h"
+
 
 /********************* */
 /* Function prototypes */
@@ -12,11 +12,11 @@ herr_t H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_typ
 herr_t H5VL_log_request_optional(void *obj, va_list arguments);
 herr_t H5VL_log_request_free(void *obj);
 
-const H5VL_file_class_t H5VL_log_file_g{
+const H5VL_request_class_t H5VL_log_request_g{
     H5VL_log_request_wait,                       /* wait */
     H5VL_log_request_notify,                         /* notify */
     H5VL_log_request_cancel,                          /* cancel */
-    H5VL_log_request_specific_reissue,                     /* specific_reissue */
+//    H5VL_log_request_specific_reissue,                     /* specific_reissue */
     H5VL_log_request_specific,                     /* specific */
     H5VL_log_request_optional,                     /* optional */
     H5VL_log_request_free                         /* free */
@@ -39,11 +39,11 @@ herr_t
 H5VL_log_request_wait(void *obj, uint64_t timeout,
     H5ES_status_t *status)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL REQUEST Wait\n");
+    printf("------- LOG VOL REQUEST Wait\n");
 #endif
 
     ret_value = H5VLrequest_wait(o->under_object, o->under_vol_id, timeout, status);
@@ -71,11 +71,11 @@ H5VL_log_request_wait(void *obj, uint64_t timeout,
 herr_t 
 H5VL_log_request_notify(void *obj, H5VL_request_notify_t cb, void *ctx)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL REQUEST Wait\n");
+    printf("------- LOG VOL REQUEST Wait\n");
 #endif
 
     ret_value = H5VLrequest_notify(o->under_object, o->under_vol_id, cb, ctx);
@@ -102,11 +102,11 @@ H5VL_log_request_notify(void *obj, H5VL_request_notify_t cb, void *ctx)
 herr_t 
 H5VL_log_request_cancel(void *obj)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL REQUEST Cancel\n");
+    printf("------- LOG VOL REQUEST Cancel\n");
 #endif
 
     ret_value = H5VLrequest_cancel(o->under_object, o->under_vol_id);
@@ -161,7 +161,7 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
     herr_t ret_value = -1;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL REQUEST Specific\n");
+    printf("------- LOG VOL REQUEST Specific\n");
 #endif
 
     if(H5VL_REQUEST_WAITANY == specific_type ||
@@ -182,19 +182,19 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
             void **req_array;
             void **under_req_array;
             uint64_t timeout;
-            H5VL_log_t *o;
+            H5VL_log_obj_t *o;
             size_t u;               /* Local index variable */
 
             /* Get the request array */
             req_array = va_arg(tmp_arguments, void **);
 
             /* Get a request to use for determining the underlying VOL connector */
-            o = (H5VL_log_t *)req_array[0];
+            o = (H5VL_log_obj_t *)req_array[0];
 
             /* Create array of underlying VOL requests */
             under_req_array = (void **)malloc(req_count * sizeof(void **));
             for(u = 0; u < req_count; u++)
-                under_req_array[u] = ((H5VL_log_t *)req_array[u])->under_object;
+                under_req_array[u] = ((H5VL_log_obj_t *)req_array[u])->under_object;
 
             /* Remove the timeout value from the vararg list (it's used in all the calls below) */
             timeout = va_arg(tmp_arguments, uint64_t);
@@ -214,9 +214,9 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
 
                 /* Release the completed request, if it completed */
                 if(ret_value >= 0 && *status != H5ES_STATUS_IN_PROGRESS) {
-                    H5VL_log_t *tmp_o;
+                    H5VL_log_obj_t *tmp_o;
 
-                    tmp_o = (H5VL_log_t *)req_array[*index];
+                    tmp_o = (H5VL_log_obj_t *)req_array[*index];
                     H5VL_log_free_obj(tmp_o);
                 } /* end if */
             } /* end if */
@@ -243,9 +243,9 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
 
                     /* Release the completed requests */
                     for(u = 0; u < *outcount; u++) {
-                        H5VL_log_t *tmp_o;
+                        H5VL_log_obj_t *tmp_o;
 
-                        tmp_o = (H5VL_log_t *)req_array[idx_array[u]];
+                        tmp_o = (H5VL_log_obj_t *)req_array[idx_array[u]];
                         H5VL_log_free_obj(tmp_o);
                     } /* end for */
                 } /* end if */
@@ -263,9 +263,9 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
                 if(ret_value >= 0) {
                     for(u = 0; u < req_count; u++) {
                         if(array_of_statuses[u] != H5ES_STATUS_IN_PROGRESS) {
-                            H5VL_log_t *tmp_o;
+                            H5VL_log_obj_t *tmp_o;
 
-                            tmp_o = (H5VL_log_t *)req_array[u];
+                            tmp_o = (H5VL_log_obj_t *)req_array[u];
                             H5VL_log_free_obj(tmp_o);
                         } /* end if */
                     } /* end for */
@@ -299,11 +299,11 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
 herr_t 
 H5VL_log_request_optional(void *obj, va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL REQUEST Optional\n");
+    printf("------- LOG VOL REQUEST Optional\n");
 #endif
 
     ret_value = H5VLrequest_optional(o->under_object, o->under_vol_id, arguments);
@@ -326,11 +326,11 @@ H5VL_log_request_optional(void *obj, va_list arguments)
 herr_t 
 H5VL_log_request_free(void *obj)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL REQUEST Free\n");
+    printf("------- LOG VOL REQUEST Free\n");
 #endif
 
     ret_value = H5VLrequest_free(o->under_object, o->under_vol_id);

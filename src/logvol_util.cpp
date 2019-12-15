@@ -1,11 +1,13 @@
 #include "logvol.h"
 
+extern hid_t H5VL_LOG_g;
+
 /*-------------------------------------------------------------------------
  * Function:    H5VL__H5VL_log_new_obj
  *
- * Purpose:     Create a new pass through object for an underlying object
+ * Purpose:     Create a new log object for an underlying object
  *
- * Return:      Success:    Pointer to the new pass through object
+ * Return:      Success:    Pointer to the new log object
  *              Failure:    NULL
  *
  * Programmer:  Quincey Koziol
@@ -13,24 +15,24 @@
  *
  *-------------------------------------------------------------------------
  */
-H5VL_log_t *
-H5VL_log_new_obj(void *under_obj, hid_t under_vol_id)
-{
-    H5VL_log_t *new_obj;
+H5VL_log_obj_t *H5VL_log_new_obj(void *under_obj, hid_t under_vol_id) {
+    H5VL_log_obj_t *new_obj;
 
-    new_obj = (H5VL_log_t *)calloc(1, sizeof(H5VL_log_t));
+    new_obj = (H5VL_log_obj_t *)calloc(1, sizeof(H5VL_log_obj_t));
     new_obj->under_object = under_obj;
     new_obj->under_vol_id = under_vol_id;
-    H5Iinc_ref(new_obj->under_vol_id);
+    //H5Iinc_ref(new_obj->under_vol_id);
 
     return new_obj;
 } /* end H5VL__H5VL_log_new_obj() */
 
+
 
+
 /*-------------------------------------------------------------------------
  * Function:    H5VL__H5VL_log_free_obj
  *
- * Purpose:     Release a pass through object
+ * Purpose:     Release a log object
  *
  * Note:	Take care to preserve the current HDF5 error stack
  *		when calling HDF5 API calls.
@@ -43,16 +45,14 @@ H5VL_log_new_obj(void *under_obj, hid_t under_vol_id)
  *
  *-------------------------------------------------------------------------
  */
-herr_t
-H5VL_log_free_obj(H5VL_log_t *obj)
-{
-    hid_t err_id;
+herr_t H5VL_log_free_obj(H5VL_log_obj_t *obj) {
+    //hid_t err_id;
 
-    err_id = H5Eget_current_stack();
+    //err_id = H5Eget_current_stack();
 
-    H5Idec_ref(obj->under_vol_id);
+    //H5Idec_ref(obj->under_vol_id);
 
-    H5Eset_current_stack(err_id);
+    //H5Eset_current_stack(err_id);
 
     free(obj);
 
@@ -74,14 +74,12 @@ H5VL_log_free_obj(H5VL_log_t *obj)
  *
  *-------------------------------------------------------------------------
  */
-hid_t
-H5VL_log_register(void)
-{
+hid_t H5VL_log_register(void) {
     /* Singleton register the pass-through VOL connector ID */
-    if(H5VL_PASSTHRU_g < 0)
-        H5VL_PASSTHRU_g = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT);
+    if(H5VL_LOG_g < 0)
+        H5VL_LOG_g = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT);
 
-    return H5VL_PASSTHRU_g;
+    return H5VL_LOG_g;
 } /* end H5VL_log_register() */
 
 
@@ -97,11 +95,9 @@ H5VL_log_register(void)
  *
  *-------------------------------------------------------------------------
  */
-herr_t
-H5VL_log_init(hid_t vipl_id)
-{
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL INIT\n");
+herr_t H5VL_log_init(hid_t vipl_id) {
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL INIT\n");
 #endif
 
     /* Shut compiler up about unused parameter */
@@ -112,7 +108,7 @@ H5VL_log_init(hid_t vipl_id)
 
 
 /*---------------------------------------------------------------------------
- * Function:    H5VL_log_term
+ * Function:    H5VL_log_obj_term
  *
  * Purpose:     Terminate this VOL connector, performing any necessary
  *              operations for the connector that release connector-wide
@@ -124,18 +120,16 @@ H5VL_log_init(hid_t vipl_id)
  *
  *---------------------------------------------------------------------------
  */
-herr_t
-H5VL_log_term(void)
-{
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL TERM\n");
+herr_t H5VL_log_obj_term(void) {
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL TERM\n");
 #endif
 
     /* Reset VOL ID */
-    H5VL_PASSTHRU_g = H5I_INVALID_HID;
+    H5VL_LOG_g = H5I_INVALID_HID;
 
     return 0;
-} /* end H5VL_log_term() */
+} /* end H5VL_log_obj_term() */
 
 
 /*---------------------------------------------------------------------------
@@ -148,17 +142,15 @@ H5VL_log_term(void)
  *
  *---------------------------------------------------------------------------
  */
-void *
-H5VL_log_info_copy(const void *_info)
-{
+void* H5VL_log_info_copy(const void *_info) {
     const H5VL_log_info_t *info = (const H5VL_log_info_t *)_info;
     H5VL_log_info_t *new_info;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL INFO Copy\n");
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL INFO Copy\n");
 #endif
 
-    /* Allocate new VOL info struct for the pass through connector */
+    /* Allocate new VOL info struct for the log connector */
     new_info = (H5VL_log_info_t *)calloc(1, sizeof(H5VL_log_info_t));
 
     /* Increment reference count on underlying VOL ID, and copy the VOL info */
@@ -182,14 +174,12 @@ H5VL_log_info_copy(const void *_info)
  *
  *---------------------------------------------------------------------------
  */
-herr_t
-H5VL_log_info_cmp(int *cmp_value, const void *_info1, const void *_info2)
-{
+herr_t H5VL_log_info_cmp(int *cmp_value, const void *_info1, const void *_info2) {
     const H5VL_log_info_t *info1 = (const H5VL_log_info_t *)_info1;
     const H5VL_log_info_t *info2 = (const H5VL_log_info_t *)_info2;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL INFO Compare\n");
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL INFO Compare\n");
 #endif
 
     /* Sanity checks */
@@ -226,14 +216,12 @@ H5VL_log_info_cmp(int *cmp_value, const void *_info1, const void *_info2)
  *
  *---------------------------------------------------------------------------
  */
-herr_t
-H5VL_log_info_free(void *_info)
-{
+herr_t H5VL_log_info_free(void *_info) {
     H5VL_log_info_t *info = (H5VL_log_info_t *)_info;
     hid_t err_id;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL INFO Free\n");
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL INFO Free\n");
 #endif
 
     err_id = H5Eget_current_stack();
@@ -245,7 +233,7 @@ H5VL_log_info_free(void *_info)
 
     H5Eset_current_stack(err_id);
 
-    /* Free pass through info object itself */
+    /* Free log info object itself */
     free(info);
 
     return 0;
@@ -262,16 +250,14 @@ H5VL_log_info_free(void *_info)
  *
  *---------------------------------------------------------------------------
  */
-herr_t
-H5VL_log_info_to_str(const void *_info, char **str)
-{
+herr_t H5VL_log_info_to_str(const void *_info, char **str) {
     const H5VL_log_info_t *info = (const H5VL_log_info_t *)_info;
     H5VL_class_value_t under_value = (H5VL_class_value_t)-1;
     char *under_vol_string = NULL;
     size_t under_vol_str_len = 0;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL INFO To String\n");
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL INFO To String\n");
 #endif
 
     /* Get value and string for underlying VOL connector */
@@ -307,17 +293,15 @@ H5VL_log_info_to_str(const void *_info, char **str)
  *
  *---------------------------------------------------------------------------
  */
-herr_t
-H5VL_log_str_to_info(const char *str, void **_info)
-{
+herr_t H5VL_log_str_to_info(const char *str, void **_info) {
     H5VL_log_info_t *info;
     unsigned under_vol_value;
     const char *under_vol_info_start, *under_vol_info_end;
     hid_t under_vol_id;
     void *under_vol_info = NULL;
     
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL INFO String To Info\n");
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL INFO String To Info\n");
 #endif
 
     /* Retrieve the underlying VOL connector value and info */
@@ -360,13 +344,11 @@ H5VL_log_str_to_info(const char *str, void **_info)
  *
  *---------------------------------------------------------------------------
  */
-void *
-H5VL_log_get_object(const void *obj)
-{
-    const H5VL_log_t *o = (const H5VL_log_t *)obj;
+void* H5VL_log_get_object(const void *obj) {
+    const H5VL_log_obj_t *o = (const H5VL_log_obj_t *)obj;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL Get object\n");
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL Get object\n");
 #endif
 
     return H5VLget_object(o->under_object, o->under_vol_id);
@@ -383,17 +365,15 @@ H5VL_log_get_object(const void *obj)
  *
  *---------------------------------------------------------------------------
  */
-herr_t
-H5VL_log_get_wrap_ctx(const void *obj, void **wrap_ctx)
-{
-    const H5VL_log_t *o = (const H5VL_log_t *)obj;
+herr_t H5VL_log_get_wrap_ctx(const void *obj, void **wrap_ctx) {
+    const H5VL_log_obj_t *o = (const H5VL_log_obj_t *)obj;
     H5VL_log_wrap_ctx_t *new_wrap_ctx;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL WRAP CTX Get\n");
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL WRAP CTX Get\n");
 #endif
 
-    /* Allocate new VOL object wrapping context for the pass through connector */
+    /* Allocate new VOL object wrapping context for the log connector */
     new_wrap_ctx = (H5VL_log_wrap_ctx_t *)calloc(1, sizeof(H5VL_log_wrap_ctx_t));
 
     /* Increment reference count on underlying VOL ID, and copy the VOL info */
@@ -418,15 +398,13 @@ H5VL_log_get_wrap_ctx(const void *obj, void **wrap_ctx)
  *
  *---------------------------------------------------------------------------
  */
-void *
-H5VL_log_wrap_object(void *obj, H5I_type_t obj_type, void *_wrap_ctx)
-{
+void* H5VL_log_wrap_object(void *obj, H5I_type_t obj_type, void *_wrap_ctx) {
     H5VL_log_wrap_ctx_t *wrap_ctx = (H5VL_log_wrap_ctx_t *)_wrap_ctx;
-    H5VL_log_t *new_obj;
+    H5VL_log_obj_t *new_obj;
     void *under;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL WRAP Object\n");
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL WRAP Object\n");
 #endif
 
     /* Wrap the object with the underlying VOL */
@@ -451,14 +429,12 @@ H5VL_log_wrap_object(void *obj, H5I_type_t obj_type, void *_wrap_ctx)
  *
  *---------------------------------------------------------------------------
  */
-void *
-H5VL_log_unwrap_object(void *obj)
-{
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+void* H5VL_log_unwrap_object(void *obj) {
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     void *under;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL UNWRAP Object\n");
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL UNWRAP Object\n");
 #endif
 
     /* Unrap the object with the underlying VOL */
@@ -484,14 +460,12 @@ H5VL_log_unwrap_object(void *obj)
  *
  *---------------------------------------------------------------------------
  */
-herr_t
-H5VL_log_free_wrap_ctx(void *_wrap_ctx)
-{
+herr_t H5VL_log_free_wrap_ctx(void *_wrap_ctx) {
     H5VL_log_wrap_ctx_t *wrap_ctx = (H5VL_log_wrap_ctx_t *)_wrap_ctx;
     hid_t err_id;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL WRAP CTX Free\n");
+#ifdef ENABLE_LOG_LOGGING
+    printf("------- LOG VOL WRAP CTX Free\n");
 #endif
 
     err_id = H5Eget_current_stack();
@@ -503,7 +477,7 @@ H5VL_log_free_wrap_ctx(void *_wrap_ctx)
 
     H5Eset_current_stack(err_id);
 
-    /* Free pass through wrap context object itself */
+    /* Free log wrap context object itself */
     free(wrap_ctx);
 
     return 0;

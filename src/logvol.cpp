@@ -9,7 +9,7 @@
 /* Function prototypes */
 /********************* */
 herr_t H5VL_log_init(hid_t vipl_id);
-herr_t H5VL_log_term(void);
+herr_t H5VL_log_obj_term(void);
 void *H5VL_log_info_copy(const void *info);
 herr_t H5VL_log_info_cmp(int *cmp_value, const void *info1, const void *info2);
 herr_t H5VL_log_info_free(void *info);
@@ -32,7 +32,7 @@ const H5VL_class_t H5VL_log_g = {
     H5VL_log_NAME,                             /* name         */
     0,                                           /* capability flags */
     H5VL_log_init,                         /* initialize   */
-    H5VL_log_term,                         /* terminate    */
+    H5VL_log_obj_term,                         /* terminate    */
     {
         sizeof(H5VL_log_info_t),               /* info size    */
         H5VL_log_info_copy,                    /* info copy    */
@@ -107,7 +107,7 @@ herr_t H5VL_log_init(hid_t vipl_id) {
 } /* end H5VL_log_init() */
 
 /*---------------------------------------------------------------------------
- * Function:    H5VL_log_term
+ * Function:    H5VL_log_obj_term
  *
  * Purpose:     Terminate this VOL connector, performing any necessary
  *      operations for the connector that release connector-wide
@@ -119,10 +119,10 @@ herr_t H5VL_log_init(hid_t vipl_id) {
  *
  *---------------------------------------------------------------------------
  */
-herr_t H5VL_log_term(void) {
+herr_t H5VL_log_obj_term(void) {
 
     return(0);
-} /* end H5VL_log_term() */
+} /* end H5VL_log_obj_term() */
 
 /*---------------------------------------------------------------------------
  * Function:    H5VL_log_info_copy

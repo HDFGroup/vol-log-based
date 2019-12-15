@@ -1,5 +1,5 @@
 #include "logvol.h"
-#include "pnetcdf.h"
+
 
 /********************* */
 /* Function prototypes */
@@ -13,7 +13,7 @@ herr_t H5VL_log_datatype_specific(void *obj, H5VL_datatype_specific_t specific_t
 herr_t H5VL_log_datatype_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
 herr_t H5VL_log_datatype_close(void *dt, hid_t dxpl_id, void **req);
 
-const H5VL_type_class_t H5VL_log_type_g{
+const H5VL_datatype_class_t H5VL_log_datatype_g{
     H5VL_log_datatype_commit,                       /* commit */
     H5VL_log_datatype_open,                         /* open */
     H5VL_log_datatype_get,                          /* get */
@@ -37,12 +37,12 @@ H5VL_log_datatype_commit(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t type_id, hid_t lcpl_id, hid_t tcpl_id, hid_t tapl_id,
     hid_t dxpl_id, void **req)
 {
-    H5VL_log_t *dt;
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *dt;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     void *under;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATATYPE Commit\n");
+    printf("------- LOG VOL DATATYPE Commit\n");
 #endif
 
     under = H5VLdatatype_commit(o->under_object, loc_params, o->under_vol_id, name, type_id, lcpl_id, tcpl_id, tapl_id, dxpl_id, req);
@@ -74,12 +74,12 @@ void *
 H5VL_log_datatype_open(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t tapl_id, hid_t dxpl_id, void **req)
 {
-    H5VL_log_t *dt;
-    H5VL_log_t *o = (H5VL_log_t *)obj;  
+    H5VL_log_obj_t *dt;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;  
     void *under;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATATYPE Open\n");
+    printf("------- LOG VOL DATATYPE Open\n");
 #endif
 
     under = H5VLdatatype_open(o->under_object, loc_params, o->under_vol_id, name, tapl_id, dxpl_id, req);
@@ -111,11 +111,11 @@ herr_t
 H5VL_log_datatype_get(void *dt, H5VL_datatype_get_t get_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)dt;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)dt;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATATYPE Get\n");
+    printf("------- LOG VOL DATATYPE Get\n");
 #endif
 
     ret_value = H5VLdatatype_get(o->under_object, o->under_vol_id, get_type, dxpl_id, req, arguments);
@@ -142,12 +142,12 @@ herr_t
 H5VL_log_datatype_specific(void *obj, H5VL_datatype_specific_t specific_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     hid_t under_vol_id;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATATYPE Specific\n");
+    printf("------- LOG VOL DATATYPE Specific\n");
 #endif
 
     // Save copy of underlying VOL connector ID and prov helper, in case of
@@ -178,11 +178,11 @@ herr_t
 H5VL_log_datatype_optional(void *obj, hid_t dxpl_id, void **req,
     va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATATYPE Optional\n");
+    printf("------- LOG VOL DATATYPE Optional\n");
 #endif
 
     ret_value = H5VLdatatype_optional(o->under_object, o->under_vol_id, dxpl_id, req, arguments);
@@ -208,11 +208,11 @@ H5VL_log_datatype_optional(void *obj, hid_t dxpl_id, void **req,
 herr_t 
 H5VL_log_datatype_close(void *dt, hid_t dxpl_id, void **req)
 {
-    H5VL_log_t *o = (H5VL_log_t *)dt;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)dt;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATATYPE Close\n");
+    printf("------- LOG VOL DATATYPE Close\n");
 #endif
 
     assert(o->under_object);

@@ -14,7 +14,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
- * Purpose: This is a "pass through" VOL connector, which forwards each
+ * Purpose: This is a "log" VOL connector, which forwards each
  *      VOL callback to an underlying connector.
  *
  *      It is designed as an example VOL connector for developers to
@@ -33,6 +33,8 @@
 #include <string.h>
 #include <mpi.h>
 #include "hdf5.h"
+#include "H5VLpublic.h"
+
 
 /* Identifier for the pass-through VOL connector */
 #define H5VL_log  (H5VL_log_register())
@@ -109,7 +111,7 @@ typedef struct H5VL_log_info_t {
     MPI_Comm comm;
 } H5VL_log_info_t;
 
-/* The pass through VOL info object */
+/* The log VOL info object */
 typedef struct H5VL_log_file_t {
     int rank;
     int refcnt;
@@ -118,22 +120,44 @@ typedef struct H5VL_log_file_t {
     hid_t mlogid;
 } H5VL_log_file_t;
 
-/* The pass through VOL info object */
+/* The log VOL info object */
 typedef struct H5VL_log_group_t {
     H5VL_log_file_t *fp;
 } H5VL_log_group_t;
 
-/* The pass through VOL info object */
+/* The log VOL info object */
 typedef struct H5VL_log_dataset_t {
     int id;
     H5VL_log_file_t *fp;
 } H5VL_log_dataset_t;
 
-/* The pass through VOL info object */
+/* The log VOL info object */
 typedef struct H5VL_log_obj_t {
     hid_t under_vol_id;
-    void *under_obj;
+    void *under_object;
 } H5VL_log_obj_t;
+
+/* The log VOL wrapper context */
+typedef struct H5VL_log_wrap_ctx_t {
+    hid_t under_vol_id;         /* VOL ID for under VOL */
+    void *under_wrap_ctx;       /* Object wrapping context for under VOL */
+} H5VL_log_wrap_ctx_t;
+
+extern H5VL_log_obj_t* H5VL_log_new_obj(void *under_obj, hid_t under_vol_id);
+extern herr_t H5VL_log_free_obj(H5VL_log_obj_t *obj);
+extern hid_t H5VL_log_register(void);
+extern herr_t H5VL_log_init(hid_t vipl_id);
+extern herr_t H5VL_log_obj_term(void);
+extern void* H5VL_log_info_copy(const void *_info);
+extern herr_t H5VL_log_info_cmp(int *cmp_value, const void *_info1, const void *_info2);
+extern herr_t H5VL_log_info_free(void *_info);
+extern herr_t H5VL_log_info_to_str(const void *_info, char **str);
+extern herr_t H5VL_log_str_to_info(const char *str, void **_info);
+extern void* H5VL_log_get_object(const void *obj);
+extern herr_t H5VL_log_get_wrap_ctx(const void *obj, void **wrap_ctx);
+extern void* H5VL_log_wrap_object(void *obj, H5I_type_t obj_type, void *_wrap_ctx);
+extern void* H5VL_log_unwrap_object(void *obj);
+extern herr_t H5VL_log_free_wrap_ctx(void *_wrap_ctx);
 
 extern MPI_Datatype h5t_to_mpi_type(hid_t type_id);
 extern void sortreq(int ndim, hssize_t len, MPI_Offset **starts, MPI_Offset **counts);
