@@ -34,12 +34,12 @@ H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     hid_t fapl_id, hid_t dxpl_id, void **req)
 {
     H5VL_log_info_t *info;
-    H5VL_log_t *file;
+    H5VL_log_obj_t *file;
     hid_t under_fapl_id;
     void *under;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL FILE Create\n");
+    printf("------- LOG VOL FILE Create\n");
 #endif
 
     /* Get copy of our VOL info from FAPL */
@@ -88,12 +88,12 @@ H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     hid_t dxpl_id, void **req)
 {
     H5VL_log_info_t *info;
-    H5VL_log_t *file;
+    H5VL_log_obj_t *file;
     hid_t under_fapl_id;
     void *under;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL FILE Open\n");
+    printf("------- LOG VOL FILE Open\n");
 #endif
 
     /* Get copy of our VOL info from FAPL */
@@ -141,11 +141,11 @@ herr_t
 H5VL_log_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id,
     void **req, va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)file;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)file;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL FILE Get\n");
+    printf("------- LOG VOL FILE Get\n");
 #endif
 
     ret_value = H5VLfile_get(o->under_object, o->under_vol_id, get_type, dxpl_id, req, arguments);
@@ -198,25 +198,25 @@ herr_t
 H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)file;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)file;
     hid_t under_vol_id = -1;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL FILE Specific\n");
+    printf("------- LOG VOL FILE Specific\n");
 #endif
 
     /* Unpack arguments to get at the child file pointer when mounting a file */
     if(specific_type == H5VL_FILE_MOUNT) {
         H5I_type_t loc_type;
         const char *name;
-        H5VL_log_t *child_file;
+        H5VL_log_obj_t *child_file;
         hid_t plist_id;
 
         /* Retrieve parameters for 'mount' operation, so we can unwrap the child file */
         loc_type = (H5I_type_t)va_arg(arguments, int); /* enum work-around */
         name = va_arg(arguments, const char *);
-        child_file = (H5VL_log_t *)va_arg(arguments, void *);
+        child_file = (H5VL_log_obj_t *)va_arg(arguments, void *);
         plist_id = va_arg(arguments, hid_t);
 
         /* Keep the correct underlying VOL ID for possible async request token */
@@ -225,7 +225,8 @@ H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type,
         /* Re-issue 'file specific' call, using the unwrapped pieces */
         ret_value = H5VL_log_file_specific_reissue(o->under_object, o->under_vol_id, specific_type, dxpl_id, req, (int)loc_type, name, child_file->under_object, plist_id);
     } /* end if */
-    else if(specific_type == H5VL_FILE_IS_ACCESSIBLE || specific_type == H5VL_FILE_DELETE) {
+    //else if(specific_type == H5VL_FILE_IS_ACCESSIBLE || specific_type == H5VL_FILE_DELETE) {
+    else if(specific_type == H5VL_FILE_IS_ACCESSIBLE) {
         H5VL_log_info_t *info;
         hid_t fapl_id, under_fapl_id;
         const char *name;
@@ -305,11 +306,11 @@ herr_t
 H5VL_log_file_optional(void *file, hid_t dxpl_id, void **req,
     va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)file;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)file;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL File Optional\n");
+    printf("------- LOG VOL File Optional\n");
 #endif
 
     ret_value = H5VLfile_optional(o->under_object, o->under_vol_id, dxpl_id, req, arguments);
@@ -335,11 +336,11 @@ H5VL_log_file_optional(void *file, hid_t dxpl_id, void **req,
 herr_t 
 H5VL_log_file_close(void *file, hid_t dxpl_id, void **req)
 {
-    H5VL_log_t *o = (H5VL_log_t *)file;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)file;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL FILE Close\n");
+    printf("------- LOG VOL FILE Close\n");
 #endif
 
     ret_value = H5VLfile_close(o->under_object, o->under_vol_id, dxpl_id, req);

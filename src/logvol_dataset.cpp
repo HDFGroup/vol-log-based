@@ -38,12 +38,12 @@ H5VL_log_dataset_create(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t lcpl_id, hid_t type_id, hid_t space_id,
     hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req) 
 {
-    H5VL_log_t *dset;
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *dset;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     void *under;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATASET Create\n");
+    printf("------- LOG VOL DATASET Create\n");
 #endif
 
     under = H5VLdataset_create(o->under_object, loc_params, o->under_vol_id, name, lcpl_id, type_id, space_id, dcpl_id,  dapl_id, dxpl_id, req);
@@ -75,12 +75,12 @@ void *
 H5VL_log_dataset_open(void *obj, const H5VL_loc_params_t *loc_params,
     const char *name, hid_t dapl_id, hid_t dxpl_id, void **req)
 {
-    H5VL_log_t *dset;
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *dset;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     void *under;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATASET Open\n");
+    printf("------- LOG VOL DATASET Open\n");
 #endif
 
     under = H5VLdataset_open(o->under_object, loc_params, o->under_vol_id, name, dapl_id, dxpl_id, req);
@@ -112,11 +112,11 @@ herr_t
 H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id,
     hid_t file_space_id, hid_t plist_id, void *buf, void **req)
 {
-    H5VL_log_t *o = (H5VL_log_t *)dset;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)dset;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATASET Read\n");
+    printf("------- LOG VOL DATASET Read\n");
 #endif
 
     ret_value = H5VLdataset_read(o->under_object, o->under_vol_id, mem_type_id, mem_space_id, file_space_id, plist_id, buf, req);
@@ -143,11 +143,11 @@ herr_t
 H5VL_log_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id,
     hid_t file_space_id, hid_t plist_id, const void *buf, void **req)
 {
-    H5VL_log_t *o = (H5VL_log_t *)dset;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)dset;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATASET Write\n");
+    printf("------- LOG VOL DATASET Write\n");
 #endif
 
     ret_value = H5VLdataset_write(o->under_object, o->under_vol_id, mem_type_id, mem_space_id, file_space_id, plist_id, buf, req);
@@ -174,11 +174,11 @@ herr_t
 H5VL_log_dataset_get(void *dset, H5VL_dataset_get_t get_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)dset;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)dset;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATASET Get\n");
+    printf("------- LOG VOL DATASET Get\n");
 #endif
 
     ret_value = H5VLdataset_get(o->under_object, o->under_vol_id, get_type, dxpl_id, req, arguments);
@@ -205,12 +205,12 @@ herr_t
 H5VL_log_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     hid_t under_vol_id;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL H5Dspecific\n");
+    printf("------- LOG VOL H5Dspecific\n");
 #endif
 
     // Save copy of underlying VOL connector ID and prov helper, in case of
@@ -241,11 +241,11 @@ herr_t
 H5VL_log_dataset_optional(void *obj, hid_t dxpl_id, void **req,
     va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATASET Optional\n");
+    printf("------- LOG VOL DATASET Optional\n");
 #endif
 
     ret_value = H5VLdataset_optional(o->under_object, o->under_vol_id, dxpl_id, req, arguments);
@@ -271,11 +271,11 @@ H5VL_log_dataset_optional(void *obj, hid_t dxpl_id, void **req,
 herr_t 
 H5VL_log_dataset_close(void *dset, hid_t dxpl_id, void **req)
 {
-    H5VL_log_t *o = (H5VL_log_t *)dset;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)dset;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL DATASET Close\n");
+    printf("------- LOG VOL DATASET Close\n");
 #endif
 
     ret_value = H5VLdataset_close(o->under_object, o->under_vol_id, dxpl_id, req);

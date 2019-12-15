@@ -1,5 +1,5 @@
 #include "logvol.h"
-#include "pnetcdf.h"
+
 
 /********************* */
 /* Function prototypes */
@@ -30,8 +30,8 @@ herr_t
 H5VL_log_link_optional(void *obj, hid_t dxpl_id, void **req,
     va_list arguments);
 
-const H5VL_file_class_t H5VL_log_file_g{
-    H5VL_log_link_create_reissue,                       /* create_reissue */
+const H5VL_link_class_t H5VL_log_link_g{
+//   H5VL_log_link_create_reissue,                       /* create_reissue */
     H5VL_log_link_create,                         /* create */
     H5VL_log_link_copy,                          /* copy */
     H5VL_log_link_move,                     /* move */
@@ -81,12 +81,12 @@ H5VL_log_link_create(H5VL_link_create_type_t create_type, void *obj,
     const H5VL_loc_params_t *loc_params, hid_t lcpl_id, hid_t lapl_id,
     hid_t dxpl_id, void **req, va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     hid_t under_vol_id = -1;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL LINK Create\n");
+    printf("------- LOG VOL LINK Create\n");
 #endif
 
     /* Try to retrieve the "under" VOL id */
@@ -106,10 +106,10 @@ H5VL_log_link_create(H5VL_link_create_type_t create_type, void *obj,
         if(cur_obj) {
             /* Check if we still need the "under" VOL ID */
             if(under_vol_id < 0)
-                under_vol_id = ((H5VL_log_t *)cur_obj)->under_vol_id;
+                under_vol_id = ((H5VL_log_obj_t *)cur_obj)->under_vol_id;
 
             /* Set the object for the link target */
-            cur_obj = ((H5VL_log_t *)cur_obj)->under_object;
+            cur_obj = ((H5VL_log_obj_t *)cur_obj)->under_object;
         } /* end if */
 
         /* Re-issue 'link create' call, using the unwrapped pieces */
@@ -146,13 +146,13 @@ H5VL_log_link_copy(void *src_obj, const H5VL_loc_params_t *loc_params1,
     void *dst_obj, const H5VL_loc_params_t *loc_params2, hid_t lcpl_id,
     hid_t lapl_id, hid_t dxpl_id, void **req)
 {
-    H5VL_log_t *o_src = (H5VL_log_t *)src_obj;
-    H5VL_log_t *o_dst = (H5VL_log_t *)dst_obj;
+    H5VL_log_obj_t *o_src = (H5VL_log_obj_t *)src_obj;
+    H5VL_log_obj_t *o_dst = (H5VL_log_obj_t *)dst_obj;
     hid_t under_vol_id = -1;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL LINK Copy\n");
+    printf("------- LOG VOL LINK Copy\n");
 #endif
 
     /* Retrieve the "under" VOL id */
@@ -192,13 +192,13 @@ H5VL_log_link_move(void *src_obj, const H5VL_loc_params_t *loc_params1,
     void *dst_obj, const H5VL_loc_params_t *loc_params2, hid_t lcpl_id,
     hid_t lapl_id, hid_t dxpl_id, void **req)
 {
-    H5VL_log_t *o_src = (H5VL_log_t *)src_obj;
-    H5VL_log_t *o_dst = (H5VL_log_t *)dst_obj;
+    H5VL_log_obj_t *o_src = (H5VL_log_obj_t *)src_obj;
+    H5VL_log_obj_t *o_dst = (H5VL_log_obj_t *)dst_obj;
     hid_t under_vol_id = -1;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL LINK Move\n");
+    printf("------- LOG VOL LINK Move\n");
 #endif
 
     /* Retrieve the "under" VOL id */
@@ -232,11 +232,11 @@ herr_t
 H5VL_log_link_get(void *obj, const H5VL_loc_params_t *loc_params,
     H5VL_link_get_t get_type, hid_t dxpl_id, void **req, va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL LINK Get\n");
+    printf("------- LOG VOL LINK Get\n");
 #endif
 
     ret_value = H5VLlink_get(o->under_object, loc_params, o->under_vol_id, get_type, dxpl_id, req, arguments);
@@ -263,11 +263,11 @@ herr_t
 H5VL_log_link_specific(void *obj, const H5VL_loc_params_t *loc_params, 
     H5VL_link_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL LINK Specific\n");
+    printf("------- LOG VOL LINK Specific\n");
 #endif
 
     ret_value = H5VLlink_specific(o->under_object, loc_params, o->under_vol_id, specific_type, dxpl_id, req, arguments);
@@ -294,11 +294,11 @@ herr_t
 H5VL_log_link_optional(void *obj, hid_t dxpl_id, void **req,
     va_list arguments)
 {
-    H5VL_log_t *o = (H5VL_log_t *)obj;
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- PASS THROUGH VOL LINK Optional\n");
+    printf("------- LOG VOL LINK Optional\n");
 #endif
 
     ret_value = H5VLlink_optional(o->under_object, o->under_vol_id, dxpl_id, req, arguments);
