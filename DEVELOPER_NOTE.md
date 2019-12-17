@@ -8,6 +8,36 @@ Log file strategy
 ---
 
 ## The goal of the VOL
+
+HDF5 is a file format and an I/O library designed to handle large and complex data collections.
+HDF5 probvides a wide range of functions that allows applications to organize complex data along with a wide variety of metadata in a hierachical way.
+Due to its convenience and flexibility, HDF5 is widely adopted in scientific applications within the HPC communicty.
+However, HDF5 was not originally designed for parallel I/O performance.
+Despite all the optimizations introduced later on, HDF5 struggles to keep up with I/O libraries designed specifically for parallel I/O performance, especially on complex I/O patterns.
+
+The cause of the performance difference lies within HDF5's flexible file format to support a wide range of use cases. % A better phase of "use cases"?
+One of them is the storage layout.
+HDF5 represents data as dataset objects.
+An HDF5 dataset can be viewed as a multi-dimensional array of a certain type in an HDF5 file.
+HDF5 arranges the data of datasets in the file according to their logical position within the dataset.
+As a result, a single write operation may need to write to multiple positions in the file.
+Writing to discontiguous positions is less efficient compared to writing to contiguous space on most modern file systems.
+It also increases the overhead of parallel I/O by introducing more metadata to synchronize among processes.
+
+Log-based storage layout is shown to be efficient for writing even on complex I/O patterns.
+Instead of arranging the data according to its logical location, it simply stores the data as-is.
+Metadata describing the logical location is also stored so that the data can be gathered when we need to read the data.
+In this way, the overhead of arranging the data is delayed to the reading time.
+For applications that produce checkpoints for restarting purposes, the file written will not be read unless there are anomalies.
+Trading read performance for write performance becomes an effective strategy to boost overall I/O performance.
+
+In this work, we explore several options to support log-based storage layout for HDF5 dataset.
+We develope a HDF5 Virtual Object Layer (VOL) that enable log-based storage layout for HDF5 dataset.
+We designed several formats to implement log-styled layout using HDF5 data objects.
+We study several strategies to perform parallel I/O on datasets in log-based layout.
+We compare those options under a variety of I/O patterns.
+
+
   * Match the write performance of the ADIOS library
     + ADIOS achieve it by using log-based storage layout
       + Log-based storage layout for efficient write operations 
@@ -29,7 +59,118 @@ Log file strategy
     + No non-blocking operation
 ---
 
+Unlike  traditional  storage  layouts,  a  log-baseed  storage
+layout  do  not  store  the  data  of  a  dataset  directly.  Instead,  it
+records  all  I/O  operations  that  modifies  the  dataset  in  a  log-
+based format. In this work, we refer to the data structure used
+to store records the ”log”. In the log, records (entries) append
+one after another. Each record in the log contains the data as
+well  as  the  metadata  that  describes  an  I/O  operation.  Some
+design  store  metadata  and  data  together  while  others  store
+them separately.
+A  major  advantage  of  using  log-baseed  storage  layout  is
+write  performance.  Writing  to  a  dataset  in  log-based  storage
+layout involves merely appending a record to the log. In this
+way,  we  always  write  to  a  contiguous  region  regardless  of
+the  I/O  pattern  at  application  level.  Also  there  is  no  need  to
+seek before each write. This type of I/O pattern is known be
+efficient on most of the file systems.
+Contrary to writing, reading a dataset in log-based storage
+layout is not that straight forward. The I/O library must search
+through  the  records  for  pieces  of  data  that  intersect  with  the
+selection.  The  pieces  is  then  stiches  together  to  reconstruct
+the  data  within  the  selection.  Some  design  incorporate  an
+index of records to speed up the search. Reading data in log-
+based  storage  layout  seems  to  be  inefficient  since  a  single
+selection  can  intersects  many  records.  However,  Polte,  Milo,
+et  al  showed  that  such  senario  seldom  happens  [3].  In  many
+cases,  the  read  pattern  is  the  same  as  write,  resulting  in
+I/O  patterns  more  efficient  than  that  reading  from  dataset  in
+contiguous storage layout.
+Due too advantages mentioned above, log-based torage lay-
+out has been emploied by many I/O libraries and middlewares.
+Kimpe et al. introduced an I/O middleware called LogFS that
+records  low-level  I/O  operation  in  a  temporary  log  and  then
+reconstruct the data when the process closes the file [2].
+
 ## VOL design 
+
+Unlike traditional storage layouts, a log-baseed storage layout do not store the data of a dataset directly.
+Instead, it records all I/O operations that modifies the dataset in a log-based format.
+In this work, we refer to the data structure used to store records the "log".
+In the log, records (entries) append one after another.
+Each record in the log contains the data as well as the metadata that describes an I/O operation.
+Some design store metadata and data together while others store them separately.
+
+A major advantage of using log-baseed storage layout is write performance.
+Writing to a dataset in log-based storage layout involves merely appending a record to the log.
+In this way, we always write to a contiguous region regardless of the I/O pattern at application level.
+Also there is no need to seek before each write.
+This type of I/O pattern is known be efficient on most of the file systems.
+
+We implemented a HDF5 VOL called log VOL that sotre HDF5 datasets in log-based storage layout.
+The log VOL intercept operation regarding dataset creation, querying, writing, and reading.
+For other operations, it is passed through to the native VOL (the VOL for native HDF5 format).
+We construct data structure for log-base layout using HDF5 datasets and attributes. % How to say it better
+The file generated by the log VOL is a valid HDF5 file except that the content is only understandable by the log VOL.
+
+The VOL represents a dataset using a special type of HDF5 dataset called the anchor dataset.
+The anchor dataset have the same name as the dataset it represents.
+Operations involving the dataset that do not need special tratement form the log VOL is perofrmed on the anchor datasset byt he native VOL.
+The data of the dataset is store elsewhere in log-based data structure.
+To conserve space, the anchor datasets is declared as scalar datasets.
+The original dimensionality and shape is stored as attributes of the anchor dataset for querying.
+Datasets are assigned an unique ID to identify them in the log-based structure.
+
+
+We implement the log using HDF5 datasets. For best write
+peroformance,  the  data  structure  of  the  log  should  be  both
+contiguous in file space and expandable in size. Unfortunately,
+non  of  HDF5  datasets  satisfy  all  the  property..  In  HDF5,
+datasets  in  contiguous  storage  layout  must  have  a  fixed  size.
+Expandable  datasets  must  be  stored  in  a  chunked  storage
+layout  that  is  not  contiguous  in  the  file.  For  several  reasons,
+we  use  fixed  sized  datasets  to  store  records.  First,  writing
+to  contiguous  dataset  is  more  efficient  than  having  to  look
+up  and  seek  to  the  positions  each  chunks.  Also,  creating
+a  contiguous  dataset  involves  less  metadata  overhead  than
+creating  a  chunked  datasets  dataset.  Moreover,  both  chunks
+and data objects are indexed by a b-tree in HDF5. As a resut.
+expanding chunked dataset (adding chunks) may not be much
+cheaper  than  creating  datasets.  Finally,  a  contiguous  dataset
+make  it  easier  to  implement  optimizations  outside  HDF5  as
+discussed in later subsections.
+The  log  is  made  up  of  multiple  special  fixed-size  datasets
+refered to as log datasets. Every time we write entries to the
+log,  we  create  a  special  1-dimensional  dataset  of  type  byte
+(H5T
+STD
+U8LE)  to  store  the  record  of  the  operation.  The
+log dataset always locate in the root group with special prefix
+in  the  name  to  distinguish  from  other  datasets.  There  is  no
+header in the log, records in log datasets simply appends one
+after another. Within each record are metadata describing one
+write  operation  followed  by  the  data  to  write.  The  metadata
+includes  the  ID  of  the  dataset  to  write,  the  location  to  write
+(selection), the location of data, and the endianess of the daata.
+The selection can be a hyper-slab (subarray) denoted by start
+position and length along each dimension or a point list (list
+of points) denoted by the position of each cell selected.
+To  allow  more  efficient  searching  of  records,  we  palce  a
+copy of all metadata into a single dataset. The dataset storing
+all  metadata  is  a  1-dimensional  fixed-sized  dataset  of  type
+BYTE (H5T
+STD
+U8LE) refered to as index dataset. Similar
+to a log dataset, it is located in the root group and has special
+prefix  in  the  name  to  distinguish  it  form  other  datasets.  We
+only  create  the  index  dataset  and  write  the  metadata  once
+when  the  file  is  closing  for  performance  consideration.  The
+metadata  in  the  log  serves  as  a  backup  inc  ase  the  program
+is  interrupted  before  we  can  write  all  metadata  to  the  index
+dataset.
+
+
   * Turn every dataset into scalar datasets
     + Original shape is stored as attributes under the scalar dataset
     + The scalar dataset represents the original dataset
