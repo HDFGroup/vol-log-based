@@ -123,52 +123,41 @@ The original dimensionality and shape is stored as attributes of the anchor data
 Datasets are assigned an unique ID to identify them in the log-based structure.
 
 
-We implement the log using HDF5 datasets. For best write
-peroformance,  the  data  structure  of  the  log  should  be  both
-contiguous in file space and expandable in size. Unfortunately,
-non  of  HDF5  datasets  satisfy  all  the  property..  In  HDF5,
-datasets  in  contiguous  storage  layout  must  have  a  fixed  size.
-Expandable  datasets  must  be  stored  in  a  chunked  storage
-layout  that  is  not  contiguous  in  the  file.  For  several  reasons,
-we  use  fixed  sized  datasets  to  store  records.  First,  writing
-to  contiguous  dataset  is  more  efficient  than  having  to  look
-up  and  seek  to  the  positions  each  chunks.  Also,  creating
-a  contiguous  dataset  involves  less  metadata  overhead  than
-creating  a  chunked  datasets  dataset.  Moreover,  both  chunks
-and data objects are indexed by a b-tree in HDF5. As a resut.
-expanding chunked dataset (adding chunks) may not be much
-cheaper  than  creating  datasets.  Finally,  a  contiguous  dataset
-make  it  easier  to  implement  optimizations  outside  HDF5  as
-discussed in later subsections.
-The  log  is  made  up  of  multiple  special  fixed-size  datasets
-refered to as log datasets. Every time we write entries to the
-log,  we  create  a  special  1-dimensional  dataset  of  type  byte
-(H5T
-STD
-U8LE)  to  store  the  record  of  the  operation.  The
-log dataset always locate in the root group with special prefix
-in  the  name  to  distinguish  from  other  datasets.  There  is  no
-header in the log, records in log datasets simply appends one
-after another. Within each record are metadata describing one
-write  operation  followed  by  the  data  to  write.  The  metadata
-includes  the  ID  of  the  dataset  to  write,  the  location  to  write
-(selection), the location of data, and the endianess of the daata.
-The selection can be a hyper-slab (subarray) denoted by start
-position and length along each dimension or a point list (list
-of points) denoted by the position of each cell selected.
-To  allow  more  efficient  searching  of  records,  we  palce  a
-copy of all metadata into a single dataset. The dataset storing
-all  metadata  is  a  1-dimensional  fixed-sized  dataset  of  type
-BYTE (H5T
-STD
-U8LE) refered to as index dataset. Similar
-to a log dataset, it is located in the root group and has special
-prefix  in  the  name  to  distinguish  it  form  other  datasets.  We
-only  create  the  index  dataset  and  write  the  metadata  once
-when  the  file  is  closing  for  performance  consideration.  The
-metadata  in  the  log  serves  as  a  backup  inc  ase  the  program
-is  interrupted  before  we  can  write  all  metadata  to  the  index
-dataset.
+We implement the log using HDF5 datasets.
+For best write peroformance, the data structure of the log should be both contiguous in file space and expandable in size.
+Unfortunately, non of HDF5 datasets satisfy all the property..
+In HDF5, datasets in contiguous storage layout must have a fixed size.
+Expandable datasets must be stored in a chunked storage layout that is not contiguous in the file.
+For several reasons, we use fixed sized datasets to store records.
+First, writing to contiguous dataset is more efficient than having to look up and seek to the positions each chunks.
+Also, creating a contiguous dataset involves less metadata overhead  than creating a chunked datasets dataset.
+Moreover, both chunks and data objects are indexed by a b-tree in HDF5.
+As a resut. expanding chunked dataset (adding chunks) may not be much cheaper than creating datasets.
+Finally, a contiguous dataset make it easier to implement optimizations outside HDF5 as discussed in later subsections.
+
+The log is made up of multiple special fixed-size datasets refered to as log datasets.
+They are 1-dimensional dataset of type byte (H5T\_STD\_U8LE) we create when we need space to record I/O operations.
+The log dataset always locate in the root group with special prefix in the name to distinguish from other datasets.
+% This behavior can be improved, we can try to create larger dataset for future writes
+There is no header in the log, records in log datasets simply appends one after another.
+Within each record are metadata describing one write operation followed by the data to write.
+The metadata includes the ID of the dataset to write, the location to write (selection), the location of data, and the endianess of the daata.
+The selection can be a hyper-slab (subarray) denoted by start position and length along each dimension or a point list (list of points) denoted by the position of each cell selected.
+
+To allow more efficient searching of records, we palce a copy of all metadata into a single dataset.
+The dataset storing all metadata is a 1-dimensional fixed-sized dataset of type BYTE (H5T\_STD\_U8LE) refered to as index dataset.
+Similar to a log dataset, it is located in the root group and has special prefix in the name to distinguish it form other datasets.
+We only create the index dataset and write the metadata once when the file is closing for performance consideration.
+The metadata in the log serves as a backup inc ase the program is interrupted before we can write all metadata to the index dataset.
+Later on, we can replace the metadata with more sophisticate indexing data structures.
+
+To write records to the log, processes first synchornize on the size of the records from each process.
+It is done by performing MPI\_All reduce on the size of records on each process.
+With such information, each process can calculate the offset to write their records to without overwriting ecord from other processes.
+Records are written to the log in the order of rank of the processes.
+If the total size of records exceeds the remaining space in the log dataset, we need to create a new log dataset.
+When creating new log dataset, we estimate the space required based on the size required to store records for current existing write oeprations ans the percentage of data space covered so far.
+After securing the file space to write, processes select the corresponding region in the log dataset and collectively write their records using the native VOL.
 
 
   * Turn every dataset into scalar datasets
