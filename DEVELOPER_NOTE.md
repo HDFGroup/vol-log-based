@@ -148,26 +148,83 @@ When creating new log dataset, we estimate the space required based on the size 
 After securing the file space to write, processes select the corresponding region in the log dataset and collectively write their records using the native VOL.
 
 ### File create
-We relies on the native VOL to access the HDF5 file.
-When the application creates a HDF5 file using the log VOL, the log VOL creates the file using the native VOL.
-We put hidden data objects used by the log VOL in a special group called LOG group under the root group.
+We rely on the native VOL to access the HDF5 file.
+When the application creates an HDF5 file using the log VOL, the log VOL creates the file using the native VOL.
+We put hidden data objects used by the log VOL in a special group called the LOG group under the root group.
 The log VOL creates the LOG group right after the file is created.
 It also creates attributes under the LOG group to store metadata used by the log VOL.
-Those metadata includes the number of datasets that stores log entries, and the name of the dataset that stores the index table.
-The file object returned by the log VOL includes all metadata cached in the memory, the index table, and the object returned by the native VOL.
+That metadata includes the number of datasets that stores log entries, the name of the dataset that stores the index table, and the number of datasets in the file.
+The file object of the log VOL includes all metadata cached in the memory, the index table, the object returned by the native VOL.
+It also includes the object of the LOG group, the index dataset, and all log datasets.
 ### File open
 To open a file, the log VOL opens the file with the native VOL.
-The log VOL tries to opens the LOG group.
-If the LOG group exists, the file is considered valid by the log VOL.
-They log VOL reads all attributes under the LOG group and store them in memory for fast access.
-Finally, the log VOL reads the entire index table into the memory to enable fast lookup of log entries.
-If the dataset containing the index table does not exist, the file is considered corrupted. 
+The log VOL  reads all the attributes and the index table into the memory for fast access.
+If any data object does not exist, the file is considered corrupted. 
 The file object returned by the log VOL includes all metadata cached in the memory, the index table, and the object returned by the native VOL.
 ### File close
+If non-blocking I/O is enabled. The log VOL flushes any request staged in memory to the log dataset when the file is closed.
+All attributes cached in the memory are written back to the attributes.
+After that, the VOL uses the metadata recorded in the memory to construct an index table.
+It creates a dataset (called index dataset) and writes the index table in a way similar to flushing log entries.
+Finally, the log vol closes the HDF5 with the native VOL.
 ### Dataset create
+The VOL creates a dataset in the HDF5 (anchor dataset) to represent the data the application creates.
+The anchor dataset allows operation not related to data read/write, such as adding dataset attributes, to be performed directly by the native VOL.
+Since we store the data of the dataset elsewhere in the log, the space allocated for the dataset will remain unused.
+To reduce file size, the log VOL declares the anchor dataset as a scalar dataset in the compact storage layout.
+The VOL saves the shape of the actual data space of the dataset as an attribute under the anchor dataset for future queries.
+The VOL assigns an ID to the dataset that is unique in the file.
+We store the ID as an attribute under the anchor dataset.
+The ID is set to the current number of datasets in the file.
+After assigned the ID, the number of files is increased, and the attribute representing it under the LOG group is updated.
+The data structure returned by the log VOL contains the dataset returned by the native VOL and all metadata, such as its shape and ID.
 ### Dataset open
+Opening a dataset only involves opening the anchor dataset with the native VOL and reading all attributes into the memory.
+The data structure returned by the log VOL contains the dataset returned by the native VOL and all metadata, such as its shape and ID.
 ### Dataset dataspace query
+The shape (saved as an attribute) is cached in the data structure of the dataset.
+The log VOL returns a new dataspace created using HDF5 API with the shape information cached.
+The VOL does not handle dataspace creation, so we use HDF5 API directly instead of the native VOL. 
 ### Dataset close
+Closing a dataset does not require any other operations other than closing the dataset with the native VOL.
+### Dataset write
+The behavior of writing depends on whether we are doing aggregation.
+If not, dataset writing acts like flushing with only one entry staged.
+If aggregation is enabled, we temporary store a record in the memory.
+A record contains the dataset ID, the selection (start and count), and the data.
+For efficiency, we do not actually copy the data but only keep the pointer to the application buffer.
+The application should not modify the data buffer until the request is flushed.
+Each record is given a timestep so ensure newer data read in case records overlap each other.
+### Dataset flush
+We are writing records collectively to a shared dataset in which records form different processes appends one after another in the order of process rank.
+The VOL calculates the offset of the records from a process using an MPI_Scan operation.
+It synchronizes the size of all records across processes using an MPI_Allreduce operation.
+If the dataset for log entries (log dataset) has not been created or the remaining space in the log dataset is not enough, we create a new log dataset to store the records.
+In such a case, the attribute in the LOG group is updated to reflect the newly created log dataset.
+The log dataset is named according to the order they are created (the first one is called "log_1" followed by "log_2" ... etc.) so we can iterate through them for the entries.
+The size of the log dataset is calculated based on the size of existing records and the percentage they cover the dataspace.
+For example, if existing records occupy 10 MiB while covering 10% of the space in all datasets, we will allocate a log dataset with a size of 100 MiB.
+The log VOL calls dataset write of native VOL to write all records to the log dataset.
+After flushing the records, we keep a copy of the metadata of each record in memory.
+The log VOL adds an entry to the index table for each record written to the log dataset.
+The index entry contains the same metadata as the records plus the location of the record in the file.
+The location is represented by the ID of the log dataset they are stored and the offset (index) within the log dataset.
+Index entries must be synchronized (all scatter) across processes so new data can be seen by all processes.
+We also synchronize the time stamp across the processes after flushing the data. 
+### Dataset read
+To read a dataset, the vol search through the index table for any record that intersects the selection.
+That is, entries with the same dataset ID and a selection intersecting the selection to read.
+For every match, the log VOL reads the data from the log dataset and copies it to the corresponding place in the application buffer.
+The entries are visited in the order they are recorded so that data form later records overwrites former one as if overwriting a dataset in contiguous storage layout.
+The metadata cached in memory is also searched for newly written records since we only construct the index table when the file is closed.
+### Construct the index
+For now, we use a simple array-based index table.
+The index table is an array of index entries.
+Each entry represents a record in log datasets.
+Entries are sorted by dataset ID, followed by the time stamp.
+We also construct a skip list for entries that belongs to one dataset so we can skip unrelated entries.
+The skip list is stored before the index array in the index dataset.
+
 
   * Turn every dataset into scalar datasets
     + Original shape is stored as attributes under the scalar dataset
