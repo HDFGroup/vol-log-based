@@ -59,6 +59,8 @@ We compare those options under a variety of I/O patterns.
     + No non-blocking operation
 ---
 
+## Background
+
 Unlike  traditional  storage  layouts,  a  log-baseed  storage
 layout  do  not  store  the  data  of  a  dataset  directly.  Instead,  it
 records  all  I/O  operations  that  modifies  the  dataset  in  a  log-
@@ -95,19 +97,6 @@ reconstruct the data when the process closes the file [2].
 
 ## VOL design 
 
-Unlike traditional storage layouts, a log-baseed storage layout do not store the data of a dataset directly.
-Instead, it records all I/O operations that modifies the dataset in a log-based format.
-In this work, we refer to the data structure used to store records the "log".
-In the log, records (entries) append one after another.
-Each record in the log contains the data as well as the metadata that describes an I/O operation.
-Some design store metadata and data together while others store them separately.
-
-A major advantage of using log-baseed storage layout is write performance.
-Writing to a dataset in log-based storage layout involves merely appending a record to the log.
-In this way, we always write to a contiguous region regardless of the I/O pattern at application level.
-Also there is no need to seek before each write.
-This type of I/O pattern is known be efficient on most of the file systems.
-
 We implemented a HDF5 VOL called log VOL that sotre HDF5 datasets in log-based storage layout.
 The log VOL intercept operation regarding dataset creation, querying, writing, and reading.
 For other operations, it is passed through to the native VOL (the VOL for native HDF5 format).
@@ -121,7 +110,6 @@ The data of the dataset is store elsewhere in log-based data structure.
 To conserve space, the anchor datasets is declared as scalar datasets.
 The original dimensionality and shape is stored as attributes of the anchor dataset for querying.
 Datasets are assigned an unique ID to identify them in the log-based structure.
-
 
 We implement the log using HDF5 datasets.
 For best write peroformance, the data structure of the log should be both contiguous in file space and expandable in size.
@@ -144,7 +132,7 @@ Within each record are metadata describing one write operation followed by the d
 The metadata includes the ID of the dataset to write, the location to write (selection), the location of data, and the endianess of the daata.
 The selection can be a hyper-slab (subarray) denoted by start position and length along each dimension or a point list (list of points) denoted by the position of each cell selected.
 
-To allow more efficient searching of records, we palce a copy of all metadata into a single dataset.
+To allow more efficient searching of records, we place a copy of all metadata into a single dataset.
 The dataset storing all metadata is a 1-dimensional fixed-sized dataset of type BYTE (H5T\_STD\_U8LE) refered to as index dataset.
 Similar to a log dataset, it is located in the root group and has special prefix in the name to distinguish it form other datasets.
 We only create the index dataset and write the metadata once when the file is closing for performance consideration.
@@ -159,6 +147,27 @@ If the total size of records exceeds the remaining space in the log dataset, we 
 When creating new log dataset, we estimate the space required based on the size required to store records for current existing write oeprations ans the percentage of data space covered so far.
 After securing the file space to write, processes select the corresponding region in the log dataset and collectively write their records using the native VOL.
 
+### File create
+We relies on the native VOL to access the HDF5 file.
+When the application creates a HDF5 file using the log VOL, the log VOL creates the file using the native VOL.
+We put hidden data objects used by the log VOL in a special group called LOG group under the root group.
+The log VOL creates the LOG group right after the file is created.
+It also creates attributes under the LOG group to store metadata used by the log VOL.
+Those metadata includes the number of datasets that stores log entries, and the name of the dataset that stores the index table.
+The file object returned by the log VOL includes all metadata cached in the memory, the index table, and the object returned by the native VOL.
+### File open
+To open a file, the log VOL opens the file with the native VOL.
+The log VOL tries to opens the LOG group.
+If the LOG group exists, the file is considered valid by the log VOL.
+They log VOL reads all attributes under the LOG group and store them in memory for fast access.
+Finally, the log VOL reads the entire index table into the memory to enable fast lookup of log entries.
+If the dataset containing the index table does not exist, the file is considered corrupted. 
+The file object returned by the log VOL includes all metadata cached in the memory, the index table, and the object returned by the native VOL.
+### File close
+### Dataset create
+### Dataset open
+### Dataset dataspace query
+### Dataset close
 
   * Turn every dataset into scalar datasets
     + Original shape is stored as attributes under the scalar dataset
