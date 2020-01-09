@@ -1,7 +1,5 @@
 Design of log VOL using HDF5 based file format
 
-# Note for Developers
-
 ### Table of contents
 - [Introduction](#Introduction)
 - [Background](#Background)
