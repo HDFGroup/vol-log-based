@@ -3,8 +3,27 @@ Design of log VOL using HDF5 based file format
 # Note for Developers
 
 ### Table of contents
-- [Logvol file format proposals](#characteristics-and-structure-of-neutrino-experimental-data)
-
+- [Introduction](#Introduction)
+- [Background](#Background)
+    + [Log-based storage layout](#Log-based-storage-layout)
+    + [I/O library that support log-based storage layout](#I/O-library-that-support-log-based-storage-layout)
+- [VOL design](#VOL-design)
+- [VOL behavior](#VOL-behavior)
+    + [File create](#File-create)
+    + [File open](#File-open)
+    + [File close](#File-close)
+    + [Dataset create](#Dataset-create)
+    + [Dataset open](#Dataset-open)
+    + [Dataset dataspace query](#Dataset-dataspace-query)
+    + [Dataset close](#Dataset-close)
+    + [Dataset write](#Dataset-write)
+    + [Dataset (file) flush](#Dataset-(file)-flush)
+    + [Dataset read](#Dataset-read)
+    + [Construct the index](#Construct-the-index)
+- [Reference](#Reference)
+- [Appendix](#Appendix)
+- [Log data format](#Log-data-format)
+- [Index format](#Index-format)
 ---
 
 ## Introduction
@@ -172,7 +191,7 @@ A record contains the dataset ID, the selection (start and count), and the data.
 For efficiency, we do not actually copy the data but only keep the pointer to the application buffer.
 The application should not modify the data buffer until the request is flushed.
 Each record is given a timestep so ensure newer data read in case records overlap each other.
-### Dataset flush
+### Dataset (file) flush
 We are writing records collectively to a shared dataset in which records form different processes appends one after another in the order of process rank.
 The VOL calculates the offset of the records from a process using an MPI_Scan operation.
 It synchronizes the size of all records across processes using an MPI_Allreduce operation.
@@ -210,7 +229,7 @@ European Parallel Virtual Machine/Message Passing Interface Users’ Group Meeti
 
 ## Appendix
 
-### Log data structure
+### Log data format
 
 Here we present the format of our log in logical view.
 We assume the log is stored as a contiguous datablock for demonstration purpose.
@@ -245,7 +264,7 @@ ONE		= 1		// 4-byte integer in native representation
 TWO		= 2		// 4-byte integer in native representation
 THREE		= 3		// 4-byte integer in native representation
 ```
-### Log data structure
+### Index format
 
 Here we present the format of the index table.
 The index table is stored in a dataset in contiguous layout.
