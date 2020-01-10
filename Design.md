@@ -213,7 +213,7 @@ The VOL saves the shape of the actual data space of the dataset as an attribute 
 The VOL assigns an ID to the dataset that is unique in the file.
 We store the ID as an attribute under the anchor dataset.
 The ID is set to the current number of datasets in the file.
-After assigned the ID, the number of files is increased, and the attribute representing it under the LOG group is updated.
+After assigned the ID, the number of datasets is increased so that the next dataset created will get a different ID.
 
 ### Dataset open
 Opening a dataset only involves opening the anchor dataset with the native VOL and reading all attributes into the memory.
