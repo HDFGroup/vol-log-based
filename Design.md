@@ -100,6 +100,8 @@ Calling H5Dwrite does not immediately write the data to the file; instead, it on
 We perform actual write when the file is closed or when requested by the application.
 The application must make sure the data buffer is not modified before requests are flushed to the file.
 
+![picture](fig_vol.png)
+
 ## VOL architecture 
 
 ### Dataset in log VOL
