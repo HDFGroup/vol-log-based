@@ -1,7 +1,7 @@
 #include "logvol.h"
 
 /* Characteristics of the pass-through VOL connector */
-#define H5VL_log_NAME        "PnetCDF"
+#define H5VL_log_NAME        "LOG"
 #define H5VL_log_VALUE        1026           /* VOL connector ID */
 #define H5VL_log_VERSION      1111
 
@@ -75,6 +75,10 @@ const H5VL_class_t H5VL_log_g = {
         NULL,                   /* specific */
         NULL,                   /* optional */
     },
+    {   /* introspect_cls */
+        NULL,       /* get_conn_cls */
+        NULL,          /* opt_query    */
+    },
     {                                           /* request_cls */
         NULL,                      /* wait */
         NULL,                    /* notify */
@@ -82,6 +86,17 @@ const H5VL_class_t H5VL_log_g = {
         NULL,                  /* specific */
         NULL,                  /* optional */
         NULL                       /* free */
+    },
+    {   /* blob_cls */
+        NULL,                      /* put */
+        NULL,                      /* get */
+        NULL,                 /* specific */
+        NULL                                        /* optional */
+    },
+    {   /* token_cls */
+        NULL,                     /* cmp            */
+        NULL,                  /* to_str         */
+        NULL                   /* from_str       */
     },
     NULL                                        /* optional */
 };

@@ -9,7 +9,7 @@ herr_t H5VL_log_request_notify(void *obj, H5VL_request_notify_t cb, void *ctx);
 herr_t H5VL_log_request_cancel(void *obj);
 herr_t H5VL_log_request_specific_reissue(void *obj, hid_t connector_id, H5VL_request_specific_t specific_type, ...);
 herr_t H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type, va_list arguments);
-herr_t H5VL_log_request_optional(void *obj, va_list arguments);
+herr_t H5VL_log_request_optional(void *obj, H5VL_request_optional_t opt_type, va_list arguments);
 herr_t H5VL_log_request_free(void *obj);
 
 const H5VL_request_class_t H5VL_log_request_g{
@@ -297,7 +297,7 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
  *-------------------------------------------------------------------------
  */
 herr_t 
-H5VL_log_request_optional(void *obj, va_list arguments)
+H5VL_log_request_optional(void *obj, H5VL_request_optional_t opt_type, va_list arguments)
 {
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
@@ -306,7 +306,7 @@ H5VL_log_request_optional(void *obj, va_list arguments)
     printf("------- LOG VOL REQUEST Optional\n");
 #endif
 
-    ret_value = H5VLrequest_optional(o->under_object, o->under_vol_id, arguments);
+    ret_value = H5VLrequest_optional(o->under_object, o->under_vol_id, opt_type, arguments);
 
     return ret_value;
 } /* end H5VL_log_request_optional() */

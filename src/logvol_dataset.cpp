@@ -9,7 +9,7 @@ herr_t H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, 
 herr_t H5VL_log_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t plist_id, const void *buf, void **req);
 herr_t H5VL_log_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
 herr_t H5VL_log_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_dataset_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_dataset_optional(void *obj, H5VL_dataset_optional_t optional_type, hid_t dxpl_id, void **req, va_list arguments);
 herr_t H5VL_log_dataset_close(void *dset, hid_t dxpl_id, void **req);
 
 const H5VL_dataset_class_t H5VL_log_dataset_g{
@@ -202,8 +202,7 @@ H5VL_log_dataset_get(void *dset, H5VL_dataset_get_t get_type,
  *-------------------------------------------------------------------------
  */
 herr_t 
-H5VL_log_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type,
-    hid_t dxpl_id, void **req, va_list arguments)
+H5VL_log_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments)
 {
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     hid_t under_vol_id;
@@ -238,8 +237,8 @@ H5VL_log_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type,
  *-------------------------------------------------------------------------
  */
 herr_t 
-H5VL_log_dataset_optional(void *obj, hid_t dxpl_id, void **req,
-    va_list arguments)
+H5VL_log_dataset_optional(void *obj, H5VL_dataset_optional_t optional_type,
+    hid_t dxpl_id, void **req, va_list arguments)
 {
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
@@ -248,7 +247,7 @@ H5VL_log_dataset_optional(void *obj, hid_t dxpl_id, void **req,
     printf("------- LOG VOL DATASET Optional\n");
 #endif
 
-    ret_value = H5VLdataset_optional(o->under_object, o->under_vol_id, dxpl_id, req, arguments);
+    ret_value = H5VLdataset_optional(o->under_object, o->under_vol_id, optional_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
