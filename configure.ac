@@ -21,9 +21,6 @@ AC_CONFIG_SRCDIR([src/logvol.h])
 
 AC_CONFIG_AUX_DIR([./scripts])
 
-LT_PREREQ([2.4.2])
-LT_INIT([disable-shared])
-
 AM_INIT_AUTOMAKE([foreign])
 AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE([enable])
@@ -209,6 +206,9 @@ if test "x$ac_cv_have_decl_unlink" = xyes ; then
    AC_CHECK_FUNCS([unlink])
 fi
 
+LT_PREREQ([2.4.2])
+LT_INIT([disable-shared])
+
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],
                     [Enable logvol internal debug mode.
@@ -284,18 +284,18 @@ if test "x$have_hdf5" = xno ; then
       to specify the location of HDF5 installation. Abort.
       -----------------------------------------------------------------------])
 fi
-AC_MSG_CHECKING([whether HDF5 version is 1.10.4 or later])
+AC_MSG_CHECKING([whether HDF5 version is 1.13.0 (develop branch) or later])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <hdf5.h>
-#if (H5_VERS_MAJOR*1000000 + H5_VERS_MINOR*1000 + H5_VERS_RELEASE < 1010004)
-#error HDF5 version is older than 1.10.4
+#if (H5_VERS_MAJOR*1000000 + H5_VERS_MINOR*1000 + H5_VERS_RELEASE < 1013000)
+#error HDF5 version is older than 1.13.0
 #endif
-   ]])], [hdf5_ge_1_10_4=yes], [hdf5_ge_1_10_4=no])
-AC_MSG_RESULT([$hdf5_ge_1_10_4])
-if test x$hdf5_ge_1_10_4 = xno; then
+   ]])], [hdf5_ge_1_13_0=yes], [hdf5_ge_1_13_0=no])
+AC_MSG_RESULT([$hdf5_ge_1_13_0])
+if test x$hdf5_ge_1_13_0 = xno; then
    AC_MSG_ERROR([
    -----------------------------------------------------------------------
-     logvol requires HDF5 1.10.4 and later. Abort.
+     logvol requires HDF5 1.13.0 and later. Abort.
    -----------------------------------------------------------------------])
 fi
 AC_MSG_CHECKING([whether HDF5 parallel I/O is enabled])
@@ -322,6 +322,7 @@ fi
 
 AC_CONFIG_FILES(Makefile \
                 src/Makefile \
+                test/Makefile \
                 )
 
 AC_OUTPUT
@@ -343,7 +344,7 @@ if test "x${CPPFLAGS}" != x ; then
 fi
 echo "\
               CFLAGS   = ${CFLAGS}"
-if test "${has_mpicxx}" = yes ; then
+if test "${CXXFLAGS}" != x ; then
    echo "\
               CXXFLAGS = ${CXXFLAGS}"
 fi

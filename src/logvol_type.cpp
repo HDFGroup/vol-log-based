@@ -10,7 +10,7 @@ void *H5VL_log_datatype_commit(void *obj, const H5VL_loc_params_t *loc_params,
 void *H5VL_log_datatype_open(void *obj, const H5VL_loc_params_t *loc_params, const char *name, hid_t tapl_id, hid_t dxpl_id, void **req);
 herr_t H5VL_log_datatype_get(void *dt, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
 herr_t H5VL_log_datatype_specific(void *obj, H5VL_datatype_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_datatype_optional(void *obj, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_datatype_optional(void *obj, H5VL_datatype_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments);
 herr_t H5VL_log_datatype_close(void *dt, hid_t dxpl_id, void **req);
 
 const H5VL_datatype_class_t H5VL_log_datatype_g{
@@ -175,7 +175,7 @@ H5VL_log_datatype_specific(void *obj, H5VL_datatype_specific_t specific_type,
  *-------------------------------------------------------------------------
  */
 herr_t 
-H5VL_log_datatype_optional(void *obj, hid_t dxpl_id, void **req,
+H5VL_log_datatype_optional(void *obj, H5VL_datatype_optional_t opt_type, hid_t dxpl_id, void **req,
     va_list arguments)
 {
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
@@ -185,7 +185,7 @@ H5VL_log_datatype_optional(void *obj, hid_t dxpl_id, void **req,
     printf("------- LOG VOL DATATYPE Optional\n");
 #endif
 
-    ret_value = H5VLdatatype_optional(o->under_object, o->under_vol_id, dxpl_id, req, arguments);
+    ret_value = H5VLdatatype_optional(o->under_object, o->under_vol_id, opt_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)

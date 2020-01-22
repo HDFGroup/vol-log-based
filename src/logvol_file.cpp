@@ -18,9 +18,8 @@ const H5VL_file_class_t H5VL_log_file_g{
     NULL,                     /* optional */
     H5VL_log_file_close                         /* close */
 };
-
 /*-------------------------------------------------------------------------
- * Function:    H5VL_log_file_create
+ * Function:     log_file_create
  *
  * Purpose:     Creates a container using this connector
  *
@@ -29,8 +28,8 @@ const H5VL_file_class_t H5VL_log_file_g{
  *
  *-------------------------------------------------------------------------
  */
-void *
-H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
+static void *
+ log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     hid_t fapl_id, hid_t dxpl_id, void **req)
 {
     H5VL_log_info_t *info;
@@ -38,8 +37,8 @@ H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     hid_t under_fapl_id;
     void *under;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL FILE Create\n");
+#ifdef ENABLE_PASSTHRU_LOGGING
+    printf("------- PASS THROUGH VOL FILE Create\n");
 #endif
 
     /* Get copy of our VOL info from FAPL */
@@ -54,11 +53,11 @@ H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     /* Open the file with the underlying VOL connector */
     under = H5VLfile_create(name, flags, fcpl_id, under_fapl_id, dxpl_id, req);
     if(under) {
-        file = H5VL_log_new_obj(under, info->under_vol_id);
+        file =  H5VL_log_new_obj(under, info->under_vol_id);
 
         /* Check for async request */
         if(req && *req)
-            *req = H5VL_log_new_obj(*req, info->under_vol_id);
+            *req =  H5VL_log_new_obj(*req, info->under_vol_id);
     } /* end if */
     else
         file = NULL;
@@ -67,14 +66,14 @@ H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     H5Pclose(under_fapl_id);
 
     /* Release copy of our VOL info */
-    H5VL_log_info_free(info);
+     H5VL_log_info_free(info);
 
     return (void *)file;
-} /* end H5VL_log_file_create() */
+} /* end  log_file_create() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_log_file_open
+ * Function:     log_file_open
  *
  * Purpose:     Opens a container created with this connector
  *
@@ -83,8 +82,8 @@ H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
  *
  *-------------------------------------------------------------------------
  */
-void *
-H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
+static void *
+ log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     hid_t dxpl_id, void **req)
 {
     H5VL_log_info_t *info;
@@ -92,8 +91,8 @@ H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     hid_t under_fapl_id;
     void *under;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL FILE Open\n");
+#ifdef ENABLE_PASSTHRU_LOGGING
+    printf("------- PASS THROUGH VOL FILE Open\n");
 #endif
 
     /* Get copy of our VOL info from FAPL */
@@ -108,11 +107,11 @@ H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     /* Open the file with the underlying VOL connector */
     under = H5VLfile_open(name, flags, under_fapl_id, dxpl_id, req);
     if(under) {
-        file = H5VL_log_new_obj(under, info->under_vol_id);
+        file =  H5VL_log_new_obj(under, info->under_vol_id);
 
         /* Check for async request */
         if(req && *req)
-            *req = H5VL_log_new_obj(*req, info->under_vol_id);
+            *req =  H5VL_log_new_obj(*req, info->under_vol_id);
     } /* end if */
     else
         file = NULL;
@@ -121,14 +120,14 @@ H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     H5Pclose(under_fapl_id);
 
     /* Release copy of our VOL info */
-    H5VL_log_info_free(info);
+     H5VL_log_info_free(info);
 
     return (void *)file;
-} /* end H5VL_log_file_open() */
+} /* end  log_file_open() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_log_file_get
+ * Function:     log_file_get
  *
  * Purpose:     Get info about a file
  *
@@ -137,29 +136,29 @@ H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id,
+static herr_t
+ log_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id,
     void **req, va_list arguments)
 {
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)file;
     herr_t ret_value;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL FILE Get\n");
+#ifdef ENABLE_PASSTHRU_LOGGING
+    printf("------- PASS THROUGH VOL FILE Get\n");
 #endif
 
     ret_value = H5VLfile_get(o->under_object, o->under_vol_id, get_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req =  H5VL_log_new_obj(*req, o->under_vol_id);
 
     return ret_value;
-} /* end H5VL_log_file_get() */
+} /* end  log_file_get() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_log_file_specific_reissue
+ * Function:     log_file_specific_reissue
  *
  * Purpose:     Re-wrap vararg arguments into a va_list and reissue the
  *              file specific callback to the underlying VOL connector.
@@ -169,8 +168,8 @@ H5VL_log_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id,
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_file_specific_reissue(void *obj, hid_t connector_id,
+static herr_t
+ log_file_specific_reissue(void *obj, hid_t connector_id,
     H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, ...)
 {
     va_list arguments;
@@ -181,11 +180,11 @@ H5VL_log_file_specific_reissue(void *obj, hid_t connector_id,
     va_end(arguments);
 
     return ret_value;
-} /* end H5VL_log_file_specific_reissue() */
+} /* end  log_file_specific_reissue() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_log_file_specific
+ * Function:     log_file_specific
  *
  * Purpose:     Specific operation on file
  *
@@ -194,16 +193,16 @@ H5VL_log_file_specific_reissue(void *obj, hid_t connector_id,
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type,
+static herr_t
+ log_file_specific(void *file, H5VL_file_specific_t specific_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)file;
     hid_t under_vol_id = -1;
     herr_t ret_value;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL FILE Specific\n");
+#ifdef ENABLE_PASSTHRU_LOGGING
+    printf("------- PASS THROUGH VOL FILE Specific\n");
 #endif
 
     /* Unpack arguments to get at the child file pointer when mounting a file */
@@ -223,10 +222,9 @@ H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type,
         under_vol_id = o->under_vol_id;
 
         /* Re-issue 'file specific' call, using the unwrapped pieces */
-        ret_value = H5VL_log_file_specific_reissue(o->under_object, o->under_vol_id, specific_type, dxpl_id, req, (int)loc_type, name, child_file->under_object, plist_id);
+        ret_value =  log_file_specific_reissue(o->under_object, o->under_vol_id, specific_type, dxpl_id, req, (int)loc_type, name, child_file->under_object, plist_id);
     } /* end if */
-    //else if(specific_type == H5VL_FILE_IS_ACCESSIBLE || specific_type == H5VL_FILE_DELETE) {
-    else if(specific_type == H5VL_FILE_IS_ACCESSIBLE) {
+    else if(specific_type == H5VL_FILE_IS_ACCESSIBLE || specific_type == H5VL_FILE_DELETE) {
         H5VL_log_info_t *info;
         hid_t fapl_id, under_fapl_id;
         const char *name;
@@ -250,13 +248,13 @@ H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type,
         under_vol_id = info->under_vol_id;
 
         /* Re-issue 'file specific' call */
-        ret_value = H5VL_log_file_specific_reissue(NULL, info->under_vol_id, specific_type, dxpl_id, req, under_fapl_id, name, ret);
+        ret_value =  log_file_specific_reissue(NULL, info->under_vol_id, specific_type, dxpl_id, req, under_fapl_id, name, ret);
 
         /* Close underlying FAPL */
         H5Pclose(under_fapl_id);
 
         /* Release copy of our VOL info */
-        H5VL_log_info_free(info);
+         H5VL_log_info_free(info);
     } /* end else-if */
     else {
         va_list my_arguments;
@@ -276,7 +274,7 @@ H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type,
                 void      **ret = va_arg(my_arguments, void **);
 
                 if(ret && *ret)
-                    *ret = H5VL_log_new_obj(*ret, o->under_vol_id);
+                    *ret =  H5VL_log_new_obj(*ret, o->under_vol_id);
             } /* end if */
 
             /* Finish use of copied vararg list */
@@ -286,14 +284,14 @@ H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type,
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, under_vol_id);
+        *req =  H5VL_log_new_obj(*req, under_vol_id);
 
     return ret_value;
-} /* end H5VL_log_file_specific() */
+} /* end  log_file_specific() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_log_file_optional
+ * Function:     log_file_optional
  *
  * Purpose:     Perform a connector-specific operation on a file
  *
@@ -302,29 +300,29 @@ H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type,
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_file_optional(void *file, hid_t dxpl_id, void **req,
-    va_list arguments)
+static herr_t
+ log_file_optional(void *file, H5VL_file_optional_t opt_type,
+    hid_t dxpl_id, void **req, va_list arguments)
 {
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)file;
     herr_t ret_value;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL File Optional\n");
+#ifdef ENABLE_PASSTHRU_LOGGING
+    printf("------- PASS THROUGH VOL File Optional\n");
 #endif
 
-    ret_value = H5VLfile_optional(o->under_object, o->under_vol_id, dxpl_id, req, arguments);
+    ret_value = H5VLfile_optional(o->under_object, o->under_vol_id, opt_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req =  H5VL_log_new_obj(*req, o->under_vol_id);
 
     return ret_value;
-} /* end H5VL_log_file_optional() */
+} /* end  log_file_optional() */
 
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_log_file_close
+ * Function:     log_file_close
  *
  * Purpose:     Closes a file.
  *
@@ -333,25 +331,25 @@ H5VL_log_file_optional(void *file, hid_t dxpl_id, void **req,
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_file_close(void *file, hid_t dxpl_id, void **req)
+static herr_t
+ log_file_close(void *file, hid_t dxpl_id, void **req)
 {
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)file;
     herr_t ret_value;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL FILE Close\n");
+#ifdef ENABLE_PASSTHRU_LOGGING
+    printf("------- PASS THROUGH VOL FILE Close\n");
 #endif
 
     ret_value = H5VLfile_close(o->under_object, o->under_vol_id, dxpl_id, req);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req =  H5VL_log_new_obj(*req, o->under_vol_id);
 
     /* Release our wrapper, if underlying file was closed */
     if(ret_value >= 0)
-        H5VL_log_free_obj(o);
+         H5VL_log_free_obj(o);
 
     return ret_value;
-} /* end H5VL_log_file_close() */
+} /* end  log_file_close() */
