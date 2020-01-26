@@ -1,4 +1,4 @@
-#include "logvol.h"
+#include "logvol_internal.hpp"
 #include <algorithm>
 
 #define REQSWAP(A,B) {tmp = starts[A]; starts[A] = starts[B]; starts[B] = tmp; tmp = counts[A]; counts[A] = counts[B]; counts[B] = tmp;}
