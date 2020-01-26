@@ -11,6 +11,8 @@ dnl autoconf v2.69 was released in 2012-04-24
 AC_PREREQ([2.69])
 AC_INIT([logvol],[1.0.0],[],[logvol],[])
 
+AM_EXTRA_RECURSIVE_TARGETS([tests])
+
 AC_CONFIG_HEADERS([config.h])
 AH_TOP([/*
  * Copyright (C) 2019, Northwestern University and Fermi National Accelerator Laboratory
@@ -318,6 +320,12 @@ if test "x$LIBS" = x ; then
    LIBS="-lhdf5"
 else
    LIBS="$LIBS -lhdf5"
+fi
+
+AC_ARG_VAR(TESTOUTDIR, [Output file directory for "make check" and "make ptest", @<:@default: ./@:>@])
+if test "x${TESTOUTDIR}" = x ; then
+   dnl set default to current directory
+   TESTOUTDIR=.
 fi
 
 AC_CONFIG_FILES(Makefile \

@@ -20,7 +20,8 @@ M4_SRCS =
 
 M4H_SRCS = 
 
-H_SRCS = logvol.h 
+H_SRCS =    logvol.h \
+            logvol_internal.h
 
 C_SRCS = 
 
@@ -28,6 +29,7 @@ CXX_SRCS = logvol.cpp \
               logvol_att.cpp \
               logvol_dataset.cpp \
               logvol_file.cpp \
+              logvol_introspect.cpp \
               logvol_group.cpp \
               logvol_link.cpp \
               logvol_obj.cpp \

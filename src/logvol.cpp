@@ -1,4 +1,4 @@
-#include "logvol.h"
+#include "logvol_internal.hpp"
 
 /* Characteristics of the pass-through VOL connector */
 #define H5VL_log_NAME        "LOG"
@@ -75,10 +75,7 @@ const H5VL_class_t H5VL_log_g = {
         NULL,                   /* specific */
         NULL,                   /* optional */
     },
-    {   /* introspect_cls */
-        NULL,       /* get_conn_cls */
-        NULL,          /* opt_query    */
-    },
+    H5VL_log_introspect_g,
     {                                           /* request_cls */
         NULL,                      /* wait */
         NULL,                    /* notify */
@@ -156,7 +153,10 @@ void* H5VL_log_info_copy(const void *_info) {
     /* Allocate new VOL info struct for the PNC connector */
     new_info = (H5VL_log_info_t *)calloc(1, sizeof(H5VL_log_info_t));
 
-    MPI_Comm_dup(info->comm, &(new_info->comm));
+    new_info->under_vol_id = info->under_vol_id;
+    new_info->under_vol_info = info->under_vol_info;
+
+    //MPI_Comm_dup(info->comm, &(new_info->comm));
 
     return(new_info);
 } /* end H5VL_log_info_copy() */
@@ -200,7 +200,7 @@ herr_t H5VL_log_info_free(void *_info) {
     H5VL_log_info_t *info = (H5VL_log_info_t *)_info;
 
     /* Release MPI_Info */
-    MPI_Comm_free(&(info->comm));
+    //MPI_Comm_free(&(info->comm));
 
     /* Free PNC info object itself */
     free(info);

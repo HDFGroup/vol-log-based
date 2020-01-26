@@ -1,5 +1,4 @@
-#include "logvol.h"
-
+#include "logvol_internal.hpp"
 
 /********************* */
 /* Function prototypes */
