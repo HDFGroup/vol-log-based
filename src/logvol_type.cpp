@@ -44,13 +44,13 @@ H5VL_log_datatype_commit(void *obj, const H5VL_loc_params_t *loc_params,
     printf("------- LOG VOL DATATYPE Commit\n");
 #endif
 
-    under = H5VLdatatype_commit(o->under_object, loc_params, o->under_vol_id, name, type_id, lcpl_id, tcpl_id, tapl_id, dxpl_id, req);
+    under = H5VLdatatype_commit(o->uo, loc_params, o->uvlid, name, type_id, lcpl_id, tcpl_id, tapl_id, dxpl_id, req);
     if(under) {
-        dt = H5VL_log_new_obj(under, o->under_vol_id);
+        dt = H5VL_log_new_obj(under, o->uvlid);
 
         /* Check for async request */
         if(req && *req)
-            *req = H5VL_log_new_obj(*req, o->under_vol_id);
+            *req = H5VL_log_new_obj(*req, o->uvlid);
     } /* end if */
     else
         dt = NULL;
@@ -81,13 +81,13 @@ H5VL_log_datatype_open(void *obj, const H5VL_loc_params_t *loc_params,
     printf("------- LOG VOL DATATYPE Open\n");
 #endif
 
-    under = H5VLdatatype_open(o->under_object, loc_params, o->under_vol_id, name, tapl_id, dxpl_id, req);
+    under = H5VLdatatype_open(o->uo, loc_params, o->uvlid, name, tapl_id, dxpl_id, req);
     if(under) {
-        dt = H5VL_log_new_obj(under, o->under_vol_id);
+        dt = H5VL_log_new_obj(under, o->uvlid);
 
         /* Check for async request */
         if(req && *req)
-            *req = H5VL_log_new_obj(*req, o->under_vol_id);
+            *req = H5VL_log_new_obj(*req, o->uvlid);
     } /* end if */
     else
         dt = NULL;
@@ -117,11 +117,11 @@ H5VL_log_datatype_get(void *dt, H5VL_datatype_get_t get_type,
     printf("------- LOG VOL DATATYPE Get\n");
 #endif
 
-    ret_value = H5VLdatatype_get(o->under_object, o->under_vol_id, get_type, dxpl_id, req, arguments);
+    ret_value = H5VLdatatype_get(o->uo, o->uvlid, get_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o->uvlid);
 
     return ret_value;
 } /* end H5VL_log_datatype_get() */
@@ -142,7 +142,7 @@ H5VL_log_datatype_specific(void *obj, H5VL_datatype_specific_t specific_type,
     hid_t dxpl_id, void **req, va_list arguments)
 {
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    hid_t under_vol_id;
+    hid_t uvlid;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
@@ -151,13 +151,13 @@ H5VL_log_datatype_specific(void *obj, H5VL_datatype_specific_t specific_type,
 
     // Save copy of underlying VOL connector ID and prov helper, in case of
     // refresh destroying the current object
-    under_vol_id = o->under_vol_id;
+    uvlid = o->uvlid;
 
-    ret_value = H5VLdatatype_specific(o->under_object, o->under_vol_id, specific_type, dxpl_id, req, arguments);
+    ret_value = H5VLdatatype_specific(o->uo, o->uvlid, specific_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, under_vol_id);
+        *req = H5VL_log_new_obj(*req, uvlid);
 
     return ret_value;
 } /* end H5VL_log_datatype_specific() */
@@ -184,11 +184,11 @@ H5VL_log_datatype_optional(void *obj, H5VL_datatype_optional_t opt_type, hid_t d
     printf("------- LOG VOL DATATYPE Optional\n");
 #endif
 
-    ret_value = H5VLdatatype_optional(o->under_object, o->under_vol_id, opt_type, dxpl_id, req, arguments);
+    ret_value = H5VLdatatype_optional(o->uo, o->uvlid, opt_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o->uvlid);
 
     return ret_value;
 } /* end H5VL_log_datatype_optional() */
@@ -214,13 +214,13 @@ H5VL_log_datatype_close(void *dt, hid_t dxpl_id, void **req)
     printf("------- LOG VOL DATATYPE Close\n");
 #endif
 
-    assert(o->under_object);
+    assert(o->uo);
 
-    ret_value = H5VLdatatype_close(o->under_object, o->under_vol_id, dxpl_id, req);
+    ret_value = H5VLdatatype_close(o->uo, o->uvlid, dxpl_id, req);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o->uvlid);
 
     /* Release our wrapper, if underlying datatype was closed */
     if(ret_value >= 0)

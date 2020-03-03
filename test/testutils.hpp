@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <stdlib.h>
+#include <mpi.h>
 #include <hdf5.h>
 
 #define CHECK_ERR(A) { \

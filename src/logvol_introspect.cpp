@@ -45,7 +45,7 @@ herr_t H5VL_log_introspect_opt_query(void *obj, H5VL_subclass_t cls, int opt_typ
     printf("------- PASS THROUGH VOL INTROSPECT OptQuery\n");
 #endif
 
-    //ret_value = H5VLintrospect_opt_query(o->under_object, o->under_vol_id, cls, opt_type, supported);
+    //ret_value = H5VLintrospect_opt_query(o->uo, o->uvlid, cls, opt_type, supported);
 
     *supported = false;
 

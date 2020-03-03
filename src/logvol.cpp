@@ -153,7 +153,7 @@ void* H5VL_log_info_copy(const void *_info) {
     /* Allocate new VOL info struct for the PNC connector */
     new_info = (H5VL_log_info_t *)calloc(1, sizeof(H5VL_log_info_t));
 
-    new_info->under_vol_id = info->under_vol_id;
+    new_info->uvlid = info->uvlid;
     new_info->under_vol_info = info->under_vol_info;
 
     //MPI_Comm_dup(info->comm, &(new_info->comm));

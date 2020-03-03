@@ -82,7 +82,7 @@ H5VL_log_link_create(H5VL_link_create_type_t create_type, void *obj,
     hid_t dxpl_id, void **req, va_list arguments)
 {
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    hid_t under_vol_id = -1;
+    hid_t uvlid = -1;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
@@ -91,7 +91,7 @@ H5VL_log_link_create(H5VL_link_create_type_t create_type, void *obj,
 
     /* Try to retrieve the "under" VOL id */
     if(o)
-        under_vol_id = o->under_vol_id;
+        uvlid = o->uvlid;
 
     /* Fix up the link target object for hard link creation */
     if(H5VL_LINK_CREATE_HARD == create_type) {
@@ -105,22 +105,22 @@ H5VL_log_link_create(H5VL_link_create_type_t create_type, void *obj,
         /* If it's a non-NULL pointer, find the 'under object' and re-set the property */
         if(cur_obj) {
             /* Check if we still need the "under" VOL ID */
-            if(under_vol_id < 0)
-                under_vol_id = ((H5VL_log_obj_t *)cur_obj)->under_vol_id;
+            if(uvlid < 0)
+                uvlid = ((H5VL_log_obj_t *)cur_obj)->uvlid;
 
             /* Set the object for the link target */
-            cur_obj = ((H5VL_log_obj_t *)cur_obj)->under_object;
+            cur_obj = ((H5VL_log_obj_t *)cur_obj)->uo;
         } /* end if */
 
         /* Re-issue 'link create' call, using the unwrapped pieces */
-        ret_value = H5VL_log_link_create_reissue(create_type, (o ? o->under_object : NULL), loc_params, under_vol_id, lcpl_id, lapl_id, dxpl_id, req, cur_obj, cur_params);
+        ret_value = H5VL_log_link_create_reissue(create_type, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id, lapl_id, dxpl_id, req, cur_obj, cur_params);
     } /* end if */
     else
-        ret_value = H5VLlink_create(create_type, (o ? o->under_object : NULL), loc_params, under_vol_id, lcpl_id, lapl_id, dxpl_id, req, arguments);
+        ret_value = H5VLlink_create(create_type, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id, lapl_id, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, under_vol_id);
+        *req = H5VL_log_new_obj(*req, uvlid);
 
     return ret_value;
 } /* end H5VL_log_link_create() */
@@ -148,7 +148,7 @@ H5VL_log_link_copy(void *src_obj, const H5VL_loc_params_t *loc_params1,
 {
     H5VL_log_obj_t *o_src = (H5VL_log_obj_t *)src_obj;
     H5VL_log_obj_t *o_dst = (H5VL_log_obj_t *)dst_obj;
-    hid_t under_vol_id = -1;
+    hid_t uvlid = -1;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
@@ -157,16 +157,16 @@ H5VL_log_link_copy(void *src_obj, const H5VL_loc_params_t *loc_params1,
 
     /* Retrieve the "under" VOL id */
     if(o_src)
-        under_vol_id = o_src->under_vol_id;
+        uvlid = o_src->uvlid;
     else if(o_dst)
-        under_vol_id = o_dst->under_vol_id;
-    assert(under_vol_id > 0);
+        uvlid = o_dst->uvlid;
+    assert(uvlid > 0);
 
-    ret_value = H5VLlink_copy((o_src ? o_src->under_object : NULL), loc_params1, (o_dst ? o_dst->under_object : NULL), loc_params2, under_vol_id, lcpl_id, lapl_id, dxpl_id, req);
+    ret_value = H5VLlink_copy((o_src ? o_src->uo : NULL), loc_params1, (o_dst ? o_dst->uo : NULL), loc_params2, uvlid, lcpl_id, lapl_id, dxpl_id, req);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, under_vol_id);
+        *req = H5VL_log_new_obj(*req, uvlid);
             
     return ret_value;
 } /* end H5VL_log_link_copy() */
@@ -194,7 +194,7 @@ H5VL_log_link_move(void *src_obj, const H5VL_loc_params_t *loc_params1,
 {
     H5VL_log_obj_t *o_src = (H5VL_log_obj_t *)src_obj;
     H5VL_log_obj_t *o_dst = (H5VL_log_obj_t *)dst_obj;
-    hid_t under_vol_id = -1;
+    hid_t uvlid = -1;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
@@ -203,16 +203,16 @@ H5VL_log_link_move(void *src_obj, const H5VL_loc_params_t *loc_params1,
 
     /* Retrieve the "under" VOL id */
     if(o_src)
-        under_vol_id = o_src->under_vol_id;
+        uvlid = o_src->uvlid;
     else if(o_dst)
-        under_vol_id = o_dst->under_vol_id;
-    assert(under_vol_id > 0);
+        uvlid = o_dst->uvlid;
+    assert(uvlid > 0);
 
-    ret_value = H5VLlink_move((o_src ? o_src->under_object : NULL), loc_params1, (o_dst ? o_dst->under_object : NULL), loc_params2, under_vol_id, lcpl_id, lapl_id, dxpl_id, req);
+    ret_value = H5VLlink_move((o_src ? o_src->uo : NULL), loc_params1, (o_dst ? o_dst->uo : NULL), loc_params2, uvlid, lcpl_id, lapl_id, dxpl_id, req);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, under_vol_id);
+        *req = H5VL_log_new_obj(*req, uvlid);
 
     return ret_value;
 } /* end H5VL_log_link_move() */
@@ -239,11 +239,11 @@ H5VL_log_link_get(void *obj, const H5VL_loc_params_t *loc_params,
     printf("------- LOG VOL LINK Get\n");
 #endif
 
-    ret_value = H5VLlink_get(o->under_object, loc_params, o->under_vol_id, get_type, dxpl_id, req, arguments);
+    ret_value = H5VLlink_get(o->uo, loc_params, o->uvlid, get_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o->uvlid);
             
     return ret_value;
 } /* end H5VL_log_link_get() */
@@ -270,11 +270,11 @@ H5VL_log_link_specific(void *obj, const H5VL_loc_params_t *loc_params,
     printf("------- LOG VOL LINK Specific\n");
 #endif
 
-    ret_value = H5VLlink_specific(o->under_object, loc_params, o->under_vol_id, specific_type, dxpl_id, req, arguments);
+    ret_value = H5VLlink_specific(o->uo, loc_params, o->uvlid, specific_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o->uvlid);
 
     return ret_value;
 } /* end H5VL_log_link_specific() */
@@ -301,11 +301,11 @@ H5VL_log_link_optional(void *obj, H5VL_link_optional_t opt_type, hid_t dxpl_id, 
     printf("------- LOG VOL LINK Optional\n");
 #endif
 
-    ret_value = H5VLlink_optional(o->under_object, o->under_vol_id, opt_type, dxpl_id, req, arguments);
+    ret_value = H5VLlink_optional(o->uo, o->uvlid, opt_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o->uvlid);
 
     return ret_value;
 } /* end H5VL_log_link_optional() */

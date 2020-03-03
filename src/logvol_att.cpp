@@ -37,26 +37,20 @@ const H5VL_attr_class_t H5VL_log_attr_g{
 void *H5VL_log_attr_create(void *obj, const H5VL_loc_params_t *loc_params,
                             const char *name, hid_t type_id, hid_t space_id, hid_t acpl_id,
                             hid_t aapl_id, hid_t dxpl_id, void **req) {
-    H5VL_log_obj_t *attr;
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    void *under;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    H5VL_log_obj_t *ap;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL ATTRIBUTE Create\n");
-#endif
+    ap = new H5VL_log_obj_t();
 
-    under = H5VLattr_create(o->under_object, loc_params, o->under_vol_id, name, type_id, space_id, acpl_id, aapl_id, dxpl_id, req);
-    if(under) {
-        attr = H5VL_log_new_obj(under, o->under_vol_id);
+    ap->uo = H5VLattr_create(op->uo, loc_params, op->uvlid, name, type_id, space_id, acpl_id, aapl_id, dxpl_id, NULL); CHECK_NERR(ap->uo);
+    ap->uvlid = op->uvlid;
 
-        /* Check for async request */
-        if(req && *req)
-            *req = H5VL_log_new_obj(*req, o->under_vol_id);
-    } /* end if */
-    else
-        attr = NULL;
+    return (void *)ap;
 
-    return (void*)attr;
+err_out:;
+    delete ap;
+
+    return NULL;
 } /* end H5VL_log_attr_create() */
 
 
@@ -71,26 +65,20 @@ void *H5VL_log_attr_create(void *obj, const H5VL_loc_params_t *loc_params,
  *-------------------------------------------------------------------------
  */
 void *H5VL_log_attr_open(void *obj, const H5VL_loc_params_t *loc_params, const char *name, hid_t aapl_id, hid_t dxpl_id, void **req) {
-    H5VL_log_obj_t *attr;
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    void *under;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    H5VL_log_obj_t *ap;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL ATTRIBUTE Open\n");
-#endif
+    ap = new H5VL_log_obj_t();
 
-    under = H5VLattr_open(o->under_object, loc_params, o->under_vol_id, name, aapl_id, dxpl_id, req);
-    if(under) {
-        attr = H5VL_log_new_obj(under, o->under_vol_id);
+    ap->uo = H5VLattr_open(op->uo, loc_params, op->uvlid, name, aapl_id, dxpl_id, req); CHECK_NERR(ap->uo);
+    ap->uvlid = op->uvlid;
+    
+    return (void *)ap;
 
-        /* Check for async request */
-        if(req && *req)
-            *req = H5VL_log_new_obj(*req, o->under_vol_id);
-    } /* end if */
-    else
-        attr = NULL;
+err_out:;
+    delete ap;
 
-    return (void *)attr;
+    return NULL;
 } /* end H5VL_log_attr_open() */
 
 
@@ -112,11 +100,11 @@ herr_t H5VL_log_attr_read(void *attr, hid_t mem_type_id, void *buf, hid_t dxpl_i
     printf("------- LOG VOL ATTRIBUTE Read\n");
 #endif
 
-    ret_value = H5VLattr_read(o->under_object, o->under_vol_id, mem_type_id, buf, dxpl_id, req);
+    ret_value = H5VLattr_read(o->uo, o->uvlid, mem_type_id, buf, dxpl_id, req);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o->uvlid);
 
     return ret_value;
 } /* end H5VL_log_attr_read() */
@@ -140,11 +128,11 @@ herr_t H5VL_log_attr_write(void *attr, hid_t mem_type_id, const void *buf, hid_t
     printf("------- LOG VOL ATTRIBUTE Write\n");
 #endif
 
-    ret_value = H5VLattr_write(o->under_object, o->under_vol_id, mem_type_id, buf, dxpl_id, req);
+    ret_value = H5VLattr_write(o->uo, o->uvlid, mem_type_id, buf, dxpl_id, req);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o->uvlid);
 
     return ret_value;
 } /* end H5VL_log_attr_write() */
@@ -168,11 +156,11 @@ herr_t H5VL_log_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, voi
     printf("------- LOG VOL ATTRIBUTE Get\n");
 #endif
 
-    ret_value = H5VLattr_get(o->under_object, o->under_vol_id, get_type, dxpl_id, req, arguments);
+    ret_value = H5VLattr_get(o->uo, o->uvlid, get_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o->uvlid);
 
     return ret_value;
 } /* end H5VL_log_attr_get() */
@@ -189,20 +177,12 @@ herr_t H5VL_log_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, voi
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_specific(void *obj, const H5VL_loc_params_t *loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    herr_t ret_value;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL ATTRIBUTE Specific\n");
-#endif
+    err = H5VLattr_specific(op->uo, loc_params, op->uvlid, specific_type, dxpl_id, req, arguments);
 
-    ret_value = H5VLattr_specific(o->under_object, loc_params, o->under_vol_id, specific_type, dxpl_id, req, arguments);
-
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
-
-    return ret_value;
+    return err;
 } /* end H5VL_log_attr_specific() */
 
 
@@ -217,20 +197,12 @@ herr_t H5VL_log_attr_specific(void *obj, const H5VL_loc_params_t *loc_params, H5
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_optional(void *obj, H5VL_attr_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    herr_t ret_value;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL ATTRIBUTE Optional\n");
-#endif
+    err = H5VLattr_optional(op->uo, op->uvlid, opt_type, dxpl_id, req, arguments);
 
-    ret_value = H5VLattr_optional(o->under_object, o->under_vol_id, opt_type, dxpl_id, req, arguments);
-
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
-
-    return ret_value;
+    return err;
 } /* end H5VL_log_attr_optional() */
 
 
@@ -245,22 +217,11 @@ herr_t H5VL_log_attr_optional(void *obj, H5VL_attr_optional_t opt_type, hid_t dx
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_close(void *attr, hid_t dxpl_id, void **req) {
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)attr;
-    herr_t ret_value;
+    H5VL_log_obj_t *ap = (H5VL_log_obj_t*)attr;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL ATTRIBUTE Close\n");
-#endif
+    err = H5VLattr_close(ap->uo, ap->uvlid, dxpl_id, req); CHECK_ERR
 
-    ret_value = H5VLattr_close(o->under_object, o->under_vol_id, dxpl_id, req);
-
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
-
-    /* Release our wrapper, if underlying attribute was closed */
-    if(ret_value >= 0)
-        H5VL_log_free_obj(o);
-
-    return ret_value;
+err_out:;
+    return err;
 } /* end H5VL_log_attr_close() */

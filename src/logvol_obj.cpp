@@ -52,13 +52,13 @@ H5VL_log_object_open(void *obj, const H5VL_loc_params_t *loc_params,
     printf("------- LOG VOL OBJECT Open\n");
 #endif
 
-    under = H5VLobject_open(o->under_object, loc_params, o->under_vol_id, opened_type, dxpl_id, req);
+    under = H5VLobject_open(o->uo, loc_params, o->uvlid, opened_type, dxpl_id, req);
     if(under) {
-        new_obj = H5VL_log_new_obj(under, o->under_vol_id);
+        new_obj = H5VL_log_new_obj(under, o->uvlid);
 
         /* Check for async request */
         if(req && *req)
-            *req = H5VL_log_new_obj(*req, o->under_vol_id);
+            *req = H5VL_log_new_obj(*req, o->uvlid);
     } /* end if */
     else
         new_obj = NULL;
@@ -91,11 +91,11 @@ H5VL_log_object_copy(void *src_obj, const H5VL_loc_params_t *src_loc_params,
     printf("------- LOG VOL OBJECT Copy\n");
 #endif
 
-    ret_value = H5VLobject_copy(o_src->under_object, src_loc_params, src_name, o_dst->under_object, dst_loc_params, dst_name, o_src->under_vol_id, ocpypl_id, lcpl_id, dxpl_id, req);
+    ret_value = H5VLobject_copy(o_src->uo, src_loc_params, src_name, o_dst->uo, dst_loc_params, dst_name, o_src->uvlid, ocpypl_id, lcpl_id, dxpl_id, req);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o_src->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o_src->uvlid);
 
     return ret_value;
 } /* end H5VL_log_object_copy() */
@@ -121,11 +121,11 @@ H5VL_log_object_get(void *obj, const H5VL_loc_params_t *loc_params, H5VL_object_
     printf("------- LOG VOL OBJECT Get\n");
 #endif
 
-    ret_value = H5VLobject_get(o->under_object, loc_params, o->under_vol_id, get_type, dxpl_id, req, arguments);
+    ret_value = H5VLobject_get(o->uo, loc_params, o->uvlid, get_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o->uvlid);
 
     return ret_value;
 } /* end H5VL_log_object_get() */
@@ -147,7 +147,7 @@ H5VL_log_object_specific(void *obj, const H5VL_loc_params_t *loc_params,
     va_list arguments)
 {
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    hid_t under_vol_id;
+    hid_t uvlid;
     herr_t ret_value;
 
 #ifdef ENABLE_PASSTHRU_LOGGING 
@@ -156,13 +156,13 @@ H5VL_log_object_specific(void *obj, const H5VL_loc_params_t *loc_params,
 
     // Save copy of underlying VOL connector ID and prov helper, in case of
     // refresh destroying the current object
-    under_vol_id = o->under_vol_id;
+    uvlid = o->uvlid;
 
-    ret_value = H5VLobject_specific(o->under_object, loc_params, o->under_vol_id, specific_type, dxpl_id, req, arguments);
+    ret_value = H5VLobject_specific(o->uo, loc_params, o->uvlid, specific_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, under_vol_id);
+        *req = H5VL_log_new_obj(*req, uvlid);
 
     return ret_value;
 } /* end H5VL_log_object_specific() */
@@ -189,11 +189,11 @@ H5VL_log_object_optional(void *obj, H5VL_object_optional_t opt_type, hid_t dxpl_
     printf("------- LOG VOL OBJECT Optional\n");
 #endif
 
-    ret_value = H5VLobject_optional(o->under_object, o->under_vol_id, opt_type, dxpl_id, req, arguments);
+    ret_value = H5VLobject_optional(o->uo, o->uvlid, opt_type, dxpl_id, req, arguments);
 
     /* Check for async request */
     if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
+        *req = H5VL_log_new_obj(*req, o->uvlid);
 
     return ret_value;
 } /* end H5VL_log_object_optional() */
