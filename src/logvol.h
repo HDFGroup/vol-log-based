@@ -52,7 +52,7 @@ hid_t H5VL_log_register(void);
 
 /* Pass-through VOL connector info */
 typedef struct H5VL_log_info_t {
-    hid_t under_vol_id;         /* VOL ID for under VOL */
+    hid_t uvlid;         /* VOL ID for under VOL */
     void *under_vol_info;       /* VOL info for under VOL */
 } H5VL_log_info_t;
 

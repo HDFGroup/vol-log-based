@@ -35,7 +35,7 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     H5VL_log_info_t *info = NULL;
     H5VL_log_file_t *fp = NULL;
     H5VL_loc_params_t loc_params;
-    hid_t under_vol_id, under_fapl_id;
+    hid_t uvlid, under_fapl_id;
     void *under_vol_info;
     MPI_Comm comm;
 
@@ -47,13 +47,13 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     H5Pget_vol_info(fapl_id, (void **)&info);
 
     if (info){
-        under_vol_id = info->under_vol_id;
+        uvlid = info->uvlid;
         under_vol_info = info->under_vol_info;
     }
     else{   // If no under VOL specified, use the native VOL
         assert(H5VLis_connector_registered("native") == 1);
-        under_vol_id = H5VLget_connector_id_by_name("native");
-        assert(under_vol_id > 0);
+        uvlid = H5VLget_connector_id_by_name("native");
+        assert(uvlid > 0);
         under_vol_info = NULL;
     }
 
@@ -66,18 +66,18 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     fp->refcnt = 0;
     MPI_Comm_dup(comm, &(fp->comm));
     MPI_Comm_rank(comm, &(fp->rank));
-    fp->under_vol_id = under_vol_id;
+    fp->uvlid = uvlid;
 
     // Create the file with underlying VOL
     under_fapl_id = H5Pcopy(fapl_id);
-    H5Pset_vol(under_fapl_id, under_vol_id, under_vol_info);
-    fp->ufp = H5VLfile_create(name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL); CHECK_NERR(fp->ufp)
+    H5Pset_vol(under_fapl_id, uvlid, under_vol_info);
+    fp->uo = H5VLfile_create(name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL); CHECK_NERR(fp->uo)
     H5Pclose(under_fapl_id);
     
     // Create LOG group
     loc_params.obj_type = H5I_FILE;
     loc_params.type = H5VL_OBJECT_BY_SELF;
-    fp->lgp = H5VLgroup_create(fp->ufp, &loc_params, fp->under_vol_id, LOG_GROUP_NAME, H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,  H5P_DEFAULT, dxpl_id, NULL); CHECK_NERR(fp->lgp)
+    fp->lgp = H5VLgroup_create(fp->uo, &loc_params, fp->uvlid, LOG_GROUP_NAME, H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,  H5P_DEFAULT, dxpl_id, NULL); CHECK_NERR(fp->lgp)
 
     goto fn_exit;
 err_out:;
@@ -112,7 +112,7 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     H5VL_log_info_t *info = NULL;
     H5VL_log_file_t *fp = NULL;
     H5VL_loc_params_t loc_params;
-    hid_t under_vol_id, under_fapl_id;
+    hid_t uvlid, under_fapl_id;
     void *under_vol_info;
     MPI_Comm comm;
 
@@ -124,13 +124,13 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     H5Pget_vol_info(fapl_id, (void **)&info);
 
     if (info){
-        under_vol_id = info->under_vol_id;
+        uvlid = info->uvlid;
         under_vol_info = info->under_vol_info;
     }
     else{   // If no under VOL specified, use the native VOL
         assert(H5VLis_connector_registered("native") == 1);
-        under_vol_id = H5VLget_connector_id_by_name("native");
-        assert(under_vol_id > 0);
+        uvlid = H5VLget_connector_id_by_name("native");
+        assert(uvlid > 0);
         under_vol_info = NULL;
     }
 
@@ -143,18 +143,18 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     fp->refcnt = 0;
     MPI_Comm_dup(comm, &(fp->comm));
     MPI_Comm_rank(comm, &(fp->rank));
-    fp->under_vol_id = under_vol_id;
+    fp->uvlid = uvlid;
 
     // Create the file with underlying VOL
     under_fapl_id = H5Pcopy(fapl_id);
-    H5Pset_vol(under_fapl_id, under_vol_id, under_vol_info);
-    fp->ufp = H5VLfile_open(name, flags, under_fapl_id, dxpl_id, NULL); CHECK_NERR(fp->ufp)
+    H5Pset_vol(under_fapl_id, uvlid, under_vol_info);
+    fp->uo = H5VLfile_open(name, flags, under_fapl_id, dxpl_id, NULL); CHECK_NERR(fp->uo)
     H5Pclose(under_fapl_id);
     
     // Create LOG group
     loc_params.obj_type = H5I_FILE;
     loc_params.type = H5VL_OBJECT_BY_SELF;
-    fp->lgp = H5VLgroup_open(fp->ufp, &loc_params, fp->under_vol_id, LOG_GROUP_NAME, H5P_DEFAULT, dxpl_id, NULL); CHECK_NERR(fp->lgp)
+    fp->lgp = H5VLgroup_open(fp->uo, &loc_params, fp->uvlid, LOG_GROUP_NAME, H5P_DEFAULT, dxpl_id, NULL); CHECK_NERR(fp->lgp)
 
     goto fn_exit;
 err_out:;
@@ -192,7 +192,7 @@ herr_t H5VL_log_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id,
     printf("------- LOG VOL FILE Get\n");
 #endif
 
-    err = H5VLfile_get(fp->ufp, fp->under_vol_id, get_type, dxpl_id, req, arguments); CHECK_ERR
+    err = H5VLfile_get(fp->uo, fp->uvlid, get_type, dxpl_id, req, arguments); CHECK_ERR
 
 err_out:;
     return err;
@@ -220,7 +220,7 @@ herr_t H5VL_log_file_specific(  void *file, H5VL_file_specific_t specific_type,
 
     
     if(specific_type == H5VL_FILE_IS_ACCESSIBLE || specific_type == H5VL_FILE_DELETE) {
-        hid_t under_vol_id, under_fapl_id, fapl_id;
+        hid_t uvlid, under_fapl_id, fapl_id;
         void *under_vol_info;
         H5VL_log_info_t *info = NULL;
 
@@ -228,21 +228,21 @@ herr_t H5VL_log_file_specific(  void *file, H5VL_file_specific_t specific_type,
         fapl_id = va_arg(arguments, hid_t);
         H5Pget_vol_info(fapl_id, (void **)&info);
         if (info){
-            under_vol_id = info->under_vol_id;
+            uvlid = info->uvlid;
             under_vol_info = info->under_vol_info;
             free(info);
         }
         else{   // If no under VOL specified, use the native VOL
             assert(H5VLis_connector_registered("native") == 1);
-            under_vol_id = H5VLget_connector_id_by_name("native");
-            assert(under_vol_id > 0);
+            uvlid = H5VLget_connector_id_by_name("native");
+            assert(uvlid > 0);
             under_vol_info = NULL;
         }
 
         /* Call specific of under VOL */
         under_fapl_id = H5Pcopy(fapl_id);
-        H5Pset_vol(under_fapl_id, under_vol_id, under_vol_info);
-        err = H5VLfile_specific(NULL, under_vol_id, specific_type, dxpl_id, req, arguments); CHECK_ERR
+        H5Pset_vol(under_fapl_id, uvlid, under_vol_info);
+        err = H5VLfile_specific(NULL, uvlid, specific_type, dxpl_id, req, arguments); CHECK_ERR
         H5Pclose(under_fapl_id);
     } /* end else-if */
     else{
@@ -272,7 +272,7 @@ herr_t H5VL_log_file_optional(void *file, H5VL_file_optional_t opt_type, hid_t d
     printf("------- LOG VOL File Optional\n");
 #endif
 
-    err = H5VLfile_optional(fp->ufp, fp->under_vol_id, opt_type, dxpl_id, req, arguments); CHECK_ERR
+    err = H5VLfile_optional(fp->uo, fp->uvlid, opt_type, dxpl_id, req, arguments); CHECK_ERR
 
 err_out:;
     return err;
@@ -297,9 +297,9 @@ herr_t H5VL_log_file_close(void *file, hid_t dxpl_id, void **req) {
     printf("------- LOG VOL FILE Close\n");
 #endif
 
-    err = H5VLgroup_close(fp->lgp, fp->under_vol_id, dxpl_id, req); CHECK_ERR
+    err = H5VLgroup_close(fp->lgp, fp->uvlid, dxpl_id, req); CHECK_ERR
 
-    err = H5VLfile_close(fp->ufp, fp->under_vol_id, dxpl_id, req); CHECK_ERR
+    err = H5VLfile_close(fp->uo, fp->uvlid, dxpl_id, req); CHECK_ERR
 
     MPI_Comm_free(&(fp->comm));
     delete fp;

@@ -46,7 +46,7 @@ H5VL_log_request_wait(void *obj, uint64_t timeout,
     printf("------- LOG VOL REQUEST Wait\n");
 #endif
 
-    ret_value = H5VLrequest_wait(o->under_object, o->under_vol_id, timeout, status);
+    ret_value = H5VLrequest_wait(o->uo, o->uvlid, timeout, status);
 
     if(ret_value >= 0 && *status != H5ES_STATUS_IN_PROGRESS)
         H5VL_log_free_obj(o);
@@ -78,7 +78,7 @@ H5VL_log_request_notify(void *obj, H5VL_request_notify_t cb, void *ctx)
     printf("------- LOG VOL REQUEST Wait\n");
 #endif
 
-    ret_value = H5VLrequest_notify(o->under_object, o->under_vol_id, cb, ctx);
+    ret_value = H5VLrequest_notify(o->uo, o->uvlid, cb, ctx);
 
     if(ret_value >= 0)
         H5VL_log_free_obj(o);
@@ -109,7 +109,7 @@ H5VL_log_request_cancel(void *obj)
     printf("------- LOG VOL REQUEST Cancel\n");
 #endif
 
-    ret_value = H5VLrequest_cancel(o->under_object, o->under_vol_id);
+    ret_value = H5VLrequest_cancel(o->uo, o->uvlid);
 
     if(ret_value >= 0)
         H5VL_log_free_obj(o);
@@ -194,7 +194,7 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
             /* Create array of underlying VOL requests */
             under_req_array = (void **)malloc(req_count * sizeof(void **));
             for(u = 0; u < req_count; u++)
-                under_req_array[u] = ((H5VL_log_obj_t *)req_array[u])->under_object;
+                under_req_array[u] = ((H5VL_log_obj_t *)req_array[u])->uo;
 
             /* Remove the timeout value from the vararg list (it's used in all the calls below) */
             timeout = va_arg(tmp_arguments, uint64_t);
@@ -210,7 +210,7 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
                 status = va_arg(tmp_arguments, H5ES_status_t *);
 
                 /* Reissue the WAITANY 'request specific' call */
-                ret_value = H5VL_log_request_specific_reissue(o->under_object, o->under_vol_id, specific_type, req_count, under_req_array, timeout, index, status);
+                ret_value = H5VL_log_request_specific_reissue(o->uo, o->uvlid, specific_type, req_count, under_req_array, timeout, index, status);
 
                 /* Release the completed request, if it completed */
                 if(ret_value >= 0 && *status != H5ES_STATUS_IN_PROGRESS) {
@@ -232,7 +232,7 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
                 array_of_statuses = va_arg(tmp_arguments, H5ES_status_t *);
 
                 /* Reissue the WAITSOME 'request specific' call */
-                ret_value = H5VL_log_request_specific_reissue(o->under_object, o->under_vol_id, specific_type, req_count, under_req_array, timeout, outcount, array_of_indices, array_of_statuses);
+                ret_value = H5VL_log_request_specific_reissue(o->uo, o->uvlid, specific_type, req_count, under_req_array, timeout, outcount, array_of_indices, array_of_statuses);
 
                 /* If any requests completed, release them */
                 if(ret_value >= 0 && *outcount > 0) {
@@ -257,7 +257,7 @@ H5VL_log_request_specific(void *obj, H5VL_request_specific_t specific_type,
                 array_of_statuses = va_arg(tmp_arguments, H5ES_status_t *);
 
                 /* Reissue the WAITALL 'request specific' call */
-                ret_value = H5VL_log_request_specific_reissue(o->under_object, o->under_vol_id, specific_type, req_count, under_req_array, timeout, array_of_statuses);
+                ret_value = H5VL_log_request_specific_reissue(o->uo, o->uvlid, specific_type, req_count, under_req_array, timeout, array_of_statuses);
 
                 /* Release the completed requests */
                 if(ret_value >= 0) {
@@ -306,7 +306,7 @@ H5VL_log_request_optional(void *obj, H5VL_request_optional_t opt_type, va_list a
     printf("------- LOG VOL REQUEST Optional\n");
 #endif
 
-    ret_value = H5VLrequest_optional(o->under_object, o->under_vol_id, opt_type, arguments);
+    ret_value = H5VLrequest_optional(o->uo, o->uvlid, opt_type, arguments);
 
     return ret_value;
 } /* end H5VL_log_request_optional() */
@@ -333,7 +333,7 @@ H5VL_log_request_free(void *obj)
     printf("------- LOG VOL REQUEST Free\n");
 #endif
 
-    ret_value = H5VLrequest_free(o->under_object, o->under_vol_id);
+    ret_value = H5VLrequest_free(o->uo, o->uvlid);
 
     if(ret_value >= 0)
         H5VL_log_free_obj(o);

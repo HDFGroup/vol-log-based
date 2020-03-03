@@ -30,31 +30,27 @@ const H5VL_group_class_t H5VL_log_group_g{
  *
  *-------------------------------------------------------------------------
  */
-void *
-H5VL_log_group_create(void *obj, const H5VL_loc_params_t *loc_params,
-    const char *name, hid_t lcpl_id, hid_t gcpl_id, hid_t gapl_id,
-    hid_t dxpl_id, void **req)
-{
-    H5VL_log_obj_t *group;
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    void *under;
+void *H5VL_log_group_create(void *obj, const H5VL_loc_params_t *loc_params,
+                            const char *name, hid_t lcpl_id, hid_t gcpl_id, hid_t gapl_id,
+                            hid_t dxpl_id, void **req) {
+    H5VL_log_obj_t *op = (H5VL_log_obj_t*)obj;
+    H5VL_log_group_t *gp;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL GROUP Create\n");
-#endif
+    /* Check arguments */
+    if((loc_params->obj_type != H5I_FILE) && (loc_params->obj_type != H5I_GROUP))   RET_ERR("container not a file or group")
+    if(loc_params->type != H5VL_OBJECT_BY_SELF) RET_ERR("loc_params->type is not H5VL_OBJECT_BY_SELF")
 
-    under = H5VLgroup_create(o->under_object, loc_params, o->under_vol_id, name, lcpl_id, gcpl_id,  gapl_id, dxpl_id, req);
-    if(under) {
-        group = H5VL_log_new_obj(under, o->under_vol_id);
+    gp = new H5VL_log_group_t();
 
-        /* Check for async request */
-        if(req && *req)
-            *req = H5VL_log_new_obj(*req, o->under_vol_id);
-    } /* end if */
-    else
-        group = NULL;
+    gp->uo = H5VLgroup_create(op->uo, loc_params, op->uvlid, name, lcpl_id, gcpl_id,  gapl_id, dxpl_id, NULL); CHECK_NERR(gp->uo)
+    gp->uvlid = op->uvlid;
 
-    return (void *)group;
+    return (void *)gp;
+
+err_out:;
+    delete gp;
+
+    return NULL;
 } /* end H5VL_log_group_create() */
 
 
@@ -68,30 +64,25 @@ H5VL_log_group_create(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-void *
-H5VL_log_group_open(void *obj, const H5VL_loc_params_t *loc_params,
-    const char *name, hid_t gapl_id, hid_t dxpl_id, void **req)
-{
-    H5VL_log_obj_t *group;
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    void *under;
+void *H5VL_log_group_open(void *obj, const H5VL_loc_params_t *loc_params, const char *name, hid_t gapl_id, hid_t dxpl_id, void **req) {
+    H5VL_log_obj_t *op = (H5VL_log_obj_t*)obj;
+    H5VL_log_group_t *gp;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL GROUP Open\n");
-#endif
+    /* Check arguments */
+    if((loc_params->obj_type != H5I_FILE) && (loc_params->obj_type != H5I_GROUP))   RET_ERR("container not a file or group")
+    if(loc_params->type != H5VL_OBJECT_BY_SELF) RET_ERR("loc_params->type is not H5VL_OBJECT_BY_SELF")
 
-    under = H5VLgroup_open(o->under_object, loc_params, o->under_vol_id, name, gapl_id, dxpl_id, req);
-    if(under) {
-        group = H5VL_log_new_obj(under, o->under_vol_id);
+    gp = new H5VL_log_group_t();
 
-        /* Check for async request */
-        if(req && *req)
-            *req = H5VL_log_new_obj(*req, o->under_vol_id);
-    } /* end if */
-    else
-        group = NULL;
+    gp->uo = H5VLgroup_open(op->uo, loc_params, op->uvlid, name, gapl_id, dxpl_id, NULL); CHECK_NERR(gp)
+    gp->uvlid = op->uvlid;
 
-    return (void *)group;
+    return (void *)gp;
+
+err_out:;
+    delete gp;
+
+    return NULL;
 } /* end H5VL_log_group_open() */
 
 
@@ -105,24 +96,13 @@ H5VL_log_group_open(void *obj, const H5VL_loc_params_t *loc_params,
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id,
-    void **req, va_list arguments)
-{
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    herr_t ret_value;
+herr_t H5VL_log_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL GROUP Get\n");
-#endif
+    err = H5VLgroup_get(op->uo, op->uvlid, get_type, dxpl_id, req, arguments);
 
-    ret_value = H5VLgroup_get(o->under_object, o->under_vol_id, get_type, dxpl_id, req, arguments);
-
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
-
-    return ret_value;
+    return err;
 } /* end H5VL_log_group_get() */
 
 
@@ -136,29 +116,15 @@ H5VL_log_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id,
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_group_specific(void *obj, H5VL_group_specific_t specific_type,
-    hid_t dxpl_id, void **req, va_list arguments)
-{
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    hid_t under_vol_id;
-    herr_t ret_value;
+herr_t H5VL_log_group_specific( void *obj, H5VL_group_specific_t specific_type,
+                                hid_t dxpl_id, void **req, va_list arguments) {
+    herr_t err;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL GROUP Specific\n");
-#endif
+    err = H5VLgroup_specific(op->uo, op->uvlid, specific_type, dxpl_id, NULL, arguments);
 
-    // Save copy of underlying VOL connector ID and prov helper, in case of
-    // refresh destroying the current object
-    under_vol_id = o->under_vol_id;
-
-    ret_value = H5VLgroup_specific(o->under_object, o->under_vol_id, specific_type, dxpl_id, req, arguments);
-
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, under_vol_id);
-
-    return ret_value;
+    return err;
 } /* end H5VL_log_group_specific() */
 
 
@@ -172,24 +138,14 @@ H5VL_log_group_specific(void *obj, H5VL_group_specific_t specific_type,
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_group_optional(void *obj, H5VL_group_optional_t opt_type, hid_t dxpl_id, void **req,
-    va_list arguments)
-{
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    herr_t ret_value;
+herr_t H5VL_log_group_optional( void *obj, H5VL_group_optional_t opt_type, hid_t dxpl_id, void **req,
+                                va_list arguments) {
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL GROUP Optional\n");
-#endif
+    err = H5VLgroup_optional(op->uo, op->uvlid, opt_type, dxpl_id, NULL, arguments);
 
-    ret_value = H5VLgroup_optional(o->under_object, o->under_vol_id, opt_type, dxpl_id, req, arguments);
-
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
-
-    return ret_value;
+    return err;
 } /* end H5VL_log_group_optional() */
 
 
@@ -203,25 +159,14 @@ H5VL_log_group_optional(void *obj, H5VL_group_optional_t opt_type, hid_t dxpl_id
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_group_close(void *grp, hid_t dxpl_id, void **req)
-{
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)grp;
-    herr_t ret_value;
+herr_t H5VL_log_group_close(void *grp, hid_t dxpl_id, void **req) {
+    H5VL_log_group_t *gp = (H5VL_log_group_t*)grp;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL H5Gclose\n");
-#endif
+    err = H5VLgroup_close(gp->uo, gp->uvlid, dxpl_id, NULL); CHECK_ERR
 
-    ret_value = H5VLgroup_close(o->under_object, o->under_vol_id, dxpl_id, req);
+    delete gp;
 
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->under_vol_id);
-
-    /* Release our wrapper, if underlying file was closed */
-    if(ret_value >= 0)
-        H5VL_log_free_obj(o);
-
-    return ret_value;
+err_out:;
+    return err;
 } /* end H5VL_log_group_close() */
