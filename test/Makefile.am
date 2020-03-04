@@ -16,7 +16,8 @@ LDADD = $(top_builddir)/src/.libs/liblogvol.la
 
 check_PROGRAMS =    file \
                     group \
-                    attr
+                    attr \
+                    dset
 
 EXTRA_DIST = # wrap_runs.sh parallel_run.sh
 

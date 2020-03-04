@@ -6,15 +6,16 @@
 #include "testutils.hpp"
 
 #define N 10
+#define M 10
 
 int main(int argc, char **argv) {   
     int err, nerrs = 0;
     int rank, np;
-    int buf = 1;
     const char *file_name;  
-    hid_t fid, gid, faid, gaid, sid;
+    hid_t fid, gid, did, gdid, sid;
     hid_t faplid, dxplid;
     hid_t log_vlid;  
+    hsize_t dims[2] = {N, M};
   
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
@@ -36,24 +37,19 @@ int main(int argc, char **argv) {
     // MPI and collective metadata is required by LOG VOL
     H5Pset_fapl_mpio(faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
     H5Pset_all_coll_metadata_ops(faplid, 1);   
-    H5Pset_vol(faplid, log_vlid, NULL);   
+    H5Pset_vol(faplid, log_vlid, NULL);
 
     // Create file
     fid = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);    CHECK_ERR(fid)
     // Create group
-    gid = H5Gcreate2(fid, "test", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); CHECK_ERR(gid)
-    
-    // Create attr
-    sid = H5Screate(H5S_SCALAR);
-    faid = H5Acreate2(fid, "test_attr", H5T_STD_I32LE, sid, H5P_DEFAULT, H5P_DEFAULT); CHECK_ERR(faid)
-    gaid = H5Acreate2(gid, "test_attr", H5T_STD_I32LE, sid, H5P_DEFAULT, H5P_DEFAULT); CHECK_ERR(gaid)
+    gid = H5Gcreate2(fid, "G", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); CHECK_ERR(gid)
+    // Create datasets
+    sid = H5Screate_simple(2, dims, dims); CHECK_ERR(sid);
+    did = H5Dcreate2(fid, "D", H5T_STD_I32LE, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); CHECK_ERR(did)
+    gdid = H5Dcreate2(gid, "D", H5T_STD_I32LE, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); CHECK_ERR(gdid)
 
-    // Write attr
-    err = H5Awrite(faid, H5T_NATIVE_INT32, &buf);
-    err = H5Awrite(gaid, H5T_NATIVE_INT32, &buf);
-
-    err = H5Aclose(faid); CHECK_ERR(err)
-    err = H5Aclose(gaid); CHECK_ERR(err)
+    err = H5Dclose(did); CHECK_ERR(err)
+    err = H5Dclose(gdid); CHECK_ERR(err)
     err = H5Gclose(gid); CHECK_ERR(err)
     err = H5Fclose(fid); CHECK_ERR(err)
 
