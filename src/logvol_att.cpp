@@ -93,20 +93,12 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_read(void *attr, hid_t mem_type_id, void *buf, hid_t dxpl_id, void **req) {
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)attr;
-    herr_t ret_value;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL ATTRIBUTE Read\n");
-#endif
+    err = H5VLattr_read(op->uo, op->uvlid, mem_type_id, buf, dxpl_id, req);
 
-    ret_value = H5VLattr_read(o->uo, o->uvlid, mem_type_id, buf, dxpl_id, req);
-
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->uvlid);
-
-    return ret_value;
+    return err;
 } /* end H5VL_log_attr_read() */
 
 
@@ -121,20 +113,12 @@ herr_t H5VL_log_attr_read(void *attr, hid_t mem_type_id, void *buf, hid_t dxpl_i
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_write(void *attr, hid_t mem_type_id, const void *buf, hid_t dxpl_id, void **req) {
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)attr;
-    herr_t ret_value;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL ATTRIBUTE Write\n");
-#endif
+    err = H5VLattr_write(op->uo, op->uvlid, mem_type_id, buf, dxpl_id, req);
 
-    ret_value = H5VLattr_write(o->uo, o->uvlid, mem_type_id, buf, dxpl_id, req);
-
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->uvlid);
-
-    return ret_value;
+    return err;
 } /* end H5VL_log_attr_write() */
 
 
@@ -149,20 +133,12 @@ herr_t H5VL_log_attr_write(void *attr, hid_t mem_type_id, const void *buf, hid_t
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    herr_t ret_value;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL ATTRIBUTE Get\n");
-#endif
+    err = H5VLattr_get(op->uo, op->uvlid, get_type, dxpl_id, req, arguments);
 
-    ret_value = H5VLattr_get(o->uo, o->uvlid, get_type, dxpl_id, req, arguments);
-
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->uvlid);
-
-    return ret_value;
+    return err;
 } /* end H5VL_log_attr_get() */
 
 

@@ -33,30 +33,44 @@ const H5VL_dataset_class_t H5VL_log_dataset_g{
  *
  *-------------------------------------------------------------------------
  */
-void *H5VL_log_dataset_create(void *obj, const H5VL_loc_params_t *loc_params,
-    const char *name, hid_t lcpl_id, hid_t type_id, hid_t space_id,
-    hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req) {
+void *H5VL_log_dataset_create(  void *obj, const H5VL_loc_params_t *loc_params,
+                                const char *name, hid_t lcpl_id, hid_t type_id, hid_t space_id,
+                                hid_t dcpl_id, hid_t dapl_id, hid_t dxpl_id, void **req) {
+    herr_t err;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    H5VL_log_dset_t *dp = NULL;
+    H5VL_loc_params_t locp;
+    hid_t sid = -1, asid = -1;
+    void *ap;
+    int ndim;
+    hsize_t nd, dims[32], mdims[32];
 
-    H5VL_log_obj_t *dset;
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    void *under;
+    sid = H5Screate(H5S_SCALAR); CHECK_ID(sid);
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL DATASET Create\n");
-#endif
+    dp = new H5VL_log_dset_t();
+    dp->uo = H5VLdataset_create(op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid, dcpl_id, dapl_id, dxpl_id, NULL); CHECK_NERR(dp->uo);
+    dp->uvlid = op->uvlid;
 
-    under = H5VLdataset_create(o->uo, loc_params, o->uvlid, name, lcpl_id, type_id, space_id, dcpl_id,  dapl_id, dxpl_id, req);
-    if(under) {
-        dset = H5VL_log_new_obj(under, o->uvlid);
+    // NOTE: I don't know if it work for scalar dataset, can we create zero sized attr?
+    ndim = H5Sget_simple_extent_dims(space_id, dims, mdims); CHECK_ID(ndim);
+    nd = (hsize_t)ndim;
+    asid = H5Screate_simple(1, &nd, &nd); CHECK_ID(asid);
+    locp.obj_type = H5I_DATASET;
+    locp.type = H5VL_OBJECT_BY_SELF;
+    ap = H5VLattr_create(dp->uo, &locp, dp->uvlid, "_dim", H5T_STD_I64LE, asid, H5P_ATTRIBUTE_CREATE_DEFAULT, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
+    err = H5VLattr_write(ap, dp->uvlid, H5T_NATIVE_INT64, dims, dxpl_id, NULL); CHECK_ERR;
+    err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
 
-        /* Check for async request */
-        if(req && *req)
-            *req = H5VL_log_new_obj(*req, o->uvlid);
-    } /* end if */
-    else
-        dset = NULL;
+    goto fn_exit;
+err_out:;
+    printf("%d\n",err);
+    if (dp) delete dp;
+    dp = NULL;
+fn_exit:;
+    H5Sclose(asid);
+    H5Sclose(sid);
 
-    return (void *)dset;
+    return (void *)dp;
 } /* end H5VL_log_dataset_create() */
 
 
@@ -266,25 +280,15 @@ H5VL_log_dataset_optional(void *obj, H5VL_dataset_optional_t optional_type,
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_dataset_close(void *dset, hid_t dxpl_id, void **req)
-{
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)dset;
-    herr_t ret_value;
+herr_t H5VL_log_dataset_close(void *dset, hid_t dxpl_id, void **req){
+    herr_t err;
+    H5VL_log_dset_t *dp = (H5VL_log_dset_t*)dset;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL DATASET Close\n");
-#endif
+    err = H5VLdataset_close(dp->uo, dp->uvlid, dxpl_id, req); CHECK_ERR
 
-    ret_value = H5VLdataset_close(o->uo, o->uvlid, dxpl_id, req);
+    delete dp;
 
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->uvlid);
+err_out:;
 
-    /* Release our wrapper, if underlying dataset was closed */
-    if(ret_value >= 0)
-        H5VL_log_free_obj(o);
-
-    return ret_value;
+    return err;
 } /* end H5VL_log_dataset_close() */
