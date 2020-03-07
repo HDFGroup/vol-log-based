@@ -43,7 +43,6 @@ void *H5VL_log_dataset_create(  void *obj, const H5VL_loc_params_t *loc_params,
     hid_t sid = -1, asid = -1;
     void *ap;
     int ndim;
-    hsize_t nd, dims[32], mdims[32];
 
     sid = H5Screate(H5S_SCALAR); CHECK_ID(sid);
 
@@ -52,13 +51,16 @@ void *H5VL_log_dataset_create(  void *obj, const H5VL_loc_params_t *loc_params,
     dp->uvlid = op->uvlid;
 
     // NOTE: I don't know if it work for scalar dataset, can we create zero sized attr?
-    ndim = H5Sget_simple_extent_dims(space_id, dims, mdims); CHECK_ID(ndim);
-    nd = (hsize_t)ndim;
-    asid = H5Screate_simple(1, &nd, &nd); CHECK_ID(asid);
+    ndim = H5Sget_simple_extent_dims(space_id, dp->dims, dp->mdims); CHECK_ID(ndim);
+    dp->nd = (hsize_t)ndim;
+    asid = H5Screate_simple(1, &(dp->nd), &(dp->nd)); CHECK_ID(asid);
     locp.obj_type = H5I_DATASET;
     locp.type = H5VL_OBJECT_BY_SELF;
-    ap = H5VLattr_create(dp->uo, &locp, dp->uvlid, "_dim", H5T_STD_I64LE, asid, H5P_ATTRIBUTE_CREATE_DEFAULT, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
-    err = H5VLattr_write(ap, dp->uvlid, H5T_NATIVE_INT64, dims, dxpl_id, NULL); CHECK_ERR;
+    ap = H5VLattr_create(dp->uo, &locp, dp->uvlid, "_dims", H5T_STD_I64LE, asid, H5P_ATTRIBUTE_CREATE_DEFAULT, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
+    err = H5VLattr_write(ap, dp->uvlid, H5T_NATIVE_INT64, dp->dims, dxpl_id, NULL); CHECK_ERR;
+    err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
+    ap = H5VLattr_create(dp->uo, &locp, dp->uvlid, "_mdims", H5T_STD_I64LE, asid, H5P_ATTRIBUTE_CREATE_DEFAULT, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
+    err = H5VLattr_write(ap, dp->uvlid, H5T_NATIVE_INT64, dp->mdims, dxpl_id, NULL); CHECK_ERR;
     err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
 
     goto fn_exit;
@@ -84,10 +86,52 @@ fn_exit:;
  *
  *-------------------------------------------------------------------------
  */
-void *
-H5VL_log_dataset_open(void *obj, const H5VL_loc_params_t *loc_params,
-    const char *name, hid_t dapl_id, hid_t dxpl_id, void **req)
-{
+void *H5VL_log_dataset_open(void *obj, const H5VL_loc_params_t *loc_params,
+                            const char *name, hid_t dapl_id, hid_t dxpl_id, void **req) {
+    herr_t err;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    H5VL_log_dset_t *dp = NULL;
+    H5VL_loc_params_t locp;
+    hid_t sid = -1, asid = -1;
+    va_list args;
+    void *ap;
+    int ndim;
+
+    sid = H5Screate(H5S_SCALAR); CHECK_ID(sid);
+
+    dp = new H5VL_log_dset_t();
+    dp->uo = H5VLdataset_create(op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid, dcpl_id, dapl_id, dxpl_id, NULL); CHECK_NERR(dp->uo);
+    dp->uvlid = op->uvlid;
+
+    // NOTE: I don't know if it work for scalar dataset, can we create zero sized attr?
+    ndim = H5Sget_simple_extent_dims(space_id, dp->dims, dp->mdims); CHECK_ID(ndim);
+    dp->nd = (hsize_t)ndim;
+    asid = H5Screate_simple(1, &(dp->nd), &(dp->nd)); CHECK_ID(asid);
+    locp.obj_type = H5I_DATASET;
+    locp.type = H5VL_OBJECT_BY_SELF;
+    ap = H5VLattr_open(dp->uo, &locp, dp->uvlid, "_dims", H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
+    err = H5VL_log_attr_get(ap, H5VL_ATTR_GET_SPACE, dxpl_id, NULL, va_list arguments); CHECK_ERR
+
+    err = H5VLattr_read(ap, dp->uvlid, H5T_NATIVE_INT64, dp->dims, dxpl_id, NULL); CHECK_ERR;
+    err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
+    ap = H5VLattr_open(dp->uo, &locp, dp->uvlid, "_mdims", H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
+    err = H5VLattr_read(ap, dp->uvlid, H5T_NATIVE_INT64, dp->mdims, dxpl_id, NULL); CHECK_ERR;
+    err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
+
+
+
+    goto fn_exit;
+err_out:;
+    printf("%d\n",err);
+    if (dp) delete dp;
+    dp = NULL;
+fn_exit:;
+    H5Sclose(asid);
+    H5Sclose(sid);
+
+    return (void *)dp;
+
+
     H5VL_log_obj_t *dset;
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     void *under;
