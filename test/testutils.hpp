@@ -21,3 +21,7 @@
         goto err_out; \
     } \
 }
+
+#define PASS_STR "pass\n"
+#define SKIP_STR "skip\n"
+#define FAIL_STR "fail with %d mismatches\n"

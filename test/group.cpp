@@ -41,19 +41,32 @@ int main(int argc, char **argv) {
 
     // Create file
     fid = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);    CHECK_ERR(fid)
+
     // Create group
     gid = H5Gcreate2(fid, "test", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); CHECK_ERR(gid)
     // Create sub-group
     sgid = H5Gcreate2(gid, "test2", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); CHECK_ERR(sgid)
-
     err = H5Gclose(sgid); CHECK_ERR(err)
     err = H5Gclose(gid); CHECK_ERR(err)
+
+    // Open group
+    gid = H5Gopen2(fid, "test", H5P_DEFAULT); CHECK_ERR(gid)
+    // Open sub-group
+    sgid = H5Gopen2(gid, "test2", H5P_DEFAULT); CHECK_ERR(sgid)
+    err = H5Gclose(sgid); CHECK_ERR(err)
+    err = H5Gclose(gid); CHECK_ERR(err)
+
     err = H5Fclose(fid); CHECK_ERR(err)
 
+    err = H5Pclose(faplid); CHECK_ERR(err)
+
 err_out:
-    
-    H5Pclose(faplid);
-    
+    MPI_Allreduce(MPI_IN_PLACE, &nerrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    if (rank == 0) {
+        if (nerrs) printf(FAIL_STR,nerrs);
+        else       printf(PASS_STR);
+    }
+
     MPI_Finalize();
 
     return (nerrs > 0);

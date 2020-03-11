@@ -47,13 +47,16 @@ void *H5VL_log_dataset_create(  void *obj, const H5VL_loc_params_t *loc_params,
     sid = H5Screate(H5S_SCALAR); CHECK_ID(sid);
 
     dp = new H5VL_log_dset_t();
+    if (loc_params->obj_type == H5I_FILE) dp->fp = (H5VL_log_file_t*)obj;
+    else if (loc_params->obj_type == H5I_GROUP) dp->fp = ((H5VL_log_group_t*)obj)->fp;
+    else RET_ERR("container not a file or group")
     dp->uo = H5VLdataset_create(op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid, dcpl_id, dapl_id, dxpl_id, NULL); CHECK_NERR(dp->uo);
     dp->uvlid = op->uvlid;
 
     // NOTE: I don't know if it work for scalar dataset, can we create zero sized attr?
     ndim = H5Sget_simple_extent_dims(space_id, dp->dims, dp->mdims); CHECK_ID(ndim);
-    dp->nd = (hsize_t)ndim;
-    asid = H5Screate_simple(1, &(dp->nd), &(dp->nd)); CHECK_ID(asid);
+    dp->ndim = (hsize_t)ndim;
+    asid = H5Screate_simple(1, &(dp->ndim), &(dp->ndim)); CHECK_ID(asid);
     locp.obj_type = H5I_DATASET;
     locp.type = H5VL_OBJECT_BY_SELF;
     ap = H5VLattr_create(dp->uo, &locp, dp->uvlid, "_dims", H5T_STD_I64LE, asid, H5P_ATTRIBUTE_CREATE_DEFAULT, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
@@ -97,28 +100,27 @@ void *H5VL_log_dataset_open(void *obj, const H5VL_loc_params_t *loc_params,
     void *ap;
     int ndim;
 
-    sid = H5Screate(H5S_SCALAR); CHECK_ID(sid);
-
     dp = new H5VL_log_dset_t();
-    dp->uo = H5VLdataset_create(op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid, dcpl_id, dapl_id, dxpl_id, NULL); CHECK_NERR(dp->uo);
+    if (loc_params->obj_type == H5I_FILE) dp->fp = (H5VL_log_file_t*)obj;
+    else if (loc_params->obj_type == H5I_GROUP) dp->fp = ((H5VL_log_group_t*)obj)->fp;
+    else RET_ERR("container not a file or group")
+    dp->uo = H5VLdataset_open(op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL); CHECK_NERR(dp->uo);
     dp->uvlid = op->uvlid;
 
-    // NOTE: I don't know if it work for scalar dataset, can we create zero sized attr?
-    ndim = H5Sget_simple_extent_dims(space_id, dp->dims, dp->mdims); CHECK_ID(ndim);
-    dp->nd = (hsize_t)ndim;
-    asid = H5Screate_simple(1, &(dp->nd), &(dp->nd)); CHECK_ID(asid);
     locp.obj_type = H5I_DATASET;
     locp.type = H5VL_OBJECT_BY_SELF;
-    ap = H5VLattr_open(dp->uo, &locp, dp->uvlid, "_dims", H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
-    err = H5VL_log_attr_get(ap, H5VL_ATTR_GET_SPACE, dxpl_id, NULL, va_list arguments); CHECK_ERR
 
+    // get cur_dims
+    ap = H5VLattr_open(dp->uo, &locp, dp->uvlid, "_dims", H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
+    err = H5VLattr_get_wrapper(ap, dp->uvlid, H5VL_ATTR_GET_SPACE, dxpl_id, NULL, &asid); CHECK_ERR
+    err = H5Sget_simple_extent_dims(asid, &(dp->ndim), NULL); CHECK_ERR
     err = H5VLattr_read(ap, dp->uvlid, H5T_NATIVE_INT64, dp->dims, dxpl_id, NULL); CHECK_ERR;
     err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
+
+    // get max_dims
     ap = H5VLattr_open(dp->uo, &locp, dp->uvlid, "_mdims", H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
     err = H5VLattr_read(ap, dp->uvlid, H5T_NATIVE_INT64, dp->mdims, dxpl_id, NULL); CHECK_ERR;
     err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
-
-
 
     goto fn_exit;
 err_out:;
@@ -127,31 +129,8 @@ err_out:;
     dp = NULL;
 fn_exit:;
     H5Sclose(asid);
-    H5Sclose(sid);
 
     return (void *)dp;
-
-
-    H5VL_log_obj_t *dset;
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    void *under;
-
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL DATASET Open\n");
-#endif
-
-    under = H5VLdataset_open(o->uo, loc_params, o->uvlid, name, dapl_id, dxpl_id, req);
-    if(under) {
-        dset = H5VL_log_new_obj(under, o->uvlid);
-
-        /* Check for async request */
-        if(req && *req)
-            *req = H5VL_log_new_obj(*req, o->uvlid);
-    } /* end if */
-    else
-        dset = NULL;
-
-    return (void *)dset;
 } /* end H5VL_log_dataset_open() */
 
 
@@ -227,24 +206,26 @@ H5VL_log_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id,
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_dataset_get(void *dset, H5VL_dataset_get_t get_type,
-    hid_t dxpl_id, void **req, va_list arguments)
-{
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)dset;
-    herr_t ret_value;
+herr_t H5VL_log_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+    H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL DATASET Get\n");
-#endif
+    if (get_type == H5VL_DATASET_GET_SPACE){
+        hid_t *sidp;
 
-    ret_value = H5VLdataset_get(o->uo, o->uvlid, get_type, dxpl_id, req, arguments);
+        sidp = va_arg(arguments, hid_t*);
 
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->uvlid);
+        if (dp->ndim) *sidp = H5Screate_simple(dp->ndim, dp->dims, dp->mdims);
+        else *sidp = H5Screate(H5S_SCALAR); 
+        CHECK_ID(*sidp)
+    }
+    else err = H5VLdataset_get(dp->uo, dp->uvlid, get_type, dxpl_id, req, arguments);
 
-    return ret_value;
+    goto fn_exit;
+err_out:;
+    err = -1;
+fn_exit:;
+    return err;
 } /* end H5VL_log_dataset_get() */
 
 
@@ -258,28 +239,13 @@ H5VL_log_dataset_get(void *dset, H5VL_dataset_get_t get_type,
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments)
-{
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    hid_t uvlid;
-    herr_t ret_value;
+herr_t H5VL_log_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL H5Dspecific\n");
-#endif
+    err = H5VLdataset_specific(op->uo, op->uvlid, specific_type, dxpl_id, req, arguments);
 
-    // Save copy of underlying VOL connector ID and prov helper, in case of
-    // refresh destroying the current object
-    uvlid = o->uvlid;
-
-    ret_value = H5VLdataset_specific(o->uo, o->uvlid, specific_type, dxpl_id, req, arguments);
-
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, uvlid);
-
-    return ret_value;
+    return err;
 } /* end H5VL_log_dataset_specific() */
 
 
@@ -293,24 +259,13 @@ H5VL_log_dataset_specific(void *obj, H5VL_dataset_specific_t specific_type, hid_
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_dataset_optional(void *obj, H5VL_dataset_optional_t optional_type,
-    hid_t dxpl_id, void **req, va_list arguments)
-{
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-    herr_t ret_value;
+herr_t H5VL_log_dataset_optional(void *obj, H5VL_dataset_optional_t optional_type, hid_t dxpl_id, void **req, va_list arguments) {
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    herr_t err;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL DATASET Optional\n");
-#endif
+    err = H5VLdataset_optional(op->uo, op->uvlid, optional_type, dxpl_id, req, arguments);
 
-    ret_value = H5VLdataset_optional(o->uo, o->uvlid, optional_type, dxpl_id, req, arguments);
-
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->uvlid);
-
-    return ret_value;
+    return err;
 } /* end H5VL_log_dataset_optional() */
 
 

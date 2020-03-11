@@ -39,13 +39,21 @@ int main(int argc, char **argv) {
 
     // Create file
     fid = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);    CHECK_ERR(fid)
-
     err = H5Fclose(fid); CHECK_ERR(err)
 
-err_out:
-    
-    H5Pclose(faplid);
-    
+    // Open file
+    fid = H5Fopen(file_name, H5F_ACC_RDONLY, faplid);    CHECK_ERR(fid)
+    err = H5Fclose(fid); CHECK_ERR(err)
+
+    err = H5Pclose(faplid); CHECK_ERR(err)
+
+err_out:    
+    MPI_Allreduce(MPI_IN_PLACE, &nerrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    if (rank == 0) {
+        if (nerrs) printf(FAIL_STR,nerrs);
+        else       printf(PASS_STR);
+    }
+
     MPI_Finalize();
 
     return (nerrs > 0);
