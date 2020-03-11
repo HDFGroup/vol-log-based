@@ -39,10 +39,6 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     void *under_vol_info;
     MPI_Comm comm;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- LOG VOL FILE Create\n");
-#endif
-
     // Try get info about under VOL
     H5Pget_vol_info(fapl_id, (void **)&info);
 
@@ -115,10 +111,6 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     hid_t uvlid, under_fapl_id;
     void *under_vol_info;
     MPI_Comm comm;
-
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- LOG VOL FILE Open\n");
-#endif
 
     // Try get info about under VOL
     H5Pget_vol_info(fapl_id, (void **)&info);
