@@ -47,10 +47,11 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
         under_vol_info = info->under_vol_info;
     }
     else{   // If no under VOL specified, use the native VOL
-        assert(H5VLis_connector_registered("native") == 1);
-        uvlid = H5VLget_connector_id_by_name("native");
-        assert(uvlid > 0);
-        under_vol_info = NULL;
+        //assert(H5VLis_connector_registered("native") == 1);
+        //uvlid = H5VLget_connector_id_by_name("native");
+        //assert(uvlid > 0);
+        //under_vol_info = NULL;
+        return NULL;
     }
 
     // Make sure we have mpi enabled
@@ -60,6 +61,7 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     fp = new H5VL_log_file_t();
     fp->closing = false;
     fp->refcnt = 0;
+    fp->nvar = 0;
     MPI_Comm_dup(comm, &(fp->comm));
     MPI_Comm_rank(comm, &(fp->rank));
     fp->uvlid = uvlid;
@@ -74,6 +76,9 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     loc_params.obj_type = H5I_FILE;
     loc_params.type = H5VL_OBJECT_BY_SELF;
     fp->lgp = H5VLgroup_create(fp->uo, &loc_params, fp->uvlid, LOG_GROUP_NAME, H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,  H5P_DEFAULT, dxpl_id, NULL); CHECK_NERR(fp->lgp)
+
+    // Att
+    err = H5VL_logi_add_att(fp, "_nvar", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(fp->nvar), dxpl_id); CHECK_ERR
 
     goto fn_exit;
 err_out:;
@@ -120,10 +125,11 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
         under_vol_info = info->under_vol_info;
     }
     else{   // If no under VOL specified, use the native VOL
-        assert(H5VLis_connector_registered("native") == 1);
-        uvlid = H5VLget_connector_id_by_name("native");
-        assert(uvlid > 0);
-        under_vol_info = NULL;
+        //assert(H5VLis_connector_registered("native") == 1);
+        //uvlid = H5VLget_connector_id_by_name("native");
+        //assert(uvlid > 0);
+        //under_vol_info = NULL;
+        return NULL;
     }
 
     // Make sure we have mpi enabled
@@ -147,6 +153,9 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     loc_params.obj_type = H5I_FILE;
     loc_params.type = H5VL_OBJECT_BY_SELF;
     fp->lgp = H5VLgroup_open(fp->uo, &loc_params, fp->uvlid, LOG_GROUP_NAME, H5P_DEFAULT, dxpl_id, NULL); CHECK_NERR(fp->lgp)
+
+    // Att
+    err = H5VL_logi_get_att(fp, "_nvar", H5T_NATIVE_INT32, &(fp->nvar), dxpl_id); CHECK_ERR
 
     goto fn_exit;
 err_out:;
@@ -225,10 +234,10 @@ herr_t H5VL_log_file_specific(  void *file, H5VL_file_specific_t specific_type,
             free(info);
         }
         else{   // If no under VOL specified, use the native VOL
-            assert(H5VLis_connector_registered("native") == 1);
-            uvlid = H5VLget_connector_id_by_name("native");
-            assert(uvlid > 0);
-            under_vol_info = NULL;
+            //assert(H5VLis_connector_registered("native") == 1);
+            //uvlid = H5VLget_connector_id_by_name("native");
+            //assert(uvlid > 0);
+            //under_vol_info = NULL;
         }
 
         /* Call specific of under VOL */
@@ -288,6 +297,9 @@ herr_t H5VL_log_file_close(void *file, hid_t dxpl_id, void **req) {
 #ifdef ENABLE_PASSTHRU_LOGGING
     printf("------- LOG VOL FILE Close\n");
 #endif
+
+    // Att
+    err = H5VL_logi_get_att(fp, "_nvar", H5T_NATIVE_INT32, &(fp->nvar), dxpl_id); CHECK_ERR
 
     err = H5VLgroup_close(fp->lgp, fp->uvlid, dxpl_id, req); CHECK_ERR
 
