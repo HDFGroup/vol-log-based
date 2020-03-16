@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 #include <mpi.h>
 #include <hdf5.h>
 #include <H5VLpublic.h>
@@ -43,8 +44,22 @@
     goto err_out; \
 }
 
+typedef struct H5VL_log_req_t{  
+    int ldid;   // Log dataset ID
+    MPI_Offset ldoff;   // Offset in log dataset
+
+    int did;    // Source dataset ID
+    int ndim;
+    hsize_t start[32];
+    hsize_t count[32];
+
+    size_t rsize;
+    char *buf;
+    int buf_alloc;  // Whether the buffer is allocated or 
+} H5VL_log_req_t;
+
 typedef struct H5VL_log_obj_t {
-    int type;
+    H5I_type_t type;
     void *uo;   // Under obj
     hid_t uvlid; // Under VolID
 } H5VL_log_obj_t;
@@ -58,6 +73,11 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     bool closing;
 
     void *lgp;
+
+    int nvar;
+
+    std::vector<H5VL_log_req_t> wreqs;
+    std::vector<H5VL_log_req_t> rreqs;
 } H5VL_log_file_t;
 
 /* The log VOL group object */
@@ -68,6 +88,7 @@ typedef struct H5VL_log_group_t : H5VL_log_obj_t {
 /* The log VOL dataset object */
 typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
     H5VL_log_file_t *fp;
+    int id;
     hsize_t ndim;
     hsize_t dims[32];
     hsize_t mdims[32];
@@ -110,3 +131,6 @@ extern void sortblock(int ndim, hssize_t len, hsize_t **starts);
 extern bool hlessthan(int ndim, hsize_t *a, hsize_t *b);
 
 extern herr_t H5VLattr_get_wrapper(void *obj, hid_t connector_id, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, ...);
+extern herr_t H5VL_logi_add_att(H5VL_log_obj_t *op, char *name, hid_t atype, hid_t mtype, hsize_t len, void *buf, hid_t dxpl_id);
+extern herr_t H5VL_logi_put_att(H5VL_log_obj_t *op, char *name, hid_t mtype, void *buf, hid_t dxpl_id);
+extern herr_t H5VL_logi_get_att(H5VL_log_obj_t *op, char *name, hid_t mtype, void *buf, hid_t dxpl_id);
