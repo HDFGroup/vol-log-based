@@ -45,13 +45,13 @@
 }
 
 typedef struct H5VL_log_req_t{  
-    int ldid;   // Log dataset ID
-    MPI_Offset ldoff;   // Offset in log dataset
-
     int did;    // Source dataset ID
     int ndim;
     hsize_t start[32];
     hsize_t count[32];
+
+    int ldid;   // Log dataset ID
+    MPI_Offset ldoff;   // Offset in log dataset
 
     size_t rsize;
     char *buf;
@@ -72,11 +72,16 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     int refcnt;
     bool closing;
 
-    void *lgp;
+    hid_t dxplid;
 
-    int nvar;
+    void *lgp;
+    int ndset;
+    int nldset;
+
+    MPI_File fh;
 
     std::vector<H5VL_log_req_t> wreqs;
+    int nflushed;
     std::vector<H5VL_log_req_t> rreqs;
 } H5VL_log_file_t;
 
@@ -134,3 +139,12 @@ extern herr_t H5VLattr_get_wrapper(void *obj, hid_t connector_id, H5VL_attr_get_
 extern herr_t H5VL_logi_add_att(H5VL_log_obj_t *op, char *name, hid_t atype, hid_t mtype, hsize_t len, void *buf, hid_t dxpl_id);
 extern herr_t H5VL_logi_put_att(H5VL_log_obj_t *op, char *name, hid_t mtype, void *buf, hid_t dxpl_id);
 extern herr_t H5VL_logi_get_att(H5VL_log_obj_t *op, char *name, hid_t mtype, void *buf, hid_t dxpl_id);
+
+// Internals
+extern herr_t H5VL_logi_file_flush(H5VL_log_file_t *fp, hid_t dxplid);
+extern herr_t H5VL_logi_file_metaflush(H5VL_log_file_t *fp);
+
+// Wraper
+extern herr_t H5VLdataset_specific_wrapper(void *obj, hid_t connector_id, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, ...);
+extern herr_t H5VLdataset_get_wrapper(void *obj, hid_t connector_id, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, ...);
+extern herr_t H5VLdataset_optional_wrapper(void *obj, hid_t connector_id, H5VL_dataset_optional_t opt_type, hid_t dxpl_id, void **req, ...);

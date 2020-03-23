@@ -146,3 +146,36 @@ herr_t H5VL_logi_get_att(H5VL_log_obj_t *op, char *name, hid_t mtype, void *buf,
 err_out:;
     return err;
 }
+
+herr_t H5VLdataset_optional_wrapper(void *obj, hid_t connector_id, H5VL_dataset_optional_t opt_type, hid_t dxpl_id, void **req, ...) {
+    herr_t err;
+    va_list args;
+
+    va_start(args, req);
+    err = H5VLdataset_optional(obj, connector_id, opt_type, dxpl_id, req, args);
+    va_end(args);
+
+    return err;
+}
+
+herr_t H5VLdataset_specific_wrapper(void *obj, hid_t connector_id, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, ...) {
+    herr_t err;
+    va_list args;
+
+    va_start(args, req);
+    err = H5VLdataset_specific(obj, connector_id, specific_type, dxpl_id, req, args);
+    va_end(args);
+
+    return err;
+}
+
+herr_t H5VLdataset_get_wrapper(void *obj, hid_t connector_id, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, ...) {
+    herr_t err;
+    va_list args;
+
+    va_start(args, req);
+    err = H5VLdataset_get(obj, connector_id, get_type, dxpl_id, req, args);
+    va_end(args);
+
+    return err;
+}

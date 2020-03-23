@@ -70,7 +70,7 @@ void *H5VL_log_dataset_create(  void *obj, const H5VL_loc_params_t *loc_params,
     err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
     */
 
-    dp->id = (dp->fp->nvar)++;
+    dp->id = (dp->fp->ndset)++;
 
     // Atts
     err = H5VL_logi_add_att(dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->dims, dxpl_id); CHECK_ERR
@@ -81,7 +81,7 @@ void *H5VL_log_dataset_create(  void *obj, const H5VL_loc_params_t *loc_params,
 err_out:;
     printf("%d\n",err);
     if (dp){
-        (dp->fp->nvar)--;
+        (dp->fp->ndset)--;
         (dp->fp->refcnt)--;
         delete dp;
         dp = NULL;
@@ -304,16 +304,7 @@ herr_t H5VL_log_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_
     H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
     herr_t err;
 
-    if (get_type == H5VL_DATASET_GET_SPACE){
-        hid_t *sidp;
-
-        sidp = va_arg(arguments, hid_t*);
-
-        if (dp->ndim) *sidp = H5Screate_simple(dp->ndim, dp->dims, dp->mdims);
-        else *sidp = H5Screate(H5S_SCALAR); 
-        CHECK_ID(*sidp)
-    }
-    else err = H5VLdataset_get(dp->uo, dp->uvlid, get_type, dxpl_id, req, arguments);
+    RET_ERR("Not supported");
 
     goto fn_exit;
 err_out:;
