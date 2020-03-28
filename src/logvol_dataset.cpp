@@ -53,6 +53,7 @@ void *H5VL_log_dataset_create(  void *obj, const H5VL_loc_params_t *loc_params,
     (dp->fp->refcnt)++;
     dp->uo = H5VLdataset_create(op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid, dcpl_id, dapl_id, dxpl_id, NULL); CHECK_NERR(dp->uo);
     dp->uvlid = op->uvlid;
+    dp->type = H5I_DATASET;
 
     // NOTE: I don't know if it work for scalar dataset, can we create zero sized attr?
     ndim = H5Sget_simple_extent_dims(space_id, dp->dims, dp->mdims); CHECK_ID(ndim);
@@ -121,7 +122,8 @@ void *H5VL_log_dataset_open(void *obj, const H5VL_loc_params_t *loc_params,
     else RET_ERR("container not a file or group")
     dp->uo = H5VLdataset_open(op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL); CHECK_NERR(dp->uo);
     dp->uvlid = op->uvlid;
-
+    dp->type = H5I_DATASET;
+    
     /*
     locp.obj_type = H5I_DATASET;
     locp.type = H5VL_OBJECT_BY_SELF;
@@ -221,17 +223,21 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
             break;
         case H5S_SEL_HYPERSLABS:
             {
-                nblock = H5Sget_select_hyper_nblocks(file_space_id);
+                nblock = H5Sget_select_hyper_nblocks(file_space_id); CHECK_ID(nblock)
 
                 start = new hsize_t[dp->ndim * 2 * nblock];
                 starts = new hsize_t*[nblock * 2];
                 counts = starts + nblock;
+
+                err = H5Sget_select_hyper_blocklist(file_space_id, 0, nblock, start); CHECK_ERR
+
                 for(i = 0; i < nblock; i++){
                     starts[i] = start + i * dp->ndim * 2;
                     counts[i] = starts[i] + dp->ndim;
+                    for(j = 0; j < dp->ndim; j++){
+                        counts[i][j] = counts[i][j] - starts[i][j] + 1;
+                    }
                 }
-
-                err = H5Sget_select_hyper_blocklist(file_space_id, 0, nblock, start); CHECK_ERR
             }
             break;
         case H5S_SEL_ALL:
@@ -270,6 +276,7 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
         memcpy(r.start, starts[i], sizeof(hsize_t) * dp->ndim);
         memcpy(r.count, counts[i], sizeof(hsize_t) * dp->ndim);
         r.did = dp->id;
+        r.ndim = dp->ndim;
 
         r.ldid = -1;
         r.ldoff = 0;
