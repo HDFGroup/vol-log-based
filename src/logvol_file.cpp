@@ -47,11 +47,11 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
         under_vol_info = info->under_vol_info;
     }
     else{   // If no under VOL specified, use the native VOL
-        //assert(H5VLis_connector_registered("native") == 1);
-        //uvlid = H5VLget_connector_id_by_name("native");
-        //assert(uvlid > 0);
-        //under_vol_info = NULL;
-        return NULL;
+        assert(H5VLis_connector_registered_by_name("native") == 1);
+        uvlid = H5VLget_connector_id_by_name("native");
+        assert(uvlid > 0);
+        under_vol_info = NULL;
+        //return NULL;
     }
 
     // Make sure we have mpi enabled
@@ -68,6 +68,7 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     fp->uvlid = uvlid;
     fp->nflushed = 0;
     fp->dxplid = dxpl_id;
+    fp->type = H5I_FILE;
 
     // Create the file with underlying VOL
     under_fapl_id = H5Pcopy(fapl_id);
@@ -132,11 +133,11 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
         under_vol_info = info->under_vol_info;
     }
     else{   // If no under VOL specified, use the native VOL
-        //assert(H5VLis_connector_registered("native") == 1);
-        //uvlid = H5VLget_connector_id_by_name("native");
-        //assert(uvlid > 0);
-        //under_vol_info = NULL;
-        return NULL;
+        assert(H5VLis_connector_registered_by_name("native") == 1);
+        uvlid = H5VLget_connector_id_by_name("native");
+        assert(uvlid > 0);
+        under_vol_info = NULL;
+        //return NULL;
     }
 
     // Make sure we have mpi enabled
@@ -151,6 +152,7 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     fp->uvlid = uvlid;
     fp->nflushed = 0;
     fp->dxplid = dxpl_id;
+    fp->type = H5I_FILE;
 
     // Create the file with underlying VOL
     under_fapl_id = H5Pcopy(fapl_id);

@@ -9,7 +9,7 @@
         nerrs++; \
         printf("Error at line %d in %s:\n", \
         __LINE__,__FILE__); \
-        H5Eprint1(stdout); \
+        goto err_out; \
     } \
 }
 
@@ -18,6 +18,22 @@
         nerrs++; \
         printf("Error at line %d in %s: expecting %d but got %d\n", \
         __LINE__,__FILE__, A, B); \
+        goto err_out; \
+    } \
+}
+
+#define EXP_VAL(A,B) { \
+    if (A != B) { \
+        nerrs++; \
+        cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " << (B) << " but got " << (A) << endl; \
+        goto err_out; \
+    } \
+}
+
+#define EXP_VAL_EX(A,B,C) { \
+    if (A != B) { \
+        nerrs++; \
+        cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " << (C) << " = " << (B) << " but got " << (A) << endl; \
         goto err_out; \
     } \
 }

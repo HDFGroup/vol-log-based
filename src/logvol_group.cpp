@@ -46,6 +46,7 @@ void *H5VL_log_group_create(void *obj, const H5VL_loc_params_t *loc_params,
 
     gp->uo = H5VLgroup_create(op->uo, loc_params, op->uvlid, name, lcpl_id, gcpl_id,  gapl_id, dxpl_id, NULL); CHECK_NERR(gp->uo)
     gp->uvlid = op->uvlid;
+    gp->type = H5I_GROUP;
 
     return (void *)gp;
 
@@ -80,7 +81,8 @@ void *H5VL_log_group_open(void *obj, const H5VL_loc_params_t *loc_params, const 
 
     gp->uo = H5VLgroup_open(op->uo, loc_params, op->uvlid, name, gapl_id, dxpl_id, NULL); CHECK_NERR(gp)
     gp->uvlid = op->uvlid;
-
+    gp->type = H5I_GROUP;
+    
     return (void *)gp;
 
 err_out:;
