@@ -20,6 +20,16 @@
     } \
 }
 
+#define CHECK_MPIERR { \
+    if (mpierr != MPI_SUCCESS) { \
+        int el = 256; \
+        char errstr[256]; \
+        MPI_Error_string(mpierr, errstr, &el); \
+        printf("Error at line %d in %s: %s\n", __LINE__, __FILE__, errstr); \
+        goto err_out; \
+    } \
+}
+
 #define CHECK_ID(A) { \
     if (A < 0) { \
         printf("Error at line %d in %s:\n", \
