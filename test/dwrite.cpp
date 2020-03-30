@@ -50,7 +50,6 @@ int main(int argc, char **argv) {
     sid = H5Screate_simple(2, dims, dims); CHECK_ERR(sid);
     did = H5Dcreate2(fid, "D", H5T_STD_I32LE, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); CHECK_ERR(did)
 
-
     // Write to dataset
     for(i = 0; i < N; i++){
         buf[i] = rank + i;
@@ -69,7 +68,7 @@ int main(int argc, char **argv) {
 
     err = H5Pclose(faplid); CHECK_ERR(err)
 
-err_out:  
+err_out:;  
     MPI_Allreduce(MPI_IN_PLACE, &nerrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     if (rank == 0) {
         if (nerrs) printf(FAIL_STR,nerrs);

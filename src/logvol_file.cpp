@@ -7,7 +7,7 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_
 void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req);
 herr_t H5VL_log_file_get(void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
 herr_t H5VL_log_file_specific(void *file, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_file_optional(void *file, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_file_optional(void *file, H5VL_file_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments);
 herr_t H5VL_log_file_close(void *file, hid_t dxpl_id, void **req);
 
 const H5VL_file_class_t H5VL_log_file_g{
@@ -15,7 +15,7 @@ const H5VL_file_class_t H5VL_log_file_g{
     H5VL_log_file_open,                         /* open */
     H5VL_log_file_get,                          /* get */
     H5VL_log_file_specific,                     /* specific */
-    NULL,                     /* optional */
+    H5VL_log_file_optional,                     /* optional */
     H5VL_log_file_close                         /* close */
 };
 
@@ -39,6 +39,7 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     hid_t uvlid, under_fapl_id;
     void *under_vol_info;
     MPI_Comm comm;
+    hbool_t po_supported;
 
     // Try get info about under VOL
     H5Pget_vol_info(fapl_id, (void **)&info);
@@ -76,6 +77,14 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     H5Pset_vol(under_fapl_id, uvlid, under_vol_info);
     fp->uo = H5VLfile_create(name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL); CHECK_NERR(fp->uo)
     H5Pclose(under_fapl_id);
+    /* Make the 'post open' callback */
+    // A workaround without introspect support
+    po_supported = 0;
+    //err = H5VLintrospect_opt_query(fp->uo, fp->uvlid, H5VL_SUBCLS_FILE, H5VL_NATIVE_FILE_POST_OPEN, &po_supported); CHECK_ERR
+    if(po_supported){
+        //err = H5VLfile_optional_wrapper(fp->uo, fp->uvlid, H5VL_NATIVE_FILE_POST_OPEN, H5P_DATASET_XFER_DEFAULT, NULL); CHECK_ERR
+    }
+    
     
     // Create LOG group
     loc.obj_type = H5I_FILE;
@@ -324,7 +333,7 @@ herr_t H5VL_log_file_close(void *file, hid_t dxpl_id, void **req) {
     err = H5VL_logi_file_flush(fp, dxpl_id); CHECK_ERR
 
     // Generate metadata table
-    //err = H5VL_logi_file_metaflush(fp); CHECK_ERR
+    err = H5VL_logi_file_metaflush(fp); CHECK_ERR
 
     // Att
     err = H5VL_logi_get_att(fp, "_ndset", H5T_NATIVE_INT32, &(fp->ndset), dxpl_id); CHECK_ERR
@@ -437,9 +446,9 @@ herr_t H5VL_logi_file_metaflush(H5VL_log_file_t *fp){
     mlens_all = mlens + fp->ndset;
     moffs = new MPI_Offset[(fp->ndset + 1) * 2];
     doffs = moffs + fp->ndset + 1;
-    memset(mlens, 0, sizeof(int) * fp->ndset);
+    memset(mlens, 0, sizeof(MPI_Offset) * fp->ndset);
     for(auto &rp : fp->wreqs){
-        mlens[rp.did] += rp.ndim * sizeof(hsize_t) * 2 + sizeof(int) * 2 + sizeof(MPI_Offset);
+        mlens[rp.did] += rp.ndim * sizeof(hsize_t) * 2 + sizeof(int) + sizeof(MPI_Offset) + sizeof(size_t);
     }
     moffs[0] = 0;
     for(i = 0; i < fp->ndset; i++){
@@ -449,15 +458,16 @@ herr_t H5VL_logi_file_metaflush(H5VL_log_file_t *fp){
     // Pack data
     buf = new char[moffs[fp->ndset]];
     bufp = new char*[fp->ndset];
+    
     for(i = 0; i < fp->ndset; i++){
         bufp[i] = buf + moffs[i];
     }
     for(auto &rp : fp->wreqs){
         *((int*)bufp[rp.did]) = rp.did;
         bufp[rp.did] += sizeof(int);
-        memcpy(bufp[rp.did], rp.start, rp.ndim * sizeof(hsize_t));
+        //memcpy(bufp[rp.did], rp.start, rp.ndim * sizeof(hsize_t));
         bufp[rp.did] += rp.ndim * sizeof(hsize_t);
-        memcpy(bufp[rp.did], rp.count, rp.ndim * sizeof(hsize_t));
+        //memcpy(bufp[rp.did], rp.count, rp.ndim * sizeof(hsize_t));
         bufp[rp.did] += rp.ndim * sizeof(hsize_t);
         *((MPI_Offset*)bufp[rp.did]) = rp.ldoff;
         bufp[rp.did] += sizeof(MPI_Offset);
@@ -477,12 +487,12 @@ herr_t H5VL_logi_file_metaflush(H5VL_log_file_t *fp){
     }
 
     // Create metadata dataset
-    loc.obj_type = H5I_GROUP;
+    loc.obj_type = H5I_FILE;
     loc.type = H5VL_OBJECT_BY_SELF;
-    mdp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
+    mdp = H5VLdataset_open(fp->uo, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
     if (mdp){
         // Look up table must be created at the same time
-        ldp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_lookup", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(ldp)
+        ldp = H5VLdataset_open(fp->uo, &loc, fp->uvlid, "_lookup", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(ldp)
 
         // Resize both dataset
         dsize = (hsize_t)doffs[fp->ndset];
@@ -514,8 +524,8 @@ herr_t H5VL_logi_file_metaflush(H5VL_log_file_t *fp){
         err = H5Pset_chunk(ldcplid, 1, &dsize); CHECK_ERR
 
         // Create
-        mdp = H5VLdataset_create(fp->lgp, &loc, fp->uvlid, "_idx", H5P_LINK_CREATE_DEFAULT, H5T_STD_B8LE, mdsid, mdcplid, H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(mdp);
-        ldp = H5VLdataset_create(fp->lgp, &loc, fp->uvlid, "_lookup", H5P_LINK_CREATE_DEFAULT, H5T_STD_I64LE, mdsid, ldcplid, H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(ldp);
+        mdp = H5VLdataset_create(fp->uo, &loc, fp->uvlid, "_idx", H5P_LINK_CREATE_DEFAULT, H5T_STD_B8LE, mdsid, mdcplid, H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(mdp);
+        ldp = H5VLdataset_create(fp->uo, &loc, fp->uvlid, "_lookup", H5P_LINK_CREATE_DEFAULT, H5T_STD_I64LE, ldsid, ldcplid, H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(ldp);
     }
 
     // Write metadata
@@ -539,7 +549,7 @@ herr_t H5VL_logi_file_metaflush(H5VL_log_file_t *fp){
         err = H5Sselect_none(lmsid); CHECK_ERR
     }
     err = H5VLdataset_write(mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, buf, NULL);    CHECK_ERR
-    err = H5VLdataset_write(ldp, fp->uvlid, H5T_NATIVE_B8, lmsid, ldsid, fp->dxplid, doffs, NULL);    CHECK_ERR
+    err = H5VLdataset_write(ldp, fp->uvlid, H5T_STD_I64LE, lmsid, ldsid, fp->dxplid, doffs, NULL);    CHECK_ERR
 
     // Close the dataset
     err = H5VLdataset_close(mdp, fp->uvlid, fp->dxplid, NULL); CHECK_ERR 

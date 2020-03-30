@@ -18,14 +18,20 @@ const H5VL_introspect_class_t H5VL_log_introspect_g{
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_introspect_get_conn_cls(void *obj, H5VL_get_conn_lvl_t lvl, const H5VL_class_t **conn_cls) {
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL INTROSPECT GetConnCls\n");
-#endif
-
-    assert(conn_cls);
-    *conn_cls = &H5VL_log_g;
-
+    herr_t err;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    
     return 0;
+
+    /* Check for querying this connector's class */
+    if(lvl == 0) {
+        *conn_cls = &H5VL_log_g;
+        err = 0;
+    } /* end if */
+    else
+        err = H5VLintrospect_get_conn_cls(op->uo, op->uvlid, lvl, conn_cls);
+
+    return err;
 } /* end H5VL_log_introspect_get_conn_cls() */
 
 
@@ -40,14 +46,12 @@ herr_t H5VL_log_introspect_get_conn_cls(void *obj, H5VL_get_conn_lvl_t lvl, cons
  */
 herr_t H5VL_log_introspect_opt_query(void *obj, H5VL_subclass_t cls, int opt_type, hbool_t *supported) {
     herr_t err;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-    printf("------- PASS THROUGH VOL INTROSPECT OptQuery\n");
-#endif
+    //*supported = 0;
+    //return 0;
 
-    //ret_value = H5VLintrospect_opt_query(o->uo, o->uvlid, cls, opt_type, supported);
-
-    *supported = false;
+    err = H5VLintrospect_opt_query(op->uo, op->uvlid, cls, opt_type, supported);
 
     return err;
 } /* end H5VL_log_introspect_opt_query() */

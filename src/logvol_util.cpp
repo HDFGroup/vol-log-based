@@ -82,6 +82,16 @@ hid_t H5VL_log_register(void) {
     return H5VL_LOG_g;
 } /* end H5VL_log_register() */
 
+herr_t H5VLfile_optional_wrapper(void *obj, hid_t connector_id, H5VL_file_optional_t opt_type, hid_t dxpl_id, void **req, ...) {
+    herr_t err;
+    va_list args;
+
+    va_start(args, req);
+    err = H5VLfile_optional(obj, connector_id, opt_type, dxpl_id, req, args);
+    va_end(args);
+
+    return err;
+}
 
 herr_t H5VLattr_get_wrapper(void *obj, hid_t connector_id, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, ...) {
     herr_t err;
