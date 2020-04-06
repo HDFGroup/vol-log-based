@@ -54,11 +54,47 @@
     goto err_out; \
 }
 
+#define H5VL_log_delete(A) {if (A != NULL) delete[] A;}
+#define H5VL_log_free(A) {if (A != NULL) free(A);}
+#define H5VL_log_Sclose(A) {if (A != -1) H5Sclose(A);}
+
+typedef struct H5VL_log_search_ret_t{
+    int ndim;
+    int fsize[32];
+    int fstart[32];
+    int msize[32];
+    int mstart[32];
+    int count[32];
+    MPI_Offset foff, moff;
+
+    bool operator < (const H5VL_log_search_ret_t &rhs) const {
+        int i;
+
+        if (foff < rhs.foff) return true;
+        else if (foff > rhs.foff) return false;
+
+        for(i = 0; i < ndim; i++){
+            if (fstart[i] < rhs.fstart[i]) return true;
+            else if (fstart[i] > rhs.fstart[i]) return false;
+        }
+        
+        return false;
+    }
+} H5VL_log_search_ret_t;
+
+typedef struct H5VL_log_metaentry_t{
+    int did;
+    MPI_Offset start[32];
+    MPI_Offset count[32];
+    MPI_Offset ldoff;
+    size_t rsize;
+} H5VL_log_metaentry_t;
+
 typedef struct H5VL_log_req_t{  
     int did;    // Source dataset ID
     int ndim;
-    hsize_t start[32];
-    hsize_t count[32];
+    MPI_Offset start[32];
+    MPI_Offset count[32];
 
     int ldid;   // Log dataset ID
     MPI_Offset ldoff;   // Offset in log dataset
@@ -93,6 +129,13 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     std::vector<H5VL_log_req_t> wreqs;
     int nflushed;
     std::vector<H5VL_log_req_t> rreqs;
+
+    std::vector<int> ndim;
+
+    //std::vector<int> lut;
+    std::vector<std::vector<H5VL_log_metaentry_t>> idx;
+    bool idxvalid;
+    bool metadirty;
 } H5VL_log_file_t;
 
 /* The log VOL group object */
@@ -107,6 +150,8 @@ typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
     hsize_t ndim;
     hsize_t dims[32];
     hsize_t mdims[32];
+    hid_t dtype;
+    hsize_t esize;
 } H5VL_log_dset_t;
 
 /* The log VOL wrapper context */
@@ -145,6 +190,9 @@ extern void mergereq(int ndim, hssize_t *len, MPI_Offset **starts, MPI_Offset **
 extern void sortblock(int ndim, hssize_t len, hsize_t **starts);
 extern bool hlessthan(int ndim, hsize_t *a, hsize_t *b);
 
+template <class A, class B>
+int H5VL_logi_vector_cmp(int ndim, A *l, B *r);
+
 extern herr_t H5VLattr_get_wrapper(void *obj, hid_t connector_id, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, ...);
 extern herr_t H5VL_logi_add_att(H5VL_log_obj_t *op, char *name, hid_t atype, hid_t mtype, hsize_t len, void *buf, hid_t dxpl_id);
 extern herr_t H5VL_logi_put_att(H5VL_log_obj_t *op, char *name, hid_t mtype, void *buf, hid_t dxpl_id);
@@ -153,9 +201,16 @@ extern herr_t H5VL_logi_get_att(H5VL_log_obj_t *op, char *name, hid_t mtype, voi
 // Internals
 extern herr_t H5VL_logi_file_flush(H5VL_log_file_t *fp, hid_t dxplid);
 extern herr_t H5VL_logi_file_metaflush(H5VL_log_file_t *fp);
+extern herr_t H5VL_logi_file_metaupdate(H5VL_log_file_t *fp);
 
 // Wraper
 extern herr_t H5VLdataset_specific_wrapper(void *obj, hid_t connector_id, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, ...);
 extern herr_t H5VLdataset_get_wrapper(void *obj, hid_t connector_id, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, ...);
 extern herr_t H5VLdataset_optional_wrapper(void *obj, hid_t connector_id, H5VL_dataset_optional_t opt_type, hid_t dxpl_id, void **req, ...);
 extern herr_t H5VLfile_optional_wrapper(void *obj, hid_t connector_id, H5VL_file_optional_t opt_type, hid_t dxpl_id, void **req, ...);
+extern herr_t H5VLlink_specific_wrapper(void *obj, const H5VL_loc_params_t *loc_params, hid_t connector_id, H5VL_link_specific_t specific_type, hid_t dxpl_id, void **req, ...);
+
+// Dataset util
+extern herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offset **&counts);
+extern herr_t H5VL_logi_idx_search(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, int n, MPI_Offset **starts, MPI_Offset **counts, std::vector<H5VL_log_search_ret_t> &ret);
+extern herr_t H5VL_logi_generate_dtype(H5VL_log_dset_t *dp, std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype);

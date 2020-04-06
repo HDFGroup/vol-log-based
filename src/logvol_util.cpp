@@ -189,3 +189,14 @@ herr_t H5VLdataset_get_wrapper(void *obj, hid_t connector_id, H5VL_dataset_get_t
 
     return err;
 }
+
+herr_t H5VLlink_specific_wrapper(void *obj, const H5VL_loc_params_t *loc_params, hid_t connector_id, H5VL_link_specific_t specific_type, hid_t dxpl_id, void **req, ...) {
+    herr_t err;
+    va_list args;
+
+    va_start(args, req);
+    H5VLlink_specific(obj, loc_params, connector_id, specific_type, dxpl_id, req, args);
+    va_end(args);
+
+    return err;
+}

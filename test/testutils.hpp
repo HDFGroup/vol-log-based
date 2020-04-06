@@ -25,7 +25,7 @@
 #define EXP_VAL(A,B) { \
     if (A != B) { \
         nerrs++; \
-        cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " << (B) << " but got " << (A) << endl; \
+        std::cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " << (B) << " but got " << (A) << std::endl; \
         goto err_out; \
     } \
 }
@@ -33,7 +33,7 @@
 #define EXP_VAL_EX(A,B,C) { \
     if (A != B) { \
         nerrs++; \
-        cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " << (C) << " = " << (B) << " but got " << (A) << endl; \
+        std::cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " << C << " = " << (B) << " but got " << (A) << std::endl; \
         goto err_out; \
     } \
 }
