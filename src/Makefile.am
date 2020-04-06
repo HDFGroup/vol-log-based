@@ -28,6 +28,7 @@ C_SRCS =
 CXX_SRCS = logvol.cpp \
               logvol_att.cpp \
               logvol_dataset.cpp \
+              logvol_dataset_util.cpp \
               logvol_file.cpp \
               logvol_introspect.cpp \
               logvol_group.cpp \

@@ -54,24 +54,15 @@ void *H5VL_log_dataset_create(  void *obj, const H5VL_loc_params_t *loc_params,
     dp->uo = H5VLdataset_create(op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid, dcpl_id, dapl_id, dxpl_id, NULL); CHECK_NERR(dp->uo);
     dp->uvlid = op->uvlid;
     dp->type = H5I_DATASET;
+    dp->dtype = H5Tcopy(type_id); CHECK_ID(dp->dtype)
+    dp->esize = H5Tget_size(type_id); CHECK_ID(dp->esize)
 
     // NOTE: I don't know if it work for scalar dataset, can we create zero sized attr?
     ndim = H5Sget_simple_extent_dims(space_id, dp->dims, dp->mdims); CHECK_ID(ndim);
     dp->ndim = (hsize_t)ndim;
-
-    /*
-    asid = H5Screate_simple(1, &(dp->ndim), &(dp->ndim)); CHECK_ID(asid);
-    locp.obj_type = H5I_DATASET;
-    locp.type = H5VL_OBJECT_BY_SELF;
-    ap = H5VLattr_create(dp->uo, &locp, dp->uvlid, "_dims", H5T_STD_I64LE, asid, H5P_ATTRIBUTE_CREATE_DEFAULT, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
-    err = H5VLattr_write(ap, dp->uvlid, H5T_NATIVE_INT64, dp->dims, dxpl_id, NULL); CHECK_ERR;
-    err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
-    ap = H5VLattr_create(dp->uo, &locp, dp->uvlid, "_mdims", H5T_STD_I64LE, asid, H5P_ATTRIBUTE_CREATE_DEFAULT, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
-    err = H5VLattr_write(ap, dp->uvlid, H5T_NATIVE_INT64, dp->mdims, dxpl_id, NULL); CHECK_ERR;
-    err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
-    */
-
     dp->id = (dp->fp->ndset)++;
+    dp->fp->ndim.push_back(ndim);
+    dp->fp->idx.resize(dp->fp->ndset);
 
     // Atts
     err = H5VL_logi_add_att(dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->dims, dxpl_id); CHECK_ERR
@@ -88,7 +79,6 @@ err_out:;
         dp = NULL;
     }
 fn_exit:;
-    //H5Sclose(asid);
     H5Sclose(sid);
 
     return (void *)dp;
@@ -123,23 +113,8 @@ void *H5VL_log_dataset_open(void *obj, const H5VL_loc_params_t *loc_params,
     dp->uo = H5VLdataset_open(op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL); CHECK_NERR(dp->uo);
     dp->uvlid = op->uvlid;
     dp->type = H5I_DATASET;
-    
-    /*
-    locp.obj_type = H5I_DATASET;
-    locp.type = H5VL_OBJECT_BY_SELF;
-
-    // get cur_dims
-    ap = H5VLattr_open(dp->uo, &locp, dp->uvlid, "_dims", H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
-    err = H5VLattr_get_wrapper(ap, dp->uvlid, H5VL_ATTR_GET_SPACE, dxpl_id, NULL, &asid); CHECK_ERR
-    err = H5Sget_simple_extent_dims(asid, &(dp->ndim), NULL); CHECK_ERR
-    err = H5VLattr_read(ap, dp->uvlid, H5T_NATIVE_INT64, dp->dims, dxpl_id, NULL); CHECK_ERR;
-    err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
-
-    // get max_dims
-    ap = H5VLattr_open(dp->uo, &locp, dp->uvlid, "_mdims", H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
-    err = H5VLattr_read(ap, dp->uvlid, H5T_NATIVE_INT64, dp->mdims, dxpl_id, NULL); CHECK_ERR;
-    err = H5VLattr_close(ap, dp->uvlid, dxpl_id, NULL); CHECK_ERR
-    */
+    err = H5VLdataset_get_wrapper(dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, NULL, &(dp->type)); CHECK_ERR
+    dp->esize = H5Tget_size(dp->type); CHECK_ID(dp->esize)
 
     // Atts
     err = H5VL_logi_get_att(dp, "_dims", H5T_NATIVE_INT64, dp->dims, dxpl_id); CHECK_ERR
@@ -168,24 +143,47 @@ fn_exit:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t 
-H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id,
-    hid_t file_space_id, hid_t plist_id, void *buf, void **req)
-{
-    H5VL_log_obj_t *o = (H5VL_log_obj_t *)dset;
-    herr_t ret_value;
+herr_t H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t plist_id, void *buf, void **req) {
+    herr_t err = 0;
+    int mpierr;
+    int i, j;
+    int n;
+    MPI_Offset **starts, **counts;
+    MPI_Datatype ftype, mtype;
+    H5VL_log_dset_t *dp = (H5VL_log_dset_t*)dset;
+    std::vector<H5VL_log_search_ret_t> intersections;
+    MPI_Status stat;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
-    printf("------- LOG VOL DATASET Read\n");
-#endif
+    if (!(dp->fp->idxvalid)){
+        err = H5VL_logi_file_metaupdate(dp->fp); CHECK_ERR
+    }
 
-    ret_value = H5VLdataset_read(o->uo, o->uvlid, mem_type_id, mem_space_id, file_space_id, plist_id, buf, req);
+    err = H5VL_logi_get_selection(file_space_id, n, starts, counts); CHECK_ERR
 
-    /* Check for async request */
-    if(req && *req)
-        *req = H5VL_log_new_obj(*req, o->uvlid);
+    err = H5VL_logi_idx_search(dp->fp, dp, n, starts, counts, intersections); CHECK_ERR
 
-    return ret_value;
+    if (intersections.size() > 0){
+        err = H5VL_logi_generate_dtype(dp, intersections, &ftype, &mtype); CHECK_ERR
+        mpierr = MPI_Type_commit(&mtype); CHECK_MPIERR
+        mpierr = MPI_Type_commit(&ftype); CHECK_MPIERR
+
+        mpierr = MPI_File_set_view(dp->fp->fh, 0, MPI_BYTE, ftype, "native", MPI_INFO_NULL); CHECK_MPIERR
+
+        mpierr = MPI_File_read_all(dp->fp->fh, buf, 1, mtype, &stat); CHECK_MPIERR
+    }
+    else{
+        mpierr = MPI_File_set_view(dp->fp->fh, 0, MPI_BYTE, MPI_DATATYPE_NULL, "native", MPI_INFO_NULL); CHECK_MPIERR
+
+        mpierr = MPI_File_read_all(dp->fp->fh, buf, 0, MPI_DATATYPE_NULL, &stat); CHECK_MPIERR
+    }
+
+err_out:;
+    if (starts != NULL){
+        delete[] starts[0];
+        delete[] starts;
+    }
+
+    return err;
 } /* end H5VL_log_dataset_read() */
 
 
@@ -266,6 +264,8 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
         r.rsize = esize;
         for(j = 0; j < dp->ndim; j++){
             r.rsize *= counts[i][j];
+            r.start[j] = starts[i][j];
+            r.count[j] = counts[i][j];
         }
 
         // TODO: Convert type, check cache size
@@ -273,8 +273,6 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
         r.buf = new char[r.rsize];
         memcpy(r.buf, bufp, r.rsize);
 
-        memcpy(r.start, starts[i], sizeof(hsize_t) * dp->ndim);
-        memcpy(r.count, counts[i], sizeof(hsize_t) * dp->ndim);
         r.did = dp->id;
         r.ndim = dp->ndim;
 

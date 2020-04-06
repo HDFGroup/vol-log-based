@@ -19,7 +19,7 @@ check_PROGRAMS =    file \
                     attr \
                     dset \
                     dwrite \
-                    dwrite2
+                    dread
 
 EXTRA_DIST = # wrap_runs.sh parallel_run.sh
 
