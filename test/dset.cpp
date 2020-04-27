@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
     err = H5Dclose(gdid); CHECK_ERR(err)
     err = H5Sclose(sid); CHECK_ERR(err)
 
+
     // Open datasets
     did = H5Dopen2(fid, "D", H5P_DEFAULT); CHECK_ERR(did)
     gdid = H5Dopen2(gid, "D", H5P_DEFAULT); CHECK_ERR(gdid)
@@ -85,6 +86,7 @@ int main(int argc, char **argv) {
                __LINE__,__FILE__, M, mdims[1]);
         nerrs++;
     }
+
     err = H5Sclose(sid); CHECK_ERR(err)
 
     err = H5Dclose(did); CHECK_ERR(err)

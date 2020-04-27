@@ -157,6 +157,29 @@ err_out:;
     return err;
 }
 
+herr_t H5VL_logi_get_att_ex(H5VL_log_obj_t *op, char *name, hid_t mtype, hsize_t *len, void *buf, hid_t dxpl_id) {
+    herr_t err = 0;
+    H5VL_loc_params_t loc;
+    hid_t asid = -1;
+    int ndim;
+    void *ap;
+
+    loc.obj_type = op->type;
+    loc.type = H5VL_OBJECT_BY_SELF;
+
+    ap = H5VLattr_open(op->uo, &loc, op->uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
+    err = H5VLattr_get_wrapper(op->uo, op->uvlid, H5VL_ATTR_GET_SPACE, dxpl_id, NULL, &asid); CHECK_ERR
+    ndim = H5Sget_simple_extent_dims(asid, len, NULL); CHECK_ID(ndim)
+    assert(ndim == 1);
+    err = H5VLattr_read(ap, op->uvlid, mtype, buf, dxpl_id, NULL); CHECK_ERR;
+    err = H5VLattr_close(ap, op->uvlid, dxpl_id, NULL); CHECK_ERR
+
+err_out:;
+    H5Sclose(asid);
+
+    return err;
+}
+
 herr_t H5VLdataset_optional_wrapper(void *obj, hid_t connector_id, H5VL_dataset_optional_t opt_type, hid_t dxpl_id, void **req, ...) {
     herr_t err;
     va_list args;
@@ -198,5 +221,57 @@ herr_t H5VLlink_specific_wrapper(void *obj, const H5VL_loc_params_t *loc_params,
     H5VLlink_specific(obj, loc_params, connector_id, specific_type, dxpl_id, req, args);
     va_end(args);
 
+    return err;
+}
+
+herr_t H5Pset_nonblocking(hid_t plist, int nonblocking) {
+    herr_t err;
+    htri_t isdxpl;
+
+    isdxpl = H5Pisa_class(plist, H5P_DATASET_XFER); CHECK_ID(isdxpl)
+    if (isdxpl == 0) RET_ERR("Not dxplid")
+
+    err = H5Pset(plist, "nonblocking", &nonblocking); CHECK_ERR
+
+err_out:;
+    return err;
+}
+
+herr_t H5Pget_nonblocking(hid_t plist, int *nonblocking) {
+    herr_t err;
+    htri_t isdxpl;
+
+    isdxpl = H5Pisa_class(plist, H5P_DATASET_XFER); CHECK_ID(isdxpl)
+    if (isdxpl == 0) RET_ERR("Not dxplid")
+
+    err = H5Pget(plist, "nonblocking", nonblocking); CHECK_ERR
+
+err_out:;
+    return err;
+}
+
+herr_t H5Pset_nb_buffer_size(hid_t plist, size_t size) {
+    herr_t err;
+    htri_t isfapl;
+
+    isfapl = H5Pisa_class(plist, H5P_FILE_ACCESS); CHECK_ID(isfapl)
+    if (isfapl == 0) RET_ERR("Not faplid")
+
+    err = H5Pset(plist, "nb_buffer_size", &size); CHECK_ERR
+
+err_out:;
+    return err;
+}
+
+herr_t H5Pget_nb_buffer_size(hid_t plist, size_t *size) {
+    herr_t err;
+    htri_t isfapl;
+
+    isfapl = H5Pisa_class(plist, H5P_FILE_ACCESS); CHECK_ID(isfapl)
+    if (isfapl == 0) RET_ERR("Not faplid")
+
+    err = H5Pget(plist, "nb_buffer_size", size); CHECK_ERR
+
+err_out:;
     return err;
 }
