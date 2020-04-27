@@ -114,8 +114,15 @@ hid_t H5VL_LOG_g = H5I_INVALID_HID;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_init(hid_t vipl_id) {
+    herr_t err;
+    int blocking = 0;
+    size_t infty = -1;
 
-    return(0);
+    //err = H5Pregister2(H5P_DATASET_XFER, "nonblocking", sizeof(int), &blocking, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
+    //err = H5Pregister2(H5P_FILE_ACCESS, "nb_buffer_size", sizeof(size_t), &infty, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
+
+err_out:;
+    return err;
 } /* end H5VL_log_init() */
 
 /*---------------------------------------------------------------------------

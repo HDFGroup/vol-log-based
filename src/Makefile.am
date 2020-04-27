@@ -13,30 +13,32 @@ endif
 if LOGVOL_PROFILING
    AM_CPPFLAGS += -DLOGVOL_PROFILING=1
 endif
+M4FLAGS = -I${top_srcdir}/m4
 
 noinst_LTLIBRARIES = liblogvol.la
 
 M4_SRCS = 
-
-M4H_SRCS = 
 
 H_SRCS =    logvol.h \
             logvol_internal.h
 
 C_SRCS = 
 
-CXX_SRCS = logvol.cpp \
-              logvol_att.cpp \
-              logvol_dataset.cpp \
-              logvol_dataset_util.cpp \
-              logvol_file.cpp \
-              logvol_introspect.cpp \
-              logvol_group.cpp \
-              logvol_link.cpp \
-              logvol_obj.cpp \
-              logvol_req.cpp \
-              logvol_type.cpp \
-              logvol_util.cpp 
+CXX_SRCS =  logvol.cpp \
+            logvol_att.cpp \
+            logvol_dataset.cpp \
+            logvol_dataset_internal.cpp \
+            logvol_file.cpp \
+            logvol_file_internal.cpp \
+            logvol_introspect.cpp \
+            logvol_group.cpp \
+            logvol_link.cpp \
+            logvol_obj.cpp \
+            logvol_req.cpp \
+            logvol_type.cpp \
+            logvol_util.cpp \
+            logvol_internal.cpp
+
 
 EXTRA_DIST = ph5_concat.hpp \
              acinclude.m4 \
@@ -47,9 +49,13 @@ EXTRA_DIST = ph5_concat.hpp \
              RELEASE_NOTES.md \
              list.txt
 
+$(M4_SRCS:.m4=.cpp): Makefile
+
+.m4.cpp:
+	$(M4) $(AM_M4FLAGS) $(M4FLAGS) $< >$@
 
 liblogvol_la_SOURCES = $(C_SRCS) $(CXX_SRCS) $(H_SRCS)
-nodist_liblogvol_la_SOURCES = $(M4_SRCS:.m4=.c) $(M4H_SRCS:.m4h=.h)
+nodist_liblogvol_la_SOURCES = $(M4_SRCS:.m4=.cpp) $(M4H_SRCS:.m4h=.h)
 
 dist-hook:
 	$(SED_I) -e "s|RELEASE_DATE|@LOGVOL_RELEASE_DATE@|g" $(distdir)/main.cpp

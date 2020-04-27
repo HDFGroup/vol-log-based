@@ -58,4 +58,8 @@ typedef struct H5VL_log_info_t {
 
 extern const H5VL_class_t H5VL_log_g;
 
+// Helper functions
+herr_t H5Pset_nonblocking(hid_t plist, int nonblocking);
+herr_t H5Pget_nonblocking(hid_t plist, int *nonblocking);
+
 #endif

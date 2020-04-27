@@ -269,34 +269,45 @@ static bool intersect(int ndim, MPI_Offset *sa, MPI_Offset *ca, MPI_Offset *sb, 
     return true;
 }
 
-herr_t H5VL_logi_idx_search(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, int n, MPI_Offset **starts, MPI_Offset **counts, std::vector<H5VL_log_search_ret_t> &ret){
+herr_t H5VL_logi_idx_search_ex(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, void *buf, int n, MPI_Offset **starts, MPI_Offset **counts, std::vector<H5VL_log_search_ret_t> &ret){
     herr_t err = 0;
-    int i, j, k;
-    MPI_Offset os[32], oc[32];
-    MPI_Offset moff = 0, rsize;
-    H5VL_log_search_ret_t cur;
+    int i, j;
+    size_t rsize;
 
     for(i = 0; i < n; i++){
-        rsize = (MPI_Offset)dp->esize;
+        rsize = (size_t)dp->esize;
         for(j = 0; j < dp->ndim; j++){
             rsize *= counts[i][j];
         }
-        for(auto &ent : fp->idx[dp->id]){
-            if(intersect(dp->ndim, ent.start, ent.count, starts[i], counts[i], os, oc)){
-                for(j = 0; j < dp->ndim; j++){
-                    cur.fstart[j] = os[j] - ent.start[j];
-                    cur.fsize[j] = ent.count[j];
-                    cur.mstart[j] = os[j] - starts[i][j];
-                    cur.msize[j] = counts[i][j];
-                    cur.count[j] = oc[j];
-                }
-                cur.foff = ent.ldoff;
-                cur.moff = moff;
-                cur.ndim = dp->ndim;
-                ret.push_back(cur);
+        err = H5VL_logi_idx_search(fp, dp->id, dp->esize, buf, starts[i], counts[i], ret); CHECK_ERR
+        buf += rsize;
+    }
+
+err_out:;
+    return err;
+}
+
+herr_t H5VL_logi_idx_search(H5VL_log_file_t *fp, int did, MPI_Offset esize, void *buf, MPI_Offset *start, MPI_Offset *count, std::vector<H5VL_log_search_ret_t> &ret){
+    herr_t err = 0;
+    int j, k;
+    MPI_Offset os[32], oc[32];
+    H5VL_log_search_ret_t cur;
+
+    for(auto &ent : fp->idx[did]){
+        if(intersect(fp->ndim[did], ent.start, ent.count, start, count, os, oc)){
+            for(j = 0; j < fp->ndim[did]; j++){
+                cur.fstart[j] = os[j] - ent.start[j];
+                cur.fsize[j] = ent.count[j];
+                cur.mstart[j] = os[j] - start[j];
+                cur.msize[j] = count[j];
+                cur.count[j] = oc[j];
             }
+            cur.foff = ent.ldoff;
+            cur.moff = (MPI_Offset)buf;
+            cur.ndim = fp->ndim[did];
+            cur.esize = esize;
+            ret.push_back(cur);
         }
-        moff += rsize;
     }
 
     return err;
@@ -356,8 +367,9 @@ void sortoffsets(int len, MPI_Aint *oa, MPI_Aint *ob, int *l){
     sortoffsets(j, oa, ob, l);
     sortoffsets(len - j - 1, oa + j + 1, ob + j + 1, l + j + 1);
 }
+
 // Assume no overlaping read
-herr_t H5VL_logi_generate_dtype(H5VL_log_dset_t *dp, std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype){
+herr_t H5VL_logi_generate_dtype(std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype){
     herr_t err = 0;
     int mpierr;
     int i, j, k;
@@ -375,13 +387,10 @@ herr_t H5VL_logi_generate_dtype(H5VL_log_dset_t *dp, std::vector<H5VL_log_search
         return 0;
     }
 
-    mpierr = MPI_Type_contiguous(dp->esize, MPI_BYTE, &etype); CHECK_MPIERR
-    mpierr = MPI_Type_commit(&etype); CHECK_MPIERR
-
     std::sort(blocks.begin(), blocks.end());
 
     for(i = 0; i < nblock - 1; i++){
-        if ((blocks[i].foff == blocks[i + 1].foff) && interleve(dp->ndim, blocks[i].fstart, blocks[i].count, blocks[i + 1].fstart)){
+        if ((blocks[i].foff == blocks[i + 1].foff) && interleve(blocks[i].ndim, blocks[i].fstart, blocks[i].count, blocks[i + 1].fstart)){
             newgroup[i] = false;
         }
         else{
@@ -401,7 +410,7 @@ herr_t H5VL_logi_generate_dtype(H5VL_log_dset_t *dp, std::vector<H5VL_log_search
             else{
                 for(; j <= i; j++){ // Breakdown
                     nrow = 1;
-                    for(j = 0; j < dp->ndim - 1; j++){
+                    for(j = 0; j < blocks[i].ndim - 1; j++){
                         nrow *= blocks[i].count[j];
                     }
                     nt += nrow;
@@ -421,10 +430,16 @@ herr_t H5VL_logi_generate_dtype(H5VL_log_dset_t *dp, std::vector<H5VL_log_search
     for(i = j = 0; i < nblock; i++){
         if (newgroup[i]){
             if (i == j){ // only 1
-                mpierr = MPI_Type_create_subarray(dp->ndim, blocks[j].fsize, blocks[j].count, blocks[j].fstart, MPI_ORDER_C, etype, ftypes + nt); CHECK_MPIERR
-                mpierr = MPI_Type_create_subarray(dp->ndim, blocks[j].msize, blocks[j].count, blocks[j].mstart, MPI_ORDER_C, etype, mtypes + nt); CHECK_MPIERR
+                mpierr = MPI_Type_contiguous(blocks[i].esize, MPI_BYTE, &etype); CHECK_MPIERR
+                mpierr = MPI_Type_commit(&etype); CHECK_MPIERR
+
+                mpierr = MPI_Type_create_subarray(blocks[i].ndim, blocks[j].fsize, blocks[j].count, blocks[j].fstart, MPI_ORDER_C, etype, ftypes + nt); CHECK_MPIERR
+                mpierr = MPI_Type_create_subarray(blocks[i].ndim, blocks[j].msize, blocks[j].count, blocks[j].mstart, MPI_ORDER_C, etype, mtypes + nt); CHECK_MPIERR
                 mpierr = MPI_Type_commit(ftypes + nt); CHECK_MPIERR
                 mpierr = MPI_Type_commit(mtypes + nt); CHECK_MPIERR
+
+                mpierr = MPI_Type_free(&etype); CHECK_MPIERR
+
                 foffs[nt] = blocks[j].foff;
                 moffs[nt] = blocks[j].moff;
                 lens[nt] = 1;
@@ -434,19 +449,19 @@ herr_t H5VL_logi_generate_dtype(H5VL_log_dset_t *dp, std::vector<H5VL_log_search
             else{
                 old_nt = nt;
                 for(; j <= i; j++){ // Breakdown each intersecting blocks
-                    fssize[dp->ndim - 1] = 1;
-                    mssize[dp->ndim - 1] = 1;
-                    for(k = dp->ndim - 2; k > -1; k--){
+                    fssize[blocks[i].ndim - 1] = 1;
+                    mssize[blocks[i].ndim - 1] = 1;
+                    for(k = blocks[i].ndim - 2; k > -1; k--){
                         fssize[k] = fssize[k + 1] * blocks[j].fsize[k + 1];
                         mssize[k] = mssize[k + 1] * blocks[j].msize[k + 1];
                     }
                     
-                    memset(ctr, 0, sizeof(MPI_Offset) * dp->ndim);
+                    memset(ctr, 0, sizeof(MPI_Offset) * blocks[i].ndim);
                     while(ctr[0] < blocks[j].count[0]){ // Foreach row
-                        lens[nt] = blocks[j].count[dp->ndim - 1] * dp->esize;
+                        lens[nt] = blocks[j].count[blocks[i].ndim - 1] * blocks[j].esize;
                         foffs[nt] = blocks[j].foff;
                         moffs[nt] = blocks[j].moff;
-                        for(k = 0; k < dp->ndim; k++){  // Calculate offset
+                        for(k = 0; k < blocks[i].ndim; k++){  // Calculate offset
                             foffs[nt] += fssize[k] * (blocks[j].fstart[k] + ctr[k]);
                             moffs[nt] += mssize[k] * (blocks[j].mstart[k] + ctr[k]);
                         }
@@ -454,8 +469,8 @@ herr_t H5VL_logi_generate_dtype(H5VL_log_dset_t *dp, std::vector<H5VL_log_search
                         mtypes[nt] = MPI_BYTE;
                         nt++;
 
-                        ctr[dp->ndim - 2]++;    // Move to next position
-                        for(k = dp->ndim - 2; k > 0; k--){
+                        ctr[blocks[i].ndim - 2]++;    // Move to next position
+                        for(k = blocks[i].ndim - 2; k > 0; k--){
                             if (ctr[k] >= blocks[j].count[k]){
                                 ctr[k] = 0;
                                 ctr[k - 1]++;
@@ -494,6 +509,7 @@ err_out:
         }
         delete mtypes;
     }
+
 
     if (etype != MPI_DATATYPE_NULL){
         MPI_Type_free(&etype);
