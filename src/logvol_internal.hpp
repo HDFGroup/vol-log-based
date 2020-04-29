@@ -108,6 +108,7 @@ typedef struct H5VL_log_wreq_t{
 
 typedef struct H5VL_log_rreq_t{  
     int did;    // Source dataset ID
+    
     int ndim;
     MPI_Offset start[32];
     MPI_Offset count[32];
@@ -115,7 +116,9 @@ typedef struct H5VL_log_rreq_t{
     hid_t dtype;
     hid_t mtype;
 
-    size_t rsize, esize;
+    size_t rsize;
+    size_t esize;
+
     char *ibuf;
     char *xbuf;
 } H5VL_log_rreq_t;
@@ -125,6 +128,16 @@ typedef struct H5VL_log_obj_t {
     void *uo;   // Under obj
     hid_t uvlid; // Under VolID
 } H5VL_log_obj_t;
+
+typedef struct H5VL_log_dset_meta_t{
+    //H5VL_log_file_t *fp;
+    //int id;
+    hsize_t ndim;
+    //hsize_t dims[32];
+    //hsize_t mdims[32];
+    hid_t dtype;
+    //hsize_t esize;
+} H5VL_log_dset_meta_t;
 
 /* The log VOL file object */
 typedef struct H5VL_log_file_t : H5VL_log_obj_t {
@@ -146,7 +159,9 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     int nflushed;
     std::vector<H5VL_log_rreq_t> rreqs;
 
-    std::vector<int> ndim;
+    // Should we do metadata caching?
+    //std::vector<int> ndim;
+    //std::vector<H5VL_log_dset_meta_t> mdc;
 
     size_t bsize;
     size_t bused;
@@ -220,8 +235,6 @@ extern herr_t H5VL_logi_get_att_ex(H5VL_log_obj_t *op, char *name, hid_t mtype, 
 
 // File internals
 extern herr_t H5VL_log_filei_flush(H5VL_log_file_t *fp, hid_t dxplid);
-extern herr_t H5VL_log_filei_flush_w(H5VL_log_file_t *fp, hid_t dxplid);
-extern herr_t H5VL_log_filei_flush_r(H5VL_log_file_t *fp, hid_t dxplid);
 extern herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_metaupdate(H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_balloc(H5VL_log_file_t *fp, size_t size, void **buf);
@@ -236,10 +249,13 @@ extern herr_t H5VLlink_specific_wrapper(void *obj, const H5VL_loc_params_t *loc_
 
 // Dataset util
 extern herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offset **&counts);
-extern herr_t H5VL_logi_idx_search_ex(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, void *buf, int n, MPI_Offset **starts, MPI_Offset **counts, std::vector<H5VL_log_search_ret_t> &ret);
-extern herr_t H5VL_logi_idx_search(H5VL_log_file_t *fp, int did, MPI_Offset esize, void *buf, MPI_Offset *start, MPI_Offset *count, std::vector<H5VL_log_search_ret_t> &ret);
-extern herr_t H5VL_logi_generate_dtype(std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype);
+extern herr_t H5VL_log_dataset_readi_idx_search_ex(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, void *buf, int n, MPI_Offset **starts, MPI_Offset **counts, std::vector<H5VL_log_search_ret_t> &ret);
+extern herr_t H5VL_log_dataset_readi_idx_search(H5VL_log_file_t *fp, int did, int ndim, MPI_Offset esize, void *buf, MPI_Offset *start, MPI_Offset *count, std::vector<H5VL_log_search_ret_t> &ret);
+extern herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype);
 
+// Nonblocking
+extern herr_t H5VL_log_nb_flush_read_reqs(H5VL_log_file_t *fp, std::vector<H5VL_log_rreq_t> reqs, hid_t dxplid);
+extern herr_t H5VL_log_nb_flush_write_reqs(H5VL_log_file_t *fp, hid_t dxplid);
 
 // Datatype
 //extern herr_t H5VL_log_dtypei_convert_core(void *inbuf, void *outbuf, hid_t intype, hid_t outtype, int N);

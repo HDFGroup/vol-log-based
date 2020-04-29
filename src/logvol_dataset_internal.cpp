@@ -269,7 +269,7 @@ static bool intersect(int ndim, MPI_Offset *sa, MPI_Offset *ca, MPI_Offset *sb, 
     return true;
 }
 
-herr_t H5VL_logi_idx_search_ex(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, void *buf, int n, MPI_Offset **starts, MPI_Offset **counts, std::vector<H5VL_log_search_ret_t> &ret){
+herr_t H5VL_log_dataset_readi_idx_search_ex(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, void *buf, int n, MPI_Offset **starts, MPI_Offset **counts, std::vector<H5VL_log_search_ret_t> &ret){
     herr_t err = 0;
     int i, j;
     size_t rsize;
@@ -279,7 +279,7 @@ herr_t H5VL_logi_idx_search_ex(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, void *b
         for(j = 0; j < dp->ndim; j++){
             rsize *= counts[i][j];
         }
-        err = H5VL_logi_idx_search(fp, dp->id, dp->esize, buf, starts[i], counts[i], ret); CHECK_ERR
+        err = H5VL_log_dataset_readi_idx_search(fp, dp->id, dp->ndim, dp->esize, buf, starts[i], counts[i], ret); CHECK_ERR
         buf += rsize;
     }
 
@@ -287,15 +287,15 @@ err_out:;
     return err;
 }
 
-herr_t H5VL_logi_idx_search(H5VL_log_file_t *fp, int did, MPI_Offset esize, void *buf, MPI_Offset *start, MPI_Offset *count, std::vector<H5VL_log_search_ret_t> &ret){
+herr_t H5VL_log_dataset_readi_idx_search(H5VL_log_file_t *fp, int did, int ndim, MPI_Offset esize, void *buf, MPI_Offset *start, MPI_Offset *count, std::vector<H5VL_log_search_ret_t> &ret){
     herr_t err = 0;
     int j, k;
     MPI_Offset os[32], oc[32];
     H5VL_log_search_ret_t cur;
 
     for(auto &ent : fp->idx[did]){
-        if(intersect(fp->ndim[did], ent.start, ent.count, start, count, os, oc)){
-            for(j = 0; j < fp->ndim[did]; j++){
+        if(intersect(ndim, ent.start, ent.count, start, count, os, oc)){
+            for(j = 0; j < ndim; j++){
                 cur.fstart[j] = os[j] - ent.start[j];
                 cur.fsize[j] = ent.count[j];
                 cur.mstart[j] = os[j] - start[j];
@@ -304,7 +304,7 @@ herr_t H5VL_logi_idx_search(H5VL_log_file_t *fp, int did, MPI_Offset esize, void
             }
             cur.foff = ent.ldoff;
             cur.moff = (MPI_Offset)buf;
-            cur.ndim = fp->ndim[did];
+            cur.ndim = ndim;
             cur.esize = esize;
             ret.push_back(cur);
         }
@@ -369,7 +369,7 @@ void sortoffsets(int len, MPI_Aint *oa, MPI_Aint *ob, int *l){
 }
 
 // Assume no overlaping read
-herr_t H5VL_logi_generate_dtype(std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype){
+herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype){
     herr_t err = 0;
     int mpierr;
     int i, j, k;
