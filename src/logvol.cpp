@@ -118,8 +118,8 @@ herr_t H5VL_log_init(hid_t vipl_id) {
     int blocking = 0;
     size_t infty = -1;
 
-    //err = H5Pregister2(H5P_DATASET_XFER, "nonblocking", sizeof(int), &blocking, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
-    //err = H5Pregister2(H5P_FILE_ACCESS, "nb_buffer_size", sizeof(size_t), &infty, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
+    err = H5Pregister2(H5P_DATASET_XFER, "nonblocking", sizeof(int), &blocking, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
+    err = H5Pregister2(H5P_FILE_ACCESS, "nb_buffer_size", sizeof(size_t), &infty, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
 
 err_out:;
     return err;
