@@ -153,8 +153,8 @@ herr_t H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, 
     htri_t eqtype;
     char *bufp = (char*)buf;
     H5VL_log_rreq_t r;
-    std::vector<H5VL_log_rreq_t> &reqs;
     std::vector<H5VL_log_rreq_t> local_reqs;
+    std::vector<H5VL_log_rreq_t> &reqs = local_reqs;
     H5VL_log_dset_t *dp = (H5VL_log_dset_t*)dset;
 
 
@@ -176,10 +176,7 @@ herr_t H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, 
     if (nb){
         reqs = dp->fp->rreqs;
     }
-    else{
-        reqs = local_reqs;
-    }
-   
+
     // Put request in queue
     for(i = 0; i < n; i++){
         r.rsize = 1;
@@ -217,7 +214,7 @@ herr_t H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, 
 
     // Flush it immediately if blocking
     if (!nb){
-        err = H5VL_log_nb_flush_read_reqs(fp, reqs, dxplid); CHECK_ERR
+        err = H5VL_log_nb_flush_read_reqs(dp->fp, reqs, plist_id); CHECK_ERR
     }
 
     /* Code to handle blocking separately

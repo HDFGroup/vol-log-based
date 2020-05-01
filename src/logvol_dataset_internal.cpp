@@ -430,15 +430,24 @@ herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> bloc
     for(i = j = 0; i < nblock; i++){
         if (newgroup[i]){
             if (i == j){ // only 1
-                mpierr = MPI_Type_contiguous(blocks[i].esize, MPI_BYTE, &etype); CHECK_MPIERR
-                mpierr = MPI_Type_commit(&etype); CHECK_MPIERR
+                etype =  H5VL_log_dtypei_mpitype_by_size(blocks[i].esize);
+                if (etype == MPI_DATATYPE_NULL){
+                    mpierr = MPI_Type_contiguous(blocks[i].esize, MPI_BYTE, &etype); CHECK_MPIERR
+                    mpierr = MPI_Type_commit(&etype); CHECK_MPIERR
+                    k = 1;
+                }
+                else{
+                    k = 0;
+                }
 
                 mpierr = MPI_Type_create_subarray(blocks[i].ndim, blocks[j].fsize, blocks[j].count, blocks[j].fstart, MPI_ORDER_C, etype, ftypes + nt); CHECK_MPIERR
                 mpierr = MPI_Type_create_subarray(blocks[i].ndim, blocks[j].msize, blocks[j].count, blocks[j].mstart, MPI_ORDER_C, etype, mtypes + nt); CHECK_MPIERR
                 mpierr = MPI_Type_commit(ftypes + nt); CHECK_MPIERR
                 mpierr = MPI_Type_commit(mtypes + nt); CHECK_MPIERR
-
-                mpierr = MPI_Type_free(&etype); CHECK_MPIERR
+                
+                if (k){
+                    mpierr = MPI_Type_free(&etype); CHECK_MPIERR
+                }
 
                 foffs[nt] = blocks[j].foff;
                 moffs[nt] = blocks[j].moff;

@@ -260,7 +260,7 @@ extern herr_t H5VL_log_nb_flush_write_reqs(H5VL_log_file_t *fp, hid_t dxplid);
 // Datatype
 //extern herr_t H5VL_log_dtypei_convert_core(void *inbuf, void *outbuf, hid_t intype, hid_t outtype, int N);
 //extern herr_t H5VL_log_dtypei_convert(void *inbuf, void *outbuf, hid_t intype, hid_t outtype, int N);
-
+extern MPI_Datatype H5VL_log_dtypei_mpitype_by_size(size_t size);
 
 // Property
 extern herr_t H5Pset_nb_buffer_size(hid_t plist, size_t size);
