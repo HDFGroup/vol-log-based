@@ -278,7 +278,7 @@ herr_t H5VL_log_file_specific(  void *file, H5VL_file_specific_t specific_type,
             break;
         case H5VL_FILE_FLUSH:
             {
-                err = H5VL_log_filei_flush_w(fp, dxpl_id);
+                err = H5VL_log_nb_flush_write_reqs(fp, dxpl_id);
                 break;
             }
             break;
@@ -336,7 +336,7 @@ herr_t H5VL_log_file_close(void *file, hid_t dxpl_id, void **req) {
 #endif
 
     // Flush the file
-    err = H5VL_log_filei_flush_w(fp, dxpl_id); CHECK_ERR
+    err = H5VL_log_nb_flush_write_reqs(fp, dxpl_id); CHECK_ERR
 
     // Generate metadata table
     err = H5VL_log_filei_metaflush(fp); CHECK_ERR
