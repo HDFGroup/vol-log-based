@@ -335,8 +335,10 @@ herr_t H5VL_log_file_close(void *file, hid_t dxpl_id, void **req) {
     printf("------- LOG VOL FILE Close\n");
 #endif
 
-    // Flush the file
-    err = H5VL_log_nb_flush_write_reqs(fp, dxpl_id); CHECK_ERR
+    // Flush write requests
+    if (fp->wreqs.size() > 0) {
+        err = H5VL_log_nb_flush_write_reqs(fp, dxpl_id); CHECK_ERR
+    }
 
     // Generate metadata table
     err = H5VL_log_filei_metaflush(fp); CHECK_ERR

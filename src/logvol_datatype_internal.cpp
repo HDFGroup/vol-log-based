@@ -13,5 +13,5 @@ MPI_Datatype H5VL_log_dtypei_mpitype_by_size(size_t size) {
             return MPI_LONG_LONG;
     }
 
-    return MPI_DATATYPE_NULL
+    return MPI_DATATYPE_NULL;
 }
