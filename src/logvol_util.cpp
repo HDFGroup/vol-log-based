@@ -224,7 +224,7 @@ herr_t H5VLlink_specific_wrapper(void *obj, const H5VL_loc_params_t *loc_params,
     return err;
 }
 
-herr_t H5Pset_nonblocking(hid_t plist, int nonblocking) {
+herr_t H5Pset_nonblocking(hid_t plist, H5VL_log_req_type_t nonblocking) {
     herr_t err;
     htri_t isdxpl;
 
@@ -237,14 +237,15 @@ err_out:;
     return err;
 }
 
-herr_t H5Pget_nonblocking(hid_t plist, int *nonblocking) {
-    herr_t err;
+herr_t H5Pget_nonblocking(hid_t plist, H5VL_log_req_type_t *nonblocking) {
+    herr_t err = 0;
     htri_t isdxpl;
 
     isdxpl = H5Pisa_class(plist, H5P_DATASET_XFER); CHECK_ID(isdxpl)
-    if (isdxpl == 0) RET_ERR("Not dxplid")
-
-    err = H5Pget(plist, "nonblocking", nonblocking); CHECK_ERR
+    if (isdxpl == 0) *nonblocking = H5VL_LOG_REQ_BLOCKING;  // Default property will not pass class check
+    else {
+        err = H5Pget(plist, "nonblocking", nonblocking); CHECK_ERR
+    }
 
 err_out:;
     return err;
@@ -264,13 +265,14 @@ err_out:;
 }
 
 herr_t H5Pget_nb_buffer_size(hid_t plist, size_t *size) {
-    herr_t err;
+    herr_t err = 0;
     htri_t isfapl;
 
     isfapl = H5Pisa_class(plist, H5P_FILE_ACCESS); CHECK_ID(isfapl)
-    if (isfapl == 0) RET_ERR("Not faplid")
-
-    err = H5Pget(plist, "nb_buffer_size", size); CHECK_ERR
+    if (isfapl == 0) *size = -1;  // Default property will not pass class check
+    else {
+        err = H5Pget(plist, "nb_buffer_size", size); CHECK_ERR
+    }
 
 err_out:;
     return err;

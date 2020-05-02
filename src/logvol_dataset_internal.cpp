@@ -520,10 +520,6 @@ err_out:
     }
 
 
-    if (etype != MPI_DATATYPE_NULL){
-        MPI_Type_free(&etype);
-    }
-
     H5VL_log_delete(foffs)
     H5VL_log_delete(moffs)
     H5VL_log_delete(lens)

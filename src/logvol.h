@@ -58,8 +58,14 @@ typedef struct H5VL_log_info_t {
 
 extern const H5VL_class_t H5VL_log_g;
 
+// Non-blocking I/O flags
+typedef enum H5VL_log_req_type_t {
+    H5VL_LOG_REQ_BLOCKING = 0, 		// Default
+    H5VL_LOG_REQ_NONBLOCKING = 1
+} H5VL_log_req_type_t;
+
 // Helper functions
-herr_t H5Pset_nonblocking(hid_t plist, int nonblocking);
-herr_t H5Pget_nonblocking(hid_t plist, int *nonblocking);
+herr_t H5Pset_nonblocking(hid_t plist, H5VL_log_req_type_t nonblocking);
+herr_t H5Pget_nonblocking(hid_t plist, H5VL_log_req_type_t *nonblocking);
 
 #endif

@@ -147,7 +147,6 @@ herr_t H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, 
     herr_t err = 0;
     int i, j;
     int n;
-    int nb;
     MPI_Offset **starts, **counts;
     size_t esize, isize;
     htri_t eqtype;
@@ -156,6 +155,7 @@ herr_t H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, 
     std::vector<H5VL_log_rreq_t> local_reqs;
     std::vector<H5VL_log_rreq_t> &reqs = local_reqs;
     H5VL_log_dset_t *dp = (H5VL_log_dset_t*)dset;
+    H5VL_log_req_type_t rtype;
 
 
     if (!(dp->fp->idxvalid)){
@@ -172,8 +172,8 @@ herr_t H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, 
     eqtype = H5Tequal(dp->dtype, mem_type_id); CHECK_ID(eqtype);
 
     // Check for nonblocking flag
-    err = H5Pget_nonblocking(plist_id, &nb); CHECK_ERR
-    if (nb){
+    err = H5Pget_nonblocking(plist_id, &rtype); CHECK_ERR
+    if (rtype == H5VL_LOG_REQ_NONBLOCKING){
         reqs = dp->fp->rreqs;
     }
 
@@ -213,7 +213,7 @@ herr_t H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, 
     }
 
     // Flush it immediately if blocking
-    if (!nb){
+    if (rtype != H5VL_LOG_REQ_NONBLOCKING){
         err = H5VL_log_nb_flush_read_reqs(dp->fp, reqs, plist_id); CHECK_ERR
     }
 
@@ -289,7 +289,6 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
                                 const void *buf, void **req) {
     herr_t err = 0;
     int i, j, k, l;
-    int nb;
     size_t esize;
     int nblock;
     MPI_Offset **starts, **counts;
@@ -297,12 +296,13 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
     H5VL_log_dset_t *dp = (H5VL_log_dset_t*)dset;
     H5VL_log_wreq_t r;
     htri_t eqtype;
+    H5VL_log_req_type_t rtype;
 
     // Gather starts and counts   
     err = H5VL_logi_get_selection(file_space_id, nblock, starts, counts); CHECK_ERR
 
     // Check for nonblocking flag
-    err = H5Pget_nonblocking(plist_id, &nb); CHECK_ERR
+    err = H5Pget_nonblocking(plist_id, &rtype); CHECK_ERR
 
     // Get element size
     esize = H5Tget_size(mem_type_id); CHECK_ID(esize)
@@ -318,7 +318,7 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
 
         eqtype = H5Tequal(dp->dtype, mem_type_id); CHECK_ID(eqtype);
         if (eqtype > 0){
-            if (nb){
+            if (rtype = H5VL_LOG_REQ_NONBLOCKING){
                 r.buf = bufp;
                 r.buf_alloc = 0;
             }

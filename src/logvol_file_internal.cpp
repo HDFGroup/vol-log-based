@@ -66,6 +66,7 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     hid_t mdsid = -1, ldsid = -1, mmsid = -1, lmsid = -1;
     hsize_t start, count;
     hsize_t dsize, msize;
+    htri_t has_idx;
 
     // Calculate size and offset of the metadata per dataset
     mlens = new MPI_Offset[fp->ndset * 2];
@@ -117,9 +118,12 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     // Create metadata dataset
     loc.obj_type = H5I_GROUP;
     loc.type = H5VL_OBJECT_BY_SELF;
-    mdp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
-    if (mdp){
-        // Look up table must be created at the same time
+    loc.loc_data.loc_by_name.name    = "_idx";
+    loc.loc_data.loc_by_name.lapl_id = H5P_DATASET_ACCESS_DEFAULT;
+    err = H5VLlink_specific_wrapper(fp->lgp, &loc, fp->uvlid, H5VL_LINK_EXISTS, H5P_DATASET_XFER_DEFAULT, NULL, &has_idx); CHECK_ERR
+    if (has_idx){
+        // If the exist, we expand them
+        mdp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
         ldp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_lookup", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(ldp)
 
         // Resize both dataset
