@@ -351,7 +351,8 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
 
 err_out:;
     if (starts != NULL){
-        delete starts;
+        delete[] starts[0];
+        delete[] starts;
     }
     return err ;
 } /* end H5VL_log_dataset_write() */

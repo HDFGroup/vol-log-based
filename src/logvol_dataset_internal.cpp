@@ -86,10 +86,10 @@ herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offs
             {
                 nblock = H5Sget_select_hyper_nblocks(sid); CHECK_ID(nblock)
 
-                hstarts = new hsize_t*[nblock * 2];
+                hstarts = (hsize_t**)malloc(sizeof(hsize_t*) * nblock * 2);
                 hends = hstarts + nblock;
 
-                hstarts[0] = new hsize_t[ndim * 2 * nblock];
+                hstarts[0] = (hsize_t*)malloc(sizeof(hsize_t) * ndim * 2 * nblock);
                 hends[0] = hstarts[0] + ndim;
                 for(i = 1; i < nblock; i++){
                     hstarts[i] = hstarts[i - 1] + ndim * 2;
@@ -101,7 +101,7 @@ herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offs
                 sortvec_ex(ndim, nblock, hstarts, hends);
 
                 // Check for interleving
-                group = new int[nblock + 1];
+                group = (int*)malloc(sizeof(int) * (nblock + 1));
                 group[0] = 0;
                 for(i = 0; i < nblock - 1; i++){
                     if (lessthan(ndim, hends[i], hstarts[i + 1])){  // The end cord is the max offset of the previous block. If less than the start offset of the next block, there won't be interleving
@@ -135,9 +135,9 @@ herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offs
                     }
                 }
 
-                starts = new MPI_Offset*[nreq * 2];
+                starts = (MPI_Offset**)malloc(sizeof(MPI_Offset*) * nreq * 2);
                 counts = starts + nreq;
-                starts[0] = new MPI_Offset[ndim * 2 * nreq];
+                starts[0] = (MPI_Offset*)malloc(sizeof(MPI_Offset) * ndim * 2 * nreq);
                 counts[0] = starts[0] + ndim;
                 for(i = 1; i < nblock; i++){
                     starts[i] = starts[i - 1] + ndim * 2;
@@ -200,17 +200,17 @@ herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offs
                 nblock = H5Sget_select_elem_npoints(sid); CHECK_ID(nblock)
 
                 if (nblock){
-                    hstarts = new hsize_t*[nblock];
-                    hstarts[0] = new hsize_t[ndim * nblock];
+                    hstarts = (hsize_t**)malloc(sizeof(hsize_t) * nblock);
+                    hstarts[0] = (hsize_t*)malloc(sizeof(hsize_t) * ndim * nblock);
                     for(i = 1; i < nblock; i++){
                         hstarts[i] = hstarts[i - 1] + ndim;
                     }
 
                     err = H5Sget_select_elem_pointlist(sid, 0, nblock, hstarts[0]); CHECK_ERR
 
-                    starts = new MPI_Offset*[nblock * 2];
+                    starts = (MPI_Offset**)malloc(sizeof(MPI_Offset*) * nblock * 2);
                     counts = starts + nblock;
-                    starts[0] = new MPI_Offset[ndim * 2 * nblock];
+                    starts[0] = (MPI_Offset*)malloc(sizeof(MPI_Offset) * ndim * 2 * nblock);
                     counts[0] = starts[0] + ndim;
                     for(i = 1; i < nblock; i++){
                         starts[i] = starts[i - 1] + ndim * 2;
@@ -230,9 +230,9 @@ herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offs
             break;
         case H5S_SEL_ALL:
             {
-                starts = new MPI_Offset*[2];
+                starts = (MPI_Offset**)malloc(sizeof(MPI_Offset*) * 2);
                 counts = starts + 1;
-                starts[0] = new MPI_Offset[ndim * 2];
+                starts[0] = (MPI_Offset*)malloc(sizeof(MPI_Offset) * ndim * 2);
                 counts[0] = starts[0] + ndim;
 
                 n = 1;
@@ -245,9 +245,8 @@ herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offs
 err_out:;
     if (err != 0){
         if (starts != NULL){
-            H5VL_log_delete(starts[0]);
-            delete starts;
-            starts = NULL;
+            H5VL_log_free(starts[0]);
+            H5VL_log_free(starts);
             counts = NULL;
         }
 
@@ -263,7 +262,7 @@ static bool intersect(int ndim, MPI_Offset *sa, MPI_Offset *ca, MPI_Offset *sb, 
     for(i = 0; i < ndim; i++){
         so[i] = std::max(sa[i], sb[i]);
         co[i] = std::min(sa[i] + ca[i], sb[i] + cb[i]) - so[i];
-        if (co[i] <= 0) false; 
+        if (co[i] <= 0) return false; 
     }
 
     return true;
@@ -290,7 +289,7 @@ err_out:;
 herr_t H5VL_log_dataset_readi_idx_search(H5VL_log_file_t *fp, int did, int ndim, MPI_Offset esize, void *buf, MPI_Offset *start, MPI_Offset *count, std::vector<H5VL_log_search_ret_t> &ret){
     herr_t err = 0;
     int j, k;
-    MPI_Offset os[32], oc[32];
+    MPI_Offset os[LOG_VOL_MAX_NDIM], oc[LOG_VOL_MAX_NDIM];
     H5VL_log_search_ret_t cur;
 
     for(auto &ent : fp->idx[did]){
@@ -379,8 +378,8 @@ herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> bloc
     int *lens;
     MPI_Aint *foffs = NULL, *moffs = NULL;
     MPI_Datatype *ftypes = NULL, *mtypes = NULL, etype = MPI_DATATYPE_NULL;
-    MPI_Offset fssize[32], mssize[32];
-    MPI_Offset ctr[32];
+    MPI_Offset fssize[LOG_VOL_MAX_NDIM], mssize[LOG_VOL_MAX_NDIM];
+    MPI_Offset ctr[LOG_VOL_MAX_NDIM];
 
     if (!nblock){
         *ftype = *mtype = MPI_DATATYPE_NULL;
@@ -410,8 +409,8 @@ herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> bloc
             else{
                 for(; j <= i; j++){ // Breakdown
                     nrow = 1;
-                    for(j = 0; j < blocks[i].ndim - 1; j++){
-                        nrow *= blocks[i].count[j];
+                    for(k = 0; k < blocks[i].ndim - 1; k++){
+                        nrow *= blocks[j].count[k];
                     }
                     nt += nrow;
                 }
@@ -419,11 +418,11 @@ herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> bloc
         }
     }
 
-    lens = new int[nt];
-    foffs = new MPI_Aint[nt];
-    moffs = new MPI_Aint[nt];
-    ftypes = new MPI_Datatype[nt];
-    mtypes = new MPI_Datatype[nt];
+    lens = (int*)malloc(sizeof(int) * nt);
+    foffs = (MPI_Aint*)malloc(sizeof(MPI_Aint) * nt);
+    moffs = (MPI_Aint*)malloc(sizeof(MPI_Aint) * nt);
+    ftypes = (MPI_Datatype*)malloc(sizeof(MPI_Datatype) * nt);
+    mtypes = (MPI_Datatype*)malloc(sizeof(MPI_Datatype) * nt);
 
     // Construct the actual type
     nt = 0;
@@ -440,8 +439,8 @@ herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> bloc
                     k = 0;
                 }
 
-                mpierr = MPI_Type_create_subarray(blocks[i].ndim, blocks[j].fsize, blocks[j].count, blocks[j].fstart, MPI_ORDER_C, etype, ftypes + nt); CHECK_MPIERR
-                mpierr = MPI_Type_create_subarray(blocks[i].ndim, blocks[j].msize, blocks[j].count, blocks[j].mstart, MPI_ORDER_C, etype, mtypes + nt); CHECK_MPIERR
+                mpierr = H5VL_log_debug_MPI_Type_create_subarray(blocks[i].ndim, blocks[j].fsize, blocks[j].count, blocks[j].fstart, MPI_ORDER_C, etype, ftypes + nt); CHECK_MPIERR
+                mpierr = H5VL_log_debug_MPI_Type_create_subarray(blocks[i].ndim, blocks[j].msize, blocks[j].count, blocks[j].mstart, MPI_ORDER_C, etype, mtypes + nt); CHECK_MPIERR
                 mpierr = MPI_Type_commit(ftypes + nt); CHECK_MPIERR
                 mpierr = MPI_Type_commit(mtypes + nt); CHECK_MPIERR
                 
@@ -507,7 +506,7 @@ err_out:
                 MPI_Type_free(ftypes + i);
             }
         }
-        delete ftypes;
+        free(ftypes);
     }
 
     if (mtypes != NULL){
@@ -516,13 +515,13 @@ err_out:
                 MPI_Type_free(mtypes + i);
             }
         }
-        delete mtypes;
+        free(mtypes);
     }
 
 
-    H5VL_log_delete(foffs)
-    H5VL_log_delete(moffs)
-    H5VL_log_delete(lens)
+    H5VL_log_free(foffs)
+    H5VL_log_free(moffs)
+    H5VL_log_free(lens)
 
     return err;
 }

@@ -69,9 +69,9 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     htri_t has_idx;
 
     // Calculate size and offset of the metadata per dataset
-    mlens = new MPI_Offset[fp->ndset * 2];
+    mlens = (MPI_Offset*)malloc(sizeof(MPI_Offset) * fp->ndset * 2);
     mlens_all = mlens + fp->ndset;
-    moffs = new MPI_Offset[(fp->ndset + 1) * 2];
+    moffs = (MPI_Offset*)malloc(sizeof(MPI_Offset) * (fp->ndset + 1) * 2);
     doffs = moffs + fp->ndset + 1;
     memset(mlens, 0, sizeof(MPI_Offset) * fp->ndset);
     for(auto &rp : fp->wreqs){
@@ -83,8 +83,8 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     }
 
     // Pack data
-    buf = new char[moffs[fp->ndset]];
-    bufp = new char*[fp->ndset];
+    buf = (char*)malloc(sizeof(char) * moffs[fp->ndset]);
+    bufp = (char**)malloc(sizeof(char*) * fp->ndset);
     
     for(i = 0; i < fp->ndset; i++){
         bufp[i] = buf + moffs[i];
@@ -104,6 +104,23 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
         bufp[rp.did] += sizeof(size_t);
     }
 
+    /* Debug code to dump metadata table
+    {
+        int i;
+        int rank, np;
+        
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &np);
+
+        for(i=0;i<np;i++){
+            if (rank == i){
+                hexDump(NULL, buf, moffs[fp->ndset], "wr.txt");
+            }
+            MPI_Barrier(MPI_COMM_WORLD);
+        }
+    }
+    */
+
     // Sync metadata size
     mpierr = MPI_Allreduce(mlens, mlens_all, fp->ndset, MPI_LONG_LONG, MPI_SUM, fp->comm); CHECK_MPIERR
     // NOTE: Some MPI implementation do not produce output for rank 0, moffs must ne initialized to 0
@@ -120,7 +137,7 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     loc.type = H5VL_OBJECT_BY_SELF;
     loc.loc_data.loc_by_name.name    = "_idx";
     loc.loc_data.loc_by_name.lapl_id = H5P_DATASET_ACCESS_DEFAULT;
-    err = H5VLlink_specific_wrapper(fp->lgp, &loc, fp->uvlid, H5VL_LINK_EXISTS, H5P_DATASET_XFER_DEFAULT, NULL, &has_idx); CHECK_ERR
+    err = H5VLlink_specific_wrapper(fp->lgp, &loc, fp->uvlid, H5VL_LINK_EXISTS, H5P_DATASET_XFER_DEFAULT, NULL, &has_idx);    CHECK_ERR
     if (has_idx){
         // If the exist, we expand them
         mdp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
@@ -193,16 +210,20 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
 
     fp->metadirty = false;
 
+    // This barrier is required to ensure no process read metadata before everyone finishes writing
+    MPI_Barrier(MPI_COMM_WORLD);
+
 err_out:
     // Cleanup
-    if (mlens != NULL) delete mlens;
-    if (moffs != NULL) delete moffs;
-    if (buf != NULL) delete buf;
-    if (bufp != NULL) delete bufp;
-    if (mdsid >= 0) H5Sclose(mdsid);
-    if (ldsid >= 0) H5Sclose(ldsid);
-    if (mmsid >= 0) H5Sclose(mmsid);
-    if (lmsid >= 0) H5Sclose(lmsid);
+    H5VL_log_free(mlens);
+    H5VL_log_free(moffs);
+    H5VL_log_free(buf);
+    H5VL_log_free(bufp);
+    H5VL_log_free(mlens);
+    H5VL_log_Sclose(mdsid);
+    H5VL_log_Sclose(ldsid);
+    H5VL_log_Sclose(mmsid);
+    H5VL_log_Sclose(lmsid);
 
     return err;
 }
@@ -236,27 +257,43 @@ herr_t H5VL_log_filei_metaupdate(H5VL_log_file_t *fp){
         // Get data space and size
         err = H5VLdataset_get_wrapper(mdp, fp->uvlid, H5VL_DATASET_GET_SPACE, fp->dxplid, NULL, &mdsid); CHECK_ERR
         //err = H5VLdataset_get_wrapper(ldp, fp->uvlid, H5VL_DATASET_GET_SPACE, fp->dxplid, NULL, &ldsid); CHECK_ERR
-        ndim = H5Sget_simple_extent_dims(mdsid, &mdsize, NULL); assert(ndim == 1);
+        ndim = H5Sget_simple_extent_dims(mdsid, &mdsize, NULL); LOG_VOL_ASSERT(ndim == 1);
         //ndim = H5Sget_simple_extent_dims(ldsid, &ldsize, NULL); assert(ndim == 1);
+        err = H5Sselect_all(mdsid); CHECK_ERR
 
         // Allocate buffer
-        buf = new char[mdsize];
+        buf = (char*)malloc(sizeof(char) * mdsize);
         //fp->lut.resize(ldsize);
 
         // Read metadata
-        err = H5VLdataset_read(mdp, fp->uvlid, H5T_NATIVE_B8, mdsid, mdsid, fp->dxplid, buf, NULL);    CHECK_ERR
+        err = H5VLdataset_read(mdp, fp->uvlid, H5T_NATIVE_B8, mdsid, mdsid, fp->dxplid, buf, NULL); CHECK_ERR
         //err = H5VLdataset_read(ldp, fp->uvlid, H5T_STD_I64LE, ldsid, ldsid, fp->dxplid, fp->lut.data(), NULL);    CHECK_ERR
 
         // Close the dataset
         err = H5VLdataset_close(mdp, fp->uvlid, fp->dxplid, NULL); CHECK_ERR 
         //err = H5VLdataset_close(ldp, fp->uvlid, fp->dxplid, NULL); CHECK_ERR 
 
+        /* Debug code to dump metadata read
+        {
+            int rank;
+            char fname[32];
+            
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+            sprintf(fname,"p%d_rd.txt",rank);
+            hexDump(NULL, buf, mdsize, fname);
+            
+        }
+        */
+
         // Parse metadata
         bufp = buf;
         while(bufp < buf + mdsize) {
             entry.did = *((int*)bufp);
+            LOG_VOL_ASSERT((entry.did >= 0) && (entry.did < fp->ndset));
             bufp += sizeof(int);
             ndim = *((int*)bufp);
+            LOG_VOL_ASSERT(ndim >= 0);
             bufp += sizeof(int);
             memcpy(entry.start, bufp, ndim * sizeof(MPI_Offset));
             bufp += ndim * sizeof(MPI_Offset);
@@ -283,7 +320,7 @@ err_out:;
     // Cleanup
     if (mdsid >= 0) H5Sclose(mdsid);
     if (ldsid >= 0) H5Sclose(ldsid);
-    if (buf != NULL) delete buf;
+    H5VL_log_free(buf);
 
     return err;
 }

@@ -9,7 +9,17 @@
 #include <H5VLpublic.h>
 #include "logvol.h"
 
+#ifdef LOGVOL_DEBUG
+#include <iostream>
+#endif
+
 #define LOG_GROUP_NAME "_LOG"
+#ifdef LOGVOL_DEBUG
+#define LOG_VOL_ASSERT(A) assert(A); 
+#else
+#define LOG_VOL_ASSERT(A) {} 
+#endif
+
 
 #define CHECK_ERR { \
     if (err < 0) { \
@@ -54,18 +64,18 @@
     goto err_out; \
 }
 
-#define H5VL_log_delete(A) {if (A != NULL) delete[] A;}
-#define H5VL_log_free(A) {if (A != NULL) free(A);}
+#define H5VL_log_delete_arr(A) {delete[] A; A = NULL;}
+#define H5VL_log_free(A) {free(A); A = NULL;}
 #define H5VL_log_Sclose(A) {if (A != -1) H5Sclose(A);}
 #define H5VL_log_Tclose(A) {if (A != -1) H5Tclose(A);}
 
 typedef struct H5VL_log_search_ret_t{
     int ndim;
-    int fsize[32];
-    int fstart[32];
-    int msize[32];
-    int mstart[32];
-    int count[32];
+    int fsize[LOG_VOL_MAX_NDIM];
+    int fstart[LOG_VOL_MAX_NDIM];
+    int msize[LOG_VOL_MAX_NDIM];
+    int mstart[LOG_VOL_MAX_NDIM];
+    int count[LOG_VOL_MAX_NDIM];
     size_t esize;
     MPI_Offset foff, moff;
 
@@ -86,8 +96,8 @@ typedef struct H5VL_log_search_ret_t{
 
 typedef struct H5VL_log_metaentry_t{
     int did;
-    MPI_Offset start[32];
-    MPI_Offset count[32];
+    MPI_Offset start[LOG_VOL_MAX_NDIM];
+    MPI_Offset count[LOG_VOL_MAX_NDIM];
     MPI_Offset ldoff;
     size_t rsize;
 } H5VL_log_metaentry_t;
@@ -95,8 +105,8 @@ typedef struct H5VL_log_metaentry_t{
 typedef struct H5VL_log_wreq_t{  
     int did;    // Source dataset ID
     int ndim;
-    MPI_Offset start[32];
-    MPI_Offset count[32];
+    MPI_Offset start[LOG_VOL_MAX_NDIM];
+    MPI_Offset count[LOG_VOL_MAX_NDIM];
 
     int ldid;   // Log dataset ID
     MPI_Offset ldoff;   // Offset in log dataset
@@ -110,8 +120,8 @@ typedef struct H5VL_log_rreq_t{
     int did;    // Source dataset ID
     
     int ndim;
-    MPI_Offset start[32];
-    MPI_Offset count[32];
+    MPI_Offset start[LOG_VOL_MAX_NDIM];
+    MPI_Offset count[LOG_VOL_MAX_NDIM];
 
     hid_t dtype;
     hid_t mtype;
@@ -133,8 +143,8 @@ typedef struct H5VL_log_dset_meta_t{
     //H5VL_log_file_t *fp;
     //int id;
     hsize_t ndim;
-    //hsize_t dims[32];
-    //hsize_t mdims[32];
+    //hsize_t dims[LOG_VOL_MAX_NDIM];
+    //hsize_t mdims[LOG_VOL_MAX_NDIM];
     hid_t dtype;
     //hsize_t esize;
 } H5VL_log_dset_meta_t;
@@ -182,8 +192,8 @@ typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
     H5VL_log_file_t *fp;
     int id;
     hsize_t ndim;
-    hsize_t dims[32];
-    hsize_t mdims[32];
+    hsize_t dims[LOG_VOL_MAX_NDIM];
+    hsize_t mdims[LOG_VOL_MAX_NDIM];
     hid_t dtype;
     hsize_t esize;
 } H5VL_log_dset_t;
@@ -267,3 +277,13 @@ extern herr_t H5Pset_nb_buffer_size(hid_t plist, size_t size);
 extern herr_t H5Pget_nb_buffer_size(hid_t plist, size_t *size);
 extern herr_t H5Pset_nonblocking(hid_t plist, int nonblocking);
 extern herr_t H5Pget_nonblocking(hid_t plist, int *nonblocking);
+
+
+#ifdef LOGVOL_DEBUG
+extern int H5VL_log_debug_MPI_Type_create_subarray(int ndims, const int array_of_sizes[], const int array_of_subsizes[], const int array_of_starts[], int order, MPI_Datatype oldtype, MPI_Datatype * newtype);
+extern void hexDump(char *desc, void *addr, size_t len, char *fname);
+extern void hexDump(char *desc, void *addr, size_t len);
+extern void hexDump(char *desc, void *addr, size_t len, FILE *fp);
+#else
+#define H5VL_log_debug_MPI_Type_create_subarray MPI_Type_create_subarray
+#endif
