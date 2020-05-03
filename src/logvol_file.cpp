@@ -49,11 +49,13 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
         under_vol_info = info->under_vol_info;
     }
     else{   // If no under VOL specified, use the native VOL
-        assert(H5VLis_connector_registered_by_name("native") == 1);
-        uvlid = H5VLget_connector_id_by_name("native");
-        assert(uvlid > 0);
+        htri_t ret;
+        ret = H5VLis_connector_registered_by_name("native");
+        if (ret != 1){
+            RET_ERR("Native VOL not found")
+        }
+        uvlid = H5VLget_connector_id_by_name("native"); CHECK_ID(uvlid)
         under_vol_info = NULL;
-        //return NULL;
     }
 
     // Make sure we have mpi enabled
@@ -146,9 +148,12 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
         under_vol_info = info->under_vol_info;
     }
     else{   // If no under VOL specified, use the native VOL
-        assert(H5VLis_connector_registered_by_name("native") == 1);
-        uvlid = H5VLget_connector_id_by_name("native");
-        assert(uvlid > 0);
+        htri_t ret;
+        ret = H5VLis_connector_registered_by_name("native");
+        if (ret != 1){
+            RET_ERR("Native VOL not found")
+        }
+        uvlid = H5VLget_connector_id_by_name("native"); CHECK_ID(uvlid)
         under_vol_info = NULL;
         //return NULL;
     }
@@ -263,10 +268,13 @@ herr_t H5VL_log_file_specific(  void *file, H5VL_file_specific_t specific_type,
                     free(info);
                 }
                 else{   // If no under VOL specified, use the native VOL
-                    //assert(H5VLis_connector_registered("native") == 1);
-                    //uvlid = H5VLget_connector_id_by_name("native");
-                    //assert(uvlid > 0);
-                    //under_vol_info = NULL;
+                    htri_t ret;
+                    ret = H5VLis_connector_registered_by_name("native");
+                    if (ret != 1){
+                        RET_ERR("Native VOL not found")
+                    }
+                    uvlid = H5VLget_connector_id_by_name("native"); CHECK_ID(uvlid)
+                    under_vol_info = NULL;
                 }
 
                 /* Call specific of under VOL */
@@ -336,7 +344,7 @@ herr_t H5VL_log_file_close(void *file, hid_t dxpl_id, void **req) {
 #endif
 
     // Flush write requests
-    if (fp->wreqs.size() > 0) {
+    if (fp->wreqs.size() > fp->nflushed) {
         err = H5VL_log_nb_flush_write_reqs(fp, dxpl_id); CHECK_ERR
     }
 

@@ -40,7 +40,10 @@ CXX_SRCS =  logvol.cpp \
             logvol_type.cpp \
             logvol_util.cpp \
             logvol_internal.cpp
-
+            
+if LOGVOL_DEBUG
+   CXX_SRCS += logvol_debug.cpp
+endif
 
 EXTRA_DIST = ph5_concat.hpp \
              acinclude.m4 \

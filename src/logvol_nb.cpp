@@ -75,8 +75,8 @@ herr_t H5VL_log_nb_flush_write_reqs(H5VL_log_file_t *fp, hid_t dxplid){
     cnt = fp->wreqs.size() - fp->nflushed;
 
     // Construct memory type
-    mlens = new int[cnt];
-    moffs = new MPI_Aint[cnt];
+    mlens = (int*)malloc(sizeof(int) * cnt);
+    moffs = (MPI_Aint*)malloc(sizeof(MPI_Aint) * cnt);
     fsize_local = 0;
     for(i = fp->nflushed; i < fp->wreqs.size(); i++){
         moffs[i - fp->nflushed] = (MPI_Aint)fp->wreqs[i].buf;
@@ -125,7 +125,10 @@ herr_t H5VL_log_nb_flush_write_reqs(H5VL_log_file_t *fp, hid_t dxplid){
 err_out:
     // Cleanup
     if (mtype != MPI_DATATYPE_NULL) MPI_Type_free(&mtype);
-    if (ldsid != -1) H5Sclose(ldsid);    
+    H5VL_log_Sclose(ldsid);  
 
+    H5VL_log_free(mlens);
+    H5VL_log_free(moffs);
+    
     return err;
 }

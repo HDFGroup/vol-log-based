@@ -170,7 +170,7 @@ herr_t H5VL_logi_get_att_ex(H5VL_log_obj_t *op, char *name, hid_t mtype, hsize_t
     ap = H5VLattr_open(op->uo, &loc, op->uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
     err = H5VLattr_get_wrapper(op->uo, op->uvlid, H5VL_ATTR_GET_SPACE, dxpl_id, NULL, &asid); CHECK_ERR
     ndim = H5Sget_simple_extent_dims(asid, len, NULL); CHECK_ID(ndim)
-    assert(ndim == 1);
+    LOG_VOL_ASSERT(ndim == 1);
     err = H5VLattr_read(ap, op->uvlid, mtype, buf, dxpl_id, NULL); CHECK_ERR;
     err = H5VLattr_close(ap, op->uvlid, dxpl_id, NULL); CHECK_ERR
 
@@ -218,7 +218,7 @@ herr_t H5VLlink_specific_wrapper(void *obj, const H5VL_loc_params_t *loc_params,
     va_list args;
 
     va_start(args, req);
-    H5VLlink_specific(obj, loc_params, connector_id, specific_type, dxpl_id, req, args);
+    err = H5VLlink_specific(obj, loc_params, connector_id, specific_type, dxpl_id, req, args);
     va_end(args);
 
     return err;
