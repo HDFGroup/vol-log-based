@@ -368,10 +368,10 @@ void sortoffsets(int len, MPI_Aint *oa, MPI_Aint *ob, int *l){
 }
 
 // Assume no overlaping read
-herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype){
+herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype, std::vector<H5VL_log_copy_ctx> &overlaps){
     herr_t err = 0;
     int mpierr;
-    int i, j, k;
+    int i, j, k, l;
     int nblock = blocks.size();
     std::vector<bool> newgroup(nblock, 0);
     int nt, nrow, old_nt;
@@ -380,6 +380,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> bloc
     MPI_Datatype *ftypes = NULL, *mtypes = NULL, etype = MPI_DATATYPE_NULL;
     MPI_Offset fssize[LOG_VOL_MAX_NDIM], mssize[LOG_VOL_MAX_NDIM];
     MPI_Offset ctr[LOG_VOL_MAX_NDIM];
+    H5VL_log_copy_ctx ctx;
 
     if (!nblock){
         *ftype = *mtype = MPI_DATATYPE_NULL;
@@ -490,7 +491,23 @@ herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> bloc
                 // Sort into order
                 sortoffsets(nt - old_nt, foffs + old_nt, moffs + old_nt, lens + old_nt);
 
-                // Should there be overlapping read, we have to merge them as well
+                // Should there be overlapping read, we have to adjust
+                for(k = old_nt; k < nt; k++){
+                    for(l = k + 1; l < nt; l++){
+                        if (foffs[k] + lens[k] > foffs[l]){ // Adjust for overlap
+                            // Record a memory copy req that copy the result from the former read to cover the later one
+                            ctx.dst = (char*)moffs[l];
+                            ctx.size = std::min((size_t)lens[l], (size_t)(foffs[k] - foffs[l] + lens[k]));
+                            ctx.src = (char*)(moffs[k] - ctx.size + lens[k]);
+                            overlaps.push_back(ctx);
+
+                            // Trim off the later one
+                            foffs[l] += ctx.size;
+                            moffs[l] += ctx.size;
+                            lens[l] -= ctx.size;
+                        }
+                    }
+                }
             }
         }
     }
