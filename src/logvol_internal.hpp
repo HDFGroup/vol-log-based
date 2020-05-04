@@ -94,6 +94,12 @@ typedef struct H5VL_log_search_ret_t{
     }
 } H5VL_log_search_ret_t;
 
+typedef struct H5VL_log_copy_ctx{
+    char *src;
+    char *dst;
+    size_t size;
+} H5VL_log_copy_ctx;
+
 typedef struct H5VL_log_metaentry_t{
     int did;
     MPI_Offset start[LOG_VOL_MAX_NDIM];
@@ -262,7 +268,7 @@ extern herr_t H5VLlink_specific_wrapper(void *obj, const H5VL_loc_params_t *loc_
 extern herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offset **&counts);
 extern herr_t H5VL_log_dataset_readi_idx_search_ex(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, void *buf, int n, MPI_Offset **starts, MPI_Offset **counts, std::vector<H5VL_log_search_ret_t> &ret);
 extern herr_t H5VL_log_dataset_readi_idx_search(H5VL_log_file_t *fp, int did, int ndim, MPI_Offset esize, void *buf, MPI_Offset *start, MPI_Offset *count, std::vector<H5VL_log_search_ret_t> &ret);
-extern herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype);
+extern herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype, std::vector<H5VL_log_copy_ctx> &overlaps);
 
 // Nonblocking
 extern herr_t H5VL_log_nb_flush_read_reqs(H5VL_log_file_t *fp, std::vector<H5VL_log_rreq_t> reqs, hid_t dxplid);

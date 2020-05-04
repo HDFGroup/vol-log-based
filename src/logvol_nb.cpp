@@ -9,6 +9,7 @@ herr_t H5VL_log_nb_flush_read_reqs(H5VL_log_file_t *fp, std::vector<H5VL_log_rre
     int mpierr;
     MPI_Datatype ftype, mtype;
     std::vector<H5VL_log_search_ret_t> intersections;
+    std::vector<H5VL_log_copy_ctx> overlaps;
     MPI_Status stat;
 
     if (!(fp->idxvalid)){
@@ -20,7 +21,7 @@ herr_t H5VL_log_nb_flush_read_reqs(H5VL_log_file_t *fp, std::vector<H5VL_log_rre
     }
 
     if (intersections.size() > 0){
-        err = H5VL_log_dataset_readi_gen_rtypes(intersections, &ftype, &mtype); CHECK_ERR
+        err = H5VL_log_dataset_readi_gen_rtypes(intersections, &ftype, &mtype, overlaps); CHECK_ERR
         mpierr = MPI_Type_commit(&mtype); CHECK_MPIERR
         mpierr = MPI_Type_commit(&ftype); CHECK_MPIERR
 
@@ -32,6 +33,10 @@ herr_t H5VL_log_nb_flush_read_reqs(H5VL_log_file_t *fp, std::vector<H5VL_log_rre
         mpierr = MPI_File_set_view(fp->fh, 0, MPI_BYTE, MPI_DATATYPE_NULL, "native", MPI_INFO_NULL); CHECK_MPIERR
 
         mpierr = MPI_File_read_all(fp->fh, MPI_BOTTOM, 0, MPI_DATATYPE_NULL, &stat); CHECK_MPIERR
+    }
+
+    for(auto &o: overlaps){
+        memcpy(o.dst, o.src, o.size);
     }
 
     // Type convertion
