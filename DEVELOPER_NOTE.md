@@ -36,6 +36,10 @@
 * H5Dclose Mar 11 2020
   close the anchor dataset
 
+* Non-blocking I/O and property
+* Overlapping read
+* Type conversion
+
 ## Working
 * H5Dread
   Stage a read request in the read queue.
@@ -50,11 +54,8 @@
 * H5Dset*
 * H5Fis_hdf5
 
-* Non-blocking I/O and property
 * Async I/O
 * Memory space
-* Overlapping read
-* Type conversion
 
 ## Do not need special care (passthrough)
 * H5A* - Mar 3 2020
@@ -93,6 +94,12 @@ Also, the file optional interface, which includes the init callback, must be imp
 It is a behavior observed in version 1.12.
 H5Sget_select_hyper_nblocks always break down the selection into unit cells even the selection is contiguous and non-interleving
 Even when the selection is a row of a 2-D data space, the returned hyperblocks from H5Sget_select_hyper_nblocks are individual cells.
+
+## HDF5 Dispatcher calls file close if any object reains open on MPI_Finalize
+
+If the application left any HDF5 object open on MPI_Finalize, the dispatcher would call the VOL file close.
+If the file has been closed by the application a prior, it causes a double-free error.
+A potential solution is to implement delayed close as the native driver does.
 
 ---
 
