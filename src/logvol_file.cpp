@@ -54,7 +54,7 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
         if (ret != 1){
             RET_ERR("Native VOL not found")
         }
-        uvlid = H5VLget_connector_id_by_name("native"); CHECK_ID(uvlid)
+        uvlid = H5VLpeek_connector_id_by_name("native"); CHECK_ID(uvlid)
         under_vol_info = NULL;
     }
 
@@ -65,6 +65,7 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     fp = new H5VL_log_file_t();
     fp->closing = false;
     fp->refcnt = 0;
+    fp->flag = flags;
     fp->nldset = 0;
     fp->ndset = 0;
     MPI_Comm_dup(comm, &(fp->comm));
@@ -153,7 +154,7 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
         if (ret != 1){
             RET_ERR("Native VOL not found")
         }
-        uvlid = H5VLget_connector_id_by_name("native"); CHECK_ID(uvlid)
+        uvlid = H5VLpeek_connector_id_by_name("native"); CHECK_ID(uvlid)
         under_vol_info = NULL;
         //return NULL;
     }
@@ -165,6 +166,7 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     fp = new H5VL_log_file_t();
     fp->closing = false;
     fp->refcnt = 0;
+    fp->flag = flags;
     MPI_Comm_dup(comm, &(fp->comm));
     MPI_Comm_rank(comm, &(fp->rank));
     fp->uvlid = uvlid;
@@ -273,7 +275,7 @@ herr_t H5VL_log_file_specific(  void *file, H5VL_file_specific_t specific_type,
                     if (ret != 1){
                         RET_ERR("Native VOL not found")
                     }
-                    uvlid = H5VLget_connector_id_by_name("native"); CHECK_ID(uvlid)
+                    uvlid = H5VLpeek_connector_id_by_name("native"); CHECK_ID(uvlid)
                     under_vol_info = NULL;
                 }
 
@@ -343,16 +345,18 @@ herr_t H5VL_log_file_close(void *file, hid_t dxpl_id, void **req) {
     printf("------- LOG VOL FILE Close\n");
 #endif
 
-    // Flush write requests
-    if (fp->wreqs.size() > fp->nflushed) {
-        err = H5VL_log_nb_flush_write_reqs(fp, dxpl_id); CHECK_ERR
+    if (fp->flag != H5F_ACC_RDONLY){
+        // Flush write requests
+        if (fp->wreqs.size() > fp->nflushed) {
+            err = H5VL_log_nb_flush_write_reqs(fp, dxpl_id); CHECK_ERR
+        }
+
+        // Generate metadata table
+        err = H5VL_log_filei_metaflush(fp); CHECK_ERR
+
+        // Att
+        err = H5VL_logi_get_att(fp, "_ndset", H5T_NATIVE_INT32, &(fp->ndset), dxpl_id); CHECK_ERR
     }
-
-    // Generate metadata table
-    err = H5VL_log_filei_metaflush(fp); CHECK_ERR
-
-    // Att
-    err = H5VL_logi_get_att(fp, "_ndset", H5T_NATIVE_INT32, &(fp->ndset), dxpl_id); CHECK_ERR
 
     // Close log group
     err = H5VLgroup_close(fp->lgp, fp->uvlid, dxpl_id, req); CHECK_ERR

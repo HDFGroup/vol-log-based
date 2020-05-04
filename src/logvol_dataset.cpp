@@ -124,10 +124,12 @@ void *H5VL_log_dataset_open(void *obj, const H5VL_loc_params_t *loc_params,
     err = H5VL_logi_get_att(dp, "_mdims", H5T_NATIVE_INT64, dp->mdims, dxpl_id); CHECK_ERR
     err = H5VL_logi_get_att(dp, "_ID", H5T_NATIVE_INT32, &(dp->id), dxpl_id); CHECK_ERR
 
+    goto fn_exit;
 err_out:;
     printf("%d\n",err);
     if (dp) delete dp;
     dp = NULL;
+fn_exit:;
 
     return (void *)dp;
 } /* end H5VL_log_dataset_open() */

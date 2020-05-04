@@ -140,14 +140,14 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     err = H5VLlink_specific_wrapper(fp->lgp, &loc, fp->uvlid, H5VL_LINK_EXISTS, H5P_DATASET_XFER_DEFAULT, NULL, &has_idx);    CHECK_ERR
     if (has_idx){
         // If the exist, we expand them
-        mdp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
+        mdp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(mdp)
         ldp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_lookup", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(ldp)
 
         // Resize both dataset
         dsize = (hsize_t)doffs[fp->ndset];
-        err = H5VLdataset_specific_wrapper(mdp, fp->uvlid, H5VL_DATASET_SET_EXTENT, fp->dxplid, NULL, &dsize);
+        err = H5VLdataset_specific_wrapper(mdp, fp->uvlid, H5VL_DATASET_SET_EXTENT, fp->dxplid, NULL, &dsize); CHECK_ERR
         dsize = fp->ndset;
-        err = H5VLdataset_specific_wrapper(ldp, fp->uvlid, H5VL_DATASET_SET_EXTENT, fp->dxplid, NULL, &dsize);
+        err = H5VLdataset_specific_wrapper(ldp, fp->uvlid, H5VL_DATASET_SET_EXTENT, fp->dxplid, NULL, &dsize); CHECK_ERR
 
         // Get data space
         err = H5VLdataset_get_wrapper(mdp, fp->uvlid, H5VL_DATASET_GET_SPACE, fp->dxplid, NULL, &mdsid); CHECK_ERR
