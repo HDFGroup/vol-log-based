@@ -156,6 +156,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
     int refcnt;
     bool closing;
+    unsigned flag;
 
     hid_t dxplid;
 
