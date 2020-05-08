@@ -1,82 +1,9 @@
 # Note for Developers
 
 ### Table of contents
-- [Logvol file format proposals](#characteristics-and-structure-of-neutrino-experimental-data)
+- [Known problem](#characteristics-and-structure-of-neutrino-experimental-data)
 
 ---
-
-# Progress
-## Done
-* H5Fcreate - Jan 26 2020
-  Create the HDF5 and all hidden data objects used by the VOL
-  Cache file metqadata (not the metadata table)
-
-* H5Fopen - Jan 26 2020
-  Open the HDF5 and all hidden data objects used by the VOL
-  Cache file metqadata (not the metadata table)
-
-* H5Fclose - Jan 26 2020
-  Clase all hidden data objects used by the VOL and the HDF5 file
-  Flush all staged I/O request
-  Build the metadata table
-  Wrtie back file metqadata
-
-* H5Fflush Mar 23 2020
-  Flush all staged I/O request
-  Mark the metadata table as outdated
-
-* H5Dcreate Mar 11 2020
-  Create the anchor dataset
-  Cache dataset metadata (ndim, type ... etc)
-
-* H5Dopen Mar 11 2020
-  Open the anchor dtaset
-  Cache dataset metadata (ndim, type ... etc)
-
-* H5Dclose Mar 11 2020
-  close the anchor dataset
-
-* Non-blocking I/O and property
-* Overlapping read
-* Type conversion
-
-## Working
-* H5Dread
-  Stage a read request in the read queue.
-  If the call is non-blocking, flush the request immediately.
-
-* H5Dwrite
-  Stage a write request in the write queue.
-  If the call is non-blocking, make a copy of the data.
-
-## ToDo
-* H5Dget*
-* H5Dset*
-* H5Fis_hdf5
-
-* Async I/O
-* Memory space
-
-## Do not need special care (passthrough)
-* H5A* - Mar 3 2020
-* H5G* - Mar 3 2020
-* H5Fget* - Mar 23 2020
-* H5T*
-* H5P*
-
-## No plan to support
-* H5Dgather
-* H5Dscatter
-* H5Diterate
-* H5Dvlen*
-* H5Dfill
-* H5Dcreate_anon
-* H5Fget_file_image
-* H5Freopen
-* H5Fmount
-* H5Funmount
-* H5Fget*
-* H5Fset*
 
 # Known problem
 
