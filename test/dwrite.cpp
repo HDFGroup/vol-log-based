@@ -25,13 +25,19 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    if (argc > 1){
+    if (argc > 2) {
+        if (!rank)
+            printf("Usage: %s [filename]\n", argv[0]);
+        MPI_Finalize();
+        return 1;
+    }
+    else if (argc > 1){
         file_name = argv[1];
     }
     else{
         file_name = "test.h5";
     }
-    // if(rank == 0) printf("Writing file_name = %s at rank 0 \n", file_name);
+    SHOW_TEST_INFO("Blocking write on datasets")
 
     //Register LOG VOL plugin 
     log_vlid = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
@@ -69,11 +75,7 @@ int main(int argc, char **argv) {
     err = H5Pclose(faplid); CHECK_ERR(err)
 
 err_out:;  
-    MPI_Allreduce(MPI_IN_PLACE, &nerrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    if (rank == 0) {
-        if (nerrs) printf(FAIL_STR,nerrs);
-        else       printf(PASS_STR);
-    }
+    SHOW_TEST_RESULT
 
     MPI_Finalize();
 

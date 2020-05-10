@@ -290,72 +290,85 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
                                 hid_t file_space_id, hid_t plist_id, 
                                 const void *buf, void **req) {
     herr_t err = 0;
+    H5VL_log_dset_t *dp = (H5VL_log_dset_t*)dset;
     int i, j, k, l;
     size_t esize;
-    int nblock;
-    MPI_Offset **starts, **counts;
-    char *bufp = (char*)buf;
-    H5VL_log_dset_t *dp = (H5VL_log_dset_t*)dset;
     H5VL_log_wreq_t r;
     htri_t eqtype;
+    H5S_sel_type stype;
     H5VL_log_req_type_t rtype;
+    MPI_Datatype ptype = MPI_DATATYPE_NULL;
 
-    // Gather starts and counts   
-    err = H5VL_logi_get_selection(file_space_id, nblock, starts, counts); CHECK_ERR
+    // H5S_All means using file space
+    if (mem_space_id == H5S_ALL) mem_space_id = file_space_id;
 
-    // Check for nonblocking flag
+    // Check mem space selection
+    if (mem_space_id == H5S_ALL) stype = H5S_SEL_ALL;
+    else stype =  H5Sget_select_type(mem_space_id);
+
+    // Setting metadata;
+    r.did = dp->id;
+    r.ndim = dp->ndim;
+    r.ldid = -1;
+    r.ldoff = 0;
+    r.ubuf = (char*)buf;
+    r.rsize = 0;    // Nomber of elements in record
+
+    // Gather starts and counts
+    err = H5VL_logi_get_selection(file_space_id, r.sels); CHECK_ERR
+    for(i = 0; i < r.sels.size(); i++){
+        r.sels[i].size = 1;
+        for(j = 0; j < dp->ndim; j++) r.sels[i].size *= r.sels[i].count[j];
+        r.rsize += r.sels[i].size;
+        r.sels[i].size *= dp->esize;
+    }
+
+    // Non-blocking?
     err = H5Pget_nonblocking(plist_id, &rtype); CHECK_ERR
 
-    // Get element size
-    esize = H5Tget_size(mem_type_id); CHECK_ID(esize)
+    // Need convert?
+    eqtype = H5Tequal(dp->dtype, mem_type_id); CHECK_ID(eqtype);
 
-    // Put request in queue
-    for(i = 0; i < nblock; i++){
-        r.rsize = 1;
-        for(j = 0; j < dp->ndim; j++){
-            r.rsize *= counts[i][j];
-            r.start[j] = starts[i][j];
-            r.count[j] = counts[i][j];
-        }
+    // Can reuse user buffer
+    if (rtype == H5VL_LOG_REQ_NONBLOCKING && eqtype > 0 && stype == H5S_SEL_ALL){
+        r.xbuf = r.ubuf;
+    }
+    else{   // Neet internal buffer
+        // Get element size
+        esize = H5Tget_size(mem_type_id); CHECK_ID(esize)
 
-        eqtype = H5Tequal(dp->dtype, mem_type_id); CHECK_ID(eqtype);
-        if (eqtype > 0){
-            if (rtype = H5VL_LOG_REQ_NONBLOCKING){
-                r.buf = bufp;
-                r.buf_alloc = 0;
-            }
-            else{
-                err = H5VL_log_filei_balloc(dp->fp, r.rsize, (void**)(&(r.buf))); CHECK_ERR
-                r.buf_alloc = 1;
-                memcpy(r.buf, bufp, r.rsize);
-            }
+        // HDF5 type conversion is in place, allocate for whatever larger
+        err = H5VL_log_filei_balloc(dp->fp, r.rsize * std::max(esize, (size_t)(dp->esize)), (void**)(&(r.xbuf))); CHECK_ERR
+
+        // Need packing
+        if (stype != H5S_SEL_ALL){
+            i = 0;
+            err = H5VL_log_dataspacei_get_sel_type(mem_space_id, esize, &ptype); CHECK_ERR
+
+            MPI_Pack(r.ubuf, 1, ptype, r.xbuf, r.rsize * esize, &i, dp->fp->comm);
+
+            LOG_VOL_ASSERT(i == r.rsize * esize)
         }
         else{
-            err = H5VL_log_filei_balloc(dp->fp, r.rsize * std::max(esize, (size_t)(dp->esize)), (void**)(&(r.buf))); CHECK_ERR
-            r.buf_alloc = 1;
-            memcpy(r.buf, bufp, r.rsize);
-        
-            err = H5Tconvert(mem_type_id, dp->dtype, r.rsize, r.buf, NULL, plist_id);
+            memcpy(r.xbuf, r.ubuf, r.rsize * esize);
         }
 
-        bufp += r.rsize * esize;
-        
-        r.rsize *= dp->esize;
-
-        r.did = dp->id;
-        r.ndim = dp->ndim;
-
-        r.ldid = -1;
-        r.ldoff = 0;
-
-        dp->fp->wreqs.push_back(r);        
+        // Need convert
+        if (eqtype == 0) err = H5Tconvert(mem_type_id, dp->dtype, r.rsize, r.xbuf, NULL, plist_id);
     }
+
+    // Convert request size to number of bytes to be used by later routines
+    r.rsize *= dp->esize;   
+
+    // Put request in queue
+    dp->fp->wreqs.push_back(r);      
 
 err_out:;
-    if (starts != NULL){
-        delete[] starts[0];
-        delete[] starts;
+    if (err){
+        if(r.xbuf != r.ubuf) H5VL_log_filei_bfree(dp->fp, r.xbuf);
     }
+    H5VL_log_type_free(ptype);
+
     return err ;
 } /* end H5VL_log_dataset_write() */
 

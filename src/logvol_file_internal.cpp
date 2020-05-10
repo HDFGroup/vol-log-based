@@ -5,7 +5,7 @@ herr_t H5VL_log_filei_balloc(H5VL_log_file_t *fp, size_t size, void **buf) {
     herr_t err = 0;
     size_t *bp;
 
-    if (fp->bsize >= 0){ // Negative means infinite
+    if (fp->bsize != LOG_VOL_BSIZE_UNLIMITED){
         if (fp->bused + size > fp->bsize){
             err = -1;
             RET_ERR("Out of buffer")
@@ -67,6 +67,7 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     hsize_t start, count;
     hsize_t dsize, msize;
     htri_t has_idx;
+    MPI_Offset seloff;
 
     // Calculate size and offset of the metadata per dataset
     mlens = (MPI_Offset*)malloc(sizeof(MPI_Offset) * fp->ndset * 2);
@@ -75,7 +76,7 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     doffs = moffs + fp->ndset + 1;
     memset(mlens, 0, sizeof(MPI_Offset) * fp->ndset);
     for(auto &rp : fp->wreqs){
-        mlens[rp.did] += rp.ndim * sizeof(MPI_Offset) * 2 + sizeof(int) * 2 + sizeof(MPI_Offset) + sizeof(size_t);
+        mlens[rp.did] += (rp.ndim * sizeof(MPI_Offset) * 2 + sizeof(int) * 2 + sizeof(MPI_Offset) + sizeof(size_t)) * rp.sels.size();
     }
     moffs[0] = 0;
     for(i = 0; i < fp->ndset; i++){
@@ -90,18 +91,22 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
         bufp[i] = buf + moffs[i];
     }
     for(auto &rp : fp->wreqs){
-        *((int*)bufp[rp.did]) = rp.did;
-        bufp[rp.did] += sizeof(int);
-        *((int*)bufp[rp.did]) = rp.ndim;
-        bufp[rp.did] += sizeof(int);
-        memcpy(bufp[rp.did], rp.start, rp.ndim * sizeof(MPI_Offset));
-        bufp[rp.did] += rp.ndim * sizeof(MPI_Offset);
-        memcpy(bufp[rp.did], rp.count, rp.ndim * sizeof(MPI_Offset));
-        bufp[rp.did] += rp.ndim * sizeof(MPI_Offset);
-        *((MPI_Offset*)bufp[rp.did]) = rp.ldoff;
-        bufp[rp.did] += sizeof(MPI_Offset);
-        *((size_t*)bufp[rp.did]) = rp.rsize;
-        bufp[rp.did] += sizeof(size_t);
+        seloff = 0;
+        for(auto &sp : rp.sels){
+            *((int*)bufp[rp.did]) = rp.did;
+            bufp[rp.did] += sizeof(int);
+            *((int*)bufp[rp.did]) = rp.ndim;
+            bufp[rp.did] += sizeof(int);
+            memcpy(bufp[rp.did], sp.start, rp.ndim * sizeof(MPI_Offset));
+            bufp[rp.did] += rp.ndim * sizeof(MPI_Offset);
+            memcpy(bufp[rp.did], sp.count, rp.ndim * sizeof(MPI_Offset));
+            bufp[rp.did] += rp.ndim * sizeof(MPI_Offset);
+            *((MPI_Offset*)bufp[rp.did]) = rp.ldoff + seloff;
+            bufp[rp.did] += sizeof(MPI_Offset);
+            *((size_t*)bufp[rp.did]) = rp.rsize;
+            bufp[rp.did] += sizeof(size_t);
+            seloff += sp.size;
+        }
     }
 
     /* Debug code to dump metadata table

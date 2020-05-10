@@ -48,6 +48,7 @@ hid_t H5VL_log_register(void);
 
 // Constants
 #define LOG_VOL_MAX_NDIM 32
+#define LOG_VOL_BSIZE_UNLIMITED -1
 
 /* Pass-through VOL connector info */
 typedef struct H5VL_log_info_t {
