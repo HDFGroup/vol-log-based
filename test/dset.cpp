@@ -23,13 +23,19 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    if (argc > 1){
+    if (argc > 2) {
+        if (!rank)
+            printf("Usage: %s [filename]\n", argv[0]);
+        MPI_Finalize();
+        return 1;
+    }
+    else if (argc > 1){
         file_name = argv[1];
     }
     else{
         file_name = "test.h5";
     }
-    // if(rank == 0) printf("Writing file_name = %s at rank 0 \n", file_name);
+    SHOW_TEST_INFO("Creating datasets")
 
     //Register LOG VOL plugin 
     log_vlid = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
@@ -61,31 +67,11 @@ int main(int argc, char **argv) {
     // Get dataspace
     sid = H5Dget_space(did); CHECK_ERR(sid)
     ndim = H5Sget_simple_extent_dims(sid, dims, mdims); CHECK_ERR(ndim);
-    if (ndim != 2) {
-        printf("Error at line %d in %s: expect ndim = %d, but got %d\n",
-               __LINE__,__FILE__, 2, ndim);
-        nerrs++;
-    }
-    if (dims[0] != N) {
-        printf("Error at line %d in %s: expect dims[0] = %llu, but got %llu\n",
-               __LINE__,__FILE__, N, dims[0]);
-        nerrs++;
-    }
-    if (dims[1] != N) {
-        printf("Error at line %d in %s: expect dims[1] = %llu, but got %llu\n",
-               __LINE__,__FILE__, M, dims[1]);
-        nerrs++;
-    }
-    if (mdims[0] != N) {
-        printf("Error at line %d in %s: expect mdims[0] = %llu, but got %llu\n",
-               __LINE__,__FILE__, N, mdims[0]);
-        nerrs++;
-    }
-    if (mdims[1] != N) {
-        printf("Error at line %d in %s: expect mdims[1] = %llu, but got %llu\n",
-               __LINE__,__FILE__, M, mdims[1]);
-        nerrs++;
-    }
+    EXP_VAL(ndim, 2)
+    EXP_VAL(dims[0], N)
+    EXP_VAL(dims[1], N)
+    EXP_VAL(mdims[0], N)
+    EXP_VAL(mdims[1], N)
 
     err = H5Sclose(sid); CHECK_ERR(err)
 
@@ -98,11 +84,7 @@ int main(int argc, char **argv) {
     err = H5Pclose(faplid); CHECK_ERR(err)
 
 err_out:  
-    MPI_Allreduce(MPI_IN_PLACE, &nerrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    if (rank == 0) {
-        if (nerrs) printf(FAIL_STR,nerrs);
-        else       printf(PASS_STR);
-    }
+    SHOW_TEST_RESULT
 
     MPI_Finalize();
 

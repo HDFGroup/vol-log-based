@@ -84,7 +84,7 @@ herr_t H5VL_log_nb_flush_write_reqs(H5VL_log_file_t *fp, hid_t dxplid){
     moffs = (MPI_Aint*)malloc(sizeof(MPI_Aint) * cnt);
     fsize_local = 0;
     for(i = fp->nflushed; i < fp->wreqs.size(); i++){
-        moffs[i - fp->nflushed] = (MPI_Aint)fp->wreqs[i].buf;
+        moffs[i - fp->nflushed] = (MPI_Aint)fp->wreqs[i].xbuf;
         mlens[i - fp->nflushed] = fp->wreqs[i].rsize;
         fp->wreqs[i].ldoff = fsize_local;
         fsize_local += fp->wreqs[i].rsize;
@@ -116,8 +116,8 @@ herr_t H5VL_log_nb_flush_write_reqs(H5VL_log_file_t *fp, hid_t dxplid){
     for(i = fp->nflushed; i < fp->wreqs.size(); i++){
         fp->wreqs[i].ldid = fp->nldset;
         fp->wreqs[i].ldoff += foff;
-        if (fp->wreqs[i].buf_alloc){
-            H5VL_log_filei_bfree(fp, (void**)(&(fp->wreqs[i].buf)));
+        if (fp->wreqs[i].xbuf != fp->wreqs[i].ubuf){
+            H5VL_log_filei_bfree(fp, (void*)(fp->wreqs[i].xbuf));
         }
     }
     (fp->nldset)++;

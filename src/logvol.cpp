@@ -116,10 +116,10 @@ hid_t H5VL_LOG_g = H5I_INVALID_HID;
 herr_t H5VL_log_init(hid_t vipl_id) {
     herr_t err;
     H5VL_log_req_type_t blocking = H5VL_LOG_REQ_BLOCKING;
-    size_t infty = -1;
+    ssize_t infty = LOG_VOL_BSIZE_UNLIMITED;
 
     err = H5Pregister2(H5P_DATASET_XFER, "nonblocking", sizeof(H5VL_log_req_type_t), &blocking, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
-    err = H5Pregister2(H5P_FILE_ACCESS, "nb_buffer_size", sizeof(size_t), &infty, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
+    err = H5Pregister2(H5P_FILE_ACCESS, "nb_buffer_size", sizeof(ssize_t), &infty, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
 
 err_out:;
     return err;

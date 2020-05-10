@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>
 #include <vector>
 #include <mpi.h>
 #include <hdf5.h>
@@ -68,6 +69,12 @@
 #define H5VL_log_free(A) {free(A); A = NULL;}
 #define H5VL_log_Sclose(A) {if (A != -1) H5Sclose(A);}
 #define H5VL_log_Tclose(A) {if (A != -1) H5Tclose(A);}
+#define H5VL_log_type_free(A) { \
+    if (A != MPI_DATATYPE_NULL){ \
+        MPI_Type_free(&A); \
+        A = MPI_DATATYPE_NULL; \
+    } \
+}
 
 typedef struct H5VL_log_search_ret_t{
     int ndim;
@@ -108,18 +115,26 @@ typedef struct H5VL_log_metaentry_t{
     size_t rsize;
 } H5VL_log_metaentry_t;
 
+typedef struct H5VL_log_selection{  
+    MPI_Offset start[LOG_VOL_MAX_NDIM]; // Start of selection
+    MPI_Offset count[LOG_VOL_MAX_NDIM]; // Count of selection
+    size_t size;    // Size of the selection (bytes)
+} H5VL_log_selection;
+
 typedef struct H5VL_log_wreq_t{  
-    int did;    // Source dataset ID
-    int ndim;
-    MPI_Offset start[LOG_VOL_MAX_NDIM];
-    MPI_Offset count[LOG_VOL_MAX_NDIM];
+    int did;    // Target dataset ID
+    int ndim;   // Dim of the target dataset
+    //MPI_Offset start[LOG_VOL_MAX_NDIM];
+    //MPI_Offset count[LOG_VOL_MAX_NDIM];
+    std::vector<H5VL_log_selection> sels;   // Selections within the dataset
 
     int ldid;   // Log dataset ID
     MPI_Offset ldoff;   // Offset in log dataset
 
-    size_t rsize;
-    char *buf;
-    int buf_alloc;  // Whether the buffer is allocated or 
+    size_t rsize; // Size of data in xbuf (bytes)
+    char *xbuf; // I/O buffer, always continguous and the same format as the dataset
+    char *ubuf; // User buffer
+    //int buf_alloc;  // Whether the buffer is allocated or 
 } H5VL_log_wreq_t;
 
 typedef struct H5VL_log_rreq_t{  
@@ -180,7 +195,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     //std::vector<int> ndim;
     //std::vector<H5VL_log_dset_meta_t> mdc;
 
-    size_t bsize;
+    ssize_t bsize;
     size_t bused;
 
     //std::vector<int> lut;
@@ -257,6 +272,11 @@ extern herr_t H5VL_log_filei_metaupdate(H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_balloc(H5VL_log_file_t *fp, size_t size, void **buf);
 extern herr_t H5VL_log_filei_bfree(H5VL_log_file_t *fp, void *buf);
 
+// Dataspace internals
+extern herr_t H5VL_logi_get_selection(hid_t sid, std::vector<H5VL_log_selection> &sels);
+extern herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offset **&counts);
+extern herr_t H5VL_log_dataspacei_get_sel_type(hid_t sid, size_t esize, MPI_Datatype *type);
+
 // Wraper
 extern herr_t H5VLdataset_specific_wrapper(void *obj, hid_t connector_id, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, ...);
 extern herr_t H5VLdataset_get_wrapper(void *obj, hid_t connector_id, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, ...);
@@ -265,7 +285,6 @@ extern herr_t H5VLfile_optional_wrapper(void *obj, hid_t connector_id, H5VL_file
 extern herr_t H5VLlink_specific_wrapper(void *obj, const H5VL_loc_params_t *loc_params, hid_t connector_id, H5VL_link_specific_t specific_type, hid_t dxpl_id, void **req, ...);
 
 // Dataset util
-extern herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offset **&counts);
 extern herr_t H5VL_log_dataset_readi_idx_search_ex(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, void *buf, int n, MPI_Offset **starts, MPI_Offset **counts, std::vector<H5VL_log_search_ret_t> &ret);
 extern herr_t H5VL_log_dataset_readi_idx_search(H5VL_log_file_t *fp, int did, int ndim, MPI_Offset esize, void *buf, MPI_Offset *start, MPI_Offset *count, std::vector<H5VL_log_search_ret_t> &ret);
 extern herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype, std::vector<H5VL_log_copy_ctx> &overlaps);
@@ -281,7 +300,7 @@ extern MPI_Datatype H5VL_log_dtypei_mpitype_by_size(size_t size);
 
 // Property
 extern herr_t H5Pset_nb_buffer_size(hid_t plist, size_t size);
-extern herr_t H5Pget_nb_buffer_size(hid_t plist, size_t *size);
+extern herr_t H5Pget_nb_buffer_size(hid_t plist, ssize_t *size);
 extern herr_t H5Pset_nonblocking(hid_t plist, int nonblocking);
 extern herr_t H5Pget_nonblocking(hid_t plist, int *nonblocking);
 

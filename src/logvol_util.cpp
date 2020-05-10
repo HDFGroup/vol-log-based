@@ -264,12 +264,12 @@ err_out:;
     return err;
 }
 
-herr_t H5Pget_nb_buffer_size(hid_t plist, size_t *size) {
+herr_t H5Pget_nb_buffer_size(hid_t plist, ssize_t *size) {
     herr_t err = 0;
     htri_t isfapl;
 
     isfapl = H5Pisa_class(plist, H5P_FILE_ACCESS); CHECK_ID(isfapl)
-    if (isfapl == 0) *size = -1;  // Default property will not pass class check
+    if (isfapl == 0) *size = LOG_VOL_BSIZE_UNLIMITED;  // Default property will not pass class check
     else {
         err = H5Pget(plist, "nb_buffer_size", size); CHECK_ERR
     }

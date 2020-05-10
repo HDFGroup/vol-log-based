@@ -76,20 +76,13 @@ void *H5VL_log_file_create(const char *name, unsigned flags, hid_t fcpl_id,
     fp->type = H5I_FILE;
     fp->idxvalid = false;
     fp->metadirty = false;
-    //err = H5Pget_nb_buffer_size(fapl_id, &(fp->bsize)); CHECK_ERR
+    err = H5Pget_nb_buffer_size(fapl_id, &(fp->bsize)); CHECK_ERR
 
     // Create the file with underlying VOL
     under_fapl_id = H5Pcopy(fapl_id);
     H5Pset_vol(under_fapl_id, uvlid, under_vol_info);
     fp->uo = H5VLfile_create(name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL); CHECK_NERR(fp->uo)
     H5Pclose(under_fapl_id);
-    /* Make the 'post open' callback */
-    // A workaround without introspect support
-    po_supported = 0;
-    //err = H5VLintrospect_opt_query(fp->uo, fp->uvlid, H5VL_SUBCLS_FILE, H5VL_NATIVE_FILE_POST_OPEN, &po_supported); CHECK_ERR
-    if(po_supported){
-        //err = H5VLfile_optional_wrapper(fp->uo, fp->uvlid, H5VL_NATIVE_FILE_POST_OPEN, H5P_DATASET_XFER_DEFAULT, NULL); CHECK_ERR
-    }
     
     // Create LOG group
     loc.obj_type = H5I_FILE;
@@ -175,7 +168,7 @@ void *H5VL_log_file_open(const char *name, unsigned flags, hid_t fapl_id,
     fp->type = H5I_FILE;
     fp->idxvalid = false;
     fp->metadirty = false;
-    //err = H5Pget_nb_buffer_size(fapl_id, &(fp->bsize)); CHECK_ERR
+    err = H5Pget_nb_buffer_size(fapl_id, &(fp->bsize)); CHECK_ERR
 
     // Create the file with underlying VOL
     under_fapl_id = H5Pcopy(fapl_id);

@@ -1,8 +1,10 @@
 #pragma once
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
 #include <mpi.h>
 #include <hdf5.h>
+#include <libgen.h>
 
 #define CHECK_ERR(A) { \
     if (A < 0) { \
@@ -25,7 +27,7 @@
 #define EXP_VAL(A,B) { \
     if (A != B) { \
         nerrs++; \
-        std::cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " << (B) << " but got " << (A) << std::endl; \
+        std::cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " << #A << " = " << (B) << ", but got " << (A) << std::endl; \
         goto err_out; \
     } \
 }
@@ -33,10 +35,25 @@
 #define EXP_VAL_EX(A,B,C) { \
     if (A != B) { \
         nerrs++; \
-        std::cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " << C << " = " << (B) << " but got " << (A) << std::endl; \
+        std::cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " << C << " = " << (B) << ", but got " << (A) << std::endl; \
         goto err_out; \
     } \
 }
+
+#define SHOW_TEST_INFO(A) { \
+    if (rank == 0) { \
+        std::cout << "*** TESTING C    " << basename(argv[0]) << ": " << A << std::endl; \
+    } \
+}
+
+#define SHOW_TEST_RESULT { \
+    MPI_Allreduce(MPI_IN_PLACE, &nerrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); \
+    if (rank == 0) { \
+        if (nerrs) std::cout << "fail with " << nerrs << " mismatches." << std::endl; \
+        else       std::cout << "pass" << std::endl; \
+    } \
+}
+
 
 #define PASS_STR "pass\n"
 #define SKIP_STR "skip\n"
