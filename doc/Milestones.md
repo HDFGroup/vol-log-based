@@ -27,7 +27,8 @@
   + Support overlapping read across datasets
 * Datatype and endianness conversion - Done
 * Memory space selection - TODO
-  + Allow memory space selection in Dread and Dwrite
+  + Allow memory space selection in Dwrite - DONE
+  + Allow memory space selection in Dread
 * Test programs
   + Basic test for VOL functions - Done
   + Comprehensive test with different I/O patterns - TODO

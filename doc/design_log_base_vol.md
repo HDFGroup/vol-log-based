@@ -130,6 +130,21 @@ close. They can also be used to convert the files in logged data layout into
 the traditional HDF5 canonical layout. Such conversion is usually carried out
 by an off-line utility program.
 
+#### 3.2.1.  Proposed change to metadata table - caching the metadata
+An alternate approach is to organize the metadata only in memory.
+The metadata in the file is unorganized (unsorted), and there is no look-up
+ table for the starting offsets of datasets in the metadata table.
+When a file is opened, we read and cache all metadata entries in the memory.
+Then, we can organize the metadata using whatever data structure we like.
+A straightforward data structure is to organize the metadata entries into bins.
+Each bin contains entries related to a dataset. It achieves the same effect as in our original design.
+We can also utilize more complex data structures, such as R-tree, to improve read performance.
+
+On every flush, we use MPI_Allgather to distribute new metadata to every process.
+Each process individually updates its own in-memory data structure with incoming change.
+When the file is close, the structured metadata is flattened and written 
+to the metadata dataset. 
+
 ### 4.  APIs Implemented in the Log-based Virtual Object Driver
 This section describes the APIs to be implemented by the log-based driver,
 including file open and close, dataset open, create, read, write, and close.
