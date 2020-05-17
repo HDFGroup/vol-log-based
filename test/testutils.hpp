@@ -42,7 +42,7 @@
 
 #define SHOW_TEST_INFO(A) { \
     if (rank == 0) { \
-        std::cout << "*** TESTING C    " << basename(argv[0]) << ": " << A << std::endl; \
+        std::cout << "*** TESTING CXX    " << basename(argv[0]) << ": " << A << std::endl; \
     } \
 }
 

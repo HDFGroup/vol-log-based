@@ -117,7 +117,7 @@ void *H5VL_log_dataset_open(void *obj, const H5VL_loc_params_t *loc_params,
     dp->uvlid = op->uvlid;
     dp->type = H5I_DATASET;
     err = H5VLdataset_get_wrapper(dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, NULL, &(dp->dtype)); CHECK_ERR
-    dp->esize = H5Tget_size(dp->type); CHECK_ID(dp->esize)
+    dp->esize = H5Tget_size(dp->dtype); CHECK_ID(dp->esize)
 
     // Atts
     err = H5VL_logi_get_att_ex(dp, "_dims", H5T_NATIVE_INT64, &(dp->ndim), dp->dims, dxpl_id); CHECK_ERR
@@ -149,128 +149,83 @@ herr_t H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, 
     herr_t err = 0;
     int i, j;
     int n;
-    MPI_Offset **starts, **counts;
-    size_t esize, isize;
+    size_t esize;
     htri_t eqtype;
     char *bufp = (char*)buf;
     H5VL_log_rreq_t r;
-    std::vector<H5VL_log_rreq_t> local_reqs;
-    std::vector<H5VL_log_rreq_t> &reqs = local_reqs;
-    H5VL_log_dset_t *dp = (H5VL_log_dset_t*)dset;
+    H5S_sel_type stype;
     H5VL_log_req_type_t rtype;
+    H5VL_log_dset_t *dp = (H5VL_log_dset_t*)dset;
 
-
+    // Update the index if it is out of date
     if (!(dp->fp->idxvalid)){
         err = H5VL_log_filei_metaupdate(dp->fp); CHECK_ERR
     }
 
-    // Gather starts and counts   
-    err = H5VL_logi_get_selection(file_space_id, n, starts, counts); CHECK_ERR
+    // H5S_All means using file space
+    if (mem_space_id == H5S_ALL) mem_space_id = file_space_id;
 
-    // Get element size
-    esize = H5Tget_size(mem_type_id);
+    // Check mem space selection
+    if (mem_space_id == H5S_ALL) stype = H5S_SEL_ALL;
+    else stype =  H5Sget_select_type(mem_space_id);
 
-    // Check if need convert
+    // Setting metadata;
+    r.did = dp->id;
+    r.ndim = dp->ndim;
+    r.ubuf = (char*)buf;
+    r.ptype = MPI_DATATYPE_NULL;
+    r.dtype = -1;
+    r.mtype = -1;
+    r.esize = dp->esize;
+    r.rsize = 0;    // Nomber of elements in record
+
+    // Gather starts and counts
+    err = H5VL_log_dataspacei_get_selection(file_space_id, r.sels); CHECK_ERR
+    for(i = 0; i < r.sels.size(); i++){
+        r.sels[i].size = 1;
+        for(j = 0; j < dp->ndim; j++) r.sels[i].size *= r.sels[i].count[j];
+        r.rsize += r.sels[i].size;
+        r.sels[i].size *= dp->esize;
+    }
+
+    // Non-blocking?
+    err = H5Pget_nonblocking(plist_id, &rtype); CHECK_ERR
+
+    // Need convert?
     eqtype = H5Tequal(dp->dtype, mem_type_id); CHECK_ID(eqtype);
 
-    // Check for nonblocking flag
-    err = H5Pget_nonblocking(plist_id, &rtype); CHECK_ERR
-    if (rtype == H5VL_LOG_REQ_NONBLOCKING){
-        reqs = dp->fp->rreqs;
+    // Can reuse user buffer
+    if (eqtype > 0 && stype == H5S_SEL_ALL){
+        r.xbuf = r.ubuf;
     }
+    else{   // Need internal buffer
+        // Get element size
+        esize = H5Tget_size(mem_type_id); CHECK_ID(esize)
 
-    // Put request in queue
-    for(i = 0; i < n; i++){
-        r.rsize = 1;
-        for(j = 0; j < dp->ndim; j++){
-            r.rsize *= counts[i][j];
-            r.start[j] = starts[i][j];
-            r.count[j] = counts[i][j];
+        // HDF5 type conversion is in place, allocate for whatever larger
+        err = H5VL_log_filei_balloc(dp->fp, r.rsize * std::max(esize, (size_t)(dp->esize)), (void**)(&(r.xbuf))); CHECK_ERR
+
+        // Need packing
+        if (stype != H5S_SEL_ALL){
+            err = H5VL_log_dataspacei_get_sel_type(mem_space_id, esize, &(r.ptype)); CHECK_ERR
         }
-        r.ibuf = bufp;  
-        bufp += r.rsize * esize;
 
+        // Need convert
         if (eqtype == 0){
-            r.dtype = H5Tcopy(dp->dtype);
-            r.mtype = H5Tcopy(mem_type_id);
-
-            if (esize >= dp->esize){
-                r.xbuf = r.ibuf; 
-            }
-            else{
-                err = H5VL_log_filei_balloc(dp->fp, r.rsize * dp->esize, (void**)(&(r.xbuf))); CHECK_ERR
-            }
+            r.dtype = H5Tcopy(dp->dtype); CHECK_ID(r.dtype)
+            r.mtype = H5Tcopy(mem_type_id); CHECK_ID(r.mtype)
         }
-        else{
-            r.dtype = -1;
-            r.mtype = -1;
-            r.xbuf = r.ibuf; 
-        }
-
-        r.esize = dp->esize;
-        r.did = dp->id;
-        r.ndim = dp->ndim;
-
-        reqs.push_back(r);        
     }
 
-    // Flush it immediately if blocking
+    // Flush it immediately if blocking, otherwise place into queue
     if (rtype != H5VL_LOG_REQ_NONBLOCKING){
-        err = H5VL_log_nb_flush_read_reqs(dp->fp, reqs, plist_id); CHECK_ERR
+        err = H5VL_log_nb_flush_read_reqs(dp->fp, std::vector<H5VL_log_rreq_t>(1, r), plist_id); CHECK_ERR
     }
-
-    /* Code to handle blocking separately
     else{
-        int mpierr;
-        MPI_Datatype ftype, mtype;
-        std::vector<H5VL_log_search_ret_t> intersections;
-        MPI_Status stat;
-        hssize_t nelem;
-        void *xbuf;
-
-        if ((!eqtype) && (isize < dp->esize)){
-            nelem = H5Sget_select_npoints(mem_space_id); CHECK_ID(nelem)
-
-            err = H5VL_log_filei_balloc(dp->fp, nelem * dp->esize, (void**)(&(xbuf))); CHECK_ERR
-        }
-        else{
-            xbuf = buf;
-        }
-
-        err = H5VL_log_dataset_readi_idx_search_ex(dp->fp, dp, xbuf, n, starts, counts, intersections); CHECK_ERR
-
-        if (intersections.size() > 0){
-            err = H5VL_log_dataset_readi_gen_rtypes(intersections, &ftype, &mtype); CHECK_ERR
-            mpierr = MPI_Type_commit(&mtype); CHECK_MPIERR
-            mpierr = MPI_Type_commit(&ftype); CHECK_MPIERR
-
-            mpierr = MPI_File_set_view(dp->fp->fh, 0, MPI_BYTE, ftype, "native", MPI_INFO_NULL); CHECK_MPIERR
-
-            mpierr = MPI_File_read_all(dp->fp->fh, MPI_BOTTOM, 1, mtype, &stat); CHECK_MPIERR
-        }
-        else{
-            mpierr = MPI_File_set_view(dp->fp->fh, 0, MPI_BYTE, MPI_DATATYPE_NULL, "native", MPI_INFO_NULL); CHECK_MPIERR
-
-            mpierr = MPI_File_read_all(dp->fp->fh, MPI_BOTTOM, 0, MPI_DATATYPE_NULL, &stat); CHECK_MPIERR
-        }
-
-        if(!eqtype){
-            err = H5Tconvert(dp->dtype, mem_type_id, nelem, xbuf, NULL, plist_id); CHECK_ERR
-
-            if (xbuf != buf){
-                memcpy(buf, xbuf, nelem * isize);
-
-                H5VL_log_filei_bfree(dp->fp, (void**)(&(xbuf)));
-            }
-        }
+        dp->fp->rreqs.push_back(r);     
     }
-    */
 
 err_out:;
-    if (starts != NULL){
-        delete[] starts[0];
-        delete[] starts;
-    }
 
     return err;
 } /* end H5VL_log_dataset_read() */
@@ -315,7 +270,7 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
     r.rsize = 0;    // Nomber of elements in record
 
     // Gather starts and counts
-    err = H5VL_logi_get_selection(file_space_id, r.sels); CHECK_ERR
+    err = H5VL_log_dataspacei_get_selection(file_space_id, r.sels); CHECK_ERR
     for(i = 0; i < r.sels.size(); i++){
         r.sels[i].size = 1;
         for(j = 0; j < dp->ndim; j++) r.sels[i].size *= r.sels[i].count[j];
@@ -333,7 +288,7 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
     if (rtype == H5VL_LOG_REQ_NONBLOCKING && eqtype > 0 && stype == H5S_SEL_ALL){
         r.xbuf = r.ubuf;
     }
-    else{   // Neet internal buffer
+    else{   // Need internal buffer
         // Get element size
         esize = H5Tget_size(mem_type_id); CHECK_ID(esize)
 

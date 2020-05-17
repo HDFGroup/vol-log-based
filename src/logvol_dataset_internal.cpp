@@ -2,64 +2,6 @@
 #include <algorithm>
 #include <vector>
 
-
-
-static bool intersect(int ndim, MPI_Offset *sa, MPI_Offset *ca, MPI_Offset *sb, MPI_Offset *cb, MPI_Offset *so, MPI_Offset *co){
-    int i;
-
-    for(i = 0; i < ndim; i++){
-        so[i] = std::max(sa[i], sb[i]);
-        co[i] = std::min(sa[i] + ca[i], sb[i] + cb[i]) - so[i];
-        if (co[i] <= 0) return false; 
-    }
-
-    return true;
-}
-
-herr_t H5VL_log_dataset_readi_idx_search_ex(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, void *buf, int n, MPI_Offset **starts, MPI_Offset **counts, std::vector<H5VL_log_search_ret_t> &ret){
-    herr_t err = 0;
-    int i, j;
-    size_t rsize;
-
-    for(i = 0; i < n; i++){
-        rsize = (size_t)dp->esize;
-        for(j = 0; j < dp->ndim; j++){
-            rsize *= counts[i][j];
-        }
-        err = H5VL_log_dataset_readi_idx_search(fp, dp->id, dp->ndim, dp->esize, buf, starts[i], counts[i], ret); CHECK_ERR
-        buf += rsize;
-    }
-
-err_out:;
-    return err;
-}
-
-herr_t H5VL_log_dataset_readi_idx_search(H5VL_log_file_t *fp, int did, int ndim, MPI_Offset esize, void *buf, MPI_Offset *start, MPI_Offset *count, std::vector<H5VL_log_search_ret_t> &ret){
-    herr_t err = 0;
-    int j, k;
-    MPI_Offset os[LOG_VOL_MAX_NDIM], oc[LOG_VOL_MAX_NDIM];
-    H5VL_log_search_ret_t cur;
-
-    for(auto &ent : fp->idx[did]){
-        if(intersect(ndim, ent.start, ent.count, start, count, os, oc)){
-            for(j = 0; j < ndim; j++){
-                cur.fstart[j] = os[j] - ent.start[j];
-                cur.fsize[j] = ent.count[j];
-                cur.mstart[j] = os[j] - start[j];
-                cur.msize[j] = count[j];
-                cur.count[j] = oc[j];
-            }
-            cur.foff = ent.ldoff;
-            cur.moff = (MPI_Offset)buf;
-            cur.ndim = ndim;
-            cur.esize = esize;
-            ret.push_back(cur);
-        }
-    }
-
-    return err;
-}
-
 static bool interleve(int ndim, int *sa, int *ca, int *sb){
     int i;
 

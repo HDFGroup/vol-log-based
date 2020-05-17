@@ -2,11 +2,9 @@
 
 herr_t H5VL_log_nb_flush_read_reqs(H5VL_log_file_t *fp, std::vector<H5VL_log_rreq_t> reqs, hid_t dxplid){
     herr_t err = 0;
-    int i, j;
-    int n;
-    int nb;
-    MPI_Offset **starts, **counts;
     int mpierr;
+    int i, j;
+    size_t esize;
     MPI_Datatype ftype, mtype;
     std::vector<H5VL_log_search_ret_t> intersections;
     std::vector<H5VL_log_copy_ctx> overlaps;
@@ -17,7 +15,7 @@ herr_t H5VL_log_nb_flush_read_reqs(H5VL_log_file_t *fp, std::vector<H5VL_log_rre
     }
 
     for(auto &r: reqs){
-        H5VL_log_dataset_readi_idx_search(fp, r.did, r.ndim, r.esize, r.xbuf, r.start, r.count, intersections);
+        err = H5VL_logi_idx_search(fp, r, intersections); CHECK_ERR
     }
 
     if (intersections.size() > 0){
@@ -39,21 +37,36 @@ herr_t H5VL_log_nb_flush_read_reqs(H5VL_log_file_t *fp, std::vector<H5VL_log_rre
         memcpy(o.dst, o.src, o.size);
     }
 
-    // Type convertion
-    for(auto &r: fp->rreqs){
+    // Post processing
+    for(auto &r: reqs){
+        // Type convertion
         if (r.dtype != r.mtype){
             err = H5Tconvert(r.dtype, r.mtype, r.rsize, r.xbuf, NULL, dxplid); CHECK_ERR
             
-            if (r.xbuf != r.ibuf){
-                size_t esize;
+            esize = H5Tget_size(r.mtype); CHECK_ID(esize)
+            H5Tclose(r.dtype);
+            H5Tclose(r.mtype);
+        }
+        else{
+            esize = r.esize;
+        }
 
-                esize = H5Tget_size(r.mtype); CHECK_ID(esize)
-                memcpy(r.ibuf, r.xbuf, r.rsize * esize);
-            
-                H5VL_log_filei_bfree(fp, (void**)(&(r.xbuf)));
+        // Packing
+        if (r.xbuf != r.ubuf){
+            if (r.ptype != MPI_DATATYPE_NULL){
+                i = 0;
+                MPI_Unpack(r.xbuf, 1, &i, r.ubuf, 1, r.ptype, fp->comm);
+                MPI_Type_free(&(r.ptype));
             }
+            else{
+                memcpy(r.ubuf, r.xbuf, r.rsize * esize);
+            }
+        
+            H5VL_log_filei_bfree(fp, r.xbuf);
         }
     }
+
+    reqs.clear();
 
 err_out:;
 

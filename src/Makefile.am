@@ -40,7 +40,8 @@ CXX_SRCS =  logvol.cpp \
             logvol_req.cpp \
             logvol_type.cpp \
             logvol_util.cpp \
-            logvol_internal.cpp
+            logvol_internal.cpp \
+            logvol_internal_idx.cpp
             
 if LOGVOL_DEBUG
    CXX_SRCS += logvol_debug.cpp

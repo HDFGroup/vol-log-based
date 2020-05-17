@@ -12,13 +12,16 @@ herr_t H5VL_log_filei_balloc(H5VL_log_file_t *fp, size_t size, void **buf) {
         }
     }
 
-    fp->bused += size;
     bp = (size_t*)malloc(size + sizeof(size_t));
     if (bp == NULL){
         err = -1;
+
         RET_ERR("OOM")
     }
+    *bp = size;
     *buf = bp + 1;
+
+    fp->bused += size;
 
 err_out:;
     return err;

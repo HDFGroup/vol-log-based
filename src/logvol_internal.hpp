@@ -139,19 +139,21 @@ typedef struct H5VL_log_wreq_t{
 
 typedef struct H5VL_log_rreq_t{  
     int did;    // Source dataset ID
-    
-    int ndim;
-    MPI_Offset start[LOG_VOL_MAX_NDIM];
-    MPI_Offset count[LOG_VOL_MAX_NDIM];
+    int ndim;   // Dim of the source dataset
+    std::vector<H5VL_log_selection> sels;   // Selections within the dataset
+    //MPI_Offset start[LOG_VOL_MAX_NDIM];
+    //MPI_Offset count[LOG_VOL_MAX_NDIM];
 
-    hid_t dtype;
-    hid_t mtype;
+    hid_t dtype;    // Dataset type
+    hid_t mtype;    // Memory type
 
-    size_t rsize;
-    size_t esize;
+    size_t rsize; // Number of data elements in xbuf
+    size_t esize; // Size of a data element in xbuf
 
-    char *ibuf;
-    char *xbuf;
+    char *ubuf; // I/O buffer, always continguous and the same format as the dataset
+    char *xbuf; // User buffer
+
+    MPI_Datatype ptype; // Datatype that represetn memory space selection
 } H5VL_log_rreq_t;
 
 typedef struct H5VL_log_obj_t {
@@ -260,10 +262,10 @@ template <class A, class B>
 int H5VL_logi_vector_cmp(int ndim, A *l, B *r);
 
 extern herr_t H5VLattr_get_wrapper(void *obj, hid_t connector_id, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, ...);
-extern herr_t H5VL_logi_add_att(H5VL_log_obj_t *op, char *name, hid_t atype, hid_t mtype, hsize_t len, void *buf, hid_t dxpl_id);
-extern herr_t H5VL_logi_put_att(H5VL_log_obj_t *op, char *name, hid_t mtype, void *buf, hid_t dxpl_id);
-extern herr_t H5VL_logi_get_att(H5VL_log_obj_t *op, char *name, hid_t mtype, void *buf, hid_t dxpl_id);
-extern herr_t H5VL_logi_get_att_ex(H5VL_log_obj_t *op, char *name, hid_t mtype, hsize_t *len, void *buf, hid_t dxpl_id);
+extern herr_t H5VL_logi_add_att(H5VL_log_obj_t *op, const char *name, hid_t atype, hid_t mtype, hsize_t len, void *buf, hid_t dxpl_id);
+extern herr_t H5VL_logi_put_att(H5VL_log_obj_t *op, const char *name, hid_t mtype, void *buf, hid_t dxpl_id);
+extern herr_t H5VL_logi_get_att(H5VL_log_obj_t *op, const char *name, hid_t mtype, void *buf, hid_t dxpl_id);
+extern herr_t H5VL_logi_get_att_ex(H5VL_log_obj_t *op, const char *name, hid_t mtype, hsize_t *len, void *buf, hid_t dxpl_id);
 
 // File internals
 extern herr_t H5VL_log_filei_flush(H5VL_log_file_t *fp, hid_t dxplid);
@@ -273,8 +275,7 @@ extern herr_t H5VL_log_filei_balloc(H5VL_log_file_t *fp, size_t size, void **buf
 extern herr_t H5VL_log_filei_bfree(H5VL_log_file_t *fp, void *buf);
 
 // Dataspace internals
-extern herr_t H5VL_logi_get_selection(hid_t sid, std::vector<H5VL_log_selection> &sels);
-extern herr_t H5VL_logi_get_selection(hid_t sid, int &n, MPI_Offset **&starts, MPI_Offset **&counts);
+extern herr_t H5VL_log_dataspacei_get_selection(hid_t sid, std::vector<H5VL_log_selection> &sels);
 extern herr_t H5VL_log_dataspacei_get_sel_type(hid_t sid, size_t esize, MPI_Datatype *type);
 
 // Wraper
@@ -285,8 +286,7 @@ extern herr_t H5VLfile_optional_wrapper(void *obj, hid_t connector_id, H5VL_file
 extern herr_t H5VLlink_specific_wrapper(void *obj, const H5VL_loc_params_t *loc_params, hid_t connector_id, H5VL_link_specific_t specific_type, hid_t dxpl_id, void **req, ...);
 
 // Dataset util
-extern herr_t H5VL_log_dataset_readi_idx_search_ex(H5VL_log_file_t *fp, H5VL_log_dset_t *dp, void *buf, int n, MPI_Offset **starts, MPI_Offset **counts, std::vector<H5VL_log_search_ret_t> &ret);
-extern herr_t H5VL_log_dataset_readi_idx_search(H5VL_log_file_t *fp, int did, int ndim, MPI_Offset esize, void *buf, MPI_Offset *start, MPI_Offset *count, std::vector<H5VL_log_search_ret_t> &ret);
+
 extern herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> blocks, MPI_Datatype *ftype, MPI_Datatype *mtype, std::vector<H5VL_log_copy_ctx> &overlaps);
 
 // Nonblocking
@@ -297,6 +297,9 @@ extern herr_t H5VL_log_nb_flush_write_reqs(H5VL_log_file_t *fp, hid_t dxplid);
 //extern herr_t H5VL_log_dtypei_convert_core(void *inbuf, void *outbuf, hid_t intype, hid_t outtype, int N);
 //extern herr_t H5VL_log_dtypei_convert(void *inbuf, void *outbuf, hid_t intype, hid_t outtype, int N);
 extern MPI_Datatype H5VL_log_dtypei_mpitype_by_size(size_t size);
+
+// Index
+extern herr_t H5VL_logi_idx_search(H5VL_log_file_t *fp, H5VL_log_rreq_t &req, std::vector<H5VL_log_search_ret_t> &ret);
 
 // Property
 extern herr_t H5Pset_nb_buffer_size(hid_t plist, size_t size);
