@@ -104,7 +104,7 @@ herr_t H5VLattr_get_wrapper(void *obj, hid_t connector_id, H5VL_attr_get_t get_t
     return err;
 }
 
-herr_t H5VL_logi_add_att(H5VL_log_obj_t *op, char *name, hid_t atype, hid_t mtype, hsize_t len, void *buf, hid_t dxpl_id) {
+herr_t H5VL_logi_add_att(H5VL_log_obj_t *op, const char *name, hid_t atype, hid_t mtype, hsize_t len, void *buf, hid_t dxpl_id) {
     herr_t err = 0;
     H5VL_loc_params_t loc;
     hid_t asid = -1;
@@ -125,7 +125,7 @@ err_out:;
     return err;
 }
 
-herr_t H5VL_logi_put_att(H5VL_log_obj_t *op, char *name, hid_t mtype, void *buf, hid_t dxpl_id) {
+herr_t H5VL_logi_put_att(H5VL_log_obj_t *op, const char *name, hid_t mtype, void *buf, hid_t dxpl_id) {
     herr_t err = 0;
     H5VL_loc_params_t loc;
     void *ap;
@@ -141,7 +141,7 @@ err_out:;
     return err;
 }
 
-herr_t H5VL_logi_get_att(H5VL_log_obj_t *op, char *name, hid_t mtype, void *buf, hid_t dxpl_id) {
+herr_t H5VL_logi_get_att(H5VL_log_obj_t *op, const char *name, hid_t mtype, void *buf, hid_t dxpl_id) {
     herr_t err = 0;
     H5VL_loc_params_t loc;
     void *ap;
@@ -157,7 +157,7 @@ err_out:;
     return err;
 }
 
-herr_t H5VL_logi_get_att_ex(H5VL_log_obj_t *op, char *name, hid_t mtype, hsize_t *len, void *buf, hid_t dxpl_id) {
+herr_t H5VL_logi_get_att_ex(H5VL_log_obj_t *op, const char *name, hid_t mtype, hsize_t *len, void *buf, hid_t dxpl_id) {
     herr_t err = 0;
     H5VL_loc_params_t loc;
     hid_t asid = -1;

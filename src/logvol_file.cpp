@@ -348,7 +348,7 @@ herr_t H5VL_log_file_close(void *file, hid_t dxpl_id, void **req) {
         err = H5VL_log_filei_metaflush(fp); CHECK_ERR
 
         // Att
-        err = H5VL_logi_get_att(fp, "_ndset", H5T_NATIVE_INT32, &(fp->ndset), dxpl_id); CHECK_ERR
+        err = H5VL_logi_put_att(fp, "_ndset", H5T_NATIVE_INT32, &(fp->ndset), dxpl_id); CHECK_ERR
     }
 
     // Close log group

@@ -47,7 +47,7 @@ void hexDump(char *desc, void *addr, size_t len, FILE *fp) {
                 fprintf(fp, "  %s\n", buff);
 
             // Output the offset.
-            fprintf(fp, "  %04x ", i);
+            fprintf(fp, "  %04lx ", i);
         }
 
         // Now the hex code for the specific character.

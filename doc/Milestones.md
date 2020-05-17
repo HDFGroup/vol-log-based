@@ -26,8 +26,8 @@
   + Generate file and memory type for MPI read across datasets
   + Support overlapping read across datasets
 * Datatype and endianness conversion - Done
-* Memory space selection - TODO
-  + Allow memory space selection in Dwrite - DONE
+* Memory space selection - DONE
+  + Allow memory space selection in Dwrite
   + Allow memory space selection in Dread
 * Test programs
   + Basic test for VOL functions - Done
