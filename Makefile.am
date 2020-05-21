@@ -4,8 +4,8 @@
 #
 # @configure_input@
 
-SUBDIRS = src test
-DIST_SUBDIRS = src test
+SUBDIRS = src test example
+DIST_SUBDIRS = src test example
 EXTRA_DIST = 
 
 .PHONY:
