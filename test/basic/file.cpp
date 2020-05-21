@@ -36,7 +36,6 @@ int main(int argc, char **argv) {
     //Register LOG VOL plugin 
     log_vlid = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
 
-
     faplid = H5Pcreate(H5P_FILE_ACCESS); 
     // MPI and collective metadata is required by LOG VOL
     H5Pset_fapl_mpio(faplid, MPI_COMM_WORLD, MPI_INFO_NULL);

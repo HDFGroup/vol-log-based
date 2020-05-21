@@ -322,6 +322,15 @@ else
    LIBS="$LIBS -lhdf5"
 fi
 
+AC_ARG_VAR(TESTSEQRUN, [Run command (on one MPI process) for "make check" on cross-compile environment. Example: "aprun -n 1". @<:@default: none@:>@])
+
+AC_ARG_VAR(TESTMPIRUN, [MPI run command for "make ptest", @<:@default: mpiexec -n NP@:>@])
+if test "x${TESTMPIRUN}" = x ; then
+   dnl if TESTMPIRUN has not been set by users, then
+   dnl set default to "mpiexec -n NP"
+   UD_MPI_PATH_PROGS([TESTMPIRUN], [mpiexec mpirun srun aprun])
+fi
+
 AC_ARG_VAR(TESTOUTDIR, [Output file directory for "make check" and "make ptest", @<:@default: ./@:>@])
 if test "x${TESTOUTDIR}" = x ; then
    dnl set default to current directory
@@ -331,6 +340,12 @@ fi
 AC_CONFIG_FILES(Makefile \
                 src/Makefile \
                 test/Makefile \
+                test/basic/Makefile \
+                test/parallel/Makefile \
+                test/hdf5/Makefile \
+                test/phdf5/Makefile \
+                example/Makefile \
+                example/hdf5/Makefile \
                 )
 
 AC_OUTPUT

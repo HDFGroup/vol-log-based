@@ -180,12 +180,24 @@ herr_t H5VL_log_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id, 
     r.rsize = 0;    // Nomber of elements in record
 
     // Gather starts and counts
-    err = H5VL_log_dataspacei_get_selection(file_space_id, r.sels); CHECK_ERR
-    for(i = 0; i < r.sels.size(); i++){
-        r.sels[i].size = 1;
-        for(j = 0; j < dp->ndim; j++) r.sels[i].size *= r.sels[i].count[j];
-        r.rsize += r.sels[i].size;
-        r.sels[i].size *= dp->esize;
+    if (stype == H5S_SEL_ALL){
+        r.sels.resize(1);
+        r.rsize = 1;
+        for(j = 0; j < dp->ndim; j++){
+            r.sels[0].start[j] = 0;
+            r.sels[0].count[j] = dp->dims[j];
+            r.rsize *= r.sels[0].count[j];
+        }
+        r.sels[0].size *= dp->esize;
+    }
+    else{
+        err = H5VL_log_dataspacei_get_selection(file_space_id, r.sels); CHECK_ERR
+        for(i = 0; i < r.sels.size(); i++){
+            r.sels[i].size = 1;
+            for(j = 0; j < dp->ndim; j++) r.sels[i].size *= r.sels[i].count[j];
+            r.rsize += r.sels[i].size;
+            r.sels[i].size *= dp->esize;
+        }
     }
 
     // Non-blocking?
@@ -268,14 +280,26 @@ herr_t H5VL_log_dataset_write(  void *dset, hid_t mem_type_id, hid_t mem_space_i
     r.ldoff = 0;
     r.ubuf = (char*)buf;
     r.rsize = 0;    // Nomber of elements in record
-
+    
     // Gather starts and counts
-    err = H5VL_log_dataspacei_get_selection(file_space_id, r.sels); CHECK_ERR
-    for(i = 0; i < r.sels.size(); i++){
-        r.sels[i].size = 1;
-        for(j = 0; j < dp->ndim; j++) r.sels[i].size *= r.sels[i].count[j];
-        r.rsize += r.sels[i].size;
-        r.sels[i].size *= dp->esize;
+    if (stype == H5S_SEL_ALL){
+        r.sels.resize(1);
+        r.rsize = 1;
+        for(j = 0; j < dp->ndim; j++){
+            r.sels[0].start[j] = 0;
+            r.sels[0].count[j] = dp->dims[j];
+            r.rsize *= r.sels[0].count[j];
+        }
+        r.sels[0].size *= dp->esize;
+    }
+    else{
+        err = H5VL_log_dataspacei_get_selection(file_space_id, r.sels); CHECK_ERR
+        for(i = 0; i < r.sels.size(); i++){
+            r.sels[i].size = 1;
+            for(j = 0; j < dp->ndim; j++) r.sels[i].size *= r.sels[i].count[j];
+            r.rsize += r.sels[i].size;
+            r.sels[i].size *= dp->esize;
+        }
     }
 
     // Non-blocking?
