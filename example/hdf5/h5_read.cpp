@@ -19,6 +19,8 @@
  */
 
 #include "hdf5.h"
+#include "logvol.h"
+#include <cassert>
 
 #define H5FILE_NAME        "SDS.h5"
 #define DATASETNAME "IntArray"
@@ -34,6 +36,7 @@ int
 main (void)
 {
     hid_t       file, dataset;         /* handles */
+    	hid_t log_vlid, faplid;
     hid_t       datatype, dataspace;
     hid_t       memspace;
     H5T_class_t t_class;                 /* data type class */
@@ -54,6 +57,8 @@ main (void)
     hsize_t      offset_out[3];         /* hyperslab offset in memory */
     int          i, j, k, status_n, rank;
 
+	MPI_Init(NULL, NULL);
+
     for (j = 0; j < NX; j++) {
 	for (i = 0; i < NY; i++) {
 	    for (k = 0; k < NZ ; k++)
@@ -61,11 +66,17 @@ main (void)
 	}
     }
 
+	faplid = H5Pcreate(H5P_FILE_ACCESS);
+	// MPI and collective metadata is required by LOG VOL
+	H5Pset_fapl_mpio(faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
+	H5Pset_all_coll_metadata_ops(faplid, 1);
+	H5Pset_vol(faplid, log_vlid, NULL);
+
     /*
      * Open the file and the dataset.
      */
-    file = H5Fopen(H5FILE_NAME, H5F_ACC_RDONLY, H5P_DEFAULT);
-    dataset = H5Dopen2(file, DATASETNAME, H5P_DEFAULT);
+    file = H5Fopen(H5FILE_NAME, H5F_ACC_RDONLY, faplid); assert(file >= 0);
+    dataset = H5Dopen2(file, DATASETNAME, H5P_DEFAULT); assert(dataset >= 0);
 
     /*
      * Get datatype and dataspace handles and then query
@@ -94,7 +105,7 @@ main (void)
     count[0]  = NX_SUB;
     count[1]  = NY_SUB;
     status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL,
-				 count, NULL);
+				 count, NULL); assert(status == 0);
 
     /*
      * Define the memory dataspace.
@@ -121,7 +132,7 @@ main (void)
      * memory and display.
      */
     status = H5Dread(dataset, H5T_NATIVE_INT, memspace, dataspace,
-		     H5P_DEFAULT, data_out);
+		     H5P_DEFAULT, data_out); assert(status == 0);
     for (j = 0; j < NX; j++) {
 	for (i = 0; i < NY; i++) printf("%d ", data_out[j][i][0]);
 	printf("\n");
@@ -144,6 +155,10 @@ main (void)
     H5Sclose(dataspace);
     H5Sclose(memspace);
     H5Fclose(file);
+
+	status = H5Pclose(faplid); assert(status == 0);
+
+	MPI_Finalize();
 
     return 0;
 }
