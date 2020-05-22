@@ -21,7 +21,8 @@
 
 
 #include "hdf5.h"
-
+#include "logvol.h"
+#include <cassert>
 
 #define H5FILE_NAME    "group.h5"
 #define RANK    2
@@ -35,6 +36,7 @@ main(void)
 {
 
     hid_t    file;
+    	hid_t log_vlid, faplid;
     hid_t    grp;
     hid_t    dataset, dataspace;
     hid_t    plist;
@@ -45,15 +47,23 @@ main(void)
 
     int      idx_f, idx_g;
 
+	MPI_Init(NULL, NULL);
+
+	faplid = H5Pcreate(H5P_FILE_ACCESS);
+	// MPI and collective metadata is required by LOG VOL
+	H5Pset_fapl_mpio(faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
+	H5Pset_all_coll_metadata_ops(faplid, 1);
+	H5Pset_vol(faplid, log_vlid, NULL);
+
     /*
      * Create a file.
      */
-    file = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    file = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, faplid); assert(file >= 0);
 
     /*
      * Create a group in the file.
      */
-    grp = H5Gcreate2(file, "/Data", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    grp = H5Gcreate2(file, "/Data", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); assert(grp >= 0);
 
     /*
      * Create dataset "Compressed Data" in the group using absolute
@@ -70,7 +80,7 @@ main(void)
                 H5Pset_chunk(plist, 2, cdims);
                 H5Pset_deflate( plist, 6);
     dataset = H5Dcreate2(file, "/Data/Compressed_Data", H5T_NATIVE_INT,
-                        dataspace, H5P_DEFAULT, plist, H5P_DEFAULT);
+                        dataspace, H5P_DEFAULT, plist, H5P_DEFAULT); assert(dataset >= 0);
     /*
      * Close the first dataset .
      */
@@ -84,7 +94,7 @@ main(void)
     dims[1] = 20;
     dataspace = H5Screate_simple(RANK, dims, NULL);
     dataset = H5Dcreate2(file, "/Data/Float_Data", H5T_NATIVE_FLOAT,
-			dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+			dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); assert(dataset >= 0);
 
     /*
      *Close the second dataset and file.
@@ -98,38 +108,38 @@ main(void)
     /*
      * Now reopen the file and group in the file.
      */
-    file = H5Fopen(H5FILE_NAME, H5F_ACC_RDWR, H5P_DEFAULT);
-    grp  = H5Gopen2(file, "Data", H5P_DEFAULT);
+    file = H5Fopen(H5FILE_NAME, H5F_ACC_RDWR, faplid); assert(file >= 0);
+    grp  = H5Gopen2(file, "Data", H5P_DEFAULT); assert(grp >= 0);
 
     /*
      * Access "Compressed_Data" dataset in the group.
      */
-    dataset = H5Dopen2(grp, "Compressed_Data", H5P_DEFAULT);
+    dataset = H5Dopen2(grp, "Compressed_Data", H5P_DEFAULT); assert(dataset >= 0);
     if( dataset < 0) printf(" Dataset 'Compressed-Data' is not found. \n");
     printf("\"/Data/Compressed_Data\" dataset is open \n");
 
     /*
      * Close the dataset.
      */
-    status = H5Dclose(dataset);
+    status = H5Dclose(dataset); assert(status == 0); assert(status == 0);
 
     /*
      * Create hard link to the Data group.
      */
-    status = H5Lcreate_hard(file, "Data", H5L_SAME_LOC, "Data_new", H5P_DEFAULT, H5P_DEFAULT);
+    status = H5Lcreate_hard(file, "Data", H5L_SAME_LOC, "Data_new", H5P_DEFAULT, H5P_DEFAULT); assert(status == 0);
 
     /*
      * We can access "Compressed_Data" dataset using created
      * hard link "Data_new".
      */
-    dataset = H5Dopen2(file, "/Data_new/Compressed_Data", H5P_DEFAULT);
+    dataset = H5Dopen2(file, "/Data_new/Compressed_Data", H5P_DEFAULT);  assert(dataset >= 0);
     if( dataset < 0) printf(" Dataset is not found. \n");
     printf("\"/Data_new/Compressed_Data\" dataset is open \n");
 
     /*
      * Close the dataset.
      */
-    status = H5Dclose(dataset);
+    status = H5Dclose(dataset); assert(status == 0);
 
 
     /*
@@ -160,6 +170,10 @@ main(void)
 
     H5Gclose(grp);
     H5Fclose(file);
+
+	status = H5Pclose(faplid); assert(status == 0);
+
+	MPI_Finalize();
 
     return 0;
 }

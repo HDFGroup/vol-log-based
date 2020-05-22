@@ -23,6 +23,8 @@
  */
 
 #include "hdf5.h"
+#include "logvol.h"
+#include <cassert>
 
 #define H5FILE_NAME "Select.h5"
 
@@ -51,6 +53,7 @@ main (void)
 {
 
    hid_t   file, dataset;           /* File and dataset identifiers */
+   	hid_t log_vlid, faplid;
    hid_t   mid1, mid2, mid, fid;    /* Dataspace identifiers */
    hid_t   plist;                   /* Dataset property list identifier */
 
@@ -81,6 +84,8 @@ main (void)
    int    vector[MSPACE1_DIM];
    int    values[] = {53, 59, 61, 67};  /* New values to be written */
 
+	MPI_Init(NULL, NULL);
+
    /*
     * Buffers' initialization.
     */
@@ -88,16 +93,22 @@ main (void)
    for(i = 1; i < MSPACE1_DIM - 1; i++)
        vector[i] = i;
 
+	faplid = H5Pcreate(H5P_FILE_ACCESS);
+	// MPI and collective metadata is required by LOG VOL
+	H5Pset_fapl_mpio(faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
+	H5Pset_all_coll_metadata_ops(faplid, 1);
+	H5Pset_vol(faplid, log_vlid, NULL);
+
    /*
     * Create a file.
     */
-   file = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+   file = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, faplid); assert(file >= 0);
 
    /*
     * Create property list for a dataset and set up fill values.
     */
    plist = H5Pcreate(H5P_DATASET_CREATE);
-   ret   = H5Pset_fill_value(plist, H5T_NATIVE_INT, &fillvalue);
+   ret   = H5Pset_fill_value(plist, H5T_NATIVE_INT, &fillvalue); assert(ret == 0);
 
     /*
      * Create dataspace for the dataset in the file.
@@ -108,7 +119,7 @@ main (void)
      * Create dataset in the file. Notice that creation
      * property list plist is used.
      */
-    dataset = H5Dcreate2(file, "Matrix in file", H5T_NATIVE_INT, fid, H5P_DEFAULT, plist, H5P_DEFAULT);
+    dataset = H5Dcreate2(file, "Matrix in file", H5T_NATIVE_INT, fid, H5P_DEFAULT, plist, H5P_DEFAULT); assert(dataset >= 0);
 
     /*
      * Select hyperslab for the dataset in the file, using 3x2 blocks,
@@ -118,7 +129,7 @@ main (void)
     stride[0] = 4; stride[1] = 3;
     count[0]  = 2; count[1]  = 4;
     block[0]  = 3; block[1]  = 2;
-    ret = H5Sselect_hyperslab(fid, H5S_SELECT_SET, start, stride, count, block);
+    ret = H5Sselect_hyperslab(fid, H5S_SELECT_SET, start, stride, count, block); assert(ret == 0);
 
     /*
      * Create dataspace for the first dataset.
@@ -134,7 +145,7 @@ main (void)
     stride[0] = 1;
     count[0]  = 48;
     block[0]  = 1;
-    ret = H5Sselect_hyperslab(mid1, H5S_SELECT_SET, start, stride, count, block);
+    ret = H5Sselect_hyperslab(mid1, H5S_SELECT_SET, start, stride, count, block); assert(ret == 0);
 
     /*
      * Write selection from the vector buffer to the dataset in the file.
@@ -149,12 +160,12 @@ main (void)
      *                    0 41 42  0 43 44  0 45 46  0 47 48
      *                    0  0  0  0  0  0  0  0  0  0  0  0
      */
-     ret = H5Dwrite(dataset, H5T_NATIVE_INT, mid1, fid, H5P_DEFAULT, vector);
+     ret = H5Dwrite(dataset, H5T_NATIVE_INT, mid1, fid, H5P_DEFAULT, vector); assert(ret == 0);
 
     /*
      * Reset the selection for the file dataspace fid.
      */
-    ret = H5Sselect_none(fid);
+    ret = H5Sselect_none(fid); assert(ret == 0);
 
     /*
      * Create dataspace for the second dataset.
@@ -169,12 +180,12 @@ main (void)
     coord[2][0] = 3; coord[2][1] = 5;
     coord[3][0] = 5; coord[3][1] = 6;
 
-    ret = H5Sselect_elements(fid, H5S_SELECT_SET, NPOINTS, (const hsize_t *)coord);
+    ret = H5Sselect_elements(fid, H5S_SELECT_SET, NPOINTS, (const hsize_t *)coord); assert(ret == 0);
 
     /*
      * Write new selection of points to the dataset.
      */
-    ret = H5Dwrite(dataset, H5T_NATIVE_INT, mid2, fid, H5P_DEFAULT, values);
+    ret = H5Dwrite(dataset, H5T_NATIVE_INT, mid2, fid, H5P_DEFAULT, values); assert(ret == 0);
 
     /*
      * File dataset should look like this:
@@ -192,29 +203,29 @@ main (void)
     /*
      * Close memory file and memory dataspaces.
      */
-    ret = H5Sclose(mid1);
-    ret = H5Sclose(mid2);
-    ret = H5Sclose(fid);
+    ret = H5Sclose(mid1); assert(ret == 0);
+    ret = H5Sclose(mid2); assert(ret == 0);
+    ret = H5Sclose(fid); assert(ret == 0);
 
     /*
      * Close dataset.
      */
-    ret = H5Dclose(dataset);
+    ret = H5Dclose(dataset); assert(ret == 0);
 
     /*
      * Close the file.
      */
-    ret = H5Fclose(file);
+    ret = H5Fclose(file); assert(ret == 0);
 
     /*
      * Open the file.
      */
-    file = H5Fopen(H5FILE_NAME, H5F_ACC_RDONLY, H5P_DEFAULT);
+    file = H5Fopen(H5FILE_NAME, H5F_ACC_RDONLY, faplid); assert(file >= 0);
 
     /*
      * Open the dataset.
      */
-    dataset = H5Dopen2(file, "Matrix in file", H5P_DEFAULT);
+    dataset = H5Dopen2(file, "Matrix in file", H5P_DEFAULT); assert(dataset >= 0);
 
     /*
      * Get dataspace of the open dataset.
@@ -233,7 +244,7 @@ main (void)
     block[0] = 1; block[1] = 1;
     stride[0] = 1; stride[1] = 1;
     count[0]  = 3; count[1]  = 4;
-    ret = H5Sselect_hyperslab(fid, H5S_SELECT_SET, start, stride, count, block);
+    ret = H5Sselect_hyperslab(fid, H5S_SELECT_SET, start, stride, count, block); assert(ret == 0);
 
     /*
      * Add second selected hyperslab to the selection.
@@ -252,7 +263,7 @@ main (void)
     block[0] = 1; block[1] = 1;
     stride[0] = 1; stride[1] = 1;
     count[0]  = 6; count[1]  = 5;
-    ret = H5Sselect_hyperslab(fid, H5S_SELECT_OR, start, stride, count, block);
+    ret = H5Sselect_hyperslab(fid, H5S_SELECT_OR, start, stride, count, block); assert(ret == 0);
 
     /*
      * Create memory dataspace.
@@ -267,13 +278,13 @@ main (void)
     block[0] = 1; block[1] = 1;
     stride[0] = 1; stride[1] = 1;
     count[0]  = 3; count[1]  = 4;
-    ret = H5Sselect_hyperslab(mid, H5S_SELECT_SET, start, stride, count, block);
+    ret = H5Sselect_hyperslab(mid, H5S_SELECT_SET, start, stride, count, block); assert(ret == 0);
 
     start[0] = 1; start[1] = 2;
     block[0] = 1; block[1] = 1;
     stride[0] = 1; stride[1] = 1;
     count[0]  = 6; count[1]  = 5;
-    ret = H5Sselect_hyperslab(mid, H5S_SELECT_OR, start, stride, count, block);
+    ret = H5Sselect_hyperslab(mid, H5S_SELECT_OR, start, stride, count, block); assert(ret == 0);
 
     /*
      * Initialize data buffer.
@@ -286,7 +297,7 @@ main (void)
      * Read data back to the buffer matrix_out.
      */
     ret = H5Dread(dataset, H5T_NATIVE_INT, mid, fid,
-                  H5P_DEFAULT, matrix_out);
+                  H5P_DEFAULT, matrix_out); assert(ret == 0);
 
     /*
      * Display the result. Memory dataset is:
@@ -309,23 +320,27 @@ main (void)
     /*
      * Close memory file and memory dataspaces.
      */
-    ret = H5Sclose(mid);
-    ret = H5Sclose(fid);
+    ret = H5Sclose(mid); assert(ret == 0);
+    ret = H5Sclose(fid); assert(ret == 0);
 
     /*
      * Close dataset.
      */
-    ret = H5Dclose(dataset);
+    ret = H5Dclose(dataset); assert(ret == 0);
 
     /*
      * Close property list
      */
-    ret = H5Pclose(plist);
+    ret = H5Pclose(plist); assert(ret == 0);
 
     /*
      * Close the file.
      */
-    ret = H5Fclose(file);
+    ret = H5Fclose(file); assert(ret == 0);
+
+	ret = H5Pclose(faplid); assert(ret == 0);
+
+	MPI_Finalize();
 
     return 0;
 }

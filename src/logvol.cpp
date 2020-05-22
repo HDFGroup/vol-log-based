@@ -100,7 +100,9 @@ const H5VL_class_t H5VL_log_g = {
 
 /* The connector identification number, initialized at runtime */
 hid_t H5VL_LOG_g = H5I_INVALID_HID;
-
+
+int mpi_inited;
+
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_init
  *
@@ -115,8 +117,14 @@ hid_t H5VL_LOG_g = H5I_INVALID_HID;
  */
 herr_t H5VL_log_init(hid_t vipl_id) {
     herr_t err;
+    int mpierr;
     H5VL_log_req_type_t blocking = H5VL_LOG_REQ_BLOCKING;
     ssize_t infty = LOG_VOL_BSIZE_UNLIMITED;
+
+    mpierr = MPI_Initialized(&mpi_inited); CHECK_MPIERR
+    if (!mpi_inited){
+        MPI_Init(NULL, NULL);
+    }
 
     err = H5Pregister2(H5P_DATASET_XFER, "nonblocking", sizeof(H5VL_log_req_type_t), &blocking, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
     err = H5Pregister2(H5P_FILE_ACCESS, "nb_buffer_size", sizeof(ssize_t), &infty, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
@@ -139,8 +147,18 @@ err_out:;
  *---------------------------------------------------------------------------
  */
 herr_t H5VL_log_obj_term(void) {
+    herr_t err;
+    int mpierr;
 
-    return(0);
+    if (!mpi_inited){
+        mpierr = MPI_Initialized(&mpi_inited); CHECK_MPIERR
+        if (mpi_inited){
+            MPI_Finalize();
+        }
+    }
+
+err_out:;
+    return err;
 } /* end H5VL_log_obj_term() */
 
 /*---------------------------------------------------------------------------

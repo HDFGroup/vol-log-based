@@ -37,6 +37,7 @@
         char errstr[256]; \
         MPI_Error_string(mpierr, errstr, &el); \
         printf("Error at line %d in %s: %s\n", __LINE__, __FILE__, errstr); \
+        err = -1; \
         goto err_out; \
     } \
 }

@@ -79,7 +79,7 @@ int main()
 	/* Close the file. */
 	status = H5Fclose(file_id);
 
-	status = H5Fclose(faplid);
+	status = H5Pclose(faplid);
 
 	MPI_Finalize();
 
