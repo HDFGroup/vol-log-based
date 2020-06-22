@@ -1,9 +1,9 @@
 #include "logvol_internal.hpp"
 
 /* Characteristics of the pass-through VOL connector */
-#define H5VL_log_NAME        "LOG"
-#define H5VL_log_VALUE        1026           /* VOL connector ID */
-#define H5VL_log_VERSION      1111
+#define H5VL_log_NAME "LOG"
+#define H5VL_log_VALUE 1026 /* VOL connector ID */
+#define H5VL_log_VERSION 1111
 
 /********************* */
 /* Function prototypes */
@@ -27,75 +27,81 @@ void *H5VL_log_unwrap_object(void *wrap_ctx);
 
 /* PNC VOL connector class struct */
 const H5VL_class_t H5VL_log_g = {
-    H5VL_log_VERSION,                          /* version      */
-    (H5VL_class_value_t)H5VL_log_VALUE,        /* value        */
-    H5VL_log_NAME,                             /* name         */
-    0,                                           /* capability flags */
-    H5VL_log_init,                         /* initialize   */
-    H5VL_log_obj_term,                         /* terminate    */
+    H5VL_log_VERSION,                   /* version      */
+    (H5VL_class_value_t)H5VL_log_VALUE, /* value        */
+    H5VL_log_NAME,                      /* name         */
+    0,                                  /* capability flags */
+    H5VL_log_init,                      /* initialize   */
+    H5VL_log_obj_term,                  /* terminate    */
     {
-        sizeof(H5VL_log_info_t),               /* info size    */
-        H5VL_log_info_copy,                    /* info copy    */
-        H5VL_log_info_cmp,                     /* info compare */
-        H5VL_log_info_free,                    /* info free    */
-        H5VL_log_info_to_str,                  /* info to str  */
-        H5VL_log_str_to_info,                  /* str to info  */
+        sizeof(H5VL_log_info_t), /* info size    */
+        H5VL_log_info_copy,      /* info copy    */
+        H5VL_log_info_cmp,       /* info compare */
+        H5VL_log_info_free,      /* info free    */
+        H5VL_log_info_to_str,    /* info to str  */
+        H5VL_log_str_to_info,    /* str to info  */
     },
     {
-        H5VL_log_get_object,                   /* get_object   */
-        H5VL_log_get_wrap_ctx,                 /* get_wrap_ctx */
-        H5VL_log_wrap_object,                  /* wrap_object  */
-        H5VL_log_unwrap_object,                  /* wrap_object  */
-        H5VL_log_free_wrap_ctx,                /* free_wrap_ctx */
+        H5VL_log_get_object,    /* get_object   */
+        H5VL_log_get_wrap_ctx,  /* get_wrap_ctx */
+        H5VL_log_wrap_object,   /* wrap_object  */
+        H5VL_log_unwrap_object, /* wrap_object  */
+        H5VL_log_free_wrap_ctx, /* free_wrap_ctx */
     },
     H5VL_log_attr_g,
     H5VL_log_dataset_g,
-    {                                               /* datatype_cls */
-        NULL,                   /* commit */
-        NULL,                     /* open */
-        NULL,                      /* get_size */
-        NULL,                 /* specific */
-        NULL,                 /* optional */
-        NULL                     /* close */
+    {
+        /* datatype_cls */
+        NULL, /* commit */
+        NULL, /* open */
+        NULL, /* get_size */
+        NULL, /* specific */
+        NULL, /* optional */
+        NULL  /* close */
     },
-    H5VL_log_file_g,                  /* file_cls */
-    H5VL_log_group_g,                  /* group_cls */
-    {                                           /* link_cls */
-        NULL,                       /* create */
-        NULL,                         /* copy */
-        NULL,                         /* move */
-        NULL,                          /* get */
-        NULL,                     /* specific */
-        NULL,                     /* optional */
+    H5VL_log_file_g,  /* file_cls */
+    H5VL_log_group_g, /* group_cls */
+    {
+        /* link_cls */
+        NULL, /* create */
+        NULL, /* copy */
+        NULL, /* move */
+        NULL, /* get */
+        NULL, /* specific */
+        NULL, /* optional */
     },
-    {                                           /* object_cls */
-        NULL,                       /* open */
-        NULL,                       /* copy */
-        NULL,                        /* get */
-        NULL,                   /* specific */
-        NULL,                   /* optional */
+    {
+        /* object_cls */
+        NULL, /* open */
+        NULL, /* copy */
+        NULL, /* get */
+        NULL, /* specific */
+        NULL, /* optional */
     },
     H5VL_log_introspect_g,
-    {                                           /* request_cls */
-        NULL,                      /* wait */
-        NULL,                    /* notify */
-        NULL,                    /* cancel */
-        NULL,                  /* specific */
-        NULL,                  /* optional */
-        NULL                       /* free */
+    {
+        /* request_cls */
+        NULL, /* wait */
+        NULL, /* notify */
+        NULL, /* cancel */
+        NULL, /* specific */
+        NULL, /* optional */
+        NULL  /* free */
     },
-    {   /* blob_cls */
-        NULL,                      /* put */
-        NULL,                      /* get */
-        NULL,                 /* specific */
-        NULL                                        /* optional */
+    {
+        /* blob_cls */
+        NULL, /* put */
+        NULL, /* get */
+        NULL, /* specific */
+        NULL  /* optional */
     },
-    {   /* token_cls */
-        NULL,                     /* cmp            */
-        NULL,                  /* to_str         */
-        NULL                   /* from_str       */
+    {
+        /* token_cls */
+        NULL, /* cmp            */
+        NULL, /* to_str         */
+        NULL  /* from_str       */
     },
-    NULL                                        /* optional */
+    NULL /* optional */
 };
 
 /* The connector identification number, initialized at runtime */
@@ -115,25 +121,30 @@ int mpi_inited;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_init(hid_t vipl_id) {
+herr_t H5VL_log_init(hid_t vipl_id)
+{
     herr_t err;
     int mpierr;
     H5VL_log_req_type_t blocking = H5VL_LOG_REQ_BLOCKING;
     ssize_t infty = LOG_VOL_BSIZE_UNLIMITED;
 
-    mpierr = MPI_Initialized(&mpi_inited); CHECK_MPIERR
-    if (!mpi_inited){
+    mpierr = MPI_Initialized(&mpi_inited);
+    CHECK_MPIERR
+    if (!mpi_inited)
+    {
         MPI_Init(NULL, NULL);
     }
 
-    err = H5Pregister2(H5P_DATASET_XFER, "nonblocking", sizeof(H5VL_log_req_type_t), &blocking, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
-    err = H5Pregister2(H5P_FILE_ACCESS, "nb_buffer_size", sizeof(ssize_t), &infty, NULL, NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
+    err = H5Pregister2(H5P_DATASET_XFER, "nonblocking", sizeof(H5VL_log_req_type_t), &blocking, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+    CHECK_ERR
+    err = H5Pregister2(H5P_FILE_ACCESS, "nb_buffer_size", sizeof(ssize_t), &infty, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+    CHECK_ERR
 
 err_out:;
     return err;
 } /* end H5VL_log_init() */
 
-/*---------------------------------------------------------------------------
+/*---------------------------------------------------------------------------
  * Function:    H5VL_log_obj_term
  *
  * Purpose:     Terminate this VOL connector, performing any necessary
@@ -146,13 +157,17 @@ err_out:;
  *
  *---------------------------------------------------------------------------
  */
-herr_t H5VL_log_obj_term(void) {
+herr_t H5VL_log_obj_term(void)
+{
     herr_t err;
     int mpierr;
 
-    if (!mpi_inited){
-        mpierr = MPI_Initialized(&mpi_inited); CHECK_MPIERR
-        if (mpi_inited){
+    if (!mpi_inited)
+    {
+        mpierr = MPI_Initialized(&mpi_inited);
+        CHECK_MPIERR
+        if (mpi_inited)
+        {
             MPI_Finalize();
         }
     }
@@ -171,7 +186,8 @@ err_out:;
  *
  *---------------------------------------------------------------------------
  */
-void* H5VL_log_info_copy(const void *_info) {
+void *H5VL_log_info_copy(const void *_info)
+{
     const H5VL_log_info_t *info = (const H5VL_log_info_t *)_info;
     H5VL_log_info_t *new_info;
 
@@ -183,7 +199,7 @@ void* H5VL_log_info_copy(const void *_info) {
 
     //MPI_Comm_dup(info->comm, &(new_info->comm));
 
-    return(new_info);
+    return (new_info);
 } /* end H5VL_log_info_copy() */
 
 /*---------------------------------------------------------------------------
@@ -197,7 +213,8 @@ void* H5VL_log_info_copy(const void *_info) {
  *
  *---------------------------------------------------------------------------
  */
-herr_t H5VL_log_info_cmp(int *cmp_value, const void *_info1, const void *_info2) {
+herr_t H5VL_log_info_cmp(int *cmp_value, const void *_info1, const void *_info2)
+{
     const H5VL_log_info_t *info1 = (const H5VL_log_info_t *)_info1;
     const H5VL_log_info_t *info2 = (const H5VL_log_info_t *)_info2;
 
@@ -205,10 +222,15 @@ herr_t H5VL_log_info_cmp(int *cmp_value, const void *_info1, const void *_info2)
     assert(info1);
     assert(info2);
 
-    /* Initialize comparison value */
-    *cmp_value = 0;
+    /* Compare under VOL connector classes */
+    H5VLcmp_connector_cls(cmp_value, info1->uvlid, info2->uvlid);
+    if (*cmp_value == 0)
+    {
+        /* Compare under VOL connector info objects */
+        H5VLcmp_connector_info(cmp_value, info1->uvlid, info1->under_vol_info, info2->under_vol_info);
+    }
 
-    return(0);
+    return (0);
 } /* end H5VL_log_info_cmp() */
 
 /*---------------------------------------------------------------------------
@@ -221,7 +243,8 @@ herr_t H5VL_log_info_cmp(int *cmp_value, const void *_info1, const void *_info2)
  *
  *---------------------------------------------------------------------------
  */
-herr_t H5VL_log_info_free(void *_info) {
+herr_t H5VL_log_info_free(void *_info)
+{
     H5VL_log_info_t *info = (H5VL_log_info_t *)_info;
 
     /* Release MPI_Info */
@@ -230,7 +253,7 @@ herr_t H5VL_log_info_free(void *_info) {
     /* Free PNC info object itself */
     free(info);
 
-    return(0);
+    return (0);
 } /* end H5VL_log_info_free() */
 
 /*---------------------------------------------------------------------------
@@ -243,15 +266,16 @@ herr_t H5VL_log_info_free(void *_info) {
  *
  *---------------------------------------------------------------------------
  */
-herr_t H5VL_log_info_to_str(const void *_info, char **str) {
+herr_t H5VL_log_info_to_str(const void *_info, char **str)
+{
     const H5VL_log_info_t *info = (const H5VL_log_info_t *)_info;
     H5VL_class_value_t under_value = (H5VL_class_value_t)-1;
     char *under_vol_string = NULL;
     size_t under_vol_str_len = 0;
 
-    return(0);
+    return (0);
 } /* end H5VL_log_info_to_str() */
-
+
 /*---------------------------------------------------------------------------
  * Function:    H5VL_log_str_to_info
  *
@@ -262,8 +286,9 @@ herr_t H5VL_log_info_to_str(const void *_info, char **str) {
  *
  *---------------------------------------------------------------------------
  */
-herr_t H5VL_log_str_to_info(const char *str, void **_info) {
-    return(0);
+herr_t H5VL_log_str_to_info(const char *str, void **_info)
+{
+    return (0);
 } /* end H5VL_log_str_to_info() */
 
 /*---------------------------------------------------------------------------
@@ -276,11 +301,12 @@ herr_t H5VL_log_str_to_info(const char *str, void **_info) {
  *
  *---------------------------------------------------------------------------
  */
-void * H5VL_log_get_object(const void *obj) {
-    return NULL;
+void *H5VL_log_get_object(const void *obj){
+    const H5VL_log_obj_t *op = (const H5VL_log_obj_t *)obj;
+
+    return H5VLget_object(op->uo, op->uvlid);
 } /* end H5VL_log_get_object() */
 
-
 /*---------------------------------------------------------------------------
  * Function:    H5VL_log_get_wrap_ctx
  *
@@ -291,11 +317,64 @@ void * H5VL_log_get_object(const void *obj) {
  *
  *---------------------------------------------------------------------------
  */
-herr_t H5VL_log_get_wrap_ctx(const void *obj, void **wrap_ctx) {
-    return(0);
+herr_t H5VL_log_get_wrap_ctx(const void *obj, void **wrap_ctx)
+{
+    herr_t err;
+    const H5VL_log_obj_t *op = (const H5VL_log_obj_t *)obj;
+    H5VL_log_wrap_ctx_t *ctx;
+
+#ifdef ENABLE_PASSTHRU_LOGGING
+    printf("------- PASS THROUGH VOL WRAP CTX Get\n");
+#endif
+
+    /* Allocate new VOL object wrapping context for the pass through connector */
+    ctx = (H5VL_log_wrap_ctx_t *)calloc(1, sizeof(H5VL_log_wrap_ctx_t));
+
+    /* Increment reference count on underlying VOL ID, and copy the VOL info */
+    ctx->uvlid = op->uvlid;
+    H5Iinc_ref(ctx->uvlid);
+    err=H5VLget_wrap_ctx(op->uo, op->uvlid, &(ctx->uctx)); CHECK_ERR
+
+    /* Set wrap context to return */
+    *wrap_ctx = ctx;
+
+err_out:;
+    return err;
+
 } /* end H5VL_log_get_wrap_ctx() */
 
-
+/*---------------------------------------------------------------------------
+ * Function:    H5VL_pass_through_wrap_object
+ *
+ * Purpose:     Use a "wrapper context" to wrap a data object
+ *
+ * Return:      Success:    Pointer to wrapped object
+ *              Failure:    NULL
+ *
+ *---------------------------------------------------------------------------
+ */
+void *H5VL_log_wrap_object(void *obj, H5I_type_t type, void *_wrap_ctx)
+{
+    H5VL_log_wrap_ctx_t *ctx = (H5VL_log_wrap_ctx_t *)_wrap_ctx;
+    H5VL_log_obj_t *wop=NULL;
+    void *uo;
+
+#ifdef ENABLE_PASSTHRU_LOGGING
+    printf("------- PASS THROUGH VOL WRAP Object\n");
+#endif
+
+    /* Wrap the object with the underlying VOL */
+    uo = H5VLwrap_object(obj, type, ctx->uvlid, ctx->uctx);
+    if(uo){
+        wop=(H5VL_log_obj_t*)malloc(sizeof(H5VL_log_obj_t));
+        wop->uo=uo;
+        wop->uvlid=ctx->uvlid;        
+        H5Iinc_ref(wop->uvlid);
+    }
+
+    return wop;
+} /* end H5VL_log_wrap_object() */
+
 /*---------------------------------------------------------------------------
  * Function:    H5VL_log_wrap_object
  *
@@ -306,22 +385,18 @@ herr_t H5VL_log_get_wrap_ctx(const void *obj, void **wrap_ctx) {
  *
  *---------------------------------------------------------------------------
  */
-void* H5VL_log_wrap_object(void *obj, H5I_type_t type, void *_wrap_ctx) {
-    return NULL;
-} /* end H5VL_log_wrap_object() */
+void *H5VL_log_unwrap_object(void *obj)
+{
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    void *uo;
 
-/*---------------------------------------------------------------------------
- * Function:    H5VL_log_wrap_object
- *
- * Purpose:     Use a "wrapper context" to wrap a data object
- *
- * Return:  Success:    0
- *      Failure:    -1
- *
- *---------------------------------------------------------------------------
- */
-void* H5VL_log_unwrap_object(void *_wrap_ctx) {
-    return NULL;
+    /* Unrap the object with the underlying VOL */
+    uo = H5VLunwrap_object(op->uo, op->uvlid);
+
+    if(uo)
+        free(op);
+
+    return uo;
 } /* end H5VL_log_wrap_object() */
 
 /*---------------------------------------------------------------------------
@@ -334,8 +409,23 @@ void* H5VL_log_unwrap_object(void *_wrap_ctx) {
  *
  *---------------------------------------------------------------------------
  */
-herr_t H5VL_log_free_wrap_ctx(void *_wrap_ctx) {
-    return(0);
-} /* end H5VL_log_free_wrap_ctx() */
+herr_t H5VL_log_free_wrap_ctx(void *_wrap_ctx){
+    herr_t err=0;
+    H5VL_log_wrap_ctx_t *ctx = (H5VL_log_wrap_ctx_t *)_wrap_ctx;
+    hid_t err_id;
 
-
+    err_id = H5Eget_current_stack();
+
+    /* Release underlying VOL ID and wrap context */
+    if(ctx->uctx)
+        err = H5VLfree_wrap_ctx(ctx->uctx, ctx->uvlid); CHECK_ERR
+    H5Idec_ref(ctx->uvlid);
+
+    H5Eset_current_stack(err_id);
+
+    /* Free pass through wrap context object itself */
+    free(ctx);
+
+err_out:;
+    return err;
+} /* end H5VL_log_free_wrap_ctx() */

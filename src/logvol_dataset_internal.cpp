@@ -68,8 +68,8 @@ herr_t H5VL_log_dataset_readi_gen_rtypes(std::vector<H5VL_log_search_ret_t> bloc
     int *lens;
     MPI_Aint *foffs = NULL, *moffs = NULL;
     MPI_Datatype *ftypes = NULL, *mtypes = NULL, etype = MPI_DATATYPE_NULL;
-    MPI_Offset fssize[LOG_VOL_MAX_NDIM], mssize[LOG_VOL_MAX_NDIM];
-    MPI_Offset ctr[LOG_VOL_MAX_NDIM];
+    MPI_Offset fssize[H5S_MAX_RANK], mssize[H5S_MAX_RANK];
+    MPI_Offset ctr[H5S_MAX_RANK];
     H5VL_log_copy_ctx ctx;
 
     if (!nblock){

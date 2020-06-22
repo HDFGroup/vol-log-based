@@ -19,7 +19,7 @@ check_PROGRAMS =    h5_attribute \
                     h5_crtdat \
                     h5_crtatt \
                     h5_crtgrp \
-                    h5_crtgrpar \ 
+                    h5_crtgrpar \
                     h5_crtgrpd \
                     h5_group \
                     h5_interm_group \

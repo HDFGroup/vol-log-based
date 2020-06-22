@@ -35,19 +35,14 @@
 #include "hdf5.h"
 #include "H5VLpublic.h"
 
-
 /* Identifier for the pass-through VOL connector */
 #define H5VL_log  (H5VL_log_register())
 #ifdef __cplusplus
 extern "C" {
 #endif
 hid_t H5VL_log_register(void);
-#ifdef __cplusplus
-}
-#endif
 
 // Constants
-#define LOG_VOL_MAX_NDIM 32
 #define LOG_VOL_BSIZE_UNLIMITED -1
 
 /* Pass-through VOL connector info */
@@ -67,5 +62,9 @@ typedef enum H5VL_log_req_type_t {
 // Helper functions
 herr_t H5Pset_nonblocking(hid_t plist, H5VL_log_req_type_t nonblocking);
 herr_t H5Pget_nonblocking(hid_t plist, H5VL_log_req_type_t *nonblocking);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
