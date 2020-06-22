@@ -18,7 +18,7 @@ herr_t H5VL_logi_idx_search(H5VL_log_file_t *fp, H5VL_log_rreq_t &req, std::vect
     herr_t err = 0;
     int j, k;
     size_t soff;
-    MPI_Offset os[LOG_VOL_MAX_NDIM], oc[LOG_VOL_MAX_NDIM];
+    MPI_Offset os[H5S_MAX_RANK], oc[H5S_MAX_RANK];
     H5VL_log_search_ret_t cur;
 
     soff = 0;

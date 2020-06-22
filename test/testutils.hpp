@@ -58,3 +58,11 @@
 #define PASS_STR "pass\n"
 #define SKIP_STR "skip\n"
 #define FAIL_STR "fail with %d mismatches\n"
+
+
+#define HDfprintf printf
+#define HDfree free
+#define failure_mssg "Fail"
+#define FUNC "func"
+#define FALSE 0
+#define TRUE 1

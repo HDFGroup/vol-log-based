@@ -79,11 +79,11 @@
 
 typedef struct H5VL_log_search_ret_t{
     int ndim;
-    int fsize[LOG_VOL_MAX_NDIM];
-    int fstart[LOG_VOL_MAX_NDIM];
-    int msize[LOG_VOL_MAX_NDIM];
-    int mstart[LOG_VOL_MAX_NDIM];
-    int count[LOG_VOL_MAX_NDIM];
+    int fsize[H5S_MAX_RANK];
+    int fstart[H5S_MAX_RANK];
+    int msize[H5S_MAX_RANK];
+    int mstart[H5S_MAX_RANK];
+    int count[H5S_MAX_RANK];
     size_t esize;
     MPI_Offset foff, moff;
 
@@ -110,23 +110,23 @@ typedef struct H5VL_log_copy_ctx{
 
 typedef struct H5VL_log_metaentry_t{
     int did;
-    MPI_Offset start[LOG_VOL_MAX_NDIM];
-    MPI_Offset count[LOG_VOL_MAX_NDIM];
+    MPI_Offset start[H5S_MAX_RANK];
+    MPI_Offset count[H5S_MAX_RANK];
     MPI_Offset ldoff;
     size_t rsize;
 } H5VL_log_metaentry_t;
 
 typedef struct H5VL_log_selection{  
-    MPI_Offset start[LOG_VOL_MAX_NDIM]; // Start of selection
-    MPI_Offset count[LOG_VOL_MAX_NDIM]; // Count of selection
+    MPI_Offset start[H5S_MAX_RANK]; // Start of selection
+    MPI_Offset count[H5S_MAX_RANK]; // Count of selection
     size_t size;    // Size of the selection (bytes)
 } H5VL_log_selection;
 
 typedef struct H5VL_log_wreq_t{  
     int did;    // Target dataset ID
     int ndim;   // Dim of the target dataset
-    //MPI_Offset start[LOG_VOL_MAX_NDIM];
-    //MPI_Offset count[LOG_VOL_MAX_NDIM];
+    //MPI_Offset start[H5S_MAX_RANK];
+    //MPI_Offset count[H5S_MAX_RANK];
     std::vector<H5VL_log_selection> sels;   // Selections within the dataset
 
     int ldid;   // Log dataset ID
@@ -142,8 +142,8 @@ typedef struct H5VL_log_rreq_t{
     int did;    // Source dataset ID
     int ndim;   // Dim of the source dataset
     std::vector<H5VL_log_selection> sels;   // Selections within the dataset
-    //MPI_Offset start[LOG_VOL_MAX_NDIM];
-    //MPI_Offset count[LOG_VOL_MAX_NDIM];
+    //MPI_Offset start[H5S_MAX_RANK];
+    //MPI_Offset count[H5S_MAX_RANK];
 
     hid_t dtype;    // Dataset type
     hid_t mtype;    // Memory type
@@ -167,8 +167,8 @@ typedef struct H5VL_log_dset_meta_t{
     //H5VL_log_file_t *fp;
     //int id;
     hsize_t ndim;
-    //hsize_t dims[LOG_VOL_MAX_NDIM];
-    //hsize_t mdims[LOG_VOL_MAX_NDIM];
+    //hsize_t dims[H5S_MAX_RANK];
+    //hsize_t mdims[H5S_MAX_RANK];
     hid_t dtype;
     //hsize_t esize;
 } H5VL_log_dset_meta_t;
@@ -217,16 +217,16 @@ typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
     H5VL_log_file_t *fp;
     int id;
     hsize_t ndim;
-    hsize_t dims[LOG_VOL_MAX_NDIM];
-    hsize_t mdims[LOG_VOL_MAX_NDIM];
+    hsize_t dims[H5S_MAX_RANK];
+    hsize_t mdims[H5S_MAX_RANK];
     hid_t dtype;
     hsize_t esize;
 } H5VL_log_dset_t;
 
 /* The log VOL wrapper context */
 typedef struct H5VL_log_wrap_ctx_t {
-    hid_t uvlid;         /* VOL ID for under VOL */
-    void *under_wrap_ctx;       /* Object wrapping context for under VOL */
+    void *uctx;   // Under context
+    hid_t uvlid; // Under VolID
 } H5VL_log_wrap_ctx_t;
 
 extern H5VL_log_obj_t* H5VL_log_new_obj(void *under_obj, hid_t uvlid);

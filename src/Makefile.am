@@ -15,7 +15,7 @@ if LOGVOL_PROFILING
 endif
 M4FLAGS = -I${top_srcdir}/m4
 
-noinst_LTLIBRARIES = liblogvol.la
+lib_LTLIBRARIES = liblogvol.la
 
 M4_SRCS = 
 
@@ -47,14 +47,7 @@ if LOGVOL_DEBUG
    CXX_SRCS += logvol_debug.cpp
 endif
 
-EXTRA_DIST = ph5_concat.hpp \
-             acinclude.m4 \
-             COPYRIGHT \
-             CREDITS.md \
-             AUTHORS.md \
-             README.md \
-             RELEASE_NOTES.md \
-             list.txt
+include_HEADERS = logvol.h
 
 $(M4_SRCS:.m4=.cpp): Makefile
 

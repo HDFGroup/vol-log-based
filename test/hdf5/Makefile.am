@@ -13,9 +13,17 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 AM_CPPFLAGS = -I$(top_srcdir)/src \
 			  -I$(top_srcdir)/test \
               -I$(srcdir) 
-LDADD = $(top_builddir)/src/.libs/liblogvol.la
 
-check_PROGRAMS =    
+noinst_LTLIBRARIES=libh5test.la
+
+libh5test_la_SOURCES=h5test.c testframe.c testframe.c external_common.c
+
+LDADD = $(top_builddir)/src/.libs/liblogvol.la libh5test.la
+
+check_PROGRAMS =    dangle \
+                    del_many_dense_attrs \
+                    dtransform
+                    
 
 EXTRA_DIST = # wrap_runs.sh parallel_run.sh
 
