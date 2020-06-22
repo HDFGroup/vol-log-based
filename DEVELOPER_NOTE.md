@@ -28,5 +28,12 @@ If the application left any HDF5 object open on MPI_Finalize, the dispatcher wou
 If the file has been closed by the application a prior, it causes a double-free error.
 A potential solution is to implement delayed close as the native driver does.
 
+## HDF5 reference count hasn't been implemented
+
+HDF5 dispatcher includes a reference count mechanism to track opened objects.
+When the reference count of an object becomes 0, the dispatcher will try to recycle it.
+This feature requires the VOL to maintain the reference count of the objects it uses.
+Without it, the dispatcher may not be aware that an object is still used by the VOL and tries to recycle it.
+
 ---
 
