@@ -44,6 +44,7 @@ void *H5VL_log_attr_create(void *obj, const H5VL_loc_params_t *loc_params,
 
     ap->uo = H5VLattr_create(op->uo, loc_params, op->uvlid, name, type_id, space_id, acpl_id, aapl_id, dxpl_id, NULL); CHECK_NERR(ap->uo);
     ap->uvlid = op->uvlid;
+    H5Iinc_ref (ap->uvlid);
     ap->type = H5I_ATTR;
 
     return (void *)ap;
@@ -73,6 +74,7 @@ void *H5VL_log_attr_open(void *obj, const H5VL_loc_params_t *loc_params, const c
 
     ap->uo = H5VLattr_open(op->uo, loc_params, op->uvlid, name, aapl_id, dxpl_id, req); CHECK_NERR(ap->uo);
     ap->uvlid = op->uvlid;
+    H5Iinc_ref (ap->uvlid);
     ap->type = H5I_ATTR;
     
     return (void *)ap;
@@ -200,6 +202,9 @@ herr_t H5VL_log_attr_close(void *attr, hid_t dxpl_id, void **req) {
 
     err = H5VLattr_close(ap->uo, ap->uvlid, dxpl_id, req); CHECK_ERR
 
+    H5Idec_ref(ap->uvlid);
+    delete ap;
+    
 err_out:;
     return err;
 } /* end H5VL_log_attr_close() */
