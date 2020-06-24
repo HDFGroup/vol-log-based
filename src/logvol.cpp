@@ -195,9 +195,10 @@ void *H5VL_log_info_copy(const void *_info)
     new_info = (H5VL_log_info_t *)calloc(1, sizeof(H5VL_log_info_t));
 
     new_info->uvlid = info->uvlid;
-    new_info->under_vol_info = info->under_vol_info;
+    H5Iinc_ref(new_info->uvlid);
 
-    //MPI_Comm_dup(info->comm, &(new_info->comm));
+    if (info->under_vol_info)
+        H5VLcopy_connector_info(new_info->uvlid, &(new_info->under_vol_info), info->under_vol_info);
 
     return (new_info);
 } /* end H5VL_log_info_copy() */
@@ -301,7 +302,8 @@ herr_t H5VL_log_str_to_info(const char *str, void **_info)
  *
  *---------------------------------------------------------------------------
  */
-void *H5VL_log_get_object(const void *obj){
+void *H5VL_log_get_object(const void *obj)
+{
     const H5VL_log_obj_t *op = (const H5VL_log_obj_t *)obj;
 
     return H5VLget_object(op->uo, op->uvlid);
@@ -333,7 +335,8 @@ herr_t H5VL_log_get_wrap_ctx(const void *obj, void **wrap_ctx)
     /* Increment reference count on underlying VOL ID, and copy the VOL info */
     ctx->uvlid = op->uvlid;
     H5Iinc_ref(ctx->uvlid);
-    err=H5VLget_wrap_ctx(op->uo, op->uvlid, &(ctx->uctx)); CHECK_ERR
+    err = H5VLget_wrap_ctx(op->uo, op->uvlid, &(ctx->uctx));
+    CHECK_ERR
 
     /* Set wrap context to return */
     *wrap_ctx = ctx;
@@ -356,7 +359,7 @@ err_out:;
 void *H5VL_log_wrap_object(void *obj, H5I_type_t type, void *_wrap_ctx)
 {
     H5VL_log_wrap_ctx_t *ctx = (H5VL_log_wrap_ctx_t *)_wrap_ctx;
-    H5VL_log_obj_t *wop=NULL;
+    H5VL_log_obj_t *wop = NULL;
     void *uo;
 
 #ifdef ENABLE_PASSTHRU_LOGGING
@@ -365,10 +368,11 @@ void *H5VL_log_wrap_object(void *obj, H5I_type_t type, void *_wrap_ctx)
 
     /* Wrap the object with the underlying VOL */
     uo = H5VLwrap_object(obj, type, ctx->uvlid, ctx->uctx);
-    if(uo){
-        wop=(H5VL_log_obj_t*)malloc(sizeof(H5VL_log_obj_t));
-        wop->uo=uo;
-        wop->uvlid=ctx->uvlid;        
+    if (uo)
+    {
+        wop = (H5VL_log_obj_t *)malloc(sizeof(H5VL_log_obj_t));
+        wop->uo = uo;
+        wop->uvlid = ctx->uvlid;
         H5Iinc_ref(wop->uvlid);
     }
 
@@ -393,7 +397,7 @@ void *H5VL_log_unwrap_object(void *obj)
     /* Unrap the object with the underlying VOL */
     uo = H5VLunwrap_object(op->uo, op->uvlid);
 
-    if(uo)
+    if (uo)
         free(op);
 
     return uo;
@@ -409,16 +413,18 @@ void *H5VL_log_unwrap_object(void *obj)
  *
  *---------------------------------------------------------------------------
  */
-herr_t H5VL_log_free_wrap_ctx(void *_wrap_ctx){
-    herr_t err=0;
+herr_t H5VL_log_free_wrap_ctx(void *_wrap_ctx)
+{
+    herr_t err = 0;
     H5VL_log_wrap_ctx_t *ctx = (H5VL_log_wrap_ctx_t *)_wrap_ctx;
     hid_t err_id;
 
     err_id = H5Eget_current_stack();
 
     /* Release underlying VOL ID and wrap context */
-    if(ctx->uctx)
-        err = H5VLfree_wrap_ctx(ctx->uctx, ctx->uvlid); CHECK_ERR
+    if (ctx->uctx)
+        err = H5VLfree_wrap_ctx(ctx->uctx, ctx->uvlid);
+    CHECK_ERR
     H5Idec_ref(ctx->uvlid);
 
     H5Eset_current_stack(err_id);

@@ -53,6 +53,7 @@ void *H5VL_log_dataset_create(  void *obj, const H5VL_loc_params_t *loc_params,
     (dp->fp->refcnt)++;
     dp->uo = H5VLdataset_create(op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid, dcpl_id, dapl_id, dxpl_id, NULL); CHECK_NERR(dp->uo);
     dp->uvlid = op->uvlid;
+    H5Iinc_ref (dp->uvlid);
     dp->type = H5I_DATASET;
     dp->dtype = H5Tcopy(type_id); CHECK_ID(dp->dtype)
     dp->esize = H5Tget_size(type_id); CHECK_ID(dp->esize)
@@ -115,6 +116,7 @@ void *H5VL_log_dataset_open(void *obj, const H5VL_loc_params_t *loc_params,
     else RET_ERR("container not a file or group")
     dp->uo = H5VLdataset_open(op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL); CHECK_NERR(dp->uo);
     dp->uvlid = op->uvlid;
+    H5Iinc_ref (dp->uvlid);
     dp->type = H5I_DATASET;
     err = H5VLdataset_get_wrapper(dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, NULL, &(dp->dtype)); CHECK_ERR
     dp->esize = H5Tget_size(dp->dtype); CHECK_ID(dp->esize)
@@ -481,6 +483,7 @@ herr_t H5VL_log_dataset_close(void *dset, hid_t dxpl_id, void **req){
 
     H5Tclose(dp->dtype);
 
+    H5Idec_ref(dp->uvlid);
     delete dp;
 
 err_out:;
