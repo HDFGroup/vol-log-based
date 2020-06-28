@@ -231,6 +231,8 @@ if test "x${debug}" = xyes; then
    CXXFLAGS=`echo $CXXFLAGS | ${SED} 's/-O. *//g' | ${SED} 's/-fast *//g'`
    CXXFLAGS="$CXXFLAGS -O0"
    unset str_found
+
+   AC_DEFINE(LOGVOL_DEBUG, 1, ["Debug build"])
 fi
 
 AC_ARG_ENABLE([profiling],

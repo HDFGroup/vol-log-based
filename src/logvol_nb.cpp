@@ -92,6 +92,10 @@ herr_t H5VL_log_nb_flush_write_reqs(H5VL_log_file_t *fp, hid_t dxplid){
 
     cnt = fp->wreqs.size() - fp->nflushed;
 
+    if (cnt == 0){
+        return 0;
+    }
+
     // Construct memory type
     mlens = (int*)malloc(sizeof(int) * cnt);
     moffs = (MPI_Aint*)malloc(sizeof(MPI_Aint) * cnt);
