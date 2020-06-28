@@ -21,10 +21,8 @@ herr_t H5VL_log_introspect_get_conn_cls(void *obj, H5VL_get_conn_lvl_t lvl, cons
     herr_t err;
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
     
-    return 0;
-
     /* Check for querying this connector's class */
-    if(lvl == 0) {
+    if(lvl == H5VL_GET_CONN_LVL_CURR) {
         *conn_cls = &H5VL_log_g;
         err = 0;
     } /* end if */

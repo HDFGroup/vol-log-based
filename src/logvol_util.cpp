@@ -277,3 +277,14 @@ herr_t H5Pget_nb_buffer_size(hid_t plist, ssize_t *size) {
 err_out:;
     return err;
 }
+
+herr_t H5VLobject_get_wrapper(void *obj, const H5VL_loc_params_t *loc_params, hid_t connector_id, H5VL_object_get_t get_type, hid_t dxpl_id, void **req, ...) {
+    herr_t err;
+    va_list args;
+
+    va_start(args, req);
+    err = H5VLobject_get(obj, loc_params, connector_id, get_type, dxpl_id, req, args);
+    va_end(args);
+
+    return err;
+}

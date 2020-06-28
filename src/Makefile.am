@@ -26,6 +26,8 @@ C_SRCS =
 
 CXX_SRCS =  logvol.cpp \
             logvol_att.cpp \
+            logvol_blob.cpp \
+            logvol_datatype.cpp \
             logvol_dataset.cpp \
             logvol_dataset_internal.cpp \
             logvol_dataspace_internal.cpp \

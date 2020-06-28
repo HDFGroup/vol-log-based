@@ -50,15 +50,7 @@ const H5VL_class_t H5VL_log_g = {
     },
     H5VL_log_attr_g,
     H5VL_log_dataset_g,
-    {
-        /* datatype_cls */
-        NULL, /* commit */
-        NULL, /* open */
-        NULL, /* get_size */
-        NULL, /* specific */
-        NULL, /* optional */
-        NULL  /* close */
-    },
+    H5VL_log_datatype_g,
     H5VL_log_file_g,  /* file_cls */
     H5VL_log_group_g, /* group_cls */
     {
@@ -70,14 +62,7 @@ const H5VL_class_t H5VL_log_g = {
         NULL, /* specific */
         NULL, /* optional */
     },
-    {
-        /* object_cls */
-        NULL, /* open */
-        NULL, /* copy */
-        NULL, /* get */
-        NULL, /* specific */
-        NULL, /* optional */
-    },
+    H5VL_log_object_g,
     H5VL_log_introspect_g,
     {
         /* request_cls */
@@ -88,13 +73,7 @@ const H5VL_class_t H5VL_log_g = {
         NULL, /* optional */
         NULL  /* free */
     },
-    {
-        /* blob_cls */
-        NULL, /* put */
-        NULL, /* get */
-        NULL, /* specific */
-        NULL  /* optional */
-    },
+    H5VL_log_blob_g,
     {
         /* token_cls */
         NULL, /* cmp            */
