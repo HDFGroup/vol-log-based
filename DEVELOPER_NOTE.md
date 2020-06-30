@@ -30,10 +30,32 @@ A potential solution is to implement delayed close as the native driver does.
 
 ## HDF5 reference count hasn't been implemented
 
+This is temporarily solved by following the way the passthrough VOL report reference counts.
+
 HDF5 dispatcher includes a reference count mechanism to track opened objects.
 When the reference count of an object becomes 0, the dispatcher will try to recycle it.
 This feature requires the VOL to maintain the reference count of the objects it uses.
 Without it, the dispatcher may not be aware that an object is still used by the VOL and tries to recycle it.
+
+## NetCDF4 support
+
+NetCDF uses many advanced HDF5 features to implement NetCDF4.
+To support the NetCDF integration, we need to significantly improve the compatibility of the VOL beyond our original plant of attribute, group, and attributes.
+Most of them can be tackled by connecting to the native VOL, but some require special handling.
+Currently, the VOL does not support "link", "token", "request", and "optional" APIs.
+It has partial support on "object" and "context" APIs.
+
+## Crash when data objects are not closed
+
+The VOL does not maintain any reference on opened objects.
+It relies on the application to properly close every object they opened.
+If the application does not close all objects (such as dataset) before closing the file, the dispatcher will consider the file as not closed and call the VOL file close again when it finalizes.
+However, our VOL already freed the file object, and the pointer passed from the dispatcher becomes invalid, causing the program to crash. 
+One way to solve it is to close all objects automatically.
+Another way is to implement delayed close as the native VOL.
+The VOL maintains a reference to all opened objects.
+If there are objects still open, they do not close the file, but just mark the file to be closed.
+If the reference becomes empty (all object is closed), it will close the file if it is marked to be closed.
 
 ---
 
