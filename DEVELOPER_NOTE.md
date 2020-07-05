@@ -8,7 +8,7 @@
 # Known issues
 
 ```
-General comments: I suggest the followings when adding a new issue.
+General comments: I suggest the following when adding a new issue.
 
 ## Short title of the issue
 **Problem description**:
@@ -25,94 +25,135 @@ General comments: I suggest the followings when adding a new issue.
   ...
 ```
 
-## HDF5 native VOL dynamic dataype init
+## HDF5 native VOL dynamic datatype init
+**Problem description**:
+  Datatypes are considered to be managed by the VOL.
+  VOLs are expected to provide their own datatype.
+  The predefined data types under https://support.hdfgroup.org/HDF5/doc/RM/PredefDTypes.html are datatype managed by the native VOL.
+  Those data types are not preprocessor macros; instead, they are exposed as global variables that the native VOL should initialize.
+  Initializing the native VOL will not automatically initialize the datatype.
+  Instead, it is initialized by a special initialization callback function (part of file_specific).
 
-The predefined datatypes are not defined as constants in HDF5 header files.
-Instead, they are defined as global variables and initialized by the native VOL when the user's VOL is initialized.
-As a result, we need to initialize the native VOL before using any derived datatype.
-H5Fcreate will call the initialization callback function if the VOL supports it.
-It requires harnessing the introspect interface so the dispatcher knows whether the VOL support the init call back.
-Also, the file optional interface, which includes the init callback, must be implemented as well.
-```
+  The dispatcher will call the introspect API of the VOL to check for the existence of the initialization routine.
+  If so, it will call the initialization function when needed.
+  Since our VOL is using predefined data type, we must call the initialization routine of the native VOL first, or the value will be invalid.
+  However, our VOL does not support the introspect APIs as well as the special initialization routine.
+  In consequence, the initialization routine of the native VOL is not called, and passing any predefined datatype to the native VOL will cause an error (unrecognized data type).
+  * HDF5 versions: 1.12.0
+  * Environment settings: N/A
+  * Trigger condition: Using any predefined datatype before calling the initializing routine of the native VOL
+**solutions**:
+  * Implemented solution
+    + Implement our initialization routine to call the initialization routine of the native VOL (pass-through).
+    + Add support to the introspect APIs so the dispatcher knows that we have a special initialization routine that must be called.
+    + Source: logvol_introspect.cpp, logvol_file.cpp:312
+    + Commit: dff337dbc63ef8363984f5e8a9d0dd9eb01f2fe9
+
 * Add reference to "VOL dynamic datatype init" in HDF5 doc.
+  + It is not documented. It is the implementation within the native VOL that is hidden to the user.
 * "derived datatype"? Do you mean compound data type?
-* Please refer to the source code locations of your fixes.
-```
+  + No, just native types. H5T_STD_*, H5T_NATIVE_*, etc. They are assigned -1 in the code (H5T.c:341) and requires the native VOL to initialize them.
 
-## HDF5 H5Sget_select_hyper_nblocks breakdown selection
+## H5Sget_select_hyper_nblocks does not combine selection blocks
+**Problem description**:
+  In older versions, H5Sget_select_hyper_nblocks will combine selections if they together form a larger rectangular block.
+  The feature is removed in 1.12.0.
+  Should the application declare a rectangular selection as many 1x1 blocks instead of a single block, the overhead of metadata can be significant.
+  HDF5 uses the argument "count" to refer to the number of blocks, and "block" to refer to the size of the blocks.
+  NetCDF selection has only one block, and "count" refers to the block size.
+  Developers transitioning from NetCDF to HDF5 may mistake the "count" argument as the block size and run into performance issues.
+  * HDF5 versions: 1.12.0
+  * Environment settings: N/A
+  * Trigger condition: Explicitly performed by the user
+**potential solutions**:
+  * Ignore (current)
+    + We left it to the user to use the library in an efficient way.
+    + Adding the overhead of a merging routine to fix a possible developer mistake may not be worth it.
+  * Implement merging in the VOL
 
-It is a behavior observed in version 1.12.
-H5Sget_select_hyper_nblocks always break down the selection into unit cells even the selection is contiguous and non-interleving
-Even when the selection is a row of a 2-D data space, the returned hyperblocks from H5Sget_select_hyper_nblocks are individual cells.
-```
-Please update this issue, as we have figured out it is our misunderstanding of H5Sselect_hyperslab.
-See https://github.com/NU-CUCIS/ph5concat/commit/e651e83169257cb44b98473970927d34c6cd4c31
-```
+## The log VOL does not report reference count to the underlying VOL it is using 
+**Problem description**:
+  HDF5 keeps a reference count to the ID (hid_t) of some type of internal objects.
+  VOL is one of the objects tracked by reference count. The reference count applies to the ID, not the object. 
+  It can be understood as the number of copies of the ID that currently resides in the memory.
+  By HDF5's current design, whichever routine that keeps the ID for use must increase the reference count.
+  When the ID is no longer needed, the routine that increased the reference must call an API to decrease the reference count.
+  If the count reaches 0, the underlying object will be freed.
 
-## HDF5 Dispatcher calls file close if any object reains open on MPI_Finalize
-
-If the application left any HDF5 object open on MPI_Finalize, the dispatcher would call the VOL file close.
-If the file has been closed by the application a prior, it causes a double-free error.
-A potential solution is to implement delayed close as the native driver does.
-```
-This description is not clear. Do you mean HDF5 will close the still-opened objects during MPI_Finalize?
-If the applications close the file after done with the file, why would HDF5 native VOL still want to free the file object?
-```
-## HDF5 reference count hasn't been implemented
-```
-Is this title referring to HDF5 native VOL or our log-based VOL?
-```
-This is temporarily solved by following the way the passthrough VOL report reference counts.
-
-HDF5 dispatcher includes a reference count mechanism to track opened objects.
-When the reference count of an object becomes 0, the dispatcher will try to recycle it.
-This feature requires the `(user's?)` VOL to maintain the reference count of the objects it uses.
-Without it, the dispatcher may not be aware that an object is still used by the VOL and tries to recycle it.
-```
-I assume each HDF5 API calls the dispatcher.
-When the dispatcher detects a zero count to an object in an HDF% API, does it immediately free the internal data structures allocated for that object?
-Please clarify whether this is done in Native or user's VOL.
-```
+  Our VOL uses the native VOl as the back end. It uses the ID of the native VOL to refer to it.
+  Previously, our VOL does not report reference count to HDF5.
+  Should any other internal function finish using the native VOL and try to decrease the reference count, the dispatcher will think that no one is using the native VOL and free it.
+  In that case, our VOL will get an error on every operation it performs with the native VOL as the native VOL is already deallocated.
+  * HDF5 versions: 1.12.0
+  * Environment settings: N/A
+  * Trigger condition: All API that triggers a reference count check (decrease) on the native VOL ID.
+**implemented solution**:
+  * Ignore (current)
+    + We call H5Iinc_ref to report a new reference every time we copied the ID the native VOL.
+    + We call H5Idec_ref every time the variable holding the native VOL ID is freed.
+    + Code: logvol_file.cpp:78, 174, 377
+* I assume each HDF5 API calls the dispatcher.
+  + Some function, such as H5P*, is not.
+* When the dispatcher detects a zero count to an object in an HDF% API, does it immediately free the internal data structures allocated for that object?
+  + Yes, but only for tracked object types.
 
 ## NetCDF4 support
+**Problem description**:
+  According to the design proposal, our VOL will support basic I/O operations on File, Group, Dataset, and Attribute.
+  We did not plan to support advanced HDF5 features such as Link (H5L*), Object (H5O*), Reference (H5R*), etc.
+  Our VOL also does not support advanced operation on HDF5 objects such as iterating (*iterate).
 
-NetCDF uses many advanced HDF5 features to implement NetCDF4.
-```
-What are the advanced HDF5 features? Give a few examples and references.
-```
-To support the NetCDF integration, we need to significantly improve the compatibility of the VOL beyond our original plant of attribute, group, and attributes.
-Most of them can be tackled by connecting to the native VOL, but some require special handling.
-```
-This statement is vague, need to be specific. Use examples.
-```
-Currently, the log-based VOL does not support "links", "tokens", "requests", and "optional" APIs.
-It partially supports "object" and "context" APIs.
-```
-These need to be specific by giving names of APIs and HDF5 doc if there is any.
-```
+  The NetCDF library requires many features beyond the design of our VOL for NetCDF4 files.
+  Currently known requirements are Object (H5O*) and Link (H5L*).
+  To support the NetCDF integration, we need to significantly improve the compatibility of the VOL beyond our original plant of attribute, group, and attributes.
+  Many of them can be tackled by passing the request to the native VOL (pass-through), but some require special handling.
+  H5Ocopy is one example. If the object copied is a dataset, we need to update its attribute as well as the metadata in the file since we assign every dataset a unique ID.
+  * HDF5 versions: 1.12.0
+  * Environment settings: N/A
+  * Trigger condition: Using the log VOL in (modified) NetCDF4 library.
+**Current solution (onging)**:
+  * Extend support to other HDF5 objects and advanced functions
+    + We need to implement VOL API for nearly all HDF5 features to support NetCDF4
+    + Code: logvol_obj.cpp, logvol_link.cpp
 
-## Crash if data objects are not closed
 
-Currently, the `(log-based ?)` VOL does not maintain reference counts to opened objects.
-It relies on the application to properly close every object they opened.
-If the application does not close objects opened previously (such as datasets) before closing the file, the dispatcher will consider the file as not closed and call the VOL file close again when it finalizes `(during MPI_Finalize?)`.
+## Native VOL won't close if there are data objects still open
+**Problem description**:
+  The native VOL keeps track of all data object it opens.
+  If there are objects associated with a file still open, the native VOL will refuse to close the file and return an error.
+  Our VOL wraps around the native VOL. Every object opened by our VOL contains at least one opened object by the native VOL.
+  If the application does not close all opened objects before closing the file, the native VOL will report an error.
+  Under our current implementation, the log VOL will abort whenever the native VOL returns an error.
+  * HDF5 versions: 1.12.0
+  * Environment settings: N/A
+  * Trigger condition: Call H5Fclose when there are other file objects left open.
+**Potential solutions**:
+  * Catch the error and return to the dispatcher without aborting
+    + We need to implement VOL API for nearly all HDF5 features to support NetCDF4
+    + Code: logvol_obj.cpp, logvol_link.cpp
+  * Automatically close all file object when the file is closed
+    + Keep track on all opened file objects within the file structure
+    + Close and free any object associated with the file when the file is closing.
+  * Delay file close until the last opened object is closed
+    + Keep an open object count in the file structure.
+    + If the count is not 0 when the user closes the file, set a flag to indicate the file should be closed without actually closing the file.
+    + When the count reaches 0, and the closing flag is set, the VOL automatically closes the file
+    + It may not always be possible as is discussed in https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Close
 
-However, our log-based VOL already freed the file object, and the pointer passed from the dispatcher becomes invalid, causing the program to crash. 
-```
-This statement is not clear.
-For example, if user application programs do not close a dataset but close the file, then the HDF5 dispatcher will try closing the dataset and then closing the file. While closing the file, the already closed file will cause a crash?
-```
-One way to solve it is to close all objects automatically.
-```
-DO you mean that our log-bsed VOL keeps track of opened objects and closes them when H5Fclose is called by the user program?
-```
-Another way is to implement delayed close as the native VOL.
-```
-Is this solution better? i.e. less error prone?
-```
-The VOL `(native or our log-based?)` maintains a reference to all opened objects.
-If there are objects still open, they `(our log-based VOL?)` do not close the file, but just mark the file to be closed.
-If the reference becomes empty (all object is closed), it will close the file if it is marked to be closed.
+## Native VOL won't close if there are data objects still open
+  HDF5 dispatcher placed a hook on MPI_Finalize to finalize the HDF5 library.
+  When finalizing, the dispatcher will close all files not closed by the application by calling the file close VOL API.
+  During that time, the library is marked to be in shutdown status, and the function of the native VOL will become limited.
+  Calling any native VOL function not related to shutting down (such as the internal function H5L_exists to check whether a link exists in the file) will get an error.
 
----
+  Our VOL flushes the file when the file is closing.
+  It relies on the native VOL to update metadata and to create log datasets.
+  However, many functions it uses are not available while the library is in shutdown status (H5L_exists to check whether we already have the metadata log and the lookup table).
+  Thus, our file closing API will always fail when called by the dispatcher on MPI_Finalize.
+  * HDF5 versions: 1.12.0
+  * Environment settings: N/A
+  * Trigger condition: Call MPI_Finalize without closing opened files.
+**possible solutions**:
+  * Contact the HDF5 team to see if there is a way to reactivate the native VOL during the shutdown status
+
 
