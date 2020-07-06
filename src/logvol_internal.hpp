@@ -165,7 +165,7 @@ typedef struct H5VL_log_wreq_t {
 	size_t rsize;  // Size of data in xbuf (bytes)
 	char *xbuf;	   // I/O buffer, always continguous and the same format as the dataset
 	char *ubuf;	   // User buffer
-	// int buf_alloc;  // Whether the buffer is allocated or
+				   // int buf_alloc;  // Whether the buffer is allocated or
 } H5VL_log_wreq_t;
 
 typedef struct H5VL_log_rreq_t {
@@ -390,8 +390,7 @@ extern herr_t H5Pset_nonblocking (hid_t plist, int nonblocking);
 extern herr_t H5Pget_nonblocking (hid_t plist, int *nonblocking);
 
 // Internal
-extern void *H5VL_log_group_open_with_uo(void *obj, void *uo, const H5VL_loc_params_t *loc_params);
-
+extern void *H5VL_log_group_open_with_uo (void *obj, void *uo, const H5VL_loc_params_t *loc_params);
 
 #ifdef LOGVOL_DEBUG
 extern int H5VL_log_debug_MPI_Type_create_subarray (int ndims,
