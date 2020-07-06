@@ -21,7 +21,8 @@ check_PROGRAMS =    file \
                     dset \
                     dwrite \
                     dread \
-					memsel 
+					memsel \
+                    noclose
 
 EXTRA_DIST = # wrap_runs.sh parallel_run.sh
 

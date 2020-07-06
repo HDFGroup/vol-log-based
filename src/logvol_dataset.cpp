@@ -462,7 +462,7 @@ herr_t H5VL_log_dataset_get (
 		case H5VL_DATASET_GET_SPACE: {
 			hid_t *ret_id = va_arg (arguments, hid_t *);
 
-			*ret_id = H5Screate_simple (dp->ndim, dp->dims, NULL);
+			*ret_id = H5Screate_simple (dp->ndim, dp->dims, dp->mdims);
 
 			break;
 		}
@@ -483,12 +483,14 @@ herr_t H5VL_log_dataset_get (
 
 		/* H5Dget_create_plist */
 		case H5VL_DATASET_GET_DCPL: {
+			err = -1;
 			RET_ERR ("get_type not supported")
 			break;
 		}
 
 		/* H5Dget_access_plist */
 		case H5VL_DATASET_GET_DAPL: {
+			err = -1;
 			RET_ERR ("get_type not supported")
 			break;
 		}
@@ -496,7 +498,8 @@ herr_t H5VL_log_dataset_get (
 		/* H5Dget_storage_size */
 		case H5VL_DATASET_GET_STORAGE_SIZE: {
 			hsize_t *ret = va_arg (arguments, hsize_t *);
-
+			err			 = -1;
+			RET_ERR ("get_type not supported")
 			break;
 		}
 		default:
@@ -522,11 +525,32 @@ herr_t H5VL_log_dataset_specific (void *obj,
 								  hid_t dxpl_id,
 								  void **req,
 								  va_list arguments) {
-	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-	herr_t err;
+	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)obj;
+	herr_t err			= 0;
 
-	err = H5VLdataset_specific (op->uo, op->uvlid, specific_type, dxpl_id, req, arguments);
+	switch (specific_type) {
+		case H5VL_DATASET_SET_EXTENT: { /* H5Dset_extent */
+			int i;
+			const hsize_t *new_sizes = va_arg (arguments, const hsize_t *);
 
+			for (i = 0; i < dp->ndim; i++) {
+				if (new_sizes[i] < 0) {
+					err = -1;
+					RET_ERR ("size cannot be negative")
+				}
+				if (dp->mdims[i] != H5S_UNLIMITED && new_sizes[i] > dp->mdims[i]) {
+					err = -1;
+					RET_ERR ("size cannot exceed max size")
+				}
+				dp->dims[i] = new_sizes[i];
+			}
+			break;
+		}
+		default:
+			err = H5VLdataset_specific (dp->uo, dp->uvlid, specific_type, dxpl_id, req, arguments);
+	}
+
+err_out:;
 	return err;
 } /* end H5VL_log_dataset_specific() */
 
