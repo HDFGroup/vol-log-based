@@ -85,7 +85,7 @@ H5VL_log_link_create(H5VL_link_create_type_t create_type, void *obj,
     hid_t uvlid = -1;
     herr_t ret_value;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
+#ifdef LOGVOL_VERBOSE_DEBUG 
     printf("------- LOG VOL LINK Create\n");
 #endif
 
@@ -151,7 +151,7 @@ H5VL_log_link_copy(void *src_obj, const H5VL_loc_params_t *loc_params1,
     hid_t uvlid = -1;
     herr_t ret_value;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
+#ifdef LOGVOL_VERBOSE_DEBUG 
     printf("------- LOG VOL LINK Copy\n");
 #endif
 
@@ -197,7 +197,7 @@ H5VL_log_link_move(void *src_obj, const H5VL_loc_params_t *loc_params1,
     hid_t uvlid = -1;
     herr_t ret_value;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
+#ifdef LOGVOL_VERBOSE_DEBUG 
     printf("------- LOG VOL LINK Move\n");
 #endif
 
@@ -235,7 +235,7 @@ H5VL_log_link_get(void *obj, const H5VL_loc_params_t *loc_params,
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
+#ifdef LOGVOL_VERBOSE_DEBUG 
     printf("------- LOG VOL LINK Get\n");
 #endif
 
@@ -266,7 +266,7 @@ H5VL_log_link_specific(void *obj, const H5VL_loc_params_t *loc_params,
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
+#ifdef LOGVOL_VERBOSE_DEBUG 
     printf("------- LOG VOL LINK Specific\n");
 #endif
 
@@ -297,7 +297,7 @@ H5VL_log_link_optional(void *obj, H5VL_link_optional_t opt_type, hid_t dxpl_id, 
     H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
     herr_t ret_value;
 
-#ifdef ENABLE_PASSTHRU_LOGGING 
+#ifdef LOGVOL_VERBOSE_DEBUG 
     printf("------- LOG VOL LINK Optional\n");
 #endif
 

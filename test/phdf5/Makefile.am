@@ -15,7 +15,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/src \
               -I$(srcdir) 
 LDADD = $(top_builddir)/src/.libs/liblogvol.la
 
-check_PROGRAMS =    cache_api
+check_PROGRAMS =    
 
 EXTRA_DIST = # wrap_runs.sh parallel_run.sh
 

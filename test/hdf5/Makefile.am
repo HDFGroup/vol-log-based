@@ -21,8 +21,7 @@ libh5test_la_SOURCES=h5test.c testframe.c testframe.c external_common.c
 LDADD = $(top_builddir)/src/.libs/liblogvol.la libh5test.la
 
 check_PROGRAMS =    dangle \
-                    del_many_dense_attrs \
-                    dtransform
+                    del_many_dense_attrs 
                     
 
 EXTRA_DIST = # wrap_runs.sh parallel_run.sh

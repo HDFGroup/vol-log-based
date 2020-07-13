@@ -59,6 +59,10 @@ typedef enum H5VL_log_req_type_t {
     H5VL_LOG_REQ_NONBLOCKING = 1
 } H5VL_log_req_type_t;
 
+// Querying functions for dynamic loading
+H5PL_type_t H5PLget_plugin_type(void);
+const void *H5PLget_plugin_info(void);
+
 // Helper functions
 herr_t H5Pset_nonblocking(hid_t plist, H5VL_log_req_type_t nonblocking);
 herr_t H5Pget_nonblocking(hid_t plist, H5VL_log_req_type_t *nonblocking);

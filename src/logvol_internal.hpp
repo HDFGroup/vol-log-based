@@ -14,7 +14,8 @@
 
 #ifdef LOGVOL_DEBUG
 #include <iostream>
-#define DEBUG_ABORT abort ();
+#define DEBUG_ABORT MPI_Abort (MPI_COMM_WORLD, -1);
+#define LOGVOL_VERBOSE_DEBUG 1
 #else
 #define DEBUG_ABORT
 #endif
@@ -283,6 +284,8 @@ extern const H5VL_introspect_class_t H5VL_log_introspect_g;
 extern const H5VL_object_class_t H5VL_log_object_g;
 extern const H5VL_datatype_class_t H5VL_log_datatype_g;
 extern const H5VL_blob_class_t H5VL_log_blob_g;
+extern const H5VL_link_class_t H5VL_log_link_g;
+extern const H5VL_token_class_t H5VL_log_token_g;
 
 // Utils
 extern MPI_Datatype h5t_to_mpi_type (hid_t type_id);

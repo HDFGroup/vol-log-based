@@ -395,7 +395,6 @@ herr_t H5VL_log_dataset_write (void *dset,
 
 	// Need convert?
 	eqtype = H5Tequal (dp->dtype, mem_type_id);
-	CHECK_ID (eqtype);
 
 	// Can reuse user buffer
 	if (rtype == H5VL_LOG_REQ_NONBLOCKING && eqtype > 0 && stype == H5S_SEL_ALL) {
