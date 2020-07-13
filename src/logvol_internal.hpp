@@ -14,8 +14,8 @@
 
 #ifdef LOGVOL_DEBUG
 #include <iostream>
-#define DEBUG_ABORT MPI_Abort (MPI_COMM_WORLD, -1);
-#define LOGVOL_VERBOSE_DEBUG 1
+#define DEBUG_ABORT abort();
+//#define LOGVOL_VERBOSE_DEBUG 1
 #else
 #define DEBUG_ABORT
 #endif

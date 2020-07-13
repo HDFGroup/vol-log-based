@@ -131,7 +131,6 @@ herr_t H5VL_log_init (hid_t vipl_id) {
 	CHECK_MPIERR
 	if (!mpi_inited) { MPI_Init (NULL, NULL); }
 
-	/*
 	exist = H5Pexist (H5P_DATASET_XFER, "nonblocking");
 	CHECK_ID (exist)
 	if (!exist) {
@@ -147,7 +146,6 @@ herr_t H5VL_log_init (hid_t vipl_id) {
 							NULL, NULL, NULL, NULL, NULL);
 		CHECK_ERR
 	}
-	*/
 
 err_out:;
 	return err;

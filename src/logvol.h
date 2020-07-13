@@ -51,6 +51,11 @@ typedef struct H5VL_log_info_t {
     void *under_vol_info;       /* VOL info for under VOL */
 } H5VL_log_info_t;
 
+typedef struct H5VL_logd_info_t {
+    hid_t under_vol_id;         /* VOL ID for under VOL */
+    void *under_vol_info;       /* VOL info for under VOL */
+} H5VL_logd_info_t;
+
 extern const H5VL_class_t H5VL_log_g;
 
 // Non-blocking I/O flags
