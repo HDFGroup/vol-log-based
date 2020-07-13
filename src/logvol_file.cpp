@@ -46,6 +46,35 @@ void *H5VL_log_file_create (
 	MPI_Comm comm;
 	hbool_t po_supported;
 
+#ifdef LOGVOL_VERBOSE_DEBUG
+	{
+		char vname[3][128];
+		ssize_t nsize;
+
+		nsize = H5Iget_name (fcpl_id, vname[0], 128);
+		if (nsize == 0) {
+			sprintf (vname[0], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[0], "Unknown_Object");
+		}
+		nsize = H5Iget_name (fapl_id, vname[1], 128);
+		if (nsize == 0) {
+			sprintf (vname[1], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[1], "Unknown_Object");
+		}
+		nsize = H5Iget_name (dxpl_id, vname[2], 128);
+		if (nsize == 0) {
+			sprintf (vname[2], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[2], "Unknown_Object");
+		}
+
+		printf ("H5VL_log_file_create(%s, %u, %s, %s, %s, %p)\n", name, flags, vname[0], vname[1],
+				vname[2], req);
+	}
+#endif
+
 	// Try get info about under VOL
 	H5Pget_vol_info (fapl_id, (void **)&info);
 
@@ -143,6 +172,28 @@ void *H5VL_log_file_open (
 	void *under_vol_info;
 	MPI_Comm comm;
 
+#ifdef LOGVOL_VERBOSE_DEBUG
+	{
+		char vname[3][128];
+		ssize_t nsize;
+
+		nsize = H5Iget_name (fapl_id, vname[1], 128);
+		if (nsize == 0) {
+			sprintf (vname[1], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[1], "Unknown_Object");
+		}
+		nsize = H5Iget_name (dxpl_id, vname[2], 128);
+		if (nsize == 0) {
+			sprintf (vname[2], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[2], "Unknown_Object");
+		}
+
+		printf ("H5VL_log_file_open(%s, %u, %s, %s, %p)\n", name, flags, vname[0], vname[1], req);
+	}
+#endif
+
 	// Try get info about under VOL
 	H5Pget_vol_info (fapl_id, (void **)&info);
 
@@ -231,8 +282,26 @@ herr_t H5VL_log_file_get (
 	herr_t err;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-	printf ("------- LOG VOL FILE Get\n");
+#ifdef LOGVOL_VERBOSE_DEBUG
+	{
+		char vname[2][128];
+		ssize_t nsize;
+
+		nsize = H5Iget_name (get_type, vname[0], 128);
+		if (nsize == 0) {
+			sprintf (vname[0], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[0], "Unknown_Object");
+		}
+		nsize = H5Iget_name (dxpl_id, vname[1], 128);
+		if (nsize == 0) {
+			sprintf (vname[1], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[1], "Unknown_Object");
+		}
+
+		printf ("H5VL_log_file_get(%p, %s, %s, %p, ...)\n", file, vname[0], vname[1], req);
+	}
 #endif
 
 	err = H5VLfile_get (fp->uo, fp->uvlid, get_type, dxpl_id, req, arguments);
@@ -256,6 +325,28 @@ herr_t H5VL_log_file_specific (
 	void *file, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
 	herr_t err;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+
+#ifdef LOGVOL_VERBOSE_DEBUG
+	{
+		char vname[2][128];
+		ssize_t nsize;
+
+		nsize = H5Iget_name (specific_type, vname[0], 128);
+		if (nsize == 0) {
+			sprintf (vname[0], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[0], "Unknown_Object");
+		}
+		nsize = H5Iget_name (dxpl_id, vname[1], 128);
+		if (nsize == 0) {
+			sprintf (vname[1], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[1], "Unknown_Object");
+		}
+
+		printf ("H5VL_log_file_specific(%p, %s, %s, %p, ...)\n", file, vname[0], vname[1], req);
+	}
+#endif
 
 	switch (specific_type) {
 		case H5VL_FILE_IS_ACCESSIBLE:
@@ -314,10 +405,27 @@ herr_t H5VL_log_file_optional (
 	herr_t err;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-	printf ("------- LOG VOL File Optional\n");
-#endif
+#ifdef LOGVOL_VERBOSE_DEBUG
+	{
+		char vname[2][128];
+		ssize_t nsize;
 
+		nsize = H5Iget_name (opt_type, vname[0], 128);
+		if (nsize == 0) {
+			sprintf (vname[0], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[0], "Unknown_Object");
+		}
+		nsize = H5Iget_name (dxpl_id, vname[1], 128);
+		if (nsize == 0) {
+			sprintf (vname[1], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[1], "Unknown_Object");
+		}
+
+		printf ("H5VL_log_file_optional(%p, %s, %s, %p, ...)\n", file, vname[0], vname[1], req);
+	}
+#endif
 	err = H5VLfile_optional (fp->uo, fp->uvlid, opt_type, dxpl_id, req, arguments);
 	CHECK_ERR
 
@@ -340,8 +448,20 @@ herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
 	int mpierr;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
-#ifdef ENABLE_PASSTHRU_LOGGING
-	printf ("------- LOG VOL FILE Close\n");
+#ifdef LOGVOL_VERBOSE_DEBUG
+	{
+		char vname[1][128];
+		ssize_t nsize;
+
+		nsize = H5Iget_name (dxpl_id, vname[0], 128);
+		if (nsize == 0) {
+			sprintf (vname[0], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[0], "Unknown_Object");
+		}
+
+		printf ("H5VL_log_file_close(%p, %s, %p, ...)\n", file, vname[0], req);
+	}
 #endif
 
 	if (fp->flag != H5F_ACC_RDONLY) {
@@ -374,7 +494,7 @@ herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
 
 	// Clean up
 	MPI_Comm_free (&(fp->comm));
-    H5Idec_ref(fp->uvlid);
+	H5Idec_ref (fp->uvlid);
 	delete fp;
 
 err_out:

@@ -209,7 +209,7 @@ if test "x$ac_cv_have_decl_unlink" = xyes ; then
 fi
 
 LT_PREREQ([2.4.2])
-LT_INIT([disable-shared])
+LT_INIT()
 
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],

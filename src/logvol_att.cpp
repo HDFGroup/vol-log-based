@@ -161,7 +161,9 @@ herr_t H5VL_log_attr_specific(void *obj, const H5VL_loc_params_t *loc_params, H5
     herr_t err;
 
     err = H5VLattr_specific(op->uo, loc_params, op->uvlid, specific_type, dxpl_id, req, arguments);
+    CHECK_ERR
 
+err_out:;
     return err;
 } /* end H5VL_log_attr_specific() */
 

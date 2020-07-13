@@ -59,23 +59,31 @@ void *H5VL_log_object_open (void *obj,
 	herr_t err;
 	H5VL_log_obj_t *new_obj;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-	H5O_type_t otype;
 	void *uo;
-
-	uo = H5VLobject_open(op->uo, loc_params, op->uvlid, opened_type, dxpl_id, req);
-	if (uo == NULL){
-		CHECK_NERR(uo);
-	}
-
-	if (otype == H5O_TYPE_DATASET)
+#ifdef LOGVOL_VERBOSE_DEBUG
 	{
-		return H5VL_log_dataset_open_with_uo(obj, uo, loc_params, dxpl_id);
+		char vname[128];
+		ssize_t nsize;
+
+		nsize = H5Iget_name (dxpl_id, vname, 128);
+		if (nsize == 0) {
+			sprintf (vname, "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname, "Unknown_Object");
+		}
+
+		printf ("H5VL_log_object_open(%p, %p, %p, %s, %p)\n", obj, loc_params, opened_type, vname,
+				req);
 	}
-	else if (otype == H5O_TYPE_GROUP)
-	{
-		return H5VL_log_group_open_with_uo(obj, uo, loc_params);
-	}
-	else{
+#endif
+	uo = H5VLobject_open (op->uo, loc_params, op->uvlid, opened_type, dxpl_id, req);
+	if (uo == NULL) { CHECK_NERR (uo); }
+
+	if (*opened_type == H5I_DATASET) {
+		return H5VL_log_dataset_open_with_uo (obj, uo, loc_params, dxpl_id);
+	} else if (*opened_type == H5I_GROUP) {
+		return H5VL_log_group_open_with_uo (obj, uo, loc_params);
+	} else {
 		return uo;
 	}
 
@@ -106,6 +114,34 @@ herr_t H5VL_log_object_copy (void *src_obj,
 	H5VL_log_obj_t *o_src = (H5VL_log_obj_t *)src_obj;
 	H5VL_log_obj_t *o_dst = (H5VL_log_obj_t *)dst_obj;
 
+#ifdef LOGVOL_VERBOSE_DEBUG
+	{
+		char vname[3][128];
+		ssize_t nsize;
+
+		nsize = H5Iget_name (ocpypl_id, vname[0], 128);
+		if (nsize == 0) {
+			sprintf (vname[0], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[0], "Unknown_Object");
+		}
+		nsize = H5Iget_name (lcpl_id, vname[1], 128);
+		if (nsize == 0) {
+			sprintf (vname[1], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[1], "Unknown_Object");
+		}
+		nsize = H5Iget_name (dxpl_id, vname[2], 128);
+		if (nsize == 0) {
+			sprintf (vname[2], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[2], "Unknown_Object");
+		}
+
+		printf ("H5VL_log_object_copy(%p, %p, %s, %p,%p,%s,%s,%s,%s,%p)\n", src_obj, src_loc_params,
+				src_name, dst_obj, dst_loc_params, dst_name, vname[0], vname[1], vname[2], req);
+	}
+#endif
 	RET_ERR ("H5VL_log_object_copy Not Supported")
 err_out:;
 	return -1;
@@ -131,7 +167,28 @@ herr_t H5VL_log_object_get (void *obj,
 							void **req,
 							va_list arguments) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+#ifdef LOGVOL_VERBOSE_DEBUG
+	{
+		char vname[2][128];
+		ssize_t nsize;
 
+		nsize = H5Iget_name (get_type, vname[0], 128);
+		if (nsize == 0) {
+			sprintf (vname[0], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[0], "Unknown_Object");
+		}
+		nsize = H5Iget_name (dxpl_id, vname[1], 128);
+		if (nsize == 0) {
+			sprintf (vname[1], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[1], "Unknown_Object");
+		}
+
+		printf ("H5VL_log_object_get(%p, %p, %s, %s,%p, ...)\n", obj, loc_params, vname[0],
+				vname[1], req);
+	}
+#endif
 	return H5VLobject_get (op->uo, loc_params, op->uvlid, get_type, dxpl_id, req, arguments);
 } /* end H5VL_log_object_get() */
 
@@ -152,7 +209,28 @@ herr_t H5VL_log_object_specific (void *obj,
 								 void **req,
 								 va_list arguments) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+#ifdef LOGVOL_VERBOSE_DEBUG
+	{
+		char vname[2][128];
+		ssize_t nsize;
 
+		nsize = H5Iget_name (specific_type, vname[0], 128);
+		if (nsize == 0) {
+			sprintf (vname[0], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[0], "Unknown_Object");
+		}
+		nsize = H5Iget_name (dxpl_id, vname[1], 128);
+		if (nsize == 0) {
+			sprintf (vname[1], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[1], "Unknown_Object");
+		}
+
+		printf ("H5VL_log_object_specific(%p, %p, %s, %s,%p, ...)\n", obj, loc_params, vname[0],
+				vname[1], req);
+	}
+#endif
 	return H5VLobject_specific (op->uo, loc_params, op->uvlid, specific_type, dxpl_id, req,
 								arguments);
 } /* end H5VL_log_object_specific() */
@@ -170,6 +248,27 @@ herr_t H5VL_log_object_specific (void *obj,
 herr_t H5VL_log_object_optional (
 	void *obj, H5VL_object_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+#ifdef LOGVOL_VERBOSE_DEBUG
+	{
+		char vname[2][128];
+		ssize_t nsize;
 
+		nsize = H5Iget_name (opt_type, vname[0], 128);
+		if (nsize == 0) {
+			sprintf (vname[0], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[0], "Unknown_Object");
+		}
+		nsize = H5Iget_name (dxpl_id, vname[1], 128);
+		if (nsize == 0) {
+			sprintf (vname[1], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[1], "Unknown_Object");
+		}
+
+		printf ("H5VL_log_object_optional(%p, %s, %s,%p, ...)\n", obj, vname[0],
+				vname[1], req);
+	}
+#endif
 	return H5VLobject_optional (op->uo, op->uvlid, opt_type, dxpl_id, req, arguments);
 } /* end H5VL_log_object_optional() */
