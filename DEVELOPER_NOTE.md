@@ -156,4 +156,32 @@ General comments: I suggest the following when adding a new issue.
 **possible solutions**:
   * Contact the HDF5 team to see if there is a way to reactivate the native VOL during the shutdown status
 
+## Registering property changes the signature of the property class
+  When the application register a new property in a property class with HDF5 (H5Pregister), the signature of the property class changes.
+  Any property created previously will no longer be compatible with the original class.
+  As a result, trying to use existing properties in any HDF5 API will result in an error since the property will be considered in the wrong property class.
+  It creates a problem for default properties (H5P_DEFAULT). They are initialized when the native VOL initializes, and thus, is associated with the old property class signature.
+  If the application registers a property with a predefined property class, H5Pdefault can no longer be used in all HDF5 API that takes a property list of that property class as an argument.
+
+  For example, an application creates a file access property P.
+  Then, it registers a new property under the H5P_FILE_ACCESS property class.
+  After that, it calls H5Fcreate with the file access property P.
+  H5Fcreate will fail because P is considered the property of the old file access property class, instead of the new one containing the new property.
+  Passing H5P_DEFAULT will also fail since it maps to an internally stored property list initialized when the library initializes.
+
+  Our VOL creates two properties. A file access property for internal buffer size, and a dataset transfer property for blocking/nonblocking I/O.
+  It causes the default property lists to become outdated and will cause problems should the application use H5P_DEFAULT as file creation property.
+  I observe this issue when trying to load the log VOL dynamically using environment variables.
+  The loader tries to add our VOL to the default file access property list and cause the error of mismatched property class.
+  * HDF5 versions: 1.12.0
+  * Environment settings: N/A
+  * Trigger condition: Call H5Pregister2 to register a new file access property, then create a file using H5P_DEFAULT as file access property.
+**possible solutions**:
+  * Contact the HDF5 team to see if there is a way to update all existing property list after the property class is extended.
+  * Avoid registering new properties, try to create our own class.
+    + Need to study the way to create our own property class.
+
+## The VOL fail when running E3SM on multi-process
+  The issue is still being studied.
+  A H5Aiterate call failed on the second process due to some format decoding error.
 
