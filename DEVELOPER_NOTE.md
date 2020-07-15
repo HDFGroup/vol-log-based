@@ -157,22 +157,30 @@ General comments: I suggest the following when adding a new issue.
   * Contact the HDF5 team to see if there is a way to reactivate the native VOL during the shutdown status
 
 ## Registering property changes the signature of the property class
-  When the application register a new property in a property class with HDF5 (H5Pregister), the signature of the property class changes.
-  Any property created previously will no longer be compatible with the original class.
-  As a result, trying to use existing properties in any HDF5 API will result in an error since the property will be considered in the wrong property class.
-  It creates a problem for default properties (H5P_DEFAULT). They are initialized when the native VOL initializes, and thus, is associated with the old property class signature.
-  If the application registers a property with a predefined property class, H5Pdefault can no longer be used in all HDF5 API that takes a property list of that property class as an argument.
+  H5Pregister can be used to register new properties to an existing property class (file access, dataset transfer, etc.).
+  After registration, any new property list created under this property class will include the registered property.
+  It allows applications or third-party plugins to define its own properties.
+  When H5Pregister is called on a property class, HDF5 replaces it with a clone that includes the new property.
+  However, HDF5 will not update the existing property lists of that property class to include the new property.
+  Thus, those property lists will no longer be compatible with the property class as they contain a different set of properties.
+  Passing them to any HDF5 API will result in an error because the sanity check will consider them to be of the wrong property class.
+  
+  For example, an application creates a file access property (H5P_FILE_ACCESS) list L.
+  Then, it registers a new property P under the file access property class.
+  After that, it calls H5Fcreate with L as the file access property list (fapl).
+  H5Fcreate will fail because L is no longer a file access property as it does not contain property P.
+  H5P_DEFAULT will also become outdated as it maps to an internally cached property list that is initialized when the library initializes.
 
-  For example, an application creates a file access property P.
-  Then, it registers a new property under the H5P_FILE_ACCESS property class.
-  After that, it calls H5Fcreate with the file access property P.
-  H5Fcreate will fail because P is considered the property of the old file access property class, instead of the new one containing the new property.
-  Passing H5P_DEFAULT will also fail since it maps to an internally stored property list initialized when the library initializes.
-
-  Our VOL creates two properties. A file access property for internal buffer size, and a dataset transfer property for blocking/nonblocking I/O.
-  It causes the default property lists to become outdated and will cause problems should the application use H5P_DEFAULT as file creation property.
-  I observe this issue when trying to load the log VOL dynamically using environment variables.
-  The loader tries to add our VOL to the default file access property list and cause the error of mismatched property class.
+  In HDF5, properties are not managed by the VOL.
+  If a VOL wants to create it's own property, it must use the same H5Pregister API as applications.
+  Our log VOL defines two customized properties.
+  One is a file access property that indicates the amount of memory available for buffering data.
+  Another one is a dataset transfer property to indicate whether an  I/O operation on a dataset is blocking or nonblocking.
+  When the log VOL registers those properties during its initialization, it invalidates all existing file access and dataset transfer property lists.
+  Also, H5P_DEFAULT can no longer be used to represent property lists of the two property classes.
+  The issue is observed when trying to load the log VOL dynamically using environment variables.
+  After loading and initializing the log VOL, the dispatcher tries to set it as the default VOL in the default file access property list (the property list used when H5P_DEFAULT is seen) by calling H5Pset_vol.
+  H5Pset_vol returns an error because the default file access property list is no longer a file access property.
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: Call H5Pregister2 to register a new file access property, then create a file using H5P_DEFAULT as file access property.
