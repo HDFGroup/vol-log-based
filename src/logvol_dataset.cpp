@@ -225,7 +225,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 	htri_t eqtype;
 	char *bufp = (char *)buf;
 	H5VL_log_rreq_t r;
-	H5S_sel_type stype;
+	H5S_sel_type stype, mstype;
 	H5VL_log_req_type_t rtype;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 
@@ -235,14 +235,20 @@ herr_t H5VL_log_dataset_read (void *dset,
 		CHECK_ERR
 	}
 
+	// Check mem space selection
+	if (file_space_id == H5S_ALL)
+		stype = H5S_SEL_ALL;
+	else
+		stype = H5Sget_select_type (file_space_id);
+
 	// H5S_All means using file space
 	if (mem_space_id == H5S_ALL) mem_space_id = file_space_id;
 
 	// Check mem space selection
 	if (mem_space_id == H5S_ALL)
-		stype = H5S_SEL_ALL;
+		mstype = H5S_SEL_ALL;
 	else
-		stype = H5Sget_select_type (mem_space_id);
+		mstype = H5Sget_select_type (mem_space_id);
 
 	// Setting metadata;
 	r.did	= dp->id;
@@ -284,7 +290,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 	CHECK_ID (eqtype);
 
 	// Can reuse user buffer
-	if (eqtype > 0 && stype == H5S_SEL_ALL) {
+	if (eqtype > 0 && mstype == H5S_SEL_ALL) {
 		r.xbuf = r.ubuf;
 	} else {  // Need internal buffer
 		// Get element size
@@ -297,7 +303,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 		CHECK_ERR
 
 		// Need packing
-		if (stype != H5S_SEL_ALL) {
+		if (mstype != H5S_SEL_ALL) {
 			err = H5VL_log_dataspacei_get_sel_type (mem_space_id, esize, &(r.ptype));
 			CHECK_ERR
 		}
@@ -347,18 +353,24 @@ herr_t H5VL_log_dataset_write (void *dset,
 	size_t esize;
 	H5VL_log_wreq_t r;
 	htri_t eqtype;
-	H5S_sel_type stype;
+	H5S_sel_type stype, mstype;
 	H5VL_log_req_type_t rtype;
 	MPI_Datatype ptype = MPI_DATATYPE_NULL;
+
+	// Check file space selection
+	if (file_space_id == H5S_ALL)
+		stype = H5S_SEL_ALL;
+	else
+		stype = H5Sget_select_type (file_space_id);
 
 	// H5S_All means using file space
 	if (mem_space_id == H5S_ALL) mem_space_id = file_space_id;
 
 	// Check mem space selection
 	if (mem_space_id == H5S_ALL)
-		stype = H5S_SEL_ALL;
+		mstype = H5S_SEL_ALL;
 	else
-		stype = H5Sget_select_type (mem_space_id);
+		mstype = H5Sget_select_type (mem_space_id);
 
 	// Setting metadata;
 	r.did	= dp->id;
@@ -397,7 +409,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	eqtype = H5Tequal (dp->dtype, mem_type_id);
 
 	// Can reuse user buffer
-	if (rtype == H5VL_LOG_REQ_NONBLOCKING && eqtype > 0 && stype == H5S_SEL_ALL) {
+	if (rtype == H5VL_LOG_REQ_NONBLOCKING && eqtype > 0 && mstype == H5S_SEL_ALL) {
 		r.xbuf = r.ubuf;
 	} else {  // Need internal buffer
 		// Get element size
@@ -410,7 +422,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 		CHECK_ERR
 
 		// Need packing
-		if (stype != H5S_SEL_ALL) {
+		if (mstype != H5S_SEL_ALL) {
 			i	= 0;
 			err = H5VL_log_dataspacei_get_sel_type (mem_space_id, esize, &ptype);
 			CHECK_ERR
