@@ -5,6 +5,8 @@ herr_t H5VL_log_filei_balloc(H5VL_log_file_t *fp, size_t size, void **buf) {
     herr_t err = 0;
     size_t *bp;
 
+    //printf("Balloc %llu\n", size);
+
     if (fp->bsize != LOG_VOL_BSIZE_UNLIMITED){
         if (fp->bused + size > fp->bsize){
             err = -1;
