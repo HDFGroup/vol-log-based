@@ -1,11 +1,10 @@
-# Note for Developers
+# Developer's Note
 
-### Table of contents
-- [Known problem](#characteristics-and-structure-of-neutrino-experimental-data)
+- [Issues encountered](#issues-encountered)
 
 ---
 
-# Known issues
+# Issues Encountered
 
 ```
 General comments: I suggest the following when adding a new issue.
@@ -24,36 +23,36 @@ General comments: I suggest the following when adding a new issue.
   * Solution 2
   ...
 ```
-
-## HDF5 native VOL dynamic datatype init
-**Problem description**:
-  Datatypes are considered to be managed by the VOL.
-  VOLs are expected to provide their own datatype.
-  The predefined data types under https://support.hdfgroup.org/HDF5/doc/RM/PredefDTypes.html are datatype managed by the native VOL.
-  Those data types are not preprocessor macros; instead, they are exposed as global variables that the native VOL should initialize.
-  Initializing the native VOL will not automatically initialize the datatype.
-  Instead, it is initialized by a special initialization callback function (part of file_specific).
-
-  The dispatcher will call the introspect API of the VOL to check for the existence of the initialization routine.
-  If so, it will call the initialization function when needed.
-  Since our VOL is using predefined data type, we must call the initialization routine of the native VOL first, or the value will be invalid.
+---
+## HDF5 Predefined Data Type Initialization
+### Problem Description
+  * User VOLs are responsible to define and manage data types. Data types are not inhereted from the native VOL. 
+  * [Predefined data types](https://support.hdfgroup.org/HDF5/doc/RM/PredefDTypes.html) (e.g. H5T_STD_*, H5T_NATIVE_*) are datatype managed by the native VOL.
+  * In the native VOL, the predefined data types are not defined as constants.
+  * Instead, they are defined as global variables, which are later initialied by the native VOL.
+  * Before their initializetion, they are assigned value of -1 (see H5T.c:341)
+  * Initializing the native VOL will not automatically initialize the predefined data types.
+  * They should be initialized by a callback function when the user VOL is initialized (part of file_specific).
+  * The HDF5 dispatcher first calls the introspect API of the user VOL to check for existence of the initialization routine.
+  * If succeeded, the dispatcher will call the user VOL's initialization function when needed (**WKL: when needed?**).
+  * This is not documented in HDF5 user guides. This behavior was found when reading into the source codes of the native VOL.
+  * Therefore, a user VOL must call the native VOL's initialization routine first. Otherwise, the values of those global variables will not be valid (remained to be -1).
+  * (**WKL: I assume the 2 sentences below desribed our earlier implementation and it has been fixed now. If this is the case, please remove them.**)  
   However, our VOL does not support the introspect APIs as well as the special initialization routine.
   In consequence, the initialization routine of the native VOL is not called, and passing any predefined datatype to the native VOL will cause an error (unrecognized data type).
+
+### Software Environment
   * HDF5 versions: 1.12.0
-  * Environment settings: N/A
   * Trigger condition: Using any predefined datatype before calling the initializing routine of the native VOL
-**solutions**:
-  * Implemented solution
-    + Implement our initialization routine to call the initialization routine of the native VOL (pass-through).
-    + Add support to the introspect APIs so the dispatcher knows that we have a special initialization routine that must be called.
-    + Source: logvol_introspect.cpp, logvol_file.cpp:312
-    + Commit: dff337dbc63ef8363984f5e8a9d0dd9eb01f2fe9
 
-* Add reference to "VOL dynamic datatype init" in HDF5 doc.
-  + It is not documented. It is the implementation within the native VOL that is hidden to the user.
-* "derived datatype"? Do you mean compound data type?
-  + No, just native types. H5T_STD_*, H5T_NATIVE_*, etc. They are assigned -1 in the code (H5T.c:341) and requires the native VOL to initialize them.
+### Solutions
+  + Implement the initialization routine in our VOL to call the native VOL initialization routine (pass-through).
+  + Add the initialization routine so the HDF5 dispatcher can call it.
+  + Source files: [logvol_introspect.cpp](/src/logvol_introspect.cpp), and [logvol_file.cpp](https://github.com/DataLib-ECP/log_io_vol/blob/e250487955bb0d498734f2455ad4d095189fe9f4/src/logvol_file.cpp#L324)
+  + Commit: [dff337d](https://github.com/DataLib-ECP/log_io_vol/commit/dff337dbc63ef8363984f5e8a9d0dd9eb01f2fe9)
+  + Test program [test/basic/dwrite.cpp](/test/basic/dwrite.cpp)
 
+---
 ## H5Sget_select_hyper_nblocks does not combine selection blocks
 **Problem description**:
   In older versions, H5Sget_select_hyper_nblocks will combine selections if they together form a larger rectangular block.
