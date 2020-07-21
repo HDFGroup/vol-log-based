@@ -1,11 +1,10 @@
-# Note for Developers
+# Developer's Note
 
-### Table of contents
-- [Known problem](#characteristics-and-structure-of-neutrino-experimental-data)
+- [Issues encountered](#issues-encountered)
 
 ---
 
-# Known issues
+# Issues Encountered
 
 ```
 General comments: I suggest the following when adding a new issue.
@@ -24,40 +23,35 @@ General comments: I suggest the following when adding a new issue.
   * Solution 2
   ...
 ```
+---
+## HDF5 Predefined Data Type Initialization (Solved)
+### Problem Description
+  * User VOLs are responsible to define and manage data types. Data types are not inhereted from the native VOL. 
+  * [Predefined data types](https://support.hdfgroup.org/HDF5/doc/RM/PredefDTypes.html) (e.g. H5T_STD_*, H5T_NATIVE_*) are datatype managed by the native VOL.
+  * In the native VOL, the predefined data types are not defined as constants.
+  * Instead, they are defined as global variables, which are later initialied by the native VOL.
+  * Before their initializetion, they are assigned value of -1 (see H5T.c:341)
+  * Initializing the native VOL will not automatically initialize the predefined data types.
+  * They should be initialized by a callback function when the user VOL is initialized (part of file_specific).
+  * The HDF5 dispatcher first calls the introspect API of the user VOL to check for existence of the initialization routine.
+  * If succeeded, the dispatcher will call the user VOL's initialization function when needed (**WKL: when needed?**).
+  * This is not documented in HDF5 user guides. This behavior was found when reading into the source codes of the native VOL.
+  * Therefore, a user VOL must call the native VOL's initialization routine first. Otherwise, the values of those global variables will not be valid (remained to be -1).
 
-## HDF5 native VOL dynamic datatype init
-**Problem description**:
-  Datatypes are considered to be managed by the VOL.
-  VOLs are expected to provide their own datatype.
-  The predefined data types under https://support.hdfgroup.org/HDF5/doc/RM/PredefDTypes.html are datatype managed by the native VOL.
-  Those data types are not preprocessor macros; instead, they are exposed as global variables that the native VOL should initialize.
-  Initializing the native VOL will not automatically initialize the datatype.
-  Instead, it is initialized by a special initialization callback function (part of file_specific).
-
-  The dispatcher will call the introspect API of the VOL to check for the existence of the initialization routine.
-  If so, it will call the initialization function when needed.
-  Since our VOL is using predefined data type, we must call the initialization routine of the native VOL first, or the value will be invalid.
-  However, our VOL does not support the introspect APIs as well as the special initialization routine.
-  In consequence, the initialization routine of the native VOL is not called, and passing any predefined datatype to the native VOL will cause an error (unrecognized data type).
+### Software Environment
   * HDF5 versions: 1.12.0
-  * Environment settings: N/A
   * Trigger condition: Using any predefined datatype before calling the initializing routine of the native VOL
-**solutions**:
-  * Implemented solution
-    + Implement our initialization routine to call the initialization routine of the native VOL (pass-through).
-    + Add support to the introspect APIs so the dispatcher knows that we have a special initialization routine that must be called.
-    + Source: logvol_introspect.cpp, logvol_file.cpp:312
-    + Commit: dff337dbc63ef8363984f5e8a9d0dd9eb01f2fe9
 
-##########################################################################################################################
-* Add reference to "VOL dynamic datatype init" in HDF5 doc.
-  => It is not documented. It is the implementation within the native VOL that is hidden to the user.
-* "derived datatype"? Do you mean compound data type?
-  => No, just native types. H5T_STD_*, H5T_NATIVE_*, etc. They are assigned -1 in the code (H5T.c:341) and requires the native VOL to initialize them.
-###########################################################################################################################
+### Solutions
+  + Implement the initialization routine in our VOL to call the native VOL initialization routine (pass-through).
+  + Add the initialization routine so the HDF5 dispatcher can call it.
+  + Source files: [logvol_introspect.cpp](/src/logvol_introspect.cpp), and [logvol_file.cpp](https://github.com/DataLib-ECP/log_io_vol/blob/e250487955bb0d498734f2455ad4d095189fe9f4/src/logvol_file.cpp#L324)
+  + Commit: [dff337d](https://github.com/DataLib-ECP/log_io_vol/commit/dff337dbc63ef8363984f5e8a9d0dd9eb01f2fe9)
+  + Test program [test/basic/dwrite.cpp](/test/basic/dwrite.cpp)
 
-## H5Sget_select_hyper_blocklist does not combine selection blocks
-**Problem description**:
+---
+## H5Sget_select_hyper_nblocks does not combine selection blocks
+### Problem Description
   HDF5 supports two types of dataspace selection - point list and hyper-slab.
   A point list selection is represented by a list of selected points (unit cell) directly.
   A hyper-slab selection is represented by four attributes - start, count, stride, and block.
@@ -70,21 +64,24 @@ General comments: I suggest the following when adding a new issue.
   NetCDF selection use "count" to refer to the block size while HDF5 uses "block" in hyper-slab selection.
   Developers transitioning from NetCDF to HDF5 may mistake the "count" argument as the block size when they want to select a single block.
   In that case, the application will end up selecting the entire region with 1x1 cells.
-It can greatly affect the performance of our log VOL as we create a metadata entry int he index for every selected block.
+  It can greatly affect the performance of our log VOL as we create a metadata entry int he index for every selected block.
   Before 1.12.0, H5Sget_select_hyper_blocklist will automatically combine those 1x1 selections into a single block before returning to the user.
   It help mitigates the issue if the developer made mistakes mentioned above.
   However, they removed this feature 1.12.0 and H5Sget_select_hyper_blocklist returns the selected blocks as is.
+
+### Software Environment
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: Explicitly performed by the user
-**potential solutions**:
+
+### Solutions
   * Ignore (current)
     + We left it to the user to use the library in an efficient way.
     + Adding the overhead of a merging routine to fix a possible developer mistake may not be worth it.
   * Implement merging in the VOL
 
 ## The log VOL does not report reference count to the underlying VOL it is using 
-**Problem description**:
+### Problem description
   Certain types of HDF5 objects can be closed by HDF5 automatically when no longer in use.
   For those objects, HDF5 keeps a reference count on each opened instance. 
   The reference count represents the number of copies of the ID (the token used to refer to the instant) that currently resides in the memory.
@@ -96,18 +93,25 @@ It can greatly affect the performance of our log VOL as we create a metadata ent
   If the reference count is not reported correctly, HDF5 may free the object prematurely while the user still needs it.
 
   VOLs are tracked objects.
-  Our log VOL uses the native VOL internally but does not report reference of the native VOL to HDF5.
-  When another internal routine that uses the native VOL finishes and decreases the reference count, the reference count becomes 0.
-  Unaware that the log VOL is still using the native VOL, HDF5 closes the native VOL.
+  If our log VOL uses the native VOL internally but does not report reference of the native VOL, HDF5 will close the native VOL when another internal routine that uses the native VOL finishes and decreases the reference count.
   In consequence, our log VOL receives an error on all native VOL operations afterward.
+
+### Software Environment
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: All API that triggers a reference count check (decrease) on the opened native VOL.
-**implemented solution**:
+
+### Implemented Solution
   * Report reference our reference of the native VOL as the passthrough VOL does
     + We call H5Iinc_ref to report a new reference every time we copied the ID the native VOL.
     + We call H5Idec_ref every time the variable holding the native VOL ID is freed.
-    + Code: logvol_file.cpp:78, 174, 377
+    + Source files: 
+      + [logvol_file.cpp](/src/logvol_file.cpp)(https://github.com/DataLib-ECP/log_io_vol/commit/1a6753ac69edd830135dd8715b649a3abb087706#L198)
+      + [logvol_att.cpp](/src/logvol_att.cpp)(https://github.com/DataLib-ECP/log_io_vol/commit/1a6753ac69edd830135dd8715b649a3abb087706#diff-5df8d5bffeba925af26354bf8ece0287#L47)
+      + [logvol_dataset.cpp](/src/logvol_dataset.cpp)(https://github.com/DataLib-ECP/log_io_vol/commit/1a6753ac69edd830135dd8715b649a3abb087706#diff-64f1886c9cbf0d0d9dbe22562cc56283#L56)
+      + [logvol_group.cpp](/src/logvol_group.cpp)(https://github.com/DataLib-ECP/log_io_vol/commit/1a6753ac69edd830135dd8715b649a3abb087706#diff-dda415767fad1bd1cea5df6b7503c76b#L49)
+      + [logvol_util.cpp](/src/logvol_util.cpp)(https://github.com/DataLib-ECP/log_io_vol/commit/1a6753ac69edd830135dd8715b649a3abb087706#diff-2e6bb9634647126e360e707b54ca2d2b#L24)
+    + Commit: [1a6753ac69edd830135dd8715b649a3abb087706](https://github.com/DataLib-ECP/log_io_vol/commit/1a6753ac69edd830135dd8715b649a3abb087706)
 
 ############################################################################################################################################
 * I assume each HDF5 API calls the dispatcher.
