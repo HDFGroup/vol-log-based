@@ -49,19 +49,31 @@ General comments: I suggest the following when adding a new issue.
     + Source: logvol_introspect.cpp, logvol_file.cpp:312
     + Commit: dff337dbc63ef8363984f5e8a9d0dd9eb01f2fe9
 
+##########################################################################################################################
 * Add reference to "VOL dynamic datatype init" in HDF5 doc.
-  + It is not documented. It is the implementation within the native VOL that is hidden to the user.
+  => It is not documented. It is the implementation within the native VOL that is hidden to the user.
 * "derived datatype"? Do you mean compound data type?
-  + No, just native types. H5T_STD_*, H5T_NATIVE_*, etc. They are assigned -1 in the code (H5T.c:341) and requires the native VOL to initialize them.
+  => No, just native types. H5T_STD_*, H5T_NATIVE_*, etc. They are assigned -1 in the code (H5T.c:341) and requires the native VOL to initialize them.
+###########################################################################################################################
 
-## H5Sget_select_hyper_nblocks does not combine selection blocks
+## H5Sget_select_hyper_blocklist does not combine selection blocks
 **Problem description**:
-  In older versions, H5Sget_select_hyper_nblocks will combine selections if they together form a larger rectangular block.
-  The feature is removed in 1.12.0.
-  Should the application declare a rectangular selection as many 1x1 blocks instead of a single block, the overhead of metadata can be significant.
-  HDF5 uses the argument "count" to refer to the number of blocks, and "block" to refer to the size of the blocks.
-  NetCDF selection has only one block, and "count" refers to the block size.
-  Developers transitioning from NetCDF to HDF5 may mistake the "count" argument as the block size and run into performance issues.
+  HDF5 supports two types of dataspace selection - point list and hyper-slab.
+  A point list selection is represented by a list of selected points (unit cell) directly.
+  A hyper-slab selection is represented by four attributes - start, count, stride, and block.
+  "Start" means the starting position of the selected blocks.
+  "Count" is the number of blocks selected along each dimension.
+  "Stride" controls the space between selected blocks 
+  "Block" is the size of each selected block.
+
+  The meaning of "count" in HDF5's hyper-slab selection is different from that in netcdf APIs.
+  NetCDF selection use "count" to refer to the block size while HDF5 uses "block" in hyper-slab selection.
+  Developers transitioning from NetCDF to HDF5 may mistake the "count" argument as the block size when they want to select a single block.
+  In that case, the application will end up selecting the entire region with 1x1 cells.
+It can greatly affect the performance of our log VOL as we create a metadata entry int he index for every selected block.
+  Before 1.12.0, H5Sget_select_hyper_blocklist will automatically combine those 1x1 selections into a single block before returning to the user.
+  It help mitigates the issue if the developer made mistakes mentioned above.
+  However, they removed this feature 1.12.0 and H5Sget_select_hyper_blocklist returns the selected blocks as is.
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: Explicitly performed by the user
@@ -73,29 +85,36 @@ General comments: I suggest the following when adding a new issue.
 
 ## The log VOL does not report reference count to the underlying VOL it is using 
 **Problem description**:
-  HDF5 keeps a reference count to the ID (hid_t) of some type of internal objects.
-  VOL is one of the objects tracked by reference count. The reference count applies to the ID, not the object. 
-  It can be understood as the number of copies of the ID that currently resides in the memory.
-  By HDF5's current design, whichever routine that keeps the ID for use must increase the reference count.
-  When the ID is no longer needed, the routine that increased the reference must call an API to decrease the reference count.
-  If the count reaches 0, the underlying object will be freed.
+  Certain types of HDF5 objects can be closed by HDF5 automatically when no longer in use.
+  For those objects, HDF5 keeps a reference count on each opened instance. 
+  The reference count represents the number of copies of the ID (the token used to refer to the instant) that currently resides in the memory.
+  Should the reference count reaches 0, HDF5 will close the instance automatically.
+  For simplicity, we refer to those objects as "tracked objects."
 
-  Our VOL uses the native VOl as the back end. It uses the ID of the native VOL to refer to it.
-  Previously, our VOL does not report reference count to HDF5.
-  Should any other internal function finish using the native VOL and try to decrease the reference count, the dispatcher will think that no one is using the native VOL and free it.
-  In that case, our VOL will get an error on every operation it performs with the native VOL as the native VOL is already deallocated.
+  To maintain the reference count, HDF5 requires the user to report new references to tracked objects (increase reference count) every time they copy the ID (such as assigning it to a variable) of the object.
+  When a copy of the ID is removed from the memory, the user has to decrease the reference count by calling a corresponding API.
+  If the reference count is not reported correctly, HDF5 may free the object prematurely while the user still needs it.
+
+  VOLs are tracked objects.
+  Our log VOL uses the native VOL internally but does not report reference of the native VOL to HDF5.
+  When another internal routine that uses the native VOL finishes and decreases the reference count, the reference count becomes 0.
+  Unaware that the log VOL is still using the native VOL, HDF5 closes the native VOL.
+  In consequence, our log VOL receives an error on all native VOL operations afterward.
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
-  * Trigger condition: All API that triggers a reference count check (decrease) on the native VOL ID.
+  * Trigger condition: All API that triggers a reference count check (decrease) on the opened native VOL.
 **implemented solution**:
-  * Ignore (current)
+  * Report reference our reference of the native VOL as the passthrough VOL does
     + We call H5Iinc_ref to report a new reference every time we copied the ID the native VOL.
     + We call H5Idec_ref every time the variable holding the native VOL ID is freed.
     + Code: logvol_file.cpp:78, 174, 377
+
+############################################################################################################################################
 * I assume each HDF5 API calls the dispatcher.
-  + Some function, such as H5P*, is not.
+  => Some function, such as H5P*, is not.
 * When the dispatcher detects a zero count to an object in an HDF% API, does it immediately free the internal data structures allocated for that object?
-  + Yes, but only for tracked object types.
+  => Yes, but only for tracked object types.
+############################################################################################################################################
 
 ## NetCDF4 support
 **Problem description**:
