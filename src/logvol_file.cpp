@@ -36,7 +36,7 @@ const H5VL_file_class_t H5VL_log_file_g {
  */
 void *H5VL_log_file_create (
 	const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req) {
-	herr_t err;
+	herr_t err = 0;
 	int mpierr;
 	H5VL_log_info_t *info = NULL;
 	H5VL_log_file_t *fp	  = NULL;
@@ -170,7 +170,7 @@ fn_exit:;
  */
 void *H5VL_log_file_open (
 	const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req) {
-	herr_t err;
+	herr_t err = 0;
 	int mpierr;
 	H5VL_log_info_t *info = NULL;
 	H5VL_log_file_t *fp	  = NULL;
@@ -290,7 +290,7 @@ fn_exit:;
  */
 herr_t H5VL_log_file_get (
 	void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
-	herr_t err;
+	herr_t err = 0;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	TIMER_START;
 
@@ -337,7 +337,7 @@ err_out:;
  */
 herr_t H5VL_log_file_specific (
 	void *file, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
-	herr_t err;
+	herr_t err = 0;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	TIMER_START;
 
@@ -418,7 +418,7 @@ err_out:;
  */
 herr_t H5VL_log_file_optional (
 	void *file, H5VL_file_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
-	herr_t err;
+	herr_t err = 0;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	TIMER_START;
 

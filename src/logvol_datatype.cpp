@@ -178,7 +178,7 @@ static herr_t H5VL_log_datatype_optional (
  *-------------------------------------------------------------------------
  */
 static herr_t H5VL_log_datatype_close (void *dt, hid_t dxpl_id, void **req) {
-	herr_t err;
+	herr_t err = 0;
     H5VL_log_obj_t *tp = (H5VL_log_obj_t *)dt;
 
     err = H5VLdatatype_close (tp->uo, tp->uvlid, dxpl_id, req); CHECK_ERR

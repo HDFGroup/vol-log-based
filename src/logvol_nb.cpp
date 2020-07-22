@@ -83,7 +83,7 @@ err_out:;
 }
 
 herr_t H5VL_log_nb_flush_write_reqs (H5VL_log_file_t *fp, hid_t dxplid) {
-	herr_t err;
+	herr_t err = 0;
 	int mpierr;
 	int i;
 	int cnt;

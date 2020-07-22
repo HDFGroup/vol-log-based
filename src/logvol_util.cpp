@@ -83,7 +83,7 @@ hid_t H5VL_log_register(void) {
 } /* end H5VL_log_register() */
 
 herr_t H5VLfile_optional_wrapper(void *obj, hid_t connector_id, H5VL_file_optional_t opt_type, hid_t dxpl_id, void **req, ...) {
-    herr_t err;
+    herr_t err = 0;
     va_list args;
 
     va_start(args, req);
@@ -94,7 +94,7 @@ herr_t H5VLfile_optional_wrapper(void *obj, hid_t connector_id, H5VL_file_option
 }
 
 herr_t H5VLattr_get_wrapper(void *obj, hid_t connector_id, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, ...) {
-    herr_t err;
+    herr_t err = 0;
     va_list args;
 
     va_start(args, req);
@@ -181,7 +181,7 @@ err_out:;
 }
 
 herr_t H5VLdataset_optional_wrapper(void *obj, hid_t connector_id, H5VL_dataset_optional_t opt_type, hid_t dxpl_id, void **req, ...) {
-    herr_t err;
+    herr_t err = 0;
     va_list args;
 
     va_start(args, req);
@@ -192,7 +192,7 @@ herr_t H5VLdataset_optional_wrapper(void *obj, hid_t connector_id, H5VL_dataset_
 }
 
 herr_t H5VLdataset_specific_wrapper(void *obj, hid_t connector_id, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, ...) {
-    herr_t err;
+    herr_t err = 0;
     va_list args;
 
     va_start(args, req);
@@ -203,7 +203,7 @@ herr_t H5VLdataset_specific_wrapper(void *obj, hid_t connector_id, H5VL_dataset_
 }
 
 herr_t H5VLdataset_get_wrapper(void *obj, hid_t connector_id, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, ...) {
-    herr_t err;
+    herr_t err = 0;
     va_list args;
 
     va_start(args, req);
@@ -214,7 +214,7 @@ herr_t H5VLdataset_get_wrapper(void *obj, hid_t connector_id, H5VL_dataset_get_t
 }
 
 herr_t H5VLlink_specific_wrapper(void *obj, const H5VL_loc_params_t *loc_params, hid_t connector_id, H5VL_link_specific_t specific_type, hid_t dxpl_id, void **req, ...) {
-    herr_t err;
+    herr_t err = 0;
     va_list args;
 
     va_start(args, req);
@@ -225,7 +225,7 @@ herr_t H5VLlink_specific_wrapper(void *obj, const H5VL_loc_params_t *loc_params,
 }
 
 herr_t H5Pset_nonblocking(hid_t plist, H5VL_log_req_type_t nonblocking) {
-    herr_t err;
+    herr_t err = 0;
     htri_t isdxpl;
 
     // TODO: Fix pclass problem
@@ -259,7 +259,7 @@ err_out:;
 }
 
 herr_t H5Pset_nb_buffer_size(hid_t plist, size_t size) {
-    herr_t err;
+    herr_t err = 0;
     htri_t isfapl;
 
     // TODO: Fix pclass problem
@@ -293,7 +293,7 @@ err_out:;
 }
 
 herr_t H5VLobject_get_wrapper(void *obj, const H5VL_loc_params_t *loc_params, hid_t connector_id, H5VL_object_get_t get_type, hid_t dxpl_id, void **req, ...) {
-    herr_t err;
+    herr_t err = 0;
     va_list args;
 
     va_start(args, req);

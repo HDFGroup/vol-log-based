@@ -247,7 +247,7 @@ void *H5VL_log_dataset_open_with_uo (   void *obj,
                                         void *uo,
                                         const H5VL_loc_params_t *loc_params,
                                         hid_t dxpl_id) {
-	herr_t err;
+	herr_t err = 0;
 	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
 	H5VL_log_dset_t *dp = NULL;
 	H5VL_loc_params_t locp;

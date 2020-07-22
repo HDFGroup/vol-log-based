@@ -158,7 +158,7 @@ herr_t H5VL_log_dataspacei_get_selection(hid_t sid, std::vector<H5VL_log_selecti
     hssize_t nblock;
     H5S_sel_type stype;
     hsize_t **hstarts = NULL, **hends;
-    int *group;
+    int *group=NULL;
 
     ndim = H5Sget_simple_extent_ndims(sid); CHECK_ID(ndim)
 
@@ -333,6 +333,9 @@ err_out:;
     if (hstarts){
         free(hstarts[0]);
         free(hstarts);
+    }
+    if(group){
+        free(group);
     }
 
     return err;

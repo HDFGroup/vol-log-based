@@ -42,7 +42,7 @@ err_out:;
 }
 
 herr_t H5VL_log_filei_flush(H5VL_log_file_t *fp, hid_t dxplid){
-    herr_t err;
+    herr_t err = 0;
 
     if (fp->wreqs.size() > 0){
         err = H5VL_log_nb_flush_write_reqs(fp, dxplid); CHECK_ERR
@@ -58,7 +58,7 @@ err_out:;
 }
 
 herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
-    herr_t err;
+    herr_t err = 0;
     int mpierr;
     int i;
     int cnt;
@@ -239,7 +239,7 @@ err_out:
 }
 
 herr_t H5VL_log_filei_metaupdate(H5VL_log_file_t *fp){
-    herr_t err;
+    herr_t err = 0;
     int i;
     H5VL_loc_params_t loc;
     htri_t mdexist;

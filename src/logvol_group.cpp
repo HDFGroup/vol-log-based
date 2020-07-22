@@ -114,7 +114,7 @@ err_out:;
  */
 herr_t H5VL_log_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    herr_t err;
+    herr_t err = 0;
 	TIMER_START;
 
     err = H5VLgroup_get(op->uo, op->uvlid, get_type, dxpl_id, req, arguments);
@@ -136,7 +136,7 @@ herr_t H5VL_log_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, v
  */
 herr_t H5VL_log_group_specific( void *obj, H5VL_group_specific_t specific_type,
                                 hid_t dxpl_id, void **req, va_list arguments) {
-    herr_t err;
+    herr_t err = 0;
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
     TIMER_START;
 
@@ -160,7 +160,7 @@ herr_t H5VL_log_group_specific( void *obj, H5VL_group_specific_t specific_type,
 herr_t H5VL_log_group_optional( void *obj, H5VL_group_optional_t opt_type, hid_t dxpl_id, void **req,
                                 va_list arguments) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    herr_t err;
+    herr_t err = 0;
 	TIMER_START;
 
     err = H5VLgroup_optional(op->uo, op->uvlid, opt_type, dxpl_id, NULL, arguments);
@@ -182,7 +182,7 @@ herr_t H5VL_log_group_optional( void *obj, H5VL_group_optional_t opt_type, hid_t
  */
 herr_t H5VL_log_group_close(void *grp, hid_t dxpl_id, void **req) {
     H5VL_log_group_t *gp = (H5VL_log_group_t*)grp;
-    herr_t err;
+    herr_t err = 0;
 	TIMER_START;
 
     err = H5VLgroup_close(gp->uo, gp->uvlid, dxpl_id, NULL); CHECK_ERR

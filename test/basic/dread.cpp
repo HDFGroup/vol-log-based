@@ -7,7 +7,7 @@
 #include "testutils.hpp"
 
 int main(int argc, char **argv) {   
-    herr_t err;
+    herr_t err = 0;
     int nerrs = 0;
     int i;
     int rank, np;

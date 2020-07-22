@@ -104,7 +104,7 @@ err_out:;
  */
 herr_t H5VL_log_attr_read(void *attr, hid_t mem_type_id, void *buf, hid_t dxpl_id, void **req) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
-    herr_t err;
+    herr_t err = 0;
 TIMER_START;
 
     err = H5VLattr_read(op->uo, op->uvlid, mem_type_id, buf, dxpl_id, req);
@@ -126,7 +126,7 @@ TIMER_STOP (op->fp, TIMER_ATT_READ);
  */
 herr_t H5VL_log_attr_write(void *attr, hid_t mem_type_id, const void *buf, hid_t dxpl_id, void **req) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
-    herr_t err;
+    herr_t err = 0;
 TIMER_START;
 
     err = H5VLattr_write(op->uo, op->uvlid, mem_type_id, buf, dxpl_id, req);
@@ -148,7 +148,7 @@ TIMER_STOP (op->fp, TIMER_ATT_WRITE);
  */
 herr_t H5VL_log_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    herr_t err;
+    herr_t err = 0;
 TIMER_START;
 
     err = H5VLattr_get(op->uo, op->uvlid, get_type, dxpl_id, req, arguments);
@@ -170,7 +170,7 @@ TIMER_STOP (op->fp, TIMER_ATT_GET);
  */
 herr_t H5VL_log_attr_specific(void *obj, const H5VL_loc_params_t *loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    herr_t err;
+    herr_t err = 0;
 TIMER_START;
 
     err = H5VLattr_specific(op->uo, loc_params, op->uvlid, specific_type, dxpl_id, req, arguments);
@@ -194,7 +194,7 @@ err_out:;
  */
 herr_t H5VL_log_attr_optional(void *obj, H5VL_attr_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    herr_t err;
+    herr_t err = 0;
 TIMER_START;
 
     err = H5VLattr_optional(op->uo, op->uvlid, opt_type, dxpl_id, req, arguments);
@@ -216,7 +216,7 @@ TIMER_STOP (op->fp, TIMER_ATT_OPTIONAL);
  */
 herr_t H5VL_log_attr_close(void *attr, hid_t dxpl_id, void **req) {
     H5VL_log_obj_t *ap = (H5VL_log_obj_t*)attr;
-    herr_t err;
+    herr_t err = 0;
 TIMER_START;
 
     err = H5VLattr_close(ap->uo, ap->uvlid, dxpl_id, req); CHECK_ERR
