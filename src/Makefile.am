@@ -48,6 +48,9 @@ CXX_SRCS =  logvol.cpp \
 if LOGVOL_DEBUG
    CXX_SRCS += logvol_debug.cpp
 endif
+if LOGVOL_PROFILING
+   CXX_SRCS += logvol_profiling.cpp
+endif
 
 include_HEADERS = logvol.h
 
