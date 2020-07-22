@@ -72,7 +72,7 @@ void *H5VL_log_dataset_create (void *obj,
 							   hid_t dapl_id,
 							   hid_t dxpl_id,
 							   void **req) {
-	herr_t err;
+	herr_t err = 0;
 	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
 	H5VL_log_dset_t *dp = NULL;
 	H5VL_loc_params_t locp;
@@ -160,7 +160,7 @@ void *H5VL_log_dataset_open (void *obj,
 							 hid_t dapl_id,
 							 hid_t dxpl_id,
 							 void **req) {
-	herr_t err;
+	herr_t err = 0;
 	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
 	H5VL_log_dset_t *dp = NULL;
 	H5VL_loc_params_t locp;
@@ -594,7 +594,7 @@ herr_t H5VL_log_dataset_optional (void *obj,
 								  void **req,
 								  va_list arguments) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-	herr_t err;
+	herr_t err = 0;
 	TIMER_START;
 
 	err = H5VLdataset_optional (op->uo, op->uvlid, optional_type, dxpl_id, req, arguments);
@@ -614,7 +614,7 @@ herr_t H5VL_log_dataset_optional (void *obj,
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
-	herr_t err;
+	herr_t err = 0;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	TIMER_START;
 
