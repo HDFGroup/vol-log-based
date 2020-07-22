@@ -35,6 +35,7 @@ void *H5VL_log_group_create(void *obj, const H5VL_loc_params_t *loc_params,
                             hid_t dxpl_id, void **req) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t*)obj;
     H5VL_log_group_t *gp;
+	TIMER_START;
 
     /* Check arguments */
     if(loc_params->type != H5VL_OBJECT_BY_SELF) RET_ERR("loc_params->type is not H5VL_OBJECT_BY_SELF")
@@ -46,8 +47,11 @@ void *H5VL_log_group_create(void *obj, const H5VL_loc_params_t *loc_params,
 
     gp->uo = H5VLgroup_create(op->uo, loc_params, op->uvlid, name, lcpl_id, gcpl_id,  gapl_id, dxpl_id, NULL); CHECK_NERR(gp->uo)
     gp->uvlid = op->uvlid;
+    gp->fp=op->fp;
     H5Iinc_ref (gp->uvlid);
     gp->type = H5I_GROUP;
+
+	TIMER_STOP (gp->fp, TIMER_GROUP_CREATE);
 
     return (void *)gp;
 
@@ -71,6 +75,7 @@ err_out:;
 void *H5VL_log_group_open(void *obj, const H5VL_loc_params_t *loc_params, const char *name, hid_t gapl_id, hid_t dxpl_id, void **req) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t*)obj;
     H5VL_log_group_t *gp;
+	TIMER_START;
 
     /* Check arguments */
     if(loc_params->type != H5VL_OBJECT_BY_SELF) RET_ERR("loc_params->type is not H5VL_OBJECT_BY_SELF")
@@ -82,9 +87,12 @@ void *H5VL_log_group_open(void *obj, const H5VL_loc_params_t *loc_params, const 
 
     gp->uo = H5VLgroup_open(op->uo, loc_params, op->uvlid, name, gapl_id, dxpl_id, NULL); CHECK_NERR(gp)
     gp->uvlid = op->uvlid;
+    gp->fp=op->fp;
     H5Iinc_ref (gp->uvlid);
     gp->type = H5I_GROUP;
     
+    TIMER_STOP (gp->fp, TIMER_GROUP_OPEN);
+
     return (void *)gp;
 
 err_out:;
@@ -107,9 +115,11 @@ err_out:;
 herr_t H5VL_log_group_get(void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
     herr_t err;
+	TIMER_START;
 
     err = H5VLgroup_get(op->uo, op->uvlid, get_type, dxpl_id, req, arguments);
 
+    TIMER_STOP (op->fp, TIMER_GROUP_GET);
     return err;
 } /* end H5VL_log_group_get() */
 
@@ -128,10 +138,11 @@ herr_t H5VL_log_group_specific( void *obj, H5VL_group_specific_t specific_type,
                                 hid_t dxpl_id, void **req, va_list arguments) {
     herr_t err;
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    
+    TIMER_START;
 
     err = H5VLgroup_specific(op->uo, op->uvlid, specific_type, dxpl_id, NULL, arguments);
 
+    TIMER_STOP (op->fp, TIMER_GROUP_SPECIFIC);
     return err;
 } /* end H5VL_log_group_specific() */
 
@@ -150,9 +161,11 @@ herr_t H5VL_log_group_optional( void *obj, H5VL_group_optional_t opt_type, hid_t
                                 va_list arguments) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
     herr_t err;
+	TIMER_START;
 
     err = H5VLgroup_optional(op->uo, op->uvlid, opt_type, dxpl_id, NULL, arguments);
 
+    TIMER_STOP (op->fp, TIMER_GROUP_OPTIONAL);
     return err;
 } /* end H5VL_log_group_optional() */
 
@@ -170,8 +183,11 @@ herr_t H5VL_log_group_optional( void *obj, H5VL_group_optional_t opt_type, hid_t
 herr_t H5VL_log_group_close(void *grp, hid_t dxpl_id, void **req) {
     H5VL_log_group_t *gp = (H5VL_log_group_t*)grp;
     herr_t err;
+	TIMER_START;
 
     err = H5VLgroup_close(gp->uo, gp->uvlid, dxpl_id, NULL); CHECK_ERR
+
+    TIMER_STOP (gp->fp, TIMER_GROUP_CLOSE);
 
     H5Idec_ref(gp->uvlid);
     delete gp;

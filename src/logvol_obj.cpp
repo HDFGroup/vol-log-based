@@ -84,6 +84,7 @@ void *H5VL_log_object_open (void *obj,
 	} else if (*opened_type == H5I_GROUP) {
 		return H5VL_log_group_open_with_uo (obj, uo, loc_params);
 	} else {
+		abort();
 		return uo;
 	}
 

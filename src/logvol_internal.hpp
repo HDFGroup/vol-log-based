@@ -1,4 +1,8 @@
 #pragma once
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <H5VLpublic.h>
 #include <assert.h>
 #include <hdf5.h>
@@ -11,6 +15,17 @@
 #include <vector>
 
 #include "logvol.h"
+
+#ifdef LOGVOL_PROFILING
+#include "logvol_profiling.hpp"
+#define TIMER_START double tstart, tend; \
+tstart=MPI_Wtime();
+#define TIMER_STOP(A,B) tend=MPI_Wtime(); \
+H5VL_log_profile_add_time(A,B,tend-tstart);
+#else
+#define TIMER_START {}
+#define TIMER_STOP(A,B) {}
+#endif
 
 #ifdef LOGVOL_DEBUG
 #include <iostream>
@@ -188,10 +203,12 @@ typedef struct H5VL_log_rreq_t {
 	MPI_Datatype ptype;	 // Datatype that represetn memory space selection
 } H5VL_log_rreq_t;
 
+struct H5VL_log_file_t;
 typedef struct H5VL_log_obj_t {
 	H5I_type_t type;
 	void *uo;	  // Under obj
 	hid_t uvlid;  // Under VolID
+	struct H5VL_log_file_t *fp; // File object
 } H5VL_log_obj_t;
 
 typedef struct H5VL_log_dset_meta_t {
@@ -236,16 +253,18 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	std::vector<std::vector<H5VL_log_metaentry_t>> idx;
 	bool idxvalid;
 	bool metadirty;
+
+#ifdef LOGVOL_PROFILING
+	double tlocal[NTIMER];
+	double clocal[NTIMER];
+#endif
 } H5VL_log_file_t;
 
 /* The log VOL group object */
-typedef struct H5VL_log_group_t : H5VL_log_obj_t {
-	H5VL_log_file_t *fp;
-} H5VL_log_group_t;
+typedef struct H5VL_log_obj_t H5VL_log_group_t;
 
 /* The log VOL dataset object */
 typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
-	H5VL_log_file_t *fp;
 	int id;
 	hsize_t ndim;
 	hsize_t dims[H5S_MAX_RANK];
@@ -408,4 +427,11 @@ extern void hexDump (char *desc, void *addr, size_t len);
 extern void hexDump (char *desc, void *addr, size_t len, FILE *fp);
 #else
 #define H5VL_log_debug_MPI_Type_create_subarray MPI_Type_create_subarray
+#endif
+
+#ifdef LOGVOL_PROFILING
+void H5VL_log_profile_add_time(H5VL_log_file_t *fp, int id, double t);
+void H5VL_log_profile_sub_time(H5VL_log_file_t *fp, int id, double t);
+void H5VL_log_profile_print(H5VL_log_file_t *fp);
+void H5VL_log_profile_reset(H5VL_log_file_t *fp);
 #endif

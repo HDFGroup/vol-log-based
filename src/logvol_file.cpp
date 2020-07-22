@@ -45,6 +45,7 @@ void *H5VL_log_file_create (
 	void *under_vol_info;
 	MPI_Comm comm;
 	hbool_t po_supported;
+	TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -110,8 +111,12 @@ void *H5VL_log_file_create (
 	fp->type	  = H5I_FILE;
 	fp->idxvalid  = false;
 	fp->metadirty = false;
+	fp->fp		  = fp;
 	err			  = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
 	CHECK_ERR
+#ifdef LOGVOL_PROFILING
+	H5VL_log_profile_reset (fp);
+#endif
 
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
@@ -138,6 +143,8 @@ void *H5VL_log_file_create (
 	// Open the file with MPI
 	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, MPI_INFO_NULL, &(fp->fh));
 	CHECK_MPIERR
+
+	TIMER_STOP (fp, TIMER_FILE_CREATE);
 
 	goto fn_exit;
 err_out:;
@@ -171,6 +178,7 @@ void *H5VL_log_file_open (
 	hid_t uvlid, under_fapl_id;
 	void *under_vol_info;
 	MPI_Comm comm;
+	TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -228,6 +236,7 @@ void *H5VL_log_file_open (
 	fp->type	  = H5I_FILE;
 	fp->idxvalid  = false;
 	fp->metadirty = false;
+	fp->fp		  = fp;
 	err			  = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
 	CHECK_ERR
 
@@ -255,6 +264,8 @@ void *H5VL_log_file_open (
 	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, MPI_INFO_NULL, &(fp->fh));
 	CHECK_MPIERR
 
+	TIMER_STOP (fp, TIMER_FILE_OPEN);
+
 	goto fn_exit;
 err_out:;
 	if (fp) { delete fp; }
@@ -281,6 +292,7 @@ herr_t H5VL_log_file_get (
 	void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
 	herr_t err;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+	TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -307,6 +319,8 @@ herr_t H5VL_log_file_get (
 	err = H5VLfile_get (fp->uo, fp->uvlid, get_type, dxpl_id, req, arguments);
 	CHECK_ERR
 
+	TIMER_STOP (fp, TIMER_FILE_GET);
+
 err_out:;
 	return err;
 } /* end H5VL_log_file_get() */
@@ -325,6 +339,7 @@ herr_t H5VL_log_file_specific (
 	void *file, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
 	herr_t err;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+	TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -386,6 +401,7 @@ herr_t H5VL_log_file_specific (
 			RET_ERR ("Unsupported specific_type")
 	} /* end select */
 
+	TIMER_STOP (fp, TIMER_FILE_SPECIFIC);
 err_out:;
 	return err;
 } /* end H5VL_log_file_specific() */
@@ -404,6 +420,7 @@ herr_t H5VL_log_file_optional (
 	void *file, H5VL_file_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
 	herr_t err;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+	TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -429,6 +446,7 @@ herr_t H5VL_log_file_optional (
 	err = H5VLfile_optional (fp->uo, fp->uvlid, opt_type, dxpl_id, req, arguments);
 	CHECK_ERR
 
+	TIMER_STOP (fp, TIMER_FILE_OPTIONAL);
 err_out:;
 	return err;
 } /* end H5VL_log_file_optional() */
@@ -447,6 +465,7 @@ herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
 	herr_t err = 0;
 	int mpierr;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+	TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -491,6 +510,11 @@ herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
 	// Close the file with under VOL
 	err = H5VLfile_close (fp->uo, fp->uvlid, dxpl_id, req);
 	CHECK_ERR
+
+	TIMER_STOP (fp, TIMER_FILE_CLOSE);
+#ifdef LOGVOL_PROFILING
+	H5VL_log_profile_print (fp);
+#endif
 
 	// Clean up
 	MPI_Comm_free (&(fp->comm));

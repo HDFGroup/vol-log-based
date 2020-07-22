@@ -79,6 +79,7 @@ void *H5VL_log_dataset_create (void *obj,
 	hid_t sid = -1;
 	void *ap;
 	int ndim;
+	TIMER_START;
 
 	sid = H5Screate (H5S_SCALAR);
 	CHECK_ID (sid);
@@ -127,6 +128,8 @@ void *H5VL_log_dataset_create (void *obj,
 	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id);
 	CHECK_ERR
 
+	TIMER_STOP (dp->fp, TIMER_DATASET_CREATE);
+
 	goto fn_exit;
 err_out:;
 	printf ("%d\n", err);
@@ -164,6 +167,7 @@ void *H5VL_log_dataset_open (void *obj,
 	va_list args;
 	void *ap;
 	int ndim;
+	TIMER_START;
 
 	dp = new H5VL_log_dset_t ();
 	if (loc_params->obj_type == H5I_FILE)
@@ -191,6 +195,7 @@ void *H5VL_log_dataset_open (void *obj,
 	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), dxpl_id);
 	CHECK_ERR
 
+	TIMER_STOP (dp->fp, TIMER_DATASET_OPEN);
 	goto fn_exit;
 err_out:;
 	printf ("%d\n", err);
@@ -228,6 +233,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 	H5S_sel_type stype, mstype;
 	H5VL_log_req_type_t rtype;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
+	TIMER_START;
 
 	// Update the index if it is out of date
 	if (!(dp->fp->idxvalid)) {
@@ -325,6 +331,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 		dp->fp->rreqs.push_back (r);
 	}
 
+	TIMER_STOP (dp->fp, TIMER_DATASET_READ);
 err_out:;
 
 	return err;
@@ -356,6 +363,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	H5S_sel_type stype, mstype;
 	H5VL_log_req_type_t rtype;
 	MPI_Datatype ptype = MPI_DATATYPE_NULL;
+	TIMER_START;
 
 	// Check file space selection
 	if (file_space_id == H5S_ALL)
@@ -444,6 +452,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	// Put request in queue
 	dp->fp->wreqs.push_back (r);
 
+	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE);
 err_out:;
 	if (err) {
 		if (r.xbuf != r.ubuf) H5VL_log_filei_bfree (dp->fp, r.xbuf);
@@ -467,6 +476,7 @@ herr_t H5VL_log_dataset_get (
 	void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	herr_t err			= 0;
+	TIMER_START;
 
 	switch (get_type) {
 		/* H5Dget_space */
@@ -517,6 +527,7 @@ herr_t H5VL_log_dataset_get (
 			RET_ERR ("get_type not supported")
 	} /* end switch */
 
+	TIMER_STOP (dp->fp, TIMER_DATASET_GET);
 err_out:;
 	return err;
 } /* end H5VL_log_dataset_get() */
@@ -538,6 +549,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
 								  va_list arguments) {
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)obj;
 	herr_t err			= 0;
+	TIMER_START;
 
 	switch (specific_type) {
 		case H5VL_DATASET_SET_EXTENT: { /* H5Dset_extent */
@@ -561,6 +573,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
 			err = H5VLdataset_specific (dp->uo, dp->uvlid, specific_type, dxpl_id, req, arguments);
 	}
 
+	TIMER_STOP (dp->fp, TIMER_DATASET_SPECIFIC);
 err_out:;
 	return err;
 } /* end H5VL_log_dataset_specific() */
@@ -582,9 +595,11 @@ herr_t H5VL_log_dataset_optional (void *obj,
 								  va_list arguments) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	herr_t err;
+	TIMER_START;
 
 	err = H5VLdataset_optional (op->uo, op->uvlid, optional_type, dxpl_id, req, arguments);
 
+	TIMER_STOP (op->fp, TIMER_DATASET_OPTIONAL);
 	return err;
 } /* end H5VL_log_dataset_optional() */
 
@@ -601,11 +616,14 @@ herr_t H5VL_log_dataset_optional (void *obj,
 herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 	herr_t err;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
+	TIMER_START;
 
 	err = H5VLdataset_close (dp->uo, dp->uvlid, dxpl_id, req);
 	CHECK_ERR
 
 	H5Tclose (dp->dtype);
+
+	TIMER_STOP (dp->fp, TIMER_DATASET_CLOSE);
 
 	H5Idec_ref (dp->uvlid);
 	delete dp;

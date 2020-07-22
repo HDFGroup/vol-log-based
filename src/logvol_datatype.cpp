@@ -63,6 +63,7 @@ static void *H5VL_log_datatype_commit (void *obj,
     tp->uo = H5VLdatatype_commit (op->uo, loc_params, op->uvlid, name, type_id,
 								 lcpl_id, tcpl_id, tapl_id, dxpl_id, req); CHECK_NERR(tp->uo);
     tp->uvlid = op->uvlid;
+	tp->fp=op->fp;
     H5Iinc_ref (tp->uvlid);
     tp->type = H5I_DATATYPE;
 
@@ -98,6 +99,7 @@ static void *H5VL_log_datatype_open (void *obj,
     tp->uo = H5VLdatatype_open (op->uo, loc_params, op->uvlid, name, tapl_id, dxpl_id,
 							   req); CHECK_NERR(tp->uo);
     tp->uvlid = op->uvlid;
+	tp->fp=op->fp;
     H5Iinc_ref (tp->uvlid);
     tp->type = H5I_ATTR;
     
