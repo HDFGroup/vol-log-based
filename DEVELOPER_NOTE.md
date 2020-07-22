@@ -50,7 +50,7 @@ General comments: I suggest the following when adding a new issue.
   + Test program [test/basic/dwrite.cpp](/test/basic/dwrite.cpp)
 
 ---
-## H5Sget_select_hyper_nblocks does not combine selection blocks
+## H5Sget_select_hyper_nblocks does not combine selection blocks (Not a bug)
 ### Problem Description
   HDF5 supports two types of dataspace selection - point list and hyper-slab.
   A point list selection is represented by a list of selected points (unit cell) directly.
@@ -80,7 +80,7 @@ General comments: I suggest the following when adding a new issue.
     + Adding the overhead of a merging routine to fix a possible developer mistake may not be worth it.
   * Implement merging in the VOL
 
-## The log VOL does not report reference count to the underlying VOL it is using 
+## The log VOL does not report reference count to the underlying VOL it is using (Solved)
 ### Problem description
   Certain types of HDF5 objects can be closed by HDF5 automatically when no longer in use.
   For those objects, HDF5 keeps a reference count on each opened instance. 
