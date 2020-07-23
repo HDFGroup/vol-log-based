@@ -254,6 +254,7 @@ void *H5VL_log_dataset_open_with_uo (   void *obj,
 	va_list args;
 	void *ap;
 	int ndim;
+	TIMER_START;
 
 	dp = new H5VL_log_dset_t ();
 	if (loc_params->obj_type == H5I_FILE)
@@ -265,11 +266,14 @@ void *H5VL_log_dataset_open_with_uo (   void *obj,
 
     dp->uo=uo;
 	dp->uvlid = op->uvlid;
+    dp->fp=op->fp;
 	H5Iinc_ref (dp->uvlid);
 	dp->type = H5I_DATASET;
+    TIMER_START;
 	err		 = H5VLdataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, NULL,
 									&(dp->dtype));
 	CHECK_ERR
+    TIMER_STOP(dp->fp,TIMER_H5VL_DATASET_GET);
 	dp->esize = H5Tget_size (dp->dtype);
 	CHECK_ID (dp->esize)
 
@@ -281,6 +285,7 @@ void *H5VL_log_dataset_open_with_uo (   void *obj,
 	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), dxpl_id);
 	CHECK_ERR
 
+TIMER_STOP (dp->fp, TIMER_DATASETI_OPEN_UO);
 	goto fn_exit;
 err_out:;
 	printf ("%d\n", err);

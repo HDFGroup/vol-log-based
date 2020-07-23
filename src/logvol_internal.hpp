@@ -18,10 +18,12 @@
 
 #ifdef LOGVOL_PROFILING
 #include "logvol_profiling.hpp"
-#define TIMER_START double tstart, tend; \
+#define TIMER_START { \
+double tstart, tend; \
 tstart=MPI_Wtime();
 #define TIMER_STOP(A,B) tend=MPI_Wtime(); \
-H5VL_log_profile_add_time(A,B,tend-tstart);
+H5VL_log_profile_add_time(A,B,tend-tstart); \
+}
 #else
 #define TIMER_START {}
 #define TIMER_STOP(A,B) {}

@@ -94,9 +94,12 @@ void *H5VL_log_dataset_create (void *obj,
 	else
 		RET_ERR ("container not a file or group")
 	(dp->fp->refcnt)++;
+		TIMER_START;
 	dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid,
 								 dcpl_id, dapl_id, dxpl_id, NULL);
 	CHECK_NERR (dp->uo)
+	TIMER_STOP (dp->fp, TIMER_H5VL_DATASET_CREATE);
+
 	dp->uvlid = op->uvlid;
 	H5Iinc_ref (dp->uvlid);
 	dp->type  = H5I_DATASET;
@@ -176,14 +179,18 @@ void *H5VL_log_dataset_open (void *obj,
 		dp->fp = ((H5VL_log_group_t *)obj)->fp;
 	else
 		RET_ERR ("container not a file or group")
+		TIMER_START;
 	dp->uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);
 	CHECK_NERR (dp->uo);
+		TIMER_STOP (dp->fp, TIMER_H5VL_DATASET_OPEN);
 	dp->uvlid = op->uvlid;
 	H5Iinc_ref (dp->uvlid);
 	dp->type = H5I_DATASET;
+	TIMER_START;
 	err		 = H5VLdataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, NULL,
 									&(dp->dtype));
 	CHECK_ERR
+	TIMER_STOP(dp->fp,TIMER_H5VL_DATASET_GET);
 	dp->esize = H5Tget_size (dp->dtype);
 	CHECK_ID (dp->esize)
 
@@ -277,8 +284,11 @@ herr_t H5VL_log_dataset_read (void *dset,
 		}
 		r.sels[0].size *= dp->esize;
 	} else {
+		TIMER_START;
 		err = H5VL_log_dataspacei_get_selection (file_space_id, r.sels);
 		CHECK_ERR
+		TIMER_STOP (dp->fp, TIMER_DATASPACEI_GET_SEL);
+
 		for (i = 0; i < r.sels.size (); i++) {
 			r.sels[i].size = 1;
 			for (j = 0; j < dp->ndim; j++) r.sels[i].size *= r.sels[i].count[j];
@@ -310,8 +320,10 @@ herr_t H5VL_log_dataset_read (void *dset,
 
 		// Need packing
 		if (mstype != H5S_SEL_ALL) {
+			TIMER_START;
 			err = H5VL_log_dataspacei_get_sel_type (mem_space_id, esize, &(r.ptype));
 			CHECK_ERR
+				TIMER_STOP (dp->fp, TIMER_DATASPACEI_GET_SEL_TYPE);
 		}
 
 		// Need convert
@@ -399,8 +411,10 @@ herr_t H5VL_log_dataset_write (void *dset,
 		}
 		r.sels[0].size *= dp->esize;
 	} else {
+		TIMER_START;
 		err = H5VL_log_dataspacei_get_selection (file_space_id, r.sels);
 		CHECK_ERR
+		TIMER_STOP (dp->fp, TIMER_DATASPACEI_GET_SEL);
 		for (i = 0; i < r.sels.size (); i++) {
 			r.sels[i].size = 1;
 			for (j = 0; j < dp->ndim; j++) r.sels[i].size *= r.sels[i].count[j];
@@ -432,8 +446,11 @@ herr_t H5VL_log_dataset_write (void *dset,
 		// Need packing
 		if (mstype != H5S_SEL_ALL) {
 			i	= 0;
+
+			TIMER_START
 			err = H5VL_log_dataspacei_get_sel_type (mem_space_id, esize, &ptype);
 			CHECK_ERR
+				TIMER_STOP (dp->fp, TIMER_DATASPACEI_GET_SEL_TYPE);
 
 			MPI_Pack (r.ubuf, 1, ptype, r.xbuf, r.rsize * esize, &i, dp->fp->comm);
 
@@ -570,7 +587,9 @@ herr_t H5VL_log_dataset_specific (void *obj,
 			break;
 		}
 		default:
+			TIMER_START;
 			err = H5VLdataset_specific (dp->uo, dp->uvlid, specific_type, dxpl_id, req, arguments);
+				TIMER_STOP (dp->fp, TIMER_H5VL_DATASET_SPECIFIC);
 	}
 
 	TIMER_STOP (dp->fp, TIMER_DATASET_SPECIFIC);
@@ -597,7 +616,9 @@ herr_t H5VL_log_dataset_optional (void *obj,
 	herr_t err = 0;
 	TIMER_START;
 
+	TIMER_START;
 	err = H5VLdataset_optional (op->uo, op->uvlid, optional_type, dxpl_id, req, arguments);
+	TIMER_STOP (op->fp, TIMER_H5VL_DATASET_OPTIONAL);
 
 	TIMER_STOP (op->fp, TIMER_DATASET_OPTIONAL);
 	return err;
@@ -618,8 +639,10 @@ herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	TIMER_START;
 
+	TIMER_START;
 	err = H5VLdataset_close (dp->uo, dp->uvlid, dxpl_id, req);
 	CHECK_ERR
+	TIMER_STOP (dp->fp, TIMER_H5VL_DATASET_CLOSE);
 
 	H5Tclose (dp->dtype);
 

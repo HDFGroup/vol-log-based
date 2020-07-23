@@ -121,8 +121,10 @@ void *H5VL_log_file_create (
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
 	H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
+	TIMER_START;
 	fp->uo = H5VLfile_create (name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL);
 	CHECK_NERR (fp->uo)
+	TIMER_STOP (fp, TIMER_H5VL_FILE_CREATE);
 	H5Pclose (under_fapl_id);
 
 	// Create LOG group
@@ -243,15 +245,19 @@ void *H5VL_log_file_open (
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
 	H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
+	TIMER_START;
 	fp->uo = H5VLfile_open (name, flags, under_fapl_id, dxpl_id, NULL);
 	CHECK_NERR (fp->uo)
+	TIMER_STOP (fp, TIMER_H5VL_FILE_OPEN);
 	H5Pclose (under_fapl_id);
 
 	// Create LOG group
 	loc.obj_type = H5I_FILE;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
+	TIMER_START
 	fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_DEFAULT, dxpl_id, NULL);
 	CHECK_NERR (fp->lgp)
+	TIMER_STOP (fp, TIMER_H5VL_GROUP_OPEN);
 
 	// Att
 	err = H5VL_logi_get_att (fp, "_ndset", H5T_NATIVE_INT32, &(fp->ndset), dxpl_id);
@@ -316,8 +322,10 @@ herr_t H5VL_log_file_get (
 	}
 #endif
 
+	TIMER_START;
 	err = H5VLfile_get (fp->uo, fp->uvlid, get_type, dxpl_id, req, arguments);
 	CHECK_ERR
+	TIMER_STOP (fp, TIMER_H5VL_FILE_GET);
 
 	TIMER_STOP (fp, TIMER_FILE_GET);
 
@@ -389,8 +397,10 @@ herr_t H5VL_log_file_specific (
 			/* Call specific of under VOL */
 			under_fapl_id = H5Pcopy (fapl_id);
 			H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
+			TIMER_START;
 			err = H5VLfile_specific (NULL, uvlid, specific_type, dxpl_id, req, arguments);
 			CHECK_ERR
+			TIMER_STOP (fp, TIMER_H5VL_FILE_SPECIFIC);
 			H5Pclose (under_fapl_id);
 		} break;
 		case H5VL_FILE_FLUSH: {
@@ -443,8 +453,11 @@ herr_t H5VL_log_file_optional (
 		printf ("H5VL_log_file_optional(%p, %s, %s, %p, ...)\n", file, vname[0], vname[1], req);
 	}
 #endif
+	TIMER_START;
 	err = H5VLfile_optional (fp->uo, fp->uvlid, opt_type, dxpl_id, req, arguments);
 	CHECK_ERR
+	TIMER_STOP (fp, TIMER_H5VL_FILE_OPTIONAL);
+	
 
 	TIMER_STOP (fp, TIMER_FILE_OPTIONAL);
 err_out:;
@@ -500,16 +513,20 @@ herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
 	}
 
 	// Close log group
+	TIMER_START
 	err = H5VLgroup_close (fp->lgp, fp->uvlid, dxpl_id, req);
 	CHECK_ERR
+	TIMER_STOP (fp, TIMER_H5VL_GROUP_CLOSE);
 
 	// Close the file with MPI
 	mpierr = MPI_File_close (&(fp->fh));
 	CHECK_MPIERR
 
 	// Close the file with under VOL
+	TIMER_START;
 	err = H5VLfile_close (fp->uo, fp->uvlid, dxpl_id, req);
 	CHECK_ERR
+	TIMER_STOP (fp, TIMER_H5VL_FILE_CLOSE);
 
 	TIMER_STOP (fp, TIMER_FILE_CLOSE);
 #ifdef LOGVOL_PROFILING

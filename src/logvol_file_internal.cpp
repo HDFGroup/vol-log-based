@@ -43,6 +43,7 @@ err_out:;
 
 herr_t H5VL_log_filei_flush(H5VL_log_file_t *fp, hid_t dxplid){
     herr_t err = 0;
+	TIMER_START;
 
     if (fp->wreqs.size() > 0){
         err = H5VL_log_nb_flush_write_reqs(fp, dxplid); CHECK_ERR
@@ -53,6 +54,7 @@ herr_t H5VL_log_filei_flush(H5VL_log_file_t *fp, hid_t dxplid){
         fp->rreqs.clear();
     }
 
+	TIMER_STOP (fp, TIMER_FILEI_FLUSH);
 err_out:;
     return err;
 }
@@ -73,6 +75,7 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     hsize_t dsize, msize;
     htri_t has_idx;
     MPI_Offset seloff;
+	TIMER_START;
 
     // Calculate size and offset of the metadata per dataset
     mlens = (MPI_Offset*)malloc(sizeof(MPI_Offset) * fp->ndset * 2);
@@ -155,13 +158,17 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
 
         // Resize both dataset
         dsize = (hsize_t)doffs[fp->ndset];
+        TIMER_START;
         err = H5VLdataset_specific_wrapper(mdp, fp->uvlid, H5VL_DATASET_SET_EXTENT, fp->dxplid, NULL, &dsize); CHECK_ERR
         dsize = fp->ndset;
         err = H5VLdataset_specific_wrapper(ldp, fp->uvlid, H5VL_DATASET_SET_EXTENT, fp->dxplid, NULL, &dsize); CHECK_ERR
+        TIMER_STOP(fp,TIMER_H5VL_DATASET_SPECIFIC);
 
         // Get data space
+        TIMER_START;
         err = H5VLdataset_get_wrapper(mdp, fp->uvlid, H5VL_DATASET_GET_SPACE, fp->dxplid, NULL, &mdsid); CHECK_ERR
         err = H5VLdataset_get_wrapper(ldp, fp->uvlid, H5VL_DATASET_GET_SPACE, fp->dxplid, NULL, &ldsid); CHECK_ERR
+        TIMER_STOP(fp,TIMER_H5VL_DATASET_GET);
     }
     else {  // Create the idx dataset and look up table dataset
         hid_t mdcplid, ldcplid;
@@ -223,6 +230,7 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     // This barrier is required to ensure no process read metadata before everyone finishes writing
     MPI_Barrier(MPI_COMM_WORLD);
 
+	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH);
 err_out:
     // Cleanup
     H5VL_log_free(mlens);
@@ -249,6 +257,7 @@ herr_t H5VL_log_filei_metaupdate(H5VL_log_file_t *fp){
     char *buf = NULL, *bufp;
     int ndim;
     H5VL_log_metaentry_t entry;
+	TIMER_START;
 
     if (fp->metadirty){
         H5VL_log_filei_metaflush(fp);
@@ -265,7 +274,9 @@ herr_t H5VL_log_filei_metaupdate(H5VL_log_file_t *fp){
         //ldp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_lookup", H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(ldp)
 
         // Get data space and size
+        TIMER_START;
         err = H5VLdataset_get_wrapper(mdp, fp->uvlid, H5VL_DATASET_GET_SPACE, fp->dxplid, NULL, &mdsid); CHECK_ERR
+        TIMER_STOP(fp,TIMER_H5VL_DATASET_GET);
         //err = H5VLdataset_get_wrapper(ldp, fp->uvlid, H5VL_DATASET_GET_SPACE, fp->dxplid, NULL, &ldsid); CHECK_ERR
         ndim = H5Sget_simple_extent_dims(mdsid, &mdsize, NULL); LOG_VOL_ASSERT(ndim == 1);
         //ndim = H5Sget_simple_extent_dims(ldsid, &ldsize, NULL); assert(ndim == 1);
@@ -325,6 +336,7 @@ herr_t H5VL_log_filei_metaupdate(H5VL_log_file_t *fp){
     
     fp->idxvalid = true;
 
+	TIMER_STOP (fp, TIMER_FILEI_METAUPDATE);
 err_out:;
 
     // Cleanup
