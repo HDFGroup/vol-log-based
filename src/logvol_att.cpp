@@ -4,26 +4,46 @@
 /* Function prototypes */
 /********************* */
 
-void *H5VL_log_attr_create(void *obj, const H5VL_loc_params_t *loc_params, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id, hid_t aapl_id, hid_t dxpl_id, void **req);
-void *H5VL_log_attr_open(void *obj, const H5VL_loc_params_t *loc_params, const char *attr_name, hid_t aapl_id, hid_t dxpl_id, void **req);
-herr_t H5VL_log_attr_read(void *attr, hid_t dtype_id, void *buf, hid_t dxpl_id, void **req);
-herr_t H5VL_log_attr_write(void *attr, hid_t dtype_id, const void *buf, hid_t dxpl_id, void **req);
-herr_t H5VL_log_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_attr_specific(void *obj, const H5VL_loc_params_t *loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_attr_optional(void *obj, H5VL_attr_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_attr_close(void *attr, hid_t dxpl_id, void **req);
+void *H5VL_log_attr_create (void *obj,
+							const H5VL_loc_params_t *loc_params,
+							const char *attr_name,
+							hid_t type_id,
+							hid_t space_id,
+							hid_t acpl_id,
+							hid_t aapl_id,
+							hid_t dxpl_id,
+							void **req);
+void *H5VL_log_attr_open (void *obj,
+						  const H5VL_loc_params_t *loc_params,
+						  const char *attr_name,
+						  hid_t aapl_id,
+						  hid_t dxpl_id,
+						  void **req);
+herr_t H5VL_log_attr_read (void *attr, hid_t dtype_id, void *buf, hid_t dxpl_id, void **req);
+herr_t H5VL_log_attr_write (void *attr, hid_t dtype_id, const void *buf, hid_t dxpl_id, void **req);
+herr_t H5VL_log_attr_get (
+	void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_attr_specific (void *obj,
+							   const H5VL_loc_params_t *loc_params,
+							   H5VL_attr_specific_t specific_type,
+							   hid_t dxpl_id,
+							   void **req,
+							   va_list arguments);
+herr_t H5VL_log_attr_optional (
+	void *obj, H5VL_attr_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_attr_close (void *attr, hid_t dxpl_id, void **req);
 
-const H5VL_attr_class_t H5VL_log_attr_g{
-    H5VL_log_attr_create,                /* create       */
-    H5VL_log_attr_open,                  /* open         */
-    H5VL_log_attr_read,                  /* read         */
-    H5VL_log_attr_write,                 /* write        */
-    H5VL_log_attr_get,                   /* get          */
-    H5VL_log_attr_specific,              /* specific     */
-    H5VL_log_attr_optional,              /* optional     */
-    H5VL_log_attr_close                  /* close        */
+const H5VL_attr_class_t H5VL_log_attr_g {
+	H5VL_log_attr_create,	/* create       */
+	H5VL_log_attr_open,		/* open         */
+	H5VL_log_attr_read,		/* read         */
+	H5VL_log_attr_write,	/* write        */
+	H5VL_log_attr_get,		/* get          */
+	H5VL_log_attr_specific, /* specific     */
+	H5VL_log_attr_optional, /* optional     */
+	H5VL_log_attr_close		/* close        */
 };
-
+
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_attr_create
  *
@@ -34,31 +54,41 @@ const H5VL_attr_class_t H5VL_log_attr_g{
  *
  *-------------------------------------------------------------------------
  */
-void *H5VL_log_attr_create(void *obj, const H5VL_loc_params_t *loc_params,
-                            const char *name, hid_t type_id, hid_t space_id, hid_t acpl_id,
-                            hid_t aapl_id, hid_t dxpl_id, void **req) {
-    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    H5VL_log_obj_t *ap;
-TIMER_START;
+void *H5VL_log_attr_create (void *obj,
+							const H5VL_loc_params_t *loc_params,
+							const char *name,
+							hid_t type_id,
+							hid_t space_id,
+							hid_t acpl_id,
+							hid_t aapl_id,
+							hid_t dxpl_id,
+							void **req) {
+	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+	H5VL_log_obj_t *ap;
+	TIMER_START;
 
-    ap = new H5VL_log_obj_t();
+	ap = new H5VL_log_obj_t ();
+	ap->uvlid = op->uvlid;
+	ap->fp	  = op->fp;
 
-    ap->uo = H5VLattr_create(op->uo, loc_params, op->uvlid, name, type_id, space_id, acpl_id, aapl_id, dxpl_id, NULL); CHECK_NERR(ap->uo);
-    ap->uvlid = op->uvlid;
-    ap->fp=op->fp;
-    H5Iinc_ref (ap->uvlid);
-    ap->type = H5I_ATTR;
+	TIMER_START;
+	ap->uo = H5VLattr_create (op->uo, loc_params, op->uvlid, name, type_id, space_id, acpl_id,
+							  aapl_id, dxpl_id, NULL);
+	CHECK_NERR (ap->uo);
+	TIMER_STOP (ap->fp, TIMER_H5VL_ATT_CREATE);
 
-    TIMER_STOP (ap->fp, TIMER_ATT_CREATE);
-    return (void *)ap;
+	H5Iinc_ref (ap->uvlid);
+	ap->type = H5I_ATTR;
+
+	TIMER_STOP (ap->fp, TIMER_ATT_CREATE);
+	return (void *)ap;
 
 err_out:;
-    delete ap;
+	delete ap;
 
-    return NULL;
+	return NULL;
 } /* end H5VL_log_attr_create() */
 
-
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_attr_open
  *
@@ -69,29 +99,37 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-void *H5VL_log_attr_open(void *obj, const H5VL_loc_params_t *loc_params, const char *name, hid_t aapl_id, hid_t dxpl_id, void **req) {
-    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    H5VL_log_obj_t *ap;
-TIMER_START;
+void *H5VL_log_attr_open (void *obj,
+						  const H5VL_loc_params_t *loc_params,
+						  const char *name,
+						  hid_t aapl_id,
+						  hid_t dxpl_id,
+						  void **req) {
+	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+	H5VL_log_obj_t *ap;
+	TIMER_START;
 
-    ap = new H5VL_log_obj_t();
+	ap = new H5VL_log_obj_t ();
+	ap->uvlid = op->uvlid;
+	ap->fp	  = op->fp;
 
-    ap->uo = H5VLattr_open(op->uo, loc_params, op->uvlid, name, aapl_id, dxpl_id, req); CHECK_NERR(ap->uo);
-    ap->uvlid = op->uvlid;
-    ap->fp=op->fp;
-    H5Iinc_ref (ap->uvlid);
-    ap->type = H5I_ATTR;
-    
-    TIMER_STOP (ap->fp, TIMER_ATT_OPEN);
-    return (void *)ap;
+	TIMER_START;
+	ap->uo = H5VLattr_open (op->uo, loc_params, op->uvlid, name, aapl_id, dxpl_id, req);
+	CHECK_NERR (ap->uo);
+	TIMER_STOP (ap->fp, TIMER_H5VL_ATT_OPEN);
+
+	H5Iinc_ref (ap->uvlid);
+	ap->type = H5I_ATTR;
+
+	TIMER_STOP (ap->fp, TIMER_ATT_OPEN);
+	return (void *)ap;
 
 err_out:;
-    delete ap;
+	delete ap;
 
-    return NULL;
+	return NULL;
 } /* end H5VL_log_attr_open() */
 
-
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_attr_read
  *
@@ -102,18 +140,19 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_attr_read(void *attr, hid_t mem_type_id, void *buf, hid_t dxpl_id, void **req) {
-    H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
-    herr_t err = 0;
-TIMER_START;
+herr_t H5VL_log_attr_read (void *attr, hid_t mem_type_id, void *buf, hid_t dxpl_id, void **req) {
+	H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
+	herr_t err		   = 0;
+	TIMER_START;
 
-    err = H5VLattr_read(op->uo, op->uvlid, mem_type_id, buf, dxpl_id, req);
+	TIMER_START;
+	err = H5VLattr_read (op->uo, op->uvlid, mem_type_id, buf, dxpl_id, req);
+	TIMER_STOP (op->fp, TIMER_H5VL_ATT_READ);
 
-TIMER_STOP (op->fp, TIMER_ATT_READ);
-    return err;
+	TIMER_STOP (op->fp, TIMER_ATT_READ);
+	return err;
 } /* end H5VL_log_attr_read() */
 
-
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_attr_write
  *
@@ -124,18 +163,20 @@ TIMER_STOP (op->fp, TIMER_ATT_READ);
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_attr_write(void *attr, hid_t mem_type_id, const void *buf, hid_t dxpl_id, void **req) {
-    H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
-    herr_t err = 0;
-TIMER_START;
+herr_t H5VL_log_attr_write (
+	void *attr, hid_t mem_type_id, const void *buf, hid_t dxpl_id, void **req) {
+	H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
+	herr_t err		   = 0;
+	TIMER_START;
 
-    err = H5VLattr_write(op->uo, op->uvlid, mem_type_id, buf, dxpl_id, req);
+	TIMER_START;
+	err = H5VLattr_write (op->uo, op->uvlid, mem_type_id, buf, dxpl_id, req);
+	TIMER_STOP (op->fp, TIMER_H5VL_ATT_WRITE);
 
-TIMER_STOP (op->fp, TIMER_ATT_WRITE);
-    return err;
+	TIMER_STOP (op->fp, TIMER_ATT_WRITE);
+	return err;
 } /* end H5VL_log_attr_write() */
 
-
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_attr_get
  *
@@ -146,18 +187,20 @@ TIMER_STOP (op->fp, TIMER_ATT_WRITE);
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_attr_get(void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
-    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    herr_t err = 0;
-TIMER_START;
+herr_t H5VL_log_attr_get (
+	void *obj, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+	herr_t err		   = 0;
+	TIMER_START;
 
-    err = H5VLattr_get(op->uo, op->uvlid, get_type, dxpl_id, req, arguments);
+	TIMER_START;
+	err = H5VLattr_get (op->uo, op->uvlid, get_type, dxpl_id, req, arguments);
+	TIMER_STOP (op->fp, TIMER_H5VL_ATT_GET);
 
-TIMER_STOP (op->fp, TIMER_ATT_GET);
-    return err;
+	TIMER_STOP (op->fp, TIMER_ATT_GET);
+	return err;
 } /* end H5VL_log_attr_get() */
 
-
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_attr_specific
  *
@@ -168,20 +211,26 @@ TIMER_STOP (op->fp, TIMER_ATT_GET);
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_attr_specific(void *obj, const H5VL_loc_params_t *loc_params, H5VL_attr_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
-    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    herr_t err = 0;
-TIMER_START;
+herr_t H5VL_log_attr_specific (void *obj,
+							   const H5VL_loc_params_t *loc_params,
+							   H5VL_attr_specific_t specific_type,
+							   hid_t dxpl_id,
+							   void **req,
+							   va_list arguments) {
+	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+	herr_t err		   = 0;
+	TIMER_START;
 
-    err = H5VLattr_specific(op->uo, loc_params, op->uvlid, specific_type, dxpl_id, req, arguments);
-    CHECK_ERR
+	TIMER_START;
+	err = H5VLattr_specific (op->uo, loc_params, op->uvlid, specific_type, dxpl_id, req, arguments);
+	CHECK_ERR
+	TIMER_STOP (op->fp, TIMER_H5VL_ATT_SPECIFIC);
 
-TIMER_STOP (op->fp, TIMER_ATT_SPECIFIC);
+	TIMER_STOP (op->fp, TIMER_ATT_SPECIFIC);
 err_out:;
-    return err;
+	return err;
 } /* end H5VL_log_attr_specific() */
 
-
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_attr_optional
  *
@@ -192,18 +241,20 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_attr_optional(void *obj, H5VL_attr_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
-    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    herr_t err = 0;
-TIMER_START;
+herr_t H5VL_log_attr_optional (
+	void *obj, H5VL_attr_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
+	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+	herr_t err		   = 0;
+	TIMER_START;
 
-    err = H5VLattr_optional(op->uo, op->uvlid, opt_type, dxpl_id, req, arguments);
+	TIMER_START;
+	err = H5VLattr_optional (op->uo, op->uvlid, opt_type, dxpl_id, req, arguments);
+	TIMER_STOP (op->fp, TIMER_H5VL_ATT_OPTIONAL);
 
-TIMER_STOP (op->fp, TIMER_ATT_OPTIONAL);
-    return err;
+	TIMER_STOP (op->fp, TIMER_ATT_OPTIONAL);
+	return err;
 } /* end H5VL_log_attr_optional() */
 
-
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_attr_close
  *
@@ -214,18 +265,21 @@ TIMER_STOP (op->fp, TIMER_ATT_OPTIONAL);
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_attr_close(void *attr, hid_t dxpl_id, void **req) {
-    H5VL_log_obj_t *ap = (H5VL_log_obj_t*)attr;
-    herr_t err = 0;
-TIMER_START;
+herr_t H5VL_log_attr_close (void *attr, hid_t dxpl_id, void **req) {
+	H5VL_log_obj_t *ap = (H5VL_log_obj_t *)attr;
+	herr_t err		   = 0;
+	TIMER_START;
 
-    err = H5VLattr_close(ap->uo, ap->uvlid, dxpl_id, req); CHECK_ERR
+	TIMER_START;
+	err = H5VLattr_close (ap->uo, ap->uvlid, dxpl_id, req);
+	CHECK_ERR
+	TIMER_STOP (ap->fp, TIMER_H5VL_ATT_CLOSE);
 
-TIMER_STOP (ap->fp, TIMER_ATT_CLOSE);
+	TIMER_STOP (ap->fp, TIMER_ATT_CLOSE);
 
-    H5Idec_ref(ap->uvlid);
-    delete ap;
-    
+	H5Idec_ref (ap->uvlid);
+	delete ap;
+
 err_out:;
-    return err;
+	return err;
 } /* end H5VL_log_attr_close() */
