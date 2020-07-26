@@ -64,6 +64,10 @@ err_out:;
 	return bp;
 }
 
+void *H5VL_log_filei_pool_alloc(H5VL_log_buffer_pool_t *p, size_t bsize){
+
+}
+
 herr_t H5VL_log_filei_pool_init(H5VL_log_buffer_pool_t *p, size_t bsize){
    	herr_t err = 0;
 
@@ -188,6 +192,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Pack data
 	buf	 = (char *)malloc (sizeof (char) * moffs[fp->ndset]);
 	bufp = (char **)malloc (sizeof (char *) * fp->ndset);
+	H5VL_log_profile_add_time(fp,TIMER_FILEI_METAFLUSH_SIZE, (double)(moffs[fp->ndset])); 
 
 	for (i = 0; i < fp->ndset; i++) { bufp[i] = buf + moffs[i]; }
 	for (auto &rp : fp->wreqs) {
