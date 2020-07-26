@@ -377,6 +377,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	MPI_Datatype ptype = MPI_DATATYPE_NULL;
 	TIMER_START;
 
+	TIMER_START;
 	// Check file space selection
 	if (file_space_id == H5S_ALL)
 		stype = H5S_SEL_ALL;
@@ -391,7 +392,9 @@ herr_t H5VL_log_dataset_write (void *dset,
 		mstype = H5S_SEL_ALL;
 	else
 		mstype = H5Sget_select_type (mem_space_id);
+TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_INIT);
 
+	TIMER_START;
 	// Setting metadata;
 	r.did	= dp->id;
 	r.ndim	= dp->ndim;
@@ -422,7 +425,9 @@ herr_t H5VL_log_dataset_write (void *dset,
 			r.sels[i].size *= dp->esize;
 		}
 	}
+	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_DECODE);
 
+	TIMER_START;
 	// Non-blocking?
 	err = H5Pget_nonblocking (plist_id, &rtype);
 	CHECK_ERR
@@ -462,12 +467,15 @@ herr_t H5VL_log_dataset_write (void *dset,
 		// Need convert
 		if (eqtype == 0) err = H5Tconvert (mem_type_id, dp->dtype, r.rsize, r.xbuf, NULL, plist_id);
 	}
+	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_CONVERT);
 
+	TIMER_START;
 	// Convert request size to number of bytes to be used by later routines
 	r.rsize *= dp->esize;
 
 	// Put request in queue
 	dp->fp->wreqs.push_back (r);
+		TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_FINALIZE);
 
 	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE);
 err_out:;

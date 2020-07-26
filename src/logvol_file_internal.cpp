@@ -77,6 +77,7 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     MPI_Offset seloff;
 	TIMER_START;
 
+    TIMER_START;
     // Calculate size and offset of the metadata per dataset
     mlens = (MPI_Offset*)malloc(sizeof(MPI_Offset) * fp->ndset * 2);
     mlens_all = mlens + fp->ndset;
@@ -90,7 +91,9 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     for(i = 0; i < fp->ndset; i++){
         moffs[i + 1] = moffs[i] + mlens[i];
     }
+    TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_INIT);
 
+    TIMER_START;
     // Pack data
     buf = (char*)malloc(sizeof(char) * moffs[fp->ndset]);
     bufp = (char**)malloc(sizeof(char*) * fp->ndset);
@@ -116,6 +119,7 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
             seloff += sp.size;
         }
     }
+    TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_PACK);
 
     /* Debug code to dump metadata table
     {
@@ -134,6 +138,7 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     }
     */
 
+TIMER_START;
     // Sync metadata size
     mpierr = MPI_Allreduce(mlens, mlens_all, fp->ndset, MPI_LONG_LONG, MPI_SUM, fp->comm); CHECK_MPIERR
     // NOTE: Some MPI implementation do not produce output for rank 0, moffs must ne initialized to 0
@@ -144,7 +149,9 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
         doffs[i + 1] = doffs[i] + mlens_all[i];
         moffs[i] += doffs[i];
     }
+TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_SYNC);
 
+TIMER_START;
     // Create metadata dataset
     loc.obj_type = H5I_GROUP;
     loc.type = H5VL_OBJECT_BY_SELF;
@@ -193,7 +200,9 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
         mdp = H5VLdataset_create(fp->lgp, &loc, fp->uvlid, "_idx", H5P_LINK_CREATE_DEFAULT, H5T_STD_B8LE, mdsid, mdcplid, H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(mdp);
         ldp = H5VLdataset_create(fp->lgp, &loc, fp->uvlid, "_lookup", H5P_LINK_CREATE_DEFAULT, H5T_STD_I64LE, ldsid, ldcplid, H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_NERR(ldp);
     }
+    TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_CREATE);
 
+TIMER_START;
     // Write metadata
     err = H5Sselect_none(mdsid); CHECK_ERR
     for(i = 0; i < fp->ndset; i++){
@@ -216,7 +225,9 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     }
     err = H5VLdataset_write(mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, buf, NULL);    CHECK_ERR
     err = H5VLdataset_write(ldp, fp->uvlid, H5T_STD_I64LE, lmsid, ldsid, fp->dxplid, doffs, NULL);    CHECK_ERR
+TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_WRITE);
 
+TIMER_START;
     // Close the dataset
     err = H5VLdataset_close(mdp, fp->uvlid, fp->dxplid, NULL); CHECK_ERR 
     err = H5VLdataset_close(ldp, fp->uvlid, fp->dxplid, NULL); CHECK_ERR 
@@ -226,9 +237,12 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp){
     }
 
     fp->metadirty = false;
+TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_CLOSE);
 
+TIMER_START;
     // This barrier is required to ensure no process read metadata before everyone finishes writing
     MPI_Barrier(MPI_COMM_WORLD);
+TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_BARR);
 
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH);
 err_out:
