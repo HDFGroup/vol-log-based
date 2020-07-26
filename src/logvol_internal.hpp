@@ -205,6 +205,19 @@ typedef struct H5VL_log_rreq_t {
 	MPI_Datatype ptype;	 // Datatype that represetn memory space selection
 } H5VL_log_rreq_t;
 
+typedef struct H5VL_log_buffer_block_t {
+	char *begin, *end;
+	char *cur;
+	H5VL_log_buffer_block_t *next;
+} H5VL_log_buffer_block_t;
+
+typedef struct H5VL_log_buffer_pool_t {
+	size_t bsize;
+	int inf;
+	H5VL_log_buffer_block_t *head;
+	H5VL_log_buffer_block_t *free_blocks;
+} H5VL_log_buffer_pool_t;
+
 struct H5VL_log_file_t;
 typedef struct H5VL_log_obj_t {
 	H5I_type_t type;
