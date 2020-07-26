@@ -77,6 +77,7 @@ const char *const tname[] = {
 	"H5VL_log_filei_metaflush_close",
 	"H5VL_log_filei_metaflush_barrier",
 	"H5VL_log_filei_metaflush_finalize",
+	"H5VL_log_filei_metaflush_size",
 	"H5VL_log_filei_metaupdate",
 	"H5VL_log_dataseti_readi_gen_rtypes",
 	"H5VL_log_dataseti_open_with_uo",
@@ -109,6 +110,14 @@ void H5VL_log_profile_print (H5VL_log_file_t *fp) {
 	MPI_Comm_rank (fp->comm, &rank);
 
 	MPI_Reduce (fp->tlocal, tmax, NTIMER, MPI_DOUBLE, MPI_MAX, 0, fp->comm);
+	MPI_Reduce (fp->tlocal, tmin, NTIMER, MPI_DOUBLE, MPI_MIN, 0, fp->comm);
+	MPI_Allreduce (fp->tlocal, tmean, NTIMER, MPI_DOUBLE, MPI_SUM, fp->comm);
+	for (i = 0; i < NTIMER; i++) {
+		tmean[i] /= np;
+		tvar_local[i] = (fp->tlocal[i] - tmean[i]) * (fp->tlocal[i] - tmean[i]);
+	}
+	MPI_Reduce (tvar_local, tvar, NTIMER, MPI_DOUBLE, MPI_SUM, 0, fp->comm);
+
 	if (rank == 0) {
 		for (i = 0; i < NTIMER; i++) {
 			printf ("#%%$: %s_time_mean: %lf\n", tname[i], tmean[i]);
