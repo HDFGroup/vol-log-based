@@ -85,6 +85,7 @@ const char *const tname[] = {
 	"H5VL_log_dataspacei_get_selection",
 	"H5VL_log_nb_flush_read_reqs",
 	"H5VL_log_nb_flush_write_reqs",
+	"H5VL_log_nb_flush_write_reqs_size",
 };
 
 void H5VL_log_profile_add_time (H5VL_log_file_t *fp, int id, double t) {

@@ -166,7 +166,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	H5VL_loc_params_t loc;
 	void *mdp, *ldp;
 	hid_t mdsid = -1, ldsid = -1, mmsid = -1, lmsid = -1;
-	hsize_t start, count;
+	hsize_t start, count, one = 1;
 	hsize_t dsize, msize;
 	htri_t has_idx;
 	MPI_Offset seloff;
@@ -192,7 +192,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Pack data
 	buf	 = (char *)malloc (sizeof (char) * moffs[fp->ndset]);
 	bufp = (char **)malloc (sizeof (char *) * fp->ndset);
-	H5VL_log_profile_add_time(fp,TIMER_FILEI_METAFLUSH_SIZE, (double)(moffs[fp->ndset])); 
+	H5VL_log_profile_add_time(fp,TIMER_FILEI_METAFLUSH_SIZE, (double)(moffs[fp->ndset]) / 1048576); 
 
 	for (i = 0; i < fp->ndset; i++) { bufp[i] = buf + moffs[i]; }
 	for (auto &rp : fp->wreqs) {
@@ -336,7 +336,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	for (i = 0; i < fp->ndset; i++) {
 		start = moffs[i];
 		count = mlens[i];
-		err	  = H5Sselect_hyperslab (mdsid, H5S_SELECT_OR, &start, NULL, &count, NULL);
+		err	  = H5Sselect_hyperslab (mdsid, H5S_SELECT_OR, &start, NULL, &one, &count);
 		CHECK_ERR
 	}
 	msize = moffs[fp->ndset];
