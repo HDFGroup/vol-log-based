@@ -24,10 +24,10 @@ herr_t H5VL_log_nb_flush_read_reqs (H5VL_log_file_t *fp,
 	}
 
 	if (intersections.size () > 0) {
-			TIMER_START;
+		TIMER_START;
 		err = H5VL_log_dataset_readi_gen_rtypes (intersections, &ftype, &mtype, overlaps);
 		CHECK_ERR
-TIMER_STOP (fp, TIMER_DATASETI_GEN_RTYPE);
+		TIMER_STOP (fp, TIMER_DATASETI_GEN_RTYPE);
 		mpierr = MPI_Type_commit (&mtype);
 		CHECK_MPIERR
 		mpierr = MPI_Type_commit (&ftype);
@@ -124,7 +124,7 @@ herr_t H5VL_log_nb_flush_write_reqs (H5VL_log_file_t *fp, hid_t dxplid) {
 	} else {
 		mtype = MPI_DATATYPE_NULL;
 	}
-	H5VL_log_profile_add_time(fp,TIMER_NB_FLUSH_WRITE_REQ_SIZE, (double)(fsize_local) / 1048576); 
+	H5VL_log_profile_add_time (fp, TIMER_NB_FLUSH_WRITE_REQ_SIZE, (double)(fsize_local) / 1048576);
 
 	// Get file offset and total size
 	mpierr = MPI_Allreduce (&fsize_local, &fsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
@@ -149,7 +149,7 @@ herr_t H5VL_log_nb_flush_write_reqs (H5VL_log_file_t *fp, hid_t dxplid) {
 	err = H5VLdataset_optional_wrapper (ldp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET, dxplid,
 										NULL, &doff);
 	CHECK_ERR  // Get dataset file offset
-	TIMER_STOP(fp,TIMER_H5VL_DATASET_OPTIONAL);
+	TIMER_STOP (fp, TIMER_H5VL_DATASET_OPTIONAL);
 
 	err = H5VLdataset_close (ldp, fp->uvlid, dxplid, NULL);
 	CHECK_ERR  // Close the dataset
@@ -169,13 +169,16 @@ herr_t H5VL_log_nb_flush_write_reqs (H5VL_log_file_t *fp, hid_t dxplid) {
 		fp->wreqs[i].ldid = fp->nldset;
 		fp->wreqs[i].ldoff += foff;
 		if (fp->wreqs[i].xbuf != fp->wreqs[i].ubuf) {
-			H5VL_log_filei_bfree (fp, (void *)(fp->wreqs[i].xbuf));
+			// H5VL_log_filei_bfree (fp, (void *)(fp->wreqs[i].xbuf));
 		}
 	}
 	(fp->nldset)++;
 	fp->nflushed = fp->wreqs.size ();
 
 	if (fsize_all) { fp->metadirty = true; }
+
+	err = H5VL_log_filei_pool_free (&(fp->data_buf));
+	CHECK_ERR
 
 	TIMER_STOP (fp, TIMER_NB_FLUSH_WRITE_REQ);
 err_out:
