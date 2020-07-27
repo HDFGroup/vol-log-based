@@ -1,6 +1,7 @@
 #include "logvol_internal.hpp"
 
-#define DEFAULT_SIZE 1073741824 // 1 GiB
+//#define DEFAULT_SIZE 1073741824 // 1 GiB
+#define DEFAULT_SIZE 10485760 // 10 MiB
 
 herr_t H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf) {
 	herr_t err = 0;
@@ -64,11 +65,46 @@ err_out:;
 	return bp;
 }
 
-void *H5VL_log_filei_pool_alloc(H5VL_log_buffer_pool_t *p, size_t bsize){
+herr_t H5VL_log_filei_pool_alloc(H5VL_log_buffer_pool_t *p, size_t bsize, void **buf){	
+	herr_t err=0;
+	H5VL_log_buffer_block_t *bp;
 
+	// Need to add blocks
+	if(p->head->cur+bsize>p->head->end){
+		size_t asize;
+		if(! (p->inf)){
+			err=-1;
+			RET_ERR("Out of buffer")
+		}
+		
+		asize = p->bsize;
+		if(bsize>p->bsize){ 
+			bp = H5VL_log_filei_pool_new_block(bsize);
+		}
+		else{
+			if(p->free_blocks){	// pull from recycle list
+				bp=p->free_blocks;
+				p->free_blocks=bp->next;
+			}
+			else{
+				bp = H5VL_log_filei_pool_new_block((size_t)(p->bsize));
+			}
+		}
+		if(!bp) err=-1;
+		CHECK_NERR(bp)
+
+		bp->next=p->head;
+		p->head=bp;
+	}
+
+	*buf = p->head->cur;
+	p->head->cur+=bsize;
+
+err_out:;
+	return err;
 }
 
-herr_t H5VL_log_filei_pool_init(H5VL_log_buffer_pool_t *p, size_t bsize){
+herr_t H5VL_log_filei_pool_init(H5VL_log_buffer_pool_t *p, ssize_t bsize){
    	herr_t err = 0;
 
     if(bsize<0){
@@ -81,7 +117,7 @@ herr_t H5VL_log_filei_pool_init(H5VL_log_buffer_pool_t *p, size_t bsize){
     }
     
     if(p->bsize){
-        p->head=H5VL_log_filei_pool_new_block(p->bsize);
+        p->head=H5VL_log_filei_pool_new_block((size_t)(p->bsize));
         CHECK_NERR(p->head);
     }
     else{
@@ -97,7 +133,8 @@ herr_t H5VL_log_filei_pool_free(H5VL_log_buffer_pool_t *p){
    	herr_t err = 0;
     H5VL_log_buffer_block_t *i,*j=NULL;
 
-    for(i=p->head;i;i=i->next){
+    for(i=p->head->next;i;i=i->next){
+		i->cur=i->begin;
         j=i;
     }
 
@@ -105,7 +142,7 @@ herr_t H5VL_log_filei_pool_free(H5VL_log_buffer_pool_t *p){
         j->next=p->free_blocks;
     }
     p->free_blocks=p->head;
-    p->head=NULL;
+    p->head->cur=p->head->begin;
 
 err_out:;
 	return err; 
@@ -289,6 +326,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		TIMER_STOP (fp, TIMER_H5VL_DATASET_GET);
 	} else {  // Create the idx dataset and look up table dataset
 		hid_t mdcplid, ldcplid;
+		hsize_t csize;
 
 		// Space
 		dsize = (hsize_t)doffs[fp->ndset];
@@ -304,9 +342,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		CHECK_ID (mdcplid)
 		err = H5Pset_fill_time (mdcplid, H5D_FILL_TIME_NEVER);
 		CHECK_ERR
-		// dsize = dsize;  // Same as dsize
-		// dsize = 1048576;  // 1 MiB chunk
-		err = H5Pset_chunk (mdcplid, 1, &dsize);
+		csize = dsize;  // Same as dsize
+		if(csize==0) csize=1048576;
+		// csize = 1048576;  // 1 MiB chunk
+		err = H5Pset_chunk (mdcplid, 1, &csize);
 		CHECK_ERR
 
 		/* Skip lookup table for now

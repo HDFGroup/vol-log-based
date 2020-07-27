@@ -212,7 +212,7 @@ typedef struct H5VL_log_buffer_block_t {
 } H5VL_log_buffer_block_t;
 
 typedef struct H5VL_log_buffer_pool_t {
-	size_t bsize;
+	ssize_t bsize;
 	int inf;
 	H5VL_log_buffer_block_t *head;
 	H5VL_log_buffer_block_t *free_blocks;
@@ -263,6 +263,9 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
 	ssize_t bsize;
 	size_t bused;
+
+	H5VL_log_buffer_pool_t data_buf;
+	H5VL_log_buffer_pool_t meta_buf;
 
 	// std::vector<int> lut;
 	std::vector<std::vector<H5VL_log_metaentry_t>> idx;
@@ -354,6 +357,11 @@ extern herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf);
 extern herr_t H5VL_log_filei_bfree (H5VL_log_file_t *fp, void *buf);
+
+extern herr_t H5VL_log_filei_pool_alloc(H5VL_log_buffer_pool_t *p, size_t bsize, void **buf);
+extern herr_t H5VL_log_filei_pool_init(H5VL_log_buffer_pool_t *p, ssize_t bsize);
+extern herr_t H5VL_log_filei_pool_free(H5VL_log_buffer_pool_t *p);
+extern herr_t H5VL_log_filei_pool_finalize(H5VL_log_buffer_pool_t *p);
 
 // Dataspace internals
 extern herr_t H5VL_log_dataspacei_get_selection (hid_t sid, std::vector<H5VL_log_selection> &sels);
