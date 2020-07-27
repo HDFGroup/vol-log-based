@@ -427,7 +427,6 @@ herr_t H5VL_log_dataset_write (void *dset,
 	}
 	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_DECODE);
 
-	TIMER_START;
 	// Non-blocking?
 	err = H5Pget_nonblocking (plist_id, &rtype);
 	CHECK_ERR
@@ -439,6 +438,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	if (rtype == H5VL_LOG_REQ_NONBLOCKING && eqtype > 0 && mstype == H5S_SEL_ALL) {
 		r.xbuf = r.ubuf;
 	} else {  // Need internal buffer
+		TIMER_START;
 		// Get element size
 		esize = H5Tget_size (mem_type_id);
 		CHECK_ID (esize)
@@ -466,11 +466,14 @@ herr_t H5VL_log_dataset_write (void *dset,
 		} else {
 			memcpy (r.xbuf, r.ubuf, r.rsize * esize);
 		}
+	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_PACK);
 
+	TIMER_START;
 		// Need convert
 		if (eqtype == 0) err = H5Tconvert (mem_type_id, dp->dtype, r.rsize, r.xbuf, NULL, plist_id);
+			TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_CONVERT);
 	}
-	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_CONVERT);
+
 
 	TIMER_START;
 	// Convert request size to number of bytes to be used by later routines
