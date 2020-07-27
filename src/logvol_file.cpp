@@ -116,7 +116,7 @@ void *H5VL_log_file_create (
 	CHECK_ERR
 	err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
 	CHECK_ERR
-	err=H5VL_log_filei_pool_init(&(fp->meta_buf), 2097152);	// 200 MiB
+	err=H5VL_log_filei_contig_buffer_init(&(fp->meta_buf), 2097152);	// 200 MiB
 	CHECK_ERR
 #ifdef LOGVOL_PROFILING
 	H5VL_log_profile_reset (fp);
@@ -247,7 +247,7 @@ void *H5VL_log_file_open (
 	CHECK_ERR
 	err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
 	CHECK_ERR
-	err=H5VL_log_filei_pool_init(&(fp->meta_buf), 2097152);	// 200 MiB
+	err=H5VL_log_filei_contig_buffer_init(&(fp->meta_buf), 2097152);	// 200 MiB
 	CHECK_ERR
 #ifdef LOGVOL_PROFILING
 	H5VL_log_profile_reset (fp);
@@ -532,6 +532,8 @@ herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
 	// Close the file with MPI
 	mpierr = MPI_File_close (&(fp->fh));
 	CHECK_MPIERR
+
+	H5VL_log_filei_contig_buffer_free(&(fp->meta_buf));
 
 	// Close the file with under VOL
 	TIMER_START;
