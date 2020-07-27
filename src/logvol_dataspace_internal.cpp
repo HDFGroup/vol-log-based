@@ -340,3 +340,196 @@ err_out:;
 
     return err;
 }
+
+/*
+herr_t H5VL_log_dataspacei_get_selection2(H5VL_log_file_t *fp, hid_t sid, H5VL_log_wreq_t *r){
+    herr_t err = 0;
+    int i, j, k, l;
+    int ndim;
+    int nreq, old_nreq, nbreq;
+    hssize_t nblock;
+    H5S_sel_type stype;
+    hsize_t **hstarts = NULL, **hends;
+    int *group=NULL;
+
+    ndim = H5Sget_simple_extent_ndims(sid); CHECK_ID(ndim)
+
+    // Get selection type
+    if (sid == H5S_ALL){
+        stype = H5S_SEL_ALL;
+    }
+    else{
+        stype =  H5Sget_select_type(sid);
+    }
+
+    switch (stype){
+        case H5S_SEL_HYPERSLABS:
+            {
+                nblock = H5Sget_select_hyper_nblocks(sid); CHECK_ID(nblock)
+
+                hstarts = (hsize_t**)malloc(sizeof(hsize_t*) * nblock * 2);
+                hends = hstarts + nblock;
+
+                hstarts[0] = (hsize_t*)malloc(sizeof(hsize_t) * ndim * 2 * nblock);
+                hends[0] = hstarts[0] + ndim;
+                for(i = 1; i < nblock; i++){
+                    hstarts[i] = hstarts[i - 1] + ndim * 2;
+                    hends[i] = hends[i - 1] + ndim * 2;
+                }
+
+                err = H5Sget_select_hyper_blocklist(sid, 0, nblock, hstarts[0]);
+
+                sortvec_ex(ndim, nblock, hstarts, hends);
+
+                // Check for interleving
+                group = (int*)malloc(sizeof(int) * (nblock + 1));
+                group[0] = 0;
+                for(i = 0; i < nblock - 1; i++){
+                    if (lessthan(ndim, hends[i], hstarts[i + 1])){  // The end cord is the max offset of the previous block. If less than the start offset of the next block, there won't be interleving
+                        group[i + 1] = group[i] + 1;
+                    }
+                    else{
+                        group[i + 1] = group[i];
+                    }
+                }
+                group[i + 1] = group[i] + 1; // Dummy group to trigger process for final group
+
+                // Count number of requests
+                j = 0;
+                nreq = 0;
+                for(i = j = 0; i <= nblock; i++){
+                    if (group[i] != group[j]){  // Within 1 group
+                        if (i - j == 1){    // Sinlge block, no need to breakdown
+                            //offs[k] = nreq; // Record offset
+                            nreq++;
+                            j++;
+                        }
+                        else{
+                            for(;j < i; j++){
+                                //offs[i] = nreq; // Record offset
+                                nbreq = 1;
+                                for(k = 0; k < ndim - 1; k++){
+                                    nbreq *= hends[j][k] - hstarts[j][k] + 1;
+                                }
+                                nreq += nbreq;
+                            }
+                        }
+                    }
+                }
+
+                // Allocate buffer
+                err= H5VL_log_dataspacei_alloc_selection (fp, r, nreq); CHECK_ERR
+
+                // Fill up selections
+                nreq = 0;
+                for(i = j = 0; i <= nblock; i++){
+                    if (group[i] != group[j]){  // Within 1 group
+                        if (i - j == 1){    // Sinlge block, no need to breakdown
+                            for(k = 0; k < ndim; k++){
+                                r->starts[nreq][k] =  (MPI_Offset)hstarts[j][k];
+                                r->counts[nreq][k] =  (MPI_Offset)(hends[j][k] - hstarts[j][k] + 1);
+                            }
+                            //offs[k] = nreq; // Record offset
+                            nreq++;
+                            j++;
+                        }
+                        else{
+                            old_nreq = nreq;
+                            for(;j < i; j++){    // Breakdown each block
+                                for(k = 0; k < ndim; k++){
+                                    r->starts[nreq][k] = (MPI_Offset)hstarts[j][k];
+                                    r->counts[nreq][k] = 1;
+                                }
+                                r->counts[nreq][ndim - 1] =  (MPI_Offset)(hends[j][ndim - 1] - hstarts[j][ndim - 1] + 1);
+
+                                for(l = 0; l < ndim; l++){   // The lowest dimension that we haven't reach the end
+                                    if (r->starts[nreq][l] < (MPI_Offset)hends[j][l]) break;
+                                }
+                                nreq++;
+                                while(l < ndim - 1){    // While we haven't handle the last one
+                                    memcpy(r->starts[nreq], r->starts[nreq - 1], sizeof(MPI_Offset) * ndim);  // Start from previous value
+                                    memcpy(r->counts[nreq], r->counts[nreq - 1], sizeof(MPI_Offset) * ndim);  // Fill in Count
+                                    
+                                    // Increase start to the next location, carry to lower dim if overflow
+                                    r->starts[nreq][ndim - 2]++;
+                                    for(k = ndim - 2; k > 0; k--){
+                                        if (r->starts[nreq][k] > (MPI_Offset)(hends[j][k])){
+                                            r->starts[nreq][k] = (MPI_Offset)(hstarts[j][k]);
+                                            r->starts[nreq][k - 1]++;
+                                        }
+                                        else{
+                                            break;
+                                        }
+                                    }
+                                    
+                                    for(l = 0; l < ndim; l++){   // The lowest dimension that we haven't reach the end
+                                        if (r->starts[nreq][l] < (MPI_Offset)hends[j][l]) break;
+                                    }
+                                    nreq++;
+                                }
+                            }
+
+                            auto comp = [&](H5VL_log_selection &l, H5VL_log_selection &r)-> bool {
+                                return sel_less_than(ndim, l, r);
+                            };
+                            std::sort(sels.begin() + old_nreq, sels.begin() + nreq, comp);
+                            //sortvec_ex(ndim, nreq - old_nreq, starts + old_nreq, count + old_nreq);
+                        }
+                    }
+                }
+            }
+            break;
+        case H5S_SEL_POINTS:
+            {
+                nblock = H5Sget_select_elem_npoints(sid); CHECK_ID(nblock)
+
+                if (nblock){
+                    hstarts = (hsize_t**)malloc(sizeof(hsize_t) * nblock);
+                    hstarts[0] = (hsize_t*)malloc(sizeof(hsize_t) * ndim * nblock);
+                    for(i = 1; i < nblock; i++){
+                        hstarts[i] = hstarts[i - 1] + ndim;
+                    }
+
+                    err = H5Sget_select_elem_pointlist(sid, 0, nblock, hstarts[0]); CHECK_ERR
+
+                    sels.resize(nblock);
+
+                    for(i = 0; i < nblock; i++){
+                        for(j = 0; j < ndim; j++){
+                            sels[i].start[j] = (MPI_Offset)hstarts[i][j];
+                            sels[i].count[j] = 1;
+                        }
+                    }
+                }
+            }
+            break;
+        case H5S_SEL_ALL:
+            {
+                hsize_t dims[32];
+
+                err = H5Sget_simple_extent_dims(sid, dims, NULL); CHECK_ERR
+
+                sels.resize(1);
+                for(j = 0; j < ndim; j++){
+                    sels[0].start[j] = (MPI_Offset)dims[j];
+                    sels[0].count[j] = 1;
+                }
+                
+            }
+            break;
+        default:
+            RET_ERR("Unsupported selection type");
+    }
+
+err_out:;
+    if (hstarts){
+        free(hstarts[0]);
+        free(hstarts);
+    }
+    if(group){
+        free(group);
+    }
+
+    return err;
+}
+*/

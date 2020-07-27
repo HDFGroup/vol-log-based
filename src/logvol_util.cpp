@@ -245,7 +245,7 @@ herr_t H5Pget_nonblocking(hid_t plist, H5VL_log_req_type_t *nonblocking) {
     htri_t isdxpl;
 
     // TODO: Fix pclass problem
-    *nonblocking = H5VL_LOG_REQ_BLOCKING;
+    *nonblocking = H5VL_LOG_REQ_NONBLOCKING;
     return 0;
 
     isdxpl = H5Pisa_class(plist, H5P_DATASET_XFER); CHECK_ID(isdxpl)

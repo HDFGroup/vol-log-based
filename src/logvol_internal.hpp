@@ -177,6 +177,8 @@ typedef struct H5VL_log_wreq_t {
 	// MPI_Offset count[H5S_MAX_RANK];
 	std::vector<H5VL_log_selection> sels;  // Selections within the dataset
 
+	//int nsel;
+
 	int ldid;		   // Log dataset ID
 	MPI_Offset ldoff;  // Offset in log dataset
 
@@ -217,6 +219,11 @@ typedef struct H5VL_log_buffer_pool_t {
 	H5VL_log_buffer_block_t *head;
 	H5VL_log_buffer_block_t *free_blocks;
 } H5VL_log_buffer_pool_t;
+
+typedef struct H5VL_log_contig_buffer_t {
+	char *begin, *end;
+	char *cur;
+} H5VL_log_contig_buffer_t;
 
 struct H5VL_log_file_t;
 typedef struct H5VL_log_obj_t {
@@ -265,7 +272,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	size_t bused;
 
 	H5VL_log_buffer_pool_t data_buf;
-	H5VL_log_buffer_pool_t meta_buf;
+	H5VL_log_contig_buffer_t meta_buf;
 
 	// std::vector<int> lut;
 	std::vector<std::vector<H5VL_log_metaentry_t>> idx;
@@ -362,6 +369,10 @@ extern herr_t H5VL_log_filei_pool_alloc(H5VL_log_buffer_pool_t *p, size_t bsize,
 extern herr_t H5VL_log_filei_pool_init(H5VL_log_buffer_pool_t *p, ssize_t bsize);
 extern herr_t H5VL_log_filei_pool_free(H5VL_log_buffer_pool_t *p);
 extern herr_t H5VL_log_filei_pool_finalize(H5VL_log_buffer_pool_t *p);
+
+extern herr_t H5VL_log_filei_contig_buffer_init(H5VL_log_contig_buffer_t *bp, size_t init_size);
+extern void H5VL_log_filei_contig_buffer_free(H5VL_log_contig_buffer_t *bp);
+extern void *H5VL_log_filei_contig_buffer_alloc(H5VL_log_contig_buffer_t *bp, size_t size);
 
 // Dataspace internals
 extern herr_t H5VL_log_dataspacei_get_selection (hid_t sid, std::vector<H5VL_log_selection> &sels);
