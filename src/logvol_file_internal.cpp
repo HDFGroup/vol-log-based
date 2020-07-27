@@ -1,7 +1,8 @@
 #include "logvol_internal.hpp"
 
 //#define DEFAULT_SIZE 1073741824 // 1 GiB
-#define DEFAULT_SIZE 10485760 // 10 MiB
+#define DEFAULT_SIZE 209715200 // 200 MiB
+//#define DEFAULT_SIZE 10485760 // 10 MiB
 
 herr_t H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf) {
 	herr_t err = 0;
