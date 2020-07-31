@@ -379,30 +379,33 @@ grammar notation.
 ```
 offset_list 		= [offset_list_entry ...]
 offset_list_entry	= dsetoff dsetcnt
-dsetoff			= INT64  	// Starting offset of index entries of the
-					// dataset ID corresponding to the index of the
-					// entry in offset_list
-dsetcnt			= INT64		// The number of index entries of the dataset
-					// ID corresponding to the index of the entry
-					// in offset_list
+dsetoff			= INT64  	// starting offset of index entries of the
+					// dataset ID corresponding to the
+					// index of the entry in offset_list
+dsetcnt			= INT64		// number of index entries of the dataset ID
+					// corresponding to the index of the entry in
+					// offset_list
 index_table		= [entry ...]	
-entry			= dsetid selection big_endian filter data_loc
+entry			= dsetid big_endian filter data_loc selection
 big_endian		= TRUE | FALSE	// Endianness of this entry.
-dsetid			= INT64  		// Dataset ID
+dsetid			= INT64  	// dataset ID
 selection		= selection_type subarray_selection | point_selection
 selection_type		= SUBARRAY | POINT
-SUBARRAY_SELECTION	= ZERO
-POINT_SELECTION		= ONE
-subarray_selection 	= start count 
-point_selection		= num_point start [start]
-start			= [INT64 ...]	// starting offsets along all dimensions
-count			= [INT64 ...]	// access lengths along all dimensions
+SUBARRAY		= ZERO
+POINT			= ONE
+subarray_selection 	= num [start ...] [end ...]
+point_selection		= num [start ...]
+num			= INT64  	// number of element(s)
+start			= INT64		// starting flattened subarray index
+end			= INT64		//   ending flattened subarray index
+					// starts and ends are pairwise
 filter 			= NONE | ZLIB 	// compression capability
 NONE 			= ZERO
 ZLIB 			= ONE
-data_loc 		= log_dset_id off // Location of this log entry
-log_dset_id 		= INT64  	  // Log dataset ID
-off 			= INT64  	  // Offset in bytes in log_dset_id
+data_loc 		= log_dset_id offset	// location of this log entry
+log_dset_id 		= INT64			// log dataset ID
+offset			= INT64			// starting file offset storing
+						// the dataset
 
 TRUE			= ONE
 FALSE			= ZERO
