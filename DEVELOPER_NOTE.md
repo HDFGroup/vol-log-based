@@ -16,7 +16,7 @@ General comments: I suggest the following when adding a new issue.
   * Trigger condition, including an example code fragment
 **Proposed solutions**:
   * Solution 1
-    + Description 
+    + Description
     + Code fragments or reference links to source files
     + Test programs developed to test the fix, which contains
       comments referring to this fix (commit SHA number)
@@ -26,11 +26,11 @@ General comments: I suggest the following when adding a new issue.
 ---
 ## HDF5 Predefined Data Type Initialization (Solved)
 ### Problem Description
-  * User VOLs are responsible to define and manage data types. Data types are not inhereted from the native VOL. 
+  * User VOLs are responsible to define and manage data types. Data types are not inherited from the native VOL.
   * [Predefined data types](https://support.hdfgroup.org/HDF5/doc/RM/PredefDTypes.html) (e.g. H5T_STD_*, H5T_NATIVE_*) are datatype managed by the native VOL.
   * In the native VOL, the predefined data types are not defined as constants.
-  * Instead, they are defined as global variables, which are later initialied by the native VOL.
-  * Before their initializetion, they are assigned value of -1 (see H5T.c:341)
+  * Instead, they are defined as global variables, which are later initialized by the native VOL.
+  * Before their initialization, they are assigned value of -1 (see H5T.c:341)
   * Initializing the native VOL will not automatically initialize the predefined data types.
   * They should be initialized by a callback function when the user VOL is initialized (part of file_specific).
   * The HDF5 dispatcher first calls the introspect API of the user VOL to check for existence of the initialization routine.
@@ -57,7 +57,7 @@ General comments: I suggest the following when adding a new issue.
   A hyper-slab selection is represented by four attributes - start, count, stride, and block.
   "Start" means the starting position of the selected blocks.
   "Count" is the number of blocks selected along each dimension.
-  "Stride" controls the space between selected blocks 
+  "Stride" controls the space between selected blocks
   "Block" is the size of each selected block.
 
   The meaning of "count" in HDF5's hyper-slab selection is different from that in netcdf APIs.
@@ -83,7 +83,7 @@ General comments: I suggest the following when adding a new issue.
 ## The log VOL does not report reference count to the underlying VOL it is using (Solved)
 ### Problem description
   Certain types of HDF5 objects can be closed by HDF5 automatically when no longer in use.
-  For those objects, HDF5 keeps a reference count on each opened instance. 
+  For those objects, HDF5 keeps a reference count on each opened instance.
   The reference count represents the number of copies of the ID (the token used to refer to the instant) that currently resides in the memory.
   Should the reference count reaches 0, HDF5 will close the instance automatically.
   For simplicity, we refer to those objects as "tracked objects."
@@ -105,7 +105,7 @@ General comments: I suggest the following when adding a new issue.
   * Report reference our reference of the native VOL as the passthrough VOL does
     + We call H5Iinc_ref to report a new reference every time we copied the ID the native VOL.
     + We call H5Idec_ref every time the variable holding the native VOL ID is freed.
-    + Source files: 
+    + Source files:
       + [logvol_file.cpp](/src/logvol_file.cpp)(https://github.com/DataLib-ECP/log_io_vol/commit/1a6753ac69edd830135dd8715b649a3abb087706#L198)
       + [logvol_att.cpp](/src/logvol_att.cpp)(https://github.com/DataLib-ECP/log_io_vol/commit/1a6753ac69edd830135dd8715b649a3abb087706#diff-5df8d5bffeba925af26354bf8ece0287#L47)
       + [logvol_dataset.cpp](/src/logvol_dataset.cpp)(https://github.com/DataLib-ECP/log_io_vol/commit/1a6753ac69edd830135dd8715b649a3abb087706#diff-64f1886c9cbf0d0d9dbe22562cc56283#L56)
@@ -116,7 +116,7 @@ General comments: I suggest the following when adding a new issue.
 ############################################################################################################################################
 * I assume each HDF5 API calls the dispatcher.
   => Some function, such as H5P*, is not.
-* When the dispatcher detects a zero count to an object in an HDF% API, does it immediately free the internal data structures allocated for that object?
+* When the dispatcher detects a zero count to an object in an HDF5 API, does it immediately free the internal data structures allocated for that object?
   => Yes, but only for tracked object types.
 ############################################################################################################################################
 
@@ -187,7 +187,7 @@ General comments: I suggest the following when adding a new issue.
   However, HDF5 will not update the existing property lists of that property class to include the new property.
   Thus, those property lists will no longer be compatible with the property class as they contain a different set of properties.
   Passing them to any HDF5 API will result in an error because the sanity check will consider them to be of the wrong property class.
-  
+
   For example, an application creates a file access property (H5P_FILE_ACCESS) list L.
   Then, it registers a new property P under the file access property class.
   After that, it calls H5Fcreate with L as the file access property list (fapl).
@@ -215,4 +215,42 @@ General comments: I suggest the following when adding a new issue.
 ## The VOL fail when running E3SM on multi-process
   The issue is still being studied.
   A H5Aiterate call failed on the second process due to some format decoding error.
+
+---
+## Improve Performance of Posting Dataset Write Requests
+### Problem Description
+* If treating individual calls to H5Dwrite independently, then the log-based
+  driver must call HDF5 APIs to query properties of a defined dataset in order
+  to perform sanity check on the user arguments. Such queries can be expensive
+  when the number of H5Dwrite calls is high. This is particularly true for
+  applications whose I/O patterns show a large number of noncontiguous subarray
+  requests, such as E3SM.
+* HDF5 currently does not have an API to read/write a large number of
+  noncontiguous subarray requests to the same variable. HDF5 group is currently
+  developing "H5Dwrite_multi", a new API that allows to write multiple datasets
+  in a single API call. See HDF5 develop branch ["multi_rd_wd_coll_io"](https://bitbucket.hdfgroup.org/projects/HDFFV/repos/hdf5/browse?at=refs%2Fheads%2Finactive%2Fmulti_rd_wd_coll_io).
+* Before API "H5Dwrite_multi" is officially released, one must either treat a
+  subarray request independently from others, i.e. each by a separate call to
+  H5Dwrite, or flatten all subarray requests into points and call
+  ["H5Sselect_elements"](https://support.hdfgroup.org/HDF5/doc1.8/RM/RM_H5S.html#Dataspace-SelectElements).
+  Both approaches can be expensive.
+
+### Software Environment
+* HDF5 versions: 1.12.0
+
+### Solutions
+* The log-based driver can cache the dataset's metadata queried at the user's
+  first call to H5Dwrite and reuse it if the next call to H5Dwrite is for the
+  same dataset, i.e. same dataset ID argument is used. The cached metadata can
+  be used until the dataset of a call to H5Dwrite is different. This pattern of
+  a long sequence of H5Dwrite to the same dataset is observed in E3SM. Such a
+  caching strategy avoids repeated HDF5 calls to query the dataset metadata.
+* The above caching strategy can also help aggregate the request metadata to
+  the same dataset into the same "entry" as a part of the
+  [metadata index table](https://github.com/DataLib-ECP/log_io_vol/blob/master/doc/design_log_base_vol.md#appendix-a-format-of-log-metadata-table).
+  This is particularly useful for E3SM I/O pattern that makes a large number of
+  subarray requests to a variable after another.
+
+---
+
 
