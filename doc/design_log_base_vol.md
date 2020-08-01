@@ -76,7 +76,7 @@ log-based driver to aggregate small requests into large ones for better I/O
 bandwidths and reduce frequency of inter-process communication cost when
 flushing data in parallel.
 
-### 3.1. Internal Representation of Dataset Objects 
+### 3.1. Internal Representation of Dataset Objects
 In the log-based driver, a traditional HDF5 dataset is represented by a scalar
 dataset with its dimension information stored as the scalar variable's
 attributes. We refer to this scalar dataset as the 'anchor dataset'.  The
@@ -142,8 +142,8 @@ We can also utilize more complex data structures, such as R-tree, to improve rea
 
 On every flush, we use MPI_Allgather to distribute new metadata to every process.
 Each process individually updates its own in-memory data structure with incoming change.
-When the file is close, the structured metadata is flattened and written 
-to the metadata dataset. 
+When the file is close, the structured metadata is flattened and written
+to the metadata dataset.
 
 ### 4.  APIs Implemented in the Log-based Virtual Object Driver
 This section describes the APIs to be implemented by the log-based driver,
@@ -172,7 +172,7 @@ datasets. Note the log datasets refer to the datasets created by the log-based
 driver to store the write requests in the log fashion. In addition to log
 datasets, there are two tables will be added to the log group. Because their
 sizes will not be known before flushing the logged data dataset, their creation
-is delayed until the first file flush call. 
+is delayed until the first file flush call.
 
 ### 4.2.  File Open
 To open a file that was previously created by the log driver, the log driver
@@ -185,7 +185,7 @@ When API H5Dcreate is called, the log driver first calls the native driver to
 create a scalar dataset, referred as the 'anchor dataset'. The anchor dataset
 will be used to store other HDF5 objects associated to it, such as attributes
 added by user programs. Such operations will be done through the native driver
-using the anchor dataset's ID. 
+using the anchor dataset's ID.
 
 ### 4.4.  Dataset Open
 When API H5Dopen is called, the log driver calls the native driver to open the
@@ -208,14 +208,15 @@ H5Pregister2 to define customized properties.
 
 Performance of our log-based driver can be significantly enhanced if the
 multiple small I/O requests can be aggregated into fewer, large request. There
-are two approaches to achieve the effect of request aggregation. One is to
-buffer the write requests internally and later the buffered requests are
-aggregated and flushed together. This approach allows users to re-use their I/O
-buffers immediately after the write requests return. The side effect is the
-increasing memory footprint. The other approach is non-blocking I/O. A new HDF5
-data transfer property can be defined to introduce a new I/O semantics that
-limit users from altering the buffer contents before the pending requests are
-flushed to the file system. Such non-blocking APIs appear in MPI and PnetCDF. 
+are two approaches to achieve the effect of request aggregation.
+1. One is to buffer the write requests internally and later the buffered
+   requests are aggregated and flushed together. This approach allows users to
+   re-use their I/O buffers immediately after the write requests return. The
+   side effect is the increasing memory footprint of the log-based driver.
+2. The other approach is non-blocking I/O. A new HDF5 data transfer property
+   will have to be defined to introduce a new I/O semantics that limit users
+   from altering the buffer contents before the pending requests are flushed to
+   the file system. Such non-blocking APIs appear in MPI and PnetCDF.
 
 Our log-based plugin driver will implement the first approach and the second
 approach in the later stage. For each write request, the log driver copies the
@@ -284,7 +285,7 @@ our design, write requests are associated with a temporal stamp (or a sequence
 ID) so the data can be stored in a log structure. Our log driver will expand
 this API to flush all the pending requests for all datasets, in order to
 maintain such log structure. In our design, calling H5Dflush is equivalent to
-calling H5Fflush, which flushes all objects of a file. 
+calling H5Fflush, which flushes all objects of a file.
 
 ### 4.9.  Dataset Close
 When API H5Dclose is called, the log driver calls the native driver to close
@@ -328,7 +329,7 @@ repeated and unsorted, as the write requests can be made in an arbitrary order.
 The table is first sorted locally in each process into a monotonically
 nondecreasing order of dataset IDs. The metadata table is then used to
 construct the offset table. The offset table stores the starting offsets to
-entries in the metadata table. 
+entries in the metadata table.
 
 Both tables are then aggregated across all processes before written to the
 file. The metadata tables from individual processes are appended in the file
@@ -375,44 +376,58 @@ The log metadata table is defined as an HDF5 dataset of type H5T_STD_U8LE
 (unsigned byte in Little Endian format). It is a byte stream containing the
 information of all write requests logged by the log driver. Below is the format
 specification of the metadata table in the form of Backus Normal Form (BNF)
-grammar notation. 
+grammar notation.
 ```
-offset_list 		= [offset_list_entry ...]
-offset_list_entry	= dsetoff dsetcnt
-dsetoff			= INT64  	// Starting offset of index entries of the
-					// dataset ID corresponding to the index of the
-					// entry in offset_list
-dsetcnt			= INT64		// The number of index entries of the dataset
-					// ID corresponding to the index of the entry
-					// in offset_list
-index_table		= [entry ...]	
-entry			= dsetid selection big_endian filter data_loc
-big_endian		= TRUE | FALSE	// Endianness of this entry.
-dsetid			= INT64  		// Dataset ID
-selection		= selection_type subarray_selection | point_selection
-selection_type		= SUBARRAY | POINT
-SUBARRAY_SELECTION	= ZERO
-POINT_SELECTION		= ONE
-subarray_selection 	= start count 
-point_selection		= num_point start [start]
-start			= [INT64 ...]	// starting offsets along all dimensions
-count			= [INT64 ...]	// access lengths along all dimensions
-filter 			= NONE | ZLIB 	// compression capability
-NONE 			= ZERO
-ZLIB 			= ONE
-data_loc 		= log_dset_id off // Location of this log entry
-log_dset_id 		= INT64  	  // Log dataset ID
-off 			= INT64  	  // Offset in bytes in log_dset_id
+metadata_table		= signature endianness var_list entry_list
 
+signature		= 'L' 'O' 'G' VERSION
+VERSION			= \x01
+endianness		= ZERO |	// little Endian
+			  ONE		// big Endian
+
+var_list		= nelems [var_name ...]
+nelems			= INT64		// number of element(s)
+var_name		= name
+name			= nelems CHARACTER_STRING
+
+entry_list		= nelems [entry_off ...] [entry_len ...] index_table
+entry_off		= INT64		// starting file offset of an entry
+entry_len		= INT64		// byte size of an entry
+					// entry_off and entry_len are pairwise
+
+index_table		= [entry ...]	// log index table
+entry			= dsetid filter data_loc selection_type selection
+					// A log entry contains metadata of
+					// write requests to a dataset. One
+					// dataset may have more than one
+					// entry.
+dsetid			= INT64		// dataset ID as ordered in var_list
+filter			= NONE | ZLIB	// compression capability
+data_loc		= INT64		// starting file offset storing the
+					// logged dataset contents
+selection_type		= SUBARRAY | POINT
+SUBARRAY		= ZERO
+POINT			= ONE
+
+selection		= subarray_selection | point_selection
+					// file data layout of a log entry
+subarray_selection	= nelems [start ...] [end ...]
+point_selection		= nelems [start ...]
+start			= INT64		// starting flattened subarray index
+end			= INT64		//   ending flattened subarray index
+					// starts and ends are pairwise
+
+NONE			= ZERO
+ZLIB			= ONE
 TRUE			= ONE
 FALSE			= ZERO
 BYTE			= <8-bit byte>
 CHAR			= BYTE
 INT32			= <32-bit signed integer, native representation>
 INT64			= <64-bit signed integer, native representation>
-ZERO			= 0		// 4-byte integer in native representation
-ONE			= 1		// 4-byte integer in native representation
-TWO			= 2		// 4-byte integer in native representation
-THREE			= 3		// 4-byte integer in native representation
+ZERO			= 0	// 4-byte integer in native representation
+ONE			= 1	// 4-byte integer in native representation
+TWO			= 2	// 4-byte integer in native representation
+THREE			= 3	// 4-byte integer in native representation
 ```
 
