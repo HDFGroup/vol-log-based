@@ -378,47 +378,56 @@ information of all write requests logged by the log driver. Below is the format
 specification of the metadata table in the form of Backus Normal Form (BNF)
 grammar notation.
 ```
-entry_list 		= num [entry_off ...] [entry_len ...] index_table
-num			= INT64  	// number of element(s)
-entry_off		= INT64  	// starting file offset of an entry
+metadata_table		= signature endianness var_list entry_list
+
+signature		= 'L' 'O' 'G' VERSION
+VERSION			= \x01
+endianness		= ZERO |	// little Endian
+			  ONE		// big Endian
+
+var_list		= nelems [var_name ...]
+nelems			= INT64		// number of element(s)
+var_name		= name
+name			= nelems CHARACTER_STRING
+
+entry_list		= nelems [entry_off ...] [entry_len ...] index_table
+entry_off		= INT64		// starting file offset of an entry
 entry_len		= INT64		// byte size of an entry
 					// entry_off and entry_len are pairwise
 
 index_table		= [entry ...]	// log index table
-entry			= dsetid big_endian filter data_loc selection
+entry			= dsetid filter data_loc selection_type selection
 					// A log entry contains metadata of
 					// write requests to a dataset. One
 					// dataset may have more than one
 					// entry.
-big_endian		= TRUE | FALSE	// Endianness of this entry.
-dsetid			= INT64  	// dataset ID
-selection		= selection_type subarray_selection | point_selection
-					// file data layout of a log
+dsetid			= INT64		// dataset ID as ordered in var_list
+filter			= NONE | ZLIB	// compression capability
+data_loc		= INT64		// starting file offset storing the
+					// logged dataset contents
 selection_type		= SUBARRAY | POINT
 SUBARRAY		= ZERO
 POINT			= ONE
-subarray_selection 	= num [start ...] [end ...]
-point_selection		= num [start ...]
+
+selection		= subarray_selection | point_selection
+					// file data layout of a log entry
+subarray_selection	= nelems [start ...] [end ...]
+point_selection		= nelems [start ...]
 start			= INT64		// starting flattened subarray index
 end			= INT64		//   ending flattened subarray index
 					// starts and ends are pairwise
-filter 			= NONE | ZLIB 	// compression capability
-NONE 			= ZERO
-ZLIB 			= ONE
-data_loc 		= log_dset_id offset	// location of this log entry
-log_dset_id 		= INT64			// log dataset ID
-offset			= INT64			// starting file offset storing
-						// the dataset
 
+NONE			= ZERO
+ZLIB			= ONE
 TRUE			= ONE
 FALSE			= ZERO
 BYTE			= <8-bit byte>
 CHAR			= BYTE
 INT32			= <32-bit signed integer, native representation>
 INT64			= <64-bit signed integer, native representation>
-ZERO			= 0		// 4-byte integer in native representation
-ONE			= 1		// 4-byte integer in native representation
-TWO			= 2		// 4-byte integer in native representation
-THREE			= 3		// 4-byte integer in native representation
+ZERO			= 0	// 4-byte integer in native representation
+ONE			= 1	// 4-byte integer in native representation
+TWO			= 2	// 4-byte integer in native representation
+THREE			= 3	// 4-byte integer in native representation
 ```
 
