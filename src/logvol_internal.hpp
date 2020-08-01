@@ -271,7 +271,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	ssize_t bsize;
 	size_t bused;
 
-	H5VL_log_buffer_pool_t data_buf;
+	//H5VL_log_buffer_pool_t data_buf;
 	H5VL_log_contig_buffer_t meta_buf;
 
 	// std::vector<int> lut;

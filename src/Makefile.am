@@ -38,6 +38,7 @@ CXX_SRCS =  logvol.cpp \
             logvol_group.cpp \
             logvol_link.cpp \
             logvol_token.cpp \
+            logvol_property.cpp \
             logvol_nb.cpp \
             logvol_obj.cpp \
             logvol_req.cpp \

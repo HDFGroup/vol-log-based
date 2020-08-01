@@ -124,7 +124,9 @@ herr_t H5VL_log_nb_flush_write_reqs (H5VL_log_file_t *fp, hid_t dxplid) {
 	} else {
 		mtype = MPI_DATATYPE_NULL;
 	}
+#ifdef LOGVOL_PROFILING
 	H5VL_log_profile_add_time (fp, TIMER_NB_FLUSH_WRITE_REQ_SIZE, (double)(fsize_local) / 1048576);
+#endif
 
 	// Get file offset and total size
 	mpierr = MPI_Allreduce (&fsize_local, &fsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
@@ -177,8 +179,8 @@ herr_t H5VL_log_nb_flush_write_reqs (H5VL_log_file_t *fp, hid_t dxplid) {
 
 	if (fsize_all) { fp->metadirty = true; }
 
-	err = H5VL_log_filei_pool_free (&(fp->data_buf));
-	CHECK_ERR
+	//err = H5VL_log_filei_pool_free (&(fp->data_buf));
+	//CHECK_ERR
 
 	TIMER_STOP (fp, TIMER_NB_FLUSH_WRITE_REQ);
 err_out:

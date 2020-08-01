@@ -443,13 +443,13 @@ herr_t H5VL_log_dataset_write (void *dset,
 		esize = H5Tget_size (mem_type_id);
 		CHECK_ID (esize)
 
-		// HDF5 type conversion is in place, allocate for whatever larger
-		// err = H5VL_log_filei_balloc (dp->fp, r.rsize * std::max (esize, (size_t) (dp->esize)),
-		//							 (void **)(&(r.xbuf)));
-		err = H5VL_log_filei_pool_alloc (&(dp->fp->data_buf),
-										 r.rsize * std::max (esize, (size_t) (dp->esize)),
-										 (void **)(&(r.xbuf)));
-		CHECK_ERR
+		//HDF5 type conversion is in place, allocate for whatever larger
+		err = H5VL_log_filei_balloc (dp->fp, r.rsize * std::max (esize, (size_t) (dp->esize)),
+									 (void **)(&(r.xbuf)));
+		//err = H5VL_log_filei_pool_alloc (&(dp->fp->data_buf),
+		//								 r.rsize * std::max (esize, (size_t) (dp->esize)),
+		//								 (void **)(&(r.xbuf)));
+		//CHECK_ERR
 
 		// Need packing
 		if (mstype != H5S_SEL_ALL) {
