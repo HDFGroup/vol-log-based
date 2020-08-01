@@ -114,8 +114,8 @@ void *H5VL_log_file_create (
 	fp->fp		  = fp;
 	err			  = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
 	CHECK_ERR
-	err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
-	CHECK_ERR
+	//err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
+	//CHECK_ERR
 	err=H5VL_log_filei_contig_buffer_init(&(fp->meta_buf), 2097152);	// 200 MiB
 	CHECK_ERR
 #ifdef LOGVOL_PROFILING
@@ -245,8 +245,8 @@ void *H5VL_log_file_open (
 	fp->fp		  = fp;
 	err			  = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
 	CHECK_ERR
-	err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
-	CHECK_ERR
+	//err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
+	//CHECK_ERR
 	err=H5VL_log_filei_contig_buffer_init(&(fp->meta_buf), 2097152);	// 200 MiB
 	CHECK_ERR
 #ifdef LOGVOL_PROFILING
