@@ -53,6 +53,10 @@
 	{}
 #endif
 
+#define LOGVOL_SELCTION_TYPE_HYPERSLABS 0x01
+#define LOGVOL_SELCTION_TYPE_POINTS 0x02
+#define LOGVOL_SELCTION_TYPE_OFFSETS 0x04
+
 #define CHECK_ERR                                                     \
 	{                                                                 \
 		if (err < 0) {                                                \
@@ -178,11 +182,18 @@ typedef struct H5VL_log_selection {
 	size_t size;					 // Size of the selection (bytes)
 } H5VL_log_selection;
 
+typedef struct H5VL_log_selection2 {
+	MPI_Offset start;	 // Start of selection
+	MPI_Offset end;	 // Count of selection
+	size_t size;					 // Size of the selection (bytes)
+} H5VL_log_selection2;
+
 typedef struct H5VL_log_wreq_t {
 	int did;   // Target dataset ID
-	int ndim;  // Dim of the target dataset
+	//int ndim;  // Dim of the target dataset
 	// MPI_Offset start[H5S_MAX_RANK];
 	// MPI_Offset count[H5S_MAX_RANK];
+	int flag;
 	std::vector<H5VL_log_selection> sels;  // Selections within the dataset
 
 	// int nsel;
@@ -273,7 +284,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	std::vector<H5VL_log_rreq_t> rreqs;
 
 	// Should we do metadata caching?
-	// std::vector<int> ndim;
+	std::vector<int> ndim;
 	// std::vector<H5VL_log_dset_meta_t> mdc;
 
 	ssize_t bsize;
@@ -302,6 +313,8 @@ typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
 	hsize_t ndim;
 	hsize_t dims[H5S_MAX_RANK];
 	hsize_t mdims[H5S_MAX_RANK];
+	hsize_t dsteps[H5S_MAX_RANK];
+
 	hid_t dtype;
 	hsize_t esize;
 } H5VL_log_dset_t;
