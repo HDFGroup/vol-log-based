@@ -259,8 +259,8 @@ err_out:;
 herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int mpierr;
-	int i, j;
-	int *cnt, *flag;
+	int i;
+	int *cnt;
 	MPI_Offset *mlens = NULL, *mlens_all;
 	MPI_Offset *moffs = NULL, *doffs;
 	char *buf		  = NULL;
@@ -284,46 +284,22 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	mlens_all = mlens + fp->ndset;
 	moffs	  = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->ndset + 1) * 2);
 	doffs	  = moffs + fp->ndset + 1;
-	cnt		  = (int *)malloc (sizeof (int) * fp->ndset * 2);
-	memset (cnt, 0, sizeof (int) * fp->ndset * 2);
-	flag = cnt + fp->ndset;
+	cnt=(int *)malloc (sizeof (int) *fp->ndset );
+	memset (cnt, 0, sizeof (int) * fp->ndset);
 	memset (mlens, 0, sizeof (MPI_Offset) * fp->ndset);
-	if (fp->rank == 0) { mlens[0] += sizeof (int) * fp->ndset; }
-	for (i = 0; i < fp->ndset; i++) {
-		dsteps[i][fp->ndim[i] - 1] = 1;
-		for (j = fp->ndim[i] - 2; j > -1; j--) {
-			dsteps[i][j] = dsteps[i][j + 1] * fp->dsizes[i][j + 1];
-		}
+	if(fp->rank==0){
+		mlens[0]+=sizeof(int)*fp->ndset;
 	}
-	for (auto &rp : fp->wreqs) { cnt[rp.did] += rp.sels.size (); }
-	for (i = 0; i < fp->ndset; i++) {
-		mlens[i] += sizeof (int) * 2;  // ID and flag
-		if (cnt[i] > 1) {			   // Multiple selection
-			flag[i] |= LOGVOL_META_FLAG_MULTI;
-			mlens[i] += sizeof (int);  // nsel
-			if (fp->ndim[i] > 1) {
-				flag[i] |= LOGVOL_META_FLAG_ENCODE;
-				mlens[i] += fp->ndim[i] * sizeof (MPI_Offset);	// dstep
-				mlens[i] +=
-					(sizeof (MPI_Offset) * fp->ndim[i] + sizeof (MPI_Offset) + sizeof (size_t)) *
-					(size_t)cnt[i];
-			} else {
-				mlens[i] += (sizeof (MPI_Offset) * fp->ndim[i] * 2 + sizeof (MPI_Offset) +
-							 sizeof (size_t)) *
-							(size_t)cnt[i];
-			}
-#ifdef HAVE_ZLIB
-			if (cnt[i] > 1024) {  // Compress if we have more than 1k entry
-				flag[i] |= LOGVOL_META_FLAG_ZIP;
-			}
-#endif
-		}
+	for(i=0;i<fp->ndset;i++){
+		mlens[i]+=sizeof (int) * 2;
 	}
 	for (auto &rp : fp->wreqs) {
-		mlens[rp.did] +=
-			(sizeof (MPI_Offset) * 2 + sizeof (MPI_Offset) + sizeof (size_t)) * rp.sels.size ();
+		mlens[rp.did] += (fp->ndim[rp.did] * sizeof (MPI_Offset) * 2 +
+						  sizeof (MPI_Offset) + sizeof (size_t)) *
+						 rp.sels.size ();
+		cnt[rp.did]+=rp.sels.size();
 	}
-	moffs[0] = 0;
+	moffs[0]=0;
 	for (i = 0; i < fp->ndset; i++) { moffs[i + 1] = moffs[i] + mlens[i]; }
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_INIT);
 
@@ -331,47 +307,26 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Pack data
 	buf	 = (char *)malloc (sizeof (char) * moffs[fp->ndset]);
 	bufp = (char **)malloc (sizeof (char *) * fp->ndset);
-	for (i = 0; i < fp->ndset; i++) {
-		bufp[i] = buf + moffs[i];
+#ifdef LOGVOL_PROFILING
+	H5VL_log_profile_add_time (fp, TIMER_FILEI_METAFLUSH_SIZE,
+							   (double)(moffs[fp->ndset]) / 1048576);
+#endif
 
-		// ID
+	for (i = 0; i < fp->ndset; i++) { bufp[i] = buf + moffs[i]; 
 		*((int *)bufp[i]) = i;
 		bufp[i] += sizeof (int);
-		// Flag
-		*((int *)bufp[i]) = i;
+		*((int *)bufp[i]) = cnt[i];
 		bufp[i] += sizeof (int);
-		// Nsel
-		if (flag[i] & LOGVOL_META_FLAG_MULTI) {
-			*((int *)bufp[i]) = cnt[i];
-			bufp[i] += sizeof (int);
-		}
-		// Dstep
-		if (flag[i] & LOGVOL_META_FLAG_ENCODE) {
-			memcpy (bufp[i], dsteps[i].data (), sizeof (MPI_Offset) * fp->ndim[i]);
-			bufp[i] += sizeof (MPI_Offset) * fp->ndim[i];
-		}
 	}
 	for (auto &rp : fp->wreqs) {
 		seloff = 0;
 		for (auto &sp : rp.sels) {
 			//*((int *)bufp[rp.did]) = rp.did;
-			// bufp[rp.did] += sizeof (int);
-			if (flag[i] & LOGVOL_META_FLAG_ENCODE) {
-				soff = eoff = 0;
-				for (i = 0; i < fp->ndim[rp.did]; i++) {
-					soff += sp.start[i] * dsteps[rp.did][i];
-					eoff += (sp.start[i] + sp.count[i]) * dsteps[rp.did][i];
-				}
-				*((MPI_Offset *)bufp[rp.did]) = soff;
-				bufp[rp.did] += sizeof (MPI_Offset);
-				*((MPI_Offset *)bufp[rp.did]) = eoff;
-				bufp[rp.did] += sizeof (MPI_Offset);
-			} else {
-				memcpy (bufp[rp.did], sp.start, sizeof (MPI_Offset) * fp->ndim[rp.did]);
-				bufp[rp.did] += sizeof (MPI_Offset) * fp->ndim[i];
-				memcpy (bufp[rp.did], sp.count, sizeof (MPI_Offset) * fp->ndim[rp.did]);
-				bufp[rp.did] += sizeof (MPI_Offset) * fp->ndim[i];
-			}
+			//bufp[rp.did] += sizeof (int);
+			memcpy (bufp[rp.did], sp.start, fp->ndim[rp.did] * sizeof (MPI_Offset));
+			bufp[rp.did] += fp->ndim[rp.did] * sizeof (MPI_Offset);
+			memcpy (bufp[rp.did], sp.count, fp->ndim[rp.did] * sizeof (MPI_Offset));
+			bufp[rp.did] += fp->ndim[rp.did] * sizeof (MPI_Offset);
 			*((MPI_Offset *)bufp[rp.did]) = rp.ldoff + seloff;
 			bufp[rp.did] += sizeof (MPI_Offset);
 			*((size_t *)bufp[rp.did]) = rp.rsize;
