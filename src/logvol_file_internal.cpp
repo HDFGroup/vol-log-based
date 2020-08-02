@@ -1,7 +1,7 @@
 #include "logvol_internal.hpp"
 
 //#define DEFAULT_SIZE 1073741824 // 1 GiB
-#define DEFAULT_SIZE 209715200 // 200 MiB
+#define DEFAULT_SIZE 209715200	// 200 MiB
 //#define DEFAULT_SIZE 10485760 // 10 MiB
 
 herr_t H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf) {
@@ -44,196 +44,191 @@ err_out:;
 	return err;
 }
 
-H5VL_log_buffer_block_t *H5VL_log_filei_pool_new_block(size_t bsize){
-   	herr_t err = 0;
-	H5VL_log_buffer_block_t *bp=NULL;
+H5VL_log_buffer_block_t *H5VL_log_filei_pool_new_block (size_t bsize) {
+	herr_t err					= 0;
+	H5VL_log_buffer_block_t *bp = NULL;
 
-    assert(bsize>0);
+	assert (bsize > 0);
 
-    bp=(H5VL_log_buffer_block_t*)malloc(sizeof(H5VL_log_buffer_block_t));
-    CHECK_NERR(bp)
+	bp = (H5VL_log_buffer_block_t *)malloc (sizeof (H5VL_log_buffer_block_t));
+	CHECK_NERR (bp)
 
-    bp->cur=bp->begin = (char*)malloc(bsize); CHECK_NERR(bp->begin);
-    bp->end=bp->begin+bsize;
-    
-    bp->next=NULL;
+	bp->cur = bp->begin = (char *)malloc (bsize);
+	CHECK_NERR (bp->begin);
+	bp->end = bp->begin + bsize;
+
+	bp->next = NULL;
 
 err_out:;
-    if (!(bp->begin)){
-        free(bp);
-        bp=NULL;
-    }
+	if (!(bp->begin)) {
+		free (bp);
+		bp = NULL;
+	}
 	return bp;
 }
 
-herr_t H5VL_log_filei_pool_alloc(H5VL_log_buffer_pool_t *p, size_t bsize, void **buf){	
-	herr_t err=0;
+herr_t H5VL_log_filei_pool_alloc (H5VL_log_buffer_pool_t *p, size_t bsize, void **buf) {
+	herr_t err = 0;
 	H5VL_log_buffer_block_t *bp;
 
 	// Need to add blocks
-	if(p->head->cur+bsize>p->head->end){
+	if (p->head->cur + bsize > p->head->end) {
 		size_t asize;
-		if(! (p->inf)){
-			err=-1;
-			RET_ERR("Out of buffer")
+		if (!(p->inf)) {
+			err = -1;
+			RET_ERR ("Out of buffer")
 		}
-		
-		asize = p->bsize;
-		if(bsize>p->bsize){ 
-			bp = H5VL_log_filei_pool_new_block(bsize);
-		}
-		else{
-			if(p->free_blocks){	// pull from recycle list
-				bp=p->free_blocks;
-				p->free_blocks=bp->next;
-			}
-			else{
-				bp = H5VL_log_filei_pool_new_block((size_t)(p->bsize));
-			}
-		}
-		if(!bp) err=-1;
-		CHECK_NERR(bp)
 
-		bp->next=p->head;
-		p->head=bp;
+		asize = p->bsize;
+		if (bsize > p->bsize) {
+			bp = H5VL_log_filei_pool_new_block (bsize);
+		} else {
+			if (p->free_blocks) {  // pull from recycle list
+				bp			   = p->free_blocks;
+				p->free_blocks = bp->next;
+			} else {
+				bp = H5VL_log_filei_pool_new_block ((size_t) (p->bsize));
+			}
+		}
+		if (!bp) err = -1;
+		CHECK_NERR (bp)
+
+		bp->next = p->head;
+		p->head	 = bp;
 	}
 
 	*buf = p->head->cur;
-	p->head->cur+=bsize;
+	p->head->cur += bsize;
 
 err_out:;
 	return err;
 }
 
-herr_t H5VL_log_filei_pool_init(H5VL_log_buffer_pool_t *p, ssize_t bsize){
-   	herr_t err = 0;
+herr_t H5VL_log_filei_pool_init (H5VL_log_buffer_pool_t *p, ssize_t bsize) {
+	herr_t err = 0;
 
-    if(bsize<0){
-        p->bsize=DEFAULT_SIZE;
-        p->inf=1;
-    }
-    else{
-    p->bsize=bsize;
-    p->inf=0;
-    }
-    
-    if(p->bsize){
-        p->head=H5VL_log_filei_pool_new_block((size_t)(p->bsize));
-        CHECK_NERR(p->head);
-    }
-    else{
-        p->head=NULL;
-    }
-    p->free_blocks=NULL;
-
-err_out:;
-	return err; 
-}
-
-herr_t H5VL_log_filei_pool_free(H5VL_log_buffer_pool_t *p){
-   	herr_t err = 0;
-    H5VL_log_buffer_block_t *i,*j=NULL;
-
-    for(i=p->head->next;i;i=i->next){
-		i->cur=i->begin;
-        j=i;
-    }
-
-    if(j){
-        j->next=p->free_blocks;
-		p->free_blocks=p->head->next;
-		p->head->next=NULL;
+	if (bsize < 0) {
+		p->bsize = DEFAULT_SIZE;
+		p->inf	 = 1;
+	} else {
+		p->bsize = bsize;
+		p->inf	 = 0;
 	}
-    p->head->cur=p->head->begin;
+
+	if (p->bsize) {
+		p->head = H5VL_log_filei_pool_new_block ((size_t) (p->bsize));
+		CHECK_NERR (p->head);
+	} else {
+		p->head = NULL;
+	}
+	p->free_blocks = NULL;
 
 err_out:;
-	return err; 
+	return err;
 }
 
-herr_t H5VL_log_filei_pool_finalize(H5VL_log_buffer_pool_t *p){
-   	herr_t err = 0;
-    H5VL_log_buffer_block_t *i,*j;
+herr_t H5VL_log_filei_pool_free (H5VL_log_buffer_pool_t *p) {
+	herr_t err = 0;
+	H5VL_log_buffer_block_t *i, *j = NULL;
 
-    for(i=p->head;i;i=j){
-        j=i->next;
-        free(i->begin);
-        free(i);
-    }
-    p->head=NULL;
-    for(i=p->free_blocks;i;i=j){
-        j=i->next;
-        free(i->begin);
-        free(i);
-    }
-    p->free_blocks=NULL;
+	for (i = p->head->next; i; i = i->next) {
+		i->cur = i->begin;
+		j	   = i;
+	}
 
-    p->bsize=0;
-    p->inf=0;
-err_out:;
-	return err; 
-}
-
-herr_t H5VL_log_filei_contig_buffer_init(H5VL_log_contig_buffer_t *bp, size_t init_size){
-   	herr_t err = 0;
-
-    bp->begin= (char*)malloc(init_size);
-	CHECK_NERR(bp->begin);
-
-	bp->cur=bp->begin;
-	bp->end+=init_size;
+	if (j) {
+		j->next		   = p->free_blocks;
+		p->free_blocks = p->head->next;
+		p->head->next  = NULL;
+	}
+	p->head->cur = p->head->begin;
 
 err_out:;
-	return err; 
+	return err;
 }
 
-void H5VL_log_filei_contig_buffer_free(H5VL_log_contig_buffer_t *bp){
-	free(bp->begin);
+herr_t H5VL_log_filei_pool_finalize (H5VL_log_buffer_pool_t *p) {
+	herr_t err = 0;
+	H5VL_log_buffer_block_t *i, *j;
+
+	for (i = p->head; i; i = j) {
+		j = i->next;
+		free (i->begin);
+		free (i);
+	}
+	p->head = NULL;
+	for (i = p->free_blocks; i; i = j) {
+		j = i->next;
+		free (i->begin);
+		free (i);
+	}
+	p->free_blocks = NULL;
+
+	p->bsize = 0;
+	p->inf	 = 0;
+err_out:;
+	return err;
 }
 
-void *H5VL_log_filei_contig_buffer_alloc(H5VL_log_contig_buffer_t *bp, size_t size){
+herr_t H5VL_log_filei_contig_buffer_init (H5VL_log_contig_buffer_t *bp, size_t init_size) {
+	herr_t err = 0;
+
+	bp->begin = (char *)malloc (init_size);
+	CHECK_NERR (bp->begin);
+
+	bp->cur = bp->begin;
+	bp->end += init_size;
+
+err_out:;
+	return err;
+}
+
+void H5VL_log_filei_contig_buffer_free (H5VL_log_contig_buffer_t *bp) { free (bp->begin); }
+
+void *H5VL_log_filei_contig_buffer_alloc (H5VL_log_contig_buffer_t *bp, size_t size) {
 	char *tmp;
 
-	if(bp->cur+size>bp->end){
-		size_t new_size=bp->end-bp->begin;
-		size_t used=bp->end-bp->cur;
-		
-		while(used+size>new_size) new_size <<= 1;
+	if (bp->cur + size > bp->end) {
+		size_t new_size = bp->end - bp->begin;
+		size_t used		= bp->end - bp->cur;
 
-		tmp=(char*)realloc(bp->begin, new_size);
-		if(!tmp) return NULL;
+		while (used + size > new_size) new_size <<= 1;
 
-		bp->begin=tmp;
-		bp->cur=bp->begin+used;
-		bp->end = bp->begin+new_size;
+		tmp = (char *)realloc (bp->begin, new_size);
+		if (!tmp) return NULL;
+
+		bp->begin = tmp;
+		bp->cur	  = bp->begin + used;
+		bp->end	  = bp->begin + new_size;
 	}
 
-	tmp=bp->cur;
-	bp->cur+=size;
+	tmp = bp->cur;
+	bp->cur += size;
 
-	return (void*)tmp;
+	return (void *)tmp;
 }
 
-herr_t H5VL_log_filei_contig_buffer_alloc(H5VL_log_buffer_pool_t *p){
-   	herr_t err = 0;
-    H5VL_log_buffer_block_t *i,*j;
+herr_t H5VL_log_filei_contig_buffer_alloc (H5VL_log_buffer_pool_t *p) {
+	herr_t err = 0;
+	H5VL_log_buffer_block_t *i, *j;
 
-    for(i=p->head;i;i=j){
-        j=i->next;
-        free(i->begin);
-        free(i);
-    }
-    p->head=NULL;
-    for(i=p->free_blocks;i;i=j){
-        j=i->next;
-        free(i->begin);
-        free(i);
-    }
-    p->free_blocks=NULL;
+	for (i = p->head; i; i = j) {
+		j = i->next;
+		free (i->begin);
+		free (i);
+	}
+	p->head = NULL;
+	for (i = p->free_blocks; i; i = j) {
+		j = i->next;
+		free (i->begin);
+		free (i);
+	}
+	p->free_blocks = NULL;
 
-    p->bsize=0;
-    p->inf=0;
+	p->bsize = 0;
+	p->inf	 = 0;
 err_out:;
-	return err; 
+	return err;
 }
 
 herr_t H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid) {
@@ -267,6 +262,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	char **bufp		  = NULL;
 	H5VL_loc_params_t loc;
 	void *mdp, *ldp;
+	hid_t dxplid;
 	hid_t mdsid = -1, ldsid = -1, mmsid = -1, lmsid = -1;
 	hsize_t start, count, one = 1;
 	hsize_t dsize, msize;
@@ -295,7 +291,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	buf	 = (char *)malloc (sizeof (char) * moffs[fp->ndset]);
 	bufp = (char **)malloc (sizeof (char *) * fp->ndset);
 #ifdef LOGVOL_PROFILING
-	H5VL_log_profile_add_time(fp,TIMER_FILEI_METAFLUSH_SIZE, (double)(moffs[fp->ndset]) / 1048576); 
+	H5VL_log_profile_add_time (fp, TIMER_FILEI_METAFLUSH_SIZE,
+							   (double)(moffs[fp->ndset]) / 1048576);
 #endif
 
 	for (i = 0; i < fp->ndset; i++) { bufp[i] = buf + moffs[i]; }
@@ -367,9 +364,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT,
 								fp->dxplid, NULL);
 		CHECK_NERR (mdp)
-		//ldp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, "_lookup", H5P_DATASET_ACCESS_DEFAULT,
+		// ldp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, "_lookup", H5P_DATASET_ACCESS_DEFAULT,
 		//						fp->dxplid, NULL);
-		//CHECK_NERR (ldp)
+		// CHECK_NERR (ldp)
 		TIMER_STOP (fp, TIMER_H5VL_DATASET_OPEN);
 
 		// Resize both dataset
@@ -409,8 +406,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		CHECK_ID (mdcplid)
 		err = H5Pset_fill_time (mdcplid, H5D_FILL_TIME_NEVER);
 		CHECK_ERR
-		csize = dsize;  // Same as dsize
-		if(csize==0) csize=1048576;
+		csize = dsize;	// Same as dsize
+		if (csize == 0) csize = 1048576;
 		// csize = 1048576;  // 1 MiB chunk
 		err = H5Pset_chunk (mdcplid, 1, &csize);
 		CHECK_ERR
@@ -448,7 +445,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	msize = moffs[fp->ndset];
 	mmsid = H5Screate_simple (1, &msize, &msize);
 	CHECK_ID (mmsid)
-    /*
+	/*
 	msize = fp->ndset;
 	lmsid = H5Screate_simple (1, &msize, &msize);
 	CHECK_ID (lmsid)
@@ -463,13 +460,18 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		err = H5Sselect_none (lmsid);
 		CHECK_ERR
 	}
-    */
-	TIMER_START;
-	err = H5VLdataset_write (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, buf, NULL);
+	*/
+
+	dxplid = H5Pcreate (H5P_DATASET_XFER);
+	err	   = H5Pset_dxpl_mpio (dxplid, H5FD_MPIO_COLLECTIVE);
 	CHECK_ERR
-	//err = H5VLdataset_write (ldp, fp->uvlid, H5T_STD_I64LE, lmsid, ldsid, fp->dxplid, doffs, NULL);
-	//CHECK_ERR
+	TIMER_START;
+	err = H5VLdataset_write (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, dxplid, buf, NULL);
 	TIMER_STOP (fp, TIMER_H5VL_DATASET_WRITE);
+	H5Pclose (dxplid);
+	CHECK_ERR
+	// err = H5VLdataset_write (ldp, fp->uvlid, H5T_STD_I64LE, lmsid, ldsid, fp->dxplid, doffs,
+	// NULL); CHECK_ERR
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_WRITE);
 
 	TIMER_START;
@@ -477,8 +479,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Close the dataset
 	err = H5VLdataset_close (mdp, fp->uvlid, fp->dxplid, NULL);
 	CHECK_ERR
-	//err = H5VLdataset_close (ldp, fp->uvlid, fp->dxplid, NULL);
-	//CHECK_ERR
+	// err = H5VLdataset_close (ldp, fp->uvlid, fp->dxplid, NULL);
+	// CHECK_ERR
 	TIMER_STOP (fp, TIMER_H5VL_DATASET_CLOSE);
 
 	if (moffs[fp->ndset] > 0) { fp->idxvalid = false; }
