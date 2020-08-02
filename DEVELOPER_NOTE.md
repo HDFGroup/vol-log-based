@@ -26,14 +26,14 @@ General comments: I suggest the following when adding a new issue.
 ---
 ## HDF5 Predefined Data Type Initialization (Solved)
 ### Problem Description
-  * User VOLs are responsible to define and manage data types. Data types are not inherited from the native VOL.
+  * User VOLs are responsible for defining and managing data types. Data types are not inherited from the native VOL.
   * [Predefined data types](https://support.hdfgroup.org/HDF5/doc/RM/PredefDTypes.html) (e.g. H5T_STD_*, H5T_NATIVE_*) are datatype managed by the native VOL.
   * In the native VOL, the predefined data types are not defined as constants.
   * Instead, they are defined as global variables, which are later initialized by the native VOL.
-  * Before their initialization, they are assigned value of -1 (see H5T.c:341)
+  * Before their initialization, they are assigned a value of -1 (see H5T.c:341)
   * Initializing the native VOL will not automatically initialize the predefined data types.
   * They should be initialized by a callback function when the user VOL is initialized (part of file_specific).
-  * The HDF5 dispatcher first calls the introspect API of the user VOL to check for existence of the initialization routine.
+  * The HDF5 dispatcher first calls the introspect API of the user VOL to check for the existence of the initialization routine.
   * If succeeded, the dispatcher will call the user VOL's initialization function when needed (**WKL: when needed?**).
   * This is not documented in HDF5 user guides. This behavior was found when reading into the source codes of the native VOL.
   * Therefore, a user VOL must call the native VOL's initialization routine first. Otherwise, the values of those global variables will not be valid (remained to be -1).
@@ -102,7 +102,7 @@ General comments: I suggest the following when adding a new issue.
   * Trigger condition: All API that triggers a reference count check (decrease) on the opened native VOL.
 
 ### Implemented Solution
-  * Report reference our reference of the native VOL as the passthrough VOL does
+  * Report reference our reference of the native VOL as the pass-through VOL does
     + We call H5Iinc_ref to report a new reference every time we copied the ID the native VOL.
     + We call H5Idec_ref every time the variable holding the native VOL ID is freed.
     + Source files:
@@ -139,6 +139,9 @@ General comments: I suggest the following when adding a new issue.
     + We need to implement VOL API for nearly all HDF5 features to support NetCDF4
     + Code: logvol_obj.cpp, logvol_link.cpp
 
+## The VOL fail when running E3SM on multi-process through NetCDF4 API
+  The issue is still being studied.
+  A H5Aiterate call failed on the second process due to some format decoding error.
 
 ## Native VOL won't close if there are data objects still open
 **Problem description**:
@@ -178,6 +181,8 @@ General comments: I suggest the following when adding a new issue.
   * Trigger condition: Call MPI_Finalize without closing opened files.
 **possible solutions**:
   * Contact the HDF5 team to see if there is a way to reactivate the native VOL during the shutdown status
+  * Delay file close until the last opened object is closed
+    + HDF5 team suggests maintaining a reference count on the number of objects opened for every file. The file is only closed when the reference count reaches 0. The VOL close function will always return success after deducting the reference count, but the file will remain open as long as the reference count remains positive. In this way, the file will only be closed when the last object opened through it is closed.
 
 ## Registering property changes the signature of the property class
   H5Pregister can be used to register new properties to an existing property class (file access, dataset transfer, etc.).
@@ -211,10 +216,7 @@ General comments: I suggest the following when adding a new issue.
   * Contact the HDF5 team to see if there is a way to update all existing property list after the property class is extended.
   * Avoid registering new properties, try to create our own class.
     + Need to study the way to create our own property class.
-
-## The VOL fail when running E3SM on multi-process
-  The issue is still being studied.
-  A H5Aiterate call failed on the second process due to some format decoding error.
+  * Solution after discussing with the HDF5 team. Instead of changing the property class to include new properties, new properties are inserted directly into every property list that needs logvol properties to be set. To achieve this, the log VOl exposes a "Set" and "Get" API for each property introduced. In the "Set" API, the VOL check whether the property exists in the property. If not, the property is inserted into the property list.  Then, the value of the property can be in the property list as usual. In the "Get" API, the VOL check whether the property exists in the property. If so, the value is retrieved from the property list. Otherwise, the default value is returned.
 
 ---
 ## Improve Performance of Posting Dataset Write Requests
@@ -223,10 +225,10 @@ General comments: I suggest the following when adding a new issue.
   driver must call HDF5 APIs to query properties of a defined dataset in order
   to perform sanity check on the user arguments. Such queries can be expensive
   when the number of H5Dwrite calls is high. This is particularly true for
-  applications whose I/O patterns show a large number of noncontiguous subarray
+  applications whose I/O patterns show a large number of non-contiguous subarray
   requests, such as E3SM.
 * HDF5 currently does not have an API to read/write a large number of
-  noncontiguous subarray requests to the same variable. HDF5 group is currently
+  non-contiguous subarray requests to the same variable. HDF5 group is currently
   developing "H5Dwrite_multi", a new API that allows to write multiple datasets
   in a single API call. See HDF5 develop branch ["multi_rd_wd_coll_io"](https://bitbucket.hdfgroup.org/projects/HDFFV/repos/hdf5/browse?at=refs%2Fheads%2Finactive%2Fmulti_rd_wd_coll_io).
 * Before API "H5Dwrite_multi" is officially released, one must either treat a
@@ -245,12 +247,45 @@ General comments: I suggest the following when adding a new issue.
   be used until the dataset of a call to H5Dwrite is different. This pattern of
   a long sequence of H5Dwrite to the same dataset is observed in E3SM. Such a
   caching strategy avoids repeated HDF5 calls to query the dataset metadata.
-* The above caching strategy can also help aggregate the request metadata to
+* The caching strategy above can also help aggregate the request metadata to
   the same dataset into the same "entry" as a part of the
   [metadata index table](https://github.com/DataLib-ECP/log_io_vol/blob/master/doc/design_log_base_vol.md#appendix-a-format-of-log-metadata-table).
   This is particularly useful for E3SM I/O pattern that makes a large number of
   subarray requests to a variable after another.
 
 ---
+## Memory space is always required in H5Dwrite even if the memory buffer is contiguous
+### Problem Description
+* According to the specification of H5Dwrite 
+  (https://support.hdfgroup.org/HDF5/doc1.6/RM_H5D.html#Dataset-Write) takes a 
+  dataspace argument called mem_space_id to describe data layout in the memory buffer. 
+  It must be either an allocated dataspace ID or H5S_All. If mem_space_id is H5S_All, 
+  the manual states that "The file dataset's data space is used for the memory dataspace 
+  and the selection specified with file_space_id specifies the selection within it.".
+  That is, if the selection in the file_space_id is non-contiguous, the data in 
+  the memory buffer is also assumed to be non-contiguous. 
+* Many NetCDF applications are designed to use contiguous memory buffer when writing
+  to a variable regardless of the selection. Since there is no built-in dataspace 
+  to indicate that the data in the memory is contiguous in HDF5, the developer will 
+  need to create a data space for memory buffer on each H5Dwrite call when porting 
+  their applications to HDF5. It creates unnecessary overhead that can add up when 
+  there are a large number of calls.
 
+### Software Environment
+* HDF5 versions: All
 
+### Solutions
+* The logvol exposes a macro H5S_CONTIG that expands to a preallocated dataspace ID 
+  within the logvol.
+  If the dataspace id received by logvol functions as mem_space_id matches H5S_CONTIG,
+  the logvol interpret it as a contiguous memory buffer.
+  H5S_CONTIG is a scalar dataspace logvol created internally. It serves as a place 
+  holder to prevent the same ID to be used in other H5S_create calls.
+  H5Sclsoe is not available at VOL finalize stage. Due to this reason, we cannot 
+  create and close H5S_CONTIG in the vol init and finalize routine. Instead, we do 
+  it for every file open and close. The logvol maintains a reference count on opened
+  files, so only the first H5Fopen call creates H5S_CONTIG, and only the last H5Fclose call closes it.
+
+---
+
+ 
