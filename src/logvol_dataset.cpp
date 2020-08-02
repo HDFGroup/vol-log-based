@@ -73,6 +73,7 @@ void *H5VL_log_dataset_create (void *obj,
 							   hid_t dxpl_id,
 							   void **req) {
 	herr_t err			= 0;
+	int i;
 	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
 	H5VL_log_dset_t *dp = NULL;
 	H5VL_loc_params_t locp;
@@ -113,14 +114,29 @@ void *H5VL_log_dataset_create (void *obj,
 	ndim = H5Sget_simple_extent_dims (space_id, dp->dims, dp->mdims);
 	CHECK_ID (ndim)
 	dp->ndim = (hsize_t)ndim;
-	dp->id	 = dp->fp->ndset;
-
+	for(i=dp->ndim-1;i>0;i--){
+		if(dp->mdims[i]==H5S_UNLIMITED) break;
+	}
+	if(i>0){
+		dp->dsteps[0]=0;	// Cannot encode into offset as there are unlimited dim
+	}
+	else{
+		dp->dsteps[0]=1;	// Can use offset
+		dp->dsteps[dp->ndim-1]=1;
+		for(i=dp->ndim-2;i>0;i--){
+			dp->dsteps[i]=dp->dsteps[i+1]*dp->mdims[i+1];
+		}
+	}
+	dp->id	 = (dp->fp->ndset)++;
 	/*
 	if (dp->fp->mdc.size() < dp->id + 1){
 		dp->fp->mdc.resize(dp->id + 1);
 	}
 	dp->fp->mdc[dp->id] = {ndim, dp->dtype, dp->esize};
 	*/
+	dp->fp->idx.resize (dp->fp->ndset);
+	dp->fp->ndim.resize(dp->fp->ndset);
+	dp->fp->ndim[dp->id]=dp->ndim;
 
 	// Atts
 	err = H5VL_logi_add_att (dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->dims,
@@ -365,6 +381,7 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
+//std::vector<H5VL_log_selection> sels;
 herr_t H5VL_log_dataset_write (void *dset,
 							   hid_t mem_type_id,
 							   hid_t mem_space_id,
@@ -409,12 +426,20 @@ herr_t H5VL_log_dataset_write (void *dset,
 	TIMER_START;
 	// Setting metadata;
 	r.did	= dp->id;
-	r.ndim	= dp->ndim;
+	//r.ndim	= dp->ndim;
 	r.ldid	= -1;
 	r.ldoff = 0;
 	r.ubuf	= (char *)buf;
 	r.rsize = 0;  // Nomber of elements in record
+	r.flag=0;
 
+	if(dp->dsteps[0]){
+		r.flag &=LOGVOL_SELCTION_TYPE_OFFSETS;
+	}
+	else{
+		r.flag &=LOGVOL_SELCTION_TYPE_HYPERSLABS;
+	}
+	
 	// Gather starts and counts
 	if (stype == H5S_SEL_ALL) {
 		r.sels.resize (1);
