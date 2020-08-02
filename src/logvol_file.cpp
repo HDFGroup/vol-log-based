@@ -24,6 +24,9 @@ const H5VL_file_class_t H5VL_log_file_g {
 	H5VL_log_file_close		/* close */
 };
 
+int H5VL_log_dataspace_contig_ref = 0;
+hid_t H5VL_log_dataspace_contig = H5I_INVALID_HID;
+
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_file_create
  *
@@ -149,6 +152,13 @@ void *H5VL_log_file_create (
 	// Open the file with MPI
 	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, MPI_INFO_NULL, &(fp->fh));
 	CHECK_MPIERR
+
+	// create the contig SID
+	if(H5VL_log_dataspace_contig_ref==0){
+		H5VL_log_dataspace_contig = H5Screate(H5S_SCALAR);
+	}
+	H5VL_log_dataspace_contig_ref++;
+	
 
 	TIMER_STOP (fp, TIMER_FILE_CREATE);
 
@@ -534,6 +544,12 @@ herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
 	CHECK_MPIERR
 
 	H5VL_log_filei_contig_buffer_free(&(fp->meta_buf));
+
+	// Close contig dataspacce ID
+	H5VL_log_dataspace_contig_ref--;
+	if(H5VL_log_dataspace_contig_ref==0){
+		H5Sclose(H5VL_log_dataspace_contig);
+	}
 
 	// Close the file with under VOL
 	TIMER_START;

@@ -44,6 +44,7 @@ hid_t H5VL_log_register(void);
 
 // Constants
 #define LOG_VOL_BSIZE_UNLIMITED -1
+#define H5S_CONTIG H5VL_log_dataspace_contig
 
 /* Pass-through VOL connector info */
 typedef struct H5VL_log_info_t {
@@ -56,6 +57,7 @@ typedef struct H5VL_logd_info_t {
     void *under_vol_info;       /* VOL info for under VOL */
 } H5VL_logd_info_t;
 
+extern hid_t H5VL_log_dataspace_contig;
 extern const H5VL_class_t H5VL_log_g;
 
 // Non-blocking I/O flags

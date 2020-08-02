@@ -131,7 +131,14 @@ herr_t H5VL_log_init (hid_t vipl_id) {
 	CHECK_MPIERR
 	if (!mpi_inited) { MPI_Init (NULL, NULL); }
 
-	/*
+	/* SID no longer recognized at this stage, move to file close
+	if(H5VL_log_dataspace_contig==H5I_INVALID_HID){
+		H5VL_log_dataspace_contig = H5Screate(H5S_SCALAR);
+		CHECK_ID(H5VL_log_dataspace_contig);
+	}
+	*/
+
+	/* Default pclass should not be changed, insert property to plist instead
 	exist = H5Pexist (H5P_DATASET_XFER, "nonblocking");
 	CHECK_ID (exist)
 	if (!exist) {
@@ -169,6 +176,12 @@ err_out:;
 herr_t H5VL_log_obj_term (void) {
 	herr_t err = 0;
 	int mpierr;
+
+	/* SID no longer recognized at this stage, move to file close
+	if(H5VL_log_dataspace_contig!=H5I_INVALID_HID){
+		H5VL_log_dataspace_contig=H5I_INVALID_HID;
+	}
+	*/
 
 	if (!mpi_inited) {
 		mpierr = MPI_Initialized (&mpi_inited);

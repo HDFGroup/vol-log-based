@@ -390,6 +390,8 @@ herr_t H5VL_log_dataset_write (void *dset,
 	// Check mem space selection
 	if (mem_space_id == H5S_ALL)
 		mstype = H5S_SEL_ALL;
+	else if (mem_space_id == H5S_CONTIG)
+		mstype = H5S_SEL_ALL;
 	else
 		mstype = H5Sget_select_type (mem_space_id);
 	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_INIT);
@@ -443,13 +445,13 @@ herr_t H5VL_log_dataset_write (void *dset,
 		esize = H5Tget_size (mem_type_id);
 		CHECK_ID (esize)
 
-		//HDF5 type conversion is in place, allocate for whatever larger
+		// HDF5 type conversion is in place, allocate for whatever larger
 		err = H5VL_log_filei_balloc (dp->fp, r.rsize * std::max (esize, (size_t) (dp->esize)),
 									 (void **)(&(r.xbuf)));
-		//err = H5VL_log_filei_pool_alloc (&(dp->fp->data_buf),
+		// err = H5VL_log_filei_pool_alloc (&(dp->fp->data_buf),
 		//								 r.rsize * std::max (esize, (size_t) (dp->esize)),
 		//								 (void **)(&(r.xbuf)));
-		//CHECK_ERR
+		// CHECK_ERR
 
 		// Need packing
 		if (mstype != H5S_SEL_ALL) {
@@ -466,14 +468,13 @@ herr_t H5VL_log_dataset_write (void *dset,
 		} else {
 			memcpy (r.xbuf, r.ubuf, r.rsize * esize);
 		}
-	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_PACK);
+		TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_PACK);
 
-	TIMER_START;
+		TIMER_START;
 		// Need convert
 		if (eqtype == 0) err = H5Tconvert (mem_type_id, dp->dtype, r.rsize, r.xbuf, NULL, plist_id);
-			TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_CONVERT);
+		TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_CONVERT);
 	}
-
 
 	TIMER_START;
 	// Convert request size to number of bytes to be used by later routines
