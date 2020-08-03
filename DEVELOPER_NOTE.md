@@ -285,7 +285,34 @@ General comments: I suggest the following when adding a new issue.
   create and close H5S_CONTIG in the vol init and finalize routine. Instead, we do 
   it for every file open and close. The logvol maintains a reference count on opened
   files, so only the first H5Fopen call creates H5S_CONTIG, and only the last H5Fclose call closes it.
+* Another option is to use the same idea of caching proposed for posting write
+  requests to avoid querying memory layout metadata. The log-based driver can
+  check if the space identifier is the same as previous one. If it is the same,
+  then a call to "H5Sget_simple_extent_dims" for example can be skipped.
+  + This can be very useful for E3SM, as the majority of memory spaces of its
+    contiguous requests share the same dimensions and sizes. For example, the
+    I/O pattern of F case below shows the minimum and maximum sizes of
+    contiguous write requests are 1 and 3, respectively, for decompositions 2
+    and 3. The I/O pattern of G case shows the sizes of all contiguous write
+    requests are 80 for decompositions 3, 4, and 5 and 81 for decomposition 6.
+    Both cases indicate a lot of write requests sharing the same amounts.
+    ```
+    For decomposition file f_case_72x777602_21600p.nc
+    Var D1.lengths: len=   43200 max= 28 min= 10
+    Var D2.lengths: len=  292513 max=  3 min=  1
+    Var D3.lengths: len=21060936 max=  3 min=  1
+
+    For decomposition file g_case_11135652x80_9600p.nc
+    Var D1.lengths: len= 3692863 max=  2 min=  1
+    Var D2.lengths: len= 9804239 max=  7 min=  1
+    Var D3.lengths: len= 3693225 max= 80 min= 80
+    Var D4.lengths: len=11135652 max= 80 min= 80
+    Var D5.lengths: len= 7441216 max= 80 min= 80
+    Var D6.lengths: len= 3693225 max= 81 min= 81
+    ```
+  + To make use of the above caching idea, **E3SM-IO benchmark** program must
+    be adjusted to reuse the memory space identifier if the write request's
+    memory layout is the same.
 
 ---
 
- 
