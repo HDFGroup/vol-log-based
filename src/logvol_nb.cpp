@@ -53,11 +53,16 @@ herr_t H5VL_log_nb_flush_read_reqs (H5VL_log_file_t *fp,
 	for (auto &r : reqs) {
 		// Type convertion
 		if (r.dtype != r.mtype) {
-			err = H5Tconvert (r.dtype, r.mtype, r.rsize, r.xbuf, NULL, dxplid);
-			CHECK_ERR
+			void *bg = NULL;
 
 			esize = H5Tget_size (r.mtype);
 			CHECK_ID (esize)
+
+			if (H5Tget_class (r.mtype) == H5T_COMPOUND) bg = malloc (r.rsize * esize);
+			err = H5Tconvert (r.dtype, r.mtype, r.rsize, r.xbuf, bg, dxplid);
+			CHECK_ERR
+			free (bg);
+
 			H5Tclose (r.dtype);
 			H5Tclose (r.mtype);
 		} else {
@@ -179,8 +184,8 @@ herr_t H5VL_log_nb_flush_write_reqs (H5VL_log_file_t *fp, hid_t dxplid) {
 
 	if (fsize_all) { fp->metadirty = true; }
 
-	//err = H5VL_log_filei_pool_free (&(fp->data_buf));
-	//CHECK_ERR
+	// err = H5VL_log_filei_pool_free (&(fp->data_buf));
+	// CHECK_ERR
 
 	TIMER_STOP (fp, TIMER_NB_FLUSH_WRITE_REQ);
 err_out:

@@ -278,10 +278,10 @@ void *H5VL_log_dataset_open_with_uo (void *obj,
 		dp->fp = ((H5VL_log_group_t *)obj)->fp;
 	else
 		RET_ERR ("container not a file or group")
+	H5VL_log_filei_inc_ref(dp->fp);
 
 	dp->uo	  = uo;
 	dp->uvlid = op->uvlid;
-	dp->fp	  = op->fp;
 	H5Iinc_ref (dp->uvlid);
 	dp->type = H5I_DATASET;
 	TIMER_START;

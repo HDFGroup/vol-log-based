@@ -617,3 +617,88 @@ err_out:;
 
 	return err;
 }
+
+herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
+	herr_t err = 0;
+	int mpierr;
+	TIMER_START;
+
+#ifdef LOGVOL_VERBOSE_DEBUG
+	{
+		char vname[1][128];
+		ssize_t nsize;
+
+		nsize = H5Iget_name (dxpl_id, vname[0], 128);
+		if (nsize == 0) {
+			sprintf (vname[0], "Unnamed_Object");
+		} else if (nsize < 0) {
+			sprintf (vname[0], "Unknown_Object");
+		}
+
+		printf ("H5VL_log_file_close(%p, %s, %p, ...)\n", file, vname[0], req);
+	}
+#endif
+
+	if (fp->flag != H5F_ACC_RDONLY) {
+		// Flush write requests
+		if (fp->wreqs.size () > fp->nflushed) {
+			err = H5VL_log_nb_flush_write_reqs (fp, H5P_DEFAULT);
+			CHECK_ERR
+		}
+
+		// Generate metadata table
+		err = H5VL_log_filei_metaflush (fp);
+		CHECK_ERR
+
+		// Att
+		err = H5VL_logi_put_att (fp, "_ndset", H5T_NATIVE_INT32, &(fp->ndset), H5P_DEFAULT);
+		CHECK_ERR
+	}
+
+	// Close log group
+	TIMER_START
+	err = H5VLgroup_close (fp->lgp, fp->uvlid, H5P_DEFAULT, NULL);
+	CHECK_ERR
+	TIMER_STOP (fp, TIMER_H5VL_GROUP_CLOSE);
+
+	// Close the file with MPI
+	mpierr = MPI_File_close (&(fp->fh));
+	CHECK_MPIERR
+
+	H5VL_log_filei_contig_buffer_free (&(fp->meta_buf));
+
+	// Close contig dataspacce ID
+	H5VL_log_dataspace_contig_ref--;
+	if (H5VL_log_dataspace_contig_ref == 0) { H5Sclose (H5VL_log_dataspace_contig); }
+
+	// Close the file with under VOL
+	TIMER_START;
+	err = H5VLfile_close (fp->uo, fp->uvlid, H5P_DEFAULT, NULL);
+	CHECK_ERR
+	TIMER_STOP (fp, TIMER_H5VL_FILE_CLOSE);
+
+	TIMER_STOP (fp, TIMER_FILE_CLOSE);
+#ifdef LOGVOL_PROFILING
+	H5VL_log_profile_print (fp);
+#endif
+
+	// Clean up
+	MPI_Comm_free (&(fp->comm));
+	H5Idec_ref (fp->uvlid);
+	delete fp;
+
+err_out:
+	return err;
+} /* end H5VL_log_file_close() */
+
+void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp) {
+	fp->refcnt++;	
+}
+
+herr_t H5VL_log_filei_dec_ref (H5VL_log_file_t *fp) {
+	fp->refcnt--;
+	if(fp->refcnt==0){
+		return H5VL_log_filei_close(fp);
+	}
+	return 0;
+}

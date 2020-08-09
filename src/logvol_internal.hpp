@@ -18,20 +18,28 @@
 
 #ifdef LOGVOL_PROFILING
 #include "logvol_profiling.hpp"
-#define TIMER_START { \
-double tstart, tend; \
-tstart=MPI_Wtime();
-#define TIMER_STOP(A,B) tend=MPI_Wtime(); \
-H5VL_log_profile_add_time(A,B,tend-tstart); \
-}
+#define TIMER_START          \
+	{                        \
+		double tstart, tend; \
+		tstart = MPI_Wtime ();
+#define TIMER_STOP(A, B)                             \
+	tend = MPI_Wtime ();                             \
+	H5VL_log_profile_add_time (A, B, tend - tstart); \
+	}
 #else
-#define TIMER_START {}
-#define TIMER_STOP(A,B) {}
+#define TIMER_START \
+	{}
+#define TIMER_STOP(A, B) \
+	{}
 #endif
 
 #ifdef LOGVOL_DEBUG
 #include <iostream>
-#define DEBUG_ABORT abort();
+#define DEBUG_ABORT                                        \
+	{                                                      \
+		char *val = getenv ("LOGVOL_DEBUG_ABORT_ON_ERR");  \
+		if (val && (strcmp (val, "1") == 0)) { abort (); } \
+	}
 //#define LOGVOL_VERBOSE_DEBUG 1
 #else
 #define DEBUG_ABORT
@@ -177,7 +185,7 @@ typedef struct H5VL_log_wreq_t {
 	// MPI_Offset count[H5S_MAX_RANK];
 	std::vector<H5VL_log_selection> sels;  // Selections within the dataset
 
-	//int nsel;
+	// int nsel;
 
 	int ldid;		   // Log dataset ID
 	MPI_Offset ldoff;  // Offset in log dataset
@@ -228,9 +236,9 @@ typedef struct H5VL_log_contig_buffer_t {
 struct H5VL_log_file_t;
 typedef struct H5VL_log_obj_t {
 	H5I_type_t type;
-	void *uo;	  // Under obj
-	hid_t uvlid;  // Under VolID
-	struct H5VL_log_file_t *fp; // File object
+	void *uo;					 // Under obj
+	hid_t uvlid;				 // Under VolID
+	struct H5VL_log_file_t *fp;	 // File object
 } H5VL_log_obj_t;
 
 typedef struct H5VL_log_dset_meta_t {
@@ -271,7 +279,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	ssize_t bsize;
 	size_t bused;
 
-	//H5VL_log_buffer_pool_t data_buf;
+	// H5VL_log_buffer_pool_t data_buf;
 	H5VL_log_contig_buffer_t meta_buf;
 
 	// std::vector<int> lut;
@@ -280,8 +288,8 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	bool metadirty;
 
 #ifdef LOGVOL_PROFILING
-	double tlocal[NTIMER];
-	double clocal[NTIMER];
+	double tlocal[NTIMER];
+	double clocal[NTIMER];
 #endif
 } H5VL_log_file_t;
 
@@ -303,6 +311,9 @@ typedef struct H5VL_log_wrap_ctx_t {
 	void *uctx;	  // Under context
 	hid_t uvlid;  // Under VolID
 } H5VL_log_wrap_ctx_t;
+
+extern int H5VL_log_dataspace_contig_ref;
+extern hid_t H5VL_log_dataspace_conti;
 
 extern H5VL_log_obj_t *H5VL_log_new_obj (void *under_obj, hid_t uvlid);
 extern herr_t H5VL_log_free_obj (H5VL_log_obj_t *obj);
@@ -365,18 +376,25 @@ extern herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf);
 extern herr_t H5VL_log_filei_bfree (H5VL_log_file_t *fp, void *buf);
 
-extern herr_t H5VL_log_filei_pool_alloc(H5VL_log_buffer_pool_t *p, size_t bsize, void **buf);
-extern herr_t H5VL_log_filei_pool_init(H5VL_log_buffer_pool_t *p, ssize_t bsize);
-extern herr_t H5VL_log_filei_pool_free(H5VL_log_buffer_pool_t *p);
-extern herr_t H5VL_log_filei_pool_finalize(H5VL_log_buffer_pool_t *p);
+extern herr_t H5VL_log_filei_pool_alloc (H5VL_log_buffer_pool_t *p, size_t bsize, void **buf);
+extern herr_t H5VL_log_filei_pool_init (H5VL_log_buffer_pool_t *p, ssize_t bsize);
+extern herr_t H5VL_log_filei_pool_free (H5VL_log_buffer_pool_t *p);
+extern herr_t H5VL_log_filei_pool_finalize (H5VL_log_buffer_pool_t *p);
 
-extern herr_t H5VL_log_filei_contig_buffer_init(H5VL_log_contig_buffer_t *bp, size_t init_size);
-extern void H5VL_log_filei_contig_buffer_free(H5VL_log_contig_buffer_t *bp);
-extern void *H5VL_log_filei_contig_buffer_alloc(H5VL_log_contig_buffer_t *bp, size_t size);
+extern herr_t H5VL_log_filei_contig_buffer_init (H5VL_log_contig_buffer_t *bp, size_t init_size);
+extern void H5VL_log_filei_contig_buffer_free (H5VL_log_contig_buffer_t *bp);
+extern void *H5VL_log_filei_contig_buffer_alloc (H5VL_log_contig_buffer_t *bp, size_t size);
+
+extern herr_t H5VL_log_filei_close (H5VL_log_file_t *fp);
+extern void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp);
+extern herr_t H5VL_log_filei_dec_ref (H5VL_log_file_t *fp);
 
 // Dataspace internals
 extern herr_t H5VL_log_dataspacei_get_selection (hid_t sid, std::vector<H5VL_log_selection> &sels);
 extern herr_t H5VL_log_dataspacei_get_sel_type (hid_t sid, size_t esize, MPI_Datatype *type);
+
+// Datatype internals
+extern void *H5VL_log_datatype_open_with_uo (void *obj, void *uo, const H5VL_loc_params_t *loc_params);
 
 // Wraper
 extern herr_t H5VLdataset_specific_wrapper (void *obj,
@@ -464,8 +482,8 @@ extern void hexDump (char *desc, void *addr, size_t len, FILE *fp);
 #endif
 
 #ifdef LOGVOL_PROFILING
-void H5VL_log_profile_add_time(H5VL_log_file_t *fp, int id, double t);
-void H5VL_log_profile_sub_time(H5VL_log_file_t *fp, int id, double t);
-void H5VL_log_profile_print(H5VL_log_file_t *fp);
-void H5VL_log_profile_reset(H5VL_log_file_t *fp);
+void H5VL_log_profile_add_time (H5VL_log_file_t *fp, int id, double t);
+void H5VL_log_profile_sub_time (H5VL_log_file_t *fp, int id, double t);
+void H5VL_log_profile_print (H5VL_log_file_t *fp);
+void H5VL_log_profile_reset (H5VL_log_file_t *fp);
 #endif
