@@ -83,6 +83,8 @@ void *H5VL_log_object_open (void *obj,
 		return H5VL_log_dataset_open_with_uo (obj, uo, loc_params, dxpl_id);
 	} else if (*opened_type == H5I_GROUP) {
 		return H5VL_log_group_open_with_uo (obj, uo, loc_params);
+	} else if (*opened_type == H5I_DATATYPE) {
+		return H5VL_log_datatype_open_with_uo (obj, uo, loc_params);
 	} else {
 		abort();
 		return uo;
@@ -267,8 +269,7 @@ herr_t H5VL_log_object_optional (
 			sprintf (vname[1], "Unknown_Object");
 		}
 
-		printf ("H5VL_log_object_optional(%p, %s, %s,%p, ...)\n", obj, vname[0],
-				vname[1], req);
+		printf ("H5VL_log_object_optional(%p, %s, %s,%p, ...)\n", obj, vname[0], vname[1], req);
 	}
 #endif
 	return H5VLobject_optional (op->uo, op->uvlid, opt_type, dxpl_id, req, arguments);

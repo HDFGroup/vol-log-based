@@ -70,6 +70,7 @@ void *H5VL_log_attr_create (void *obj,
 	ap = new H5VL_log_obj_t ();
 	ap->uvlid = op->uvlid;
 	ap->fp	  = op->fp;
+	H5VL_log_filei_inc_ref (ap->fp);
 
 	TIMER_START;
 	ap->uo = H5VLattr_create (op->uo, loc_params, op->uvlid, name, type_id, space_id, acpl_id,
@@ -112,6 +113,7 @@ void *H5VL_log_attr_open (void *obj,
 	ap = new H5VL_log_obj_t ();
 	ap->uvlid = op->uvlid;
 	ap->fp	  = op->fp;
+	H5VL_log_filei_inc_ref (ap->fp);
 
 	TIMER_START;
 	ap->uo = H5VLattr_open (op->uo, loc_params, op->uvlid, name, aapl_id, dxpl_id, req);
@@ -276,6 +278,9 @@ herr_t H5VL_log_attr_close (void *attr, hid_t dxpl_id, void **req) {
 	TIMER_STOP (ap->fp, TIMER_H5VL_ATT_CLOSE);
 
 	TIMER_STOP (ap->fp, TIMER_ATT_CLOSE);
+
+	err = H5VL_log_filei_dec_ref (ap->fp);
+	CHECK_ERR
 
 	H5Idec_ref (ap->uvlid);
 	delete ap;

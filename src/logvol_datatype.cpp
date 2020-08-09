@@ -64,6 +64,7 @@ static void *H5VL_log_datatype_commit (void *obj,
 								 lcpl_id, tcpl_id, tapl_id, dxpl_id, req); CHECK_NERR(tp->uo);
     tp->uvlid = op->uvlid;
 	tp->fp=op->fp;
+	H5VL_log_filei_inc_ref (tp->fp);
     H5Iinc_ref (tp->uvlid);
     tp->type = H5I_DATATYPE;
 
@@ -100,6 +101,7 @@ static void *H5VL_log_datatype_open (void *obj,
 							   req); CHECK_NERR(tp->uo);
     tp->uvlid = op->uvlid;
 	tp->fp=op->fp;
+	H5VL_log_filei_inc_ref (tp->fp);
     H5Iinc_ref (tp->uvlid);
     tp->type = H5I_ATTR;
     
@@ -182,6 +184,9 @@ static herr_t H5VL_log_datatype_close (void *dt, hid_t dxpl_id, void **req) {
     H5VL_log_obj_t *tp = (H5VL_log_obj_t *)dt;
 
     err = H5VLdatatype_close (tp->uo, tp->uvlid, dxpl_id, req); CHECK_ERR
+
+	err = H5VL_log_filei_dec_ref (tp->fp);
+	CHECK_ERR
 
     H5Idec_ref(tp->uvlid);
     delete tp;

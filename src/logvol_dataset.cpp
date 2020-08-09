@@ -93,7 +93,8 @@ void *H5VL_log_dataset_create (void *obj,
 		dp->fp = ((H5VL_log_group_t *)obj)->fp;
 	else
 		RET_ERR ("container not a file or group")
-	(dp->fp->refcnt)++;
+	H5VL_log_filei_inc_ref (dp->fp);
+
 	TIMER_START;
 	dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid,
 								 dcpl_id, dapl_id, dxpl_id, NULL);
@@ -112,14 +113,14 @@ void *H5VL_log_dataset_create (void *obj,
 	ndim = H5Sget_simple_extent_dims (space_id, dp->dims, dp->mdims);
 	CHECK_ID (ndim)
 	dp->ndim = (hsize_t)ndim;
-	dp->id	 = (dp->fp->ndset)++;
+	dp->id	 = dp->fp->ndset;
+
 	/*
 	if (dp->fp->mdc.size() < dp->id + 1){
 		dp->fp->mdc.resize(dp->id + 1);
 	}
 	dp->fp->mdc[dp->id] = {ndim, dp->dtype, dp->esize};
 	*/
-	dp->fp->idx.resize (dp->fp->ndset);
 
 	// Atts
 	err = H5VL_logi_add_att (dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->dims,
@@ -131,14 +132,15 @@ void *H5VL_log_dataset_create (void *obj,
 	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id);
 	CHECK_ERR
 
+	dp->fp->ndset++;
+	dp->fp->idx.resize (dp->fp->ndset);
+
 	TIMER_STOP (dp->fp, TIMER_DATASET_CREATE);
 
 	goto fn_exit;
 err_out:;
 	printf ("%d\n", err);
 	if (dp) {
-		(dp->fp->ndset)--;
-		(dp->fp->refcnt)--;
 		delete dp;
 		dp = NULL;
 	}
@@ -179,6 +181,8 @@ void *H5VL_log_dataset_open (void *obj,
 		dp->fp = ((H5VL_log_group_t *)obj)->fp;
 	else
 		RET_ERR ("container not a file or group")
+	H5VL_log_filei_inc_ref (dp->fp);
+
 	TIMER_START;
 	dp->uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);
 	CHECK_NERR (dp->uo);
@@ -242,17 +246,19 @@ herr_t H5VL_log_dataset_read (void *dset,
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	TIMER_START;
 
-	// Update the index if it is out of date
-	if (!(dp->fp->idxvalid)) {
-		err = H5VL_log_filei_metaupdate (dp->fp);
-		CHECK_ERR
-	}
-
 	// Check mem space selection
 	if (file_space_id == H5S_ALL)
 		stype = H5S_SEL_ALL;
 	else
 		stype = H5Sget_select_type (file_space_id);
+
+	if (stype == H5S_SEL_NONE) goto err_out;
+
+	// Update the index if it is out of date
+	if (!(dp->fp->idxvalid)) {
+		err = H5VL_log_filei_metaupdate (dp->fp);
+		CHECK_ERR
+	}
 
 	// H5S_All means using file space
 	if (mem_space_id == H5S_ALL) mem_space_id = file_space_id;
@@ -384,6 +390,10 @@ herr_t H5VL_log_dataset_write (void *dset,
 	else
 		stype = H5Sget_select_type (file_space_id);
 
+	// Sanity check
+	if (stype == H5S_SEL_NONE) goto err_out;
+	if (!buf) RET_ERR ("user buffer can't be NULL");
+
 	// H5S_All means using file space
 	if (mem_space_id == H5S_ALL) mem_space_id = file_space_id;
 
@@ -472,7 +482,13 @@ herr_t H5VL_log_dataset_write (void *dset,
 
 		TIMER_START;
 		// Need convert
-		if (eqtype == 0) err = H5Tconvert (mem_type_id, dp->dtype, r.rsize, r.xbuf, NULL, plist_id);
+		if (eqtype == 0) {
+			void *bg = NULL;
+
+			if (H5Tget_class (dp->dtype) == H5T_COMPOUND) bg = malloc (r.rsize * dp->esize);
+			err = H5Tconvert (mem_type_id, dp->dtype, r.rsize, r.xbuf, bg, plist_id);
+			free (bg);
+		}
 		TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_CONVERT);
 	}
 
@@ -663,7 +679,11 @@ herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 
 	TIMER_STOP (dp->fp, TIMER_DATASET_CLOSE);
 
+	err = H5VL_log_filei_dec_ref (dp->fp);
+	CHECK_ERR
+
 	H5Idec_ref (dp->uvlid);
+
 	delete dp;
 
 err_out:;
