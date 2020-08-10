@@ -407,8 +407,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		err = H5Pset_fill_time (mdcplid, H5D_FILL_TIME_NEVER);
 		CHECK_ERR
 		csize = dsize;	// Same as dsize
-		if (csize == 0) csize = 1048576;
-		// csize = 1048576;  // 1 MiB chunk
+		if (csize < 1048576)
+			csize = 1048576;  // No less than 1 MiB
+		else if (csize > 1073741824)
+			csize = 1073741824;	 // No more than 1 GiB
 		err = H5Pset_chunk (mdcplid, 1, &csize);
 		CHECK_ERR
 
@@ -691,14 +693,10 @@ err_out:
 	return err;
 } /* end H5VL_log_file_close() */
 
-void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp) {
-	fp->refcnt++;	
-}
+void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp) { fp->refcnt++; }
 
 herr_t H5VL_log_filei_dec_ref (H5VL_log_file_t *fp) {
 	fp->refcnt--;
-	if(fp->refcnt==0){
-		return H5VL_log_filei_close(fp);
-	}
+	if (fp->refcnt == 0) { return H5VL_log_filei_close (fp); }
 	return 0;
 }
