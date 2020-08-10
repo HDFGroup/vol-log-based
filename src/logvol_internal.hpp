@@ -290,6 +290,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
 	// Should we do metadata caching?
 	std::vector<int> ndim;
+	std::vector<H5VL_log_cord_t> dsizes;
 	// std::vector<H5VL_log_dset_meta_t> mdc;
 
 	ssize_t bsize;
