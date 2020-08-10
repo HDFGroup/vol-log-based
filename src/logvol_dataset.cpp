@@ -72,7 +72,7 @@ void *H5VL_log_dataset_create (void *obj,
 							   hid_t dapl_id,
 							   hid_t dxpl_id,
 							   void **req) {
-	herr_t err			= 0;
+	herr_t err = 0;
 	int i;
 	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
 	H5VL_log_dset_t *dp = NULL;
@@ -114,6 +114,8 @@ void *H5VL_log_dataset_create (void *obj,
 	ndim = H5Sget_simple_extent_dims (space_id, dp->dims, dp->mdims);
 	CHECK_ID (ndim)
 	dp->ndim = (hsize_t)ndim;
+
+	/*
 	for(i=dp->ndim-1;i>0;i--){
 		if(dp->mdims[i]==H5S_UNLIMITED) break;
 	}
@@ -127,7 +129,8 @@ void *H5VL_log_dataset_create (void *obj,
 			dp->dsteps[i]=dp->dsteps[i+1]*dp->mdims[i+1];
 		}
 	}
-	dp->id	 = (dp->fp->ndset)++;
+	*/
+	dp->id = (dp->fp->ndset)++;
 	/*
 	if (dp->fp->mdc.size() < dp->id + 1){
 		dp->fp->mdc.resize(dp->id + 1);
@@ -136,8 +139,10 @@ void *H5VL_log_dataset_create (void *obj,
 	*/
 	// Record metadata in fp
 	dp->fp->idx.resize (dp->fp->ndset);
-	dp->fp->ndim.resize(dp->fp->ndset);
-	dp->fp->ndim[dp->id]=dp->ndim;
+	dp->fp->ndim.resize (dp->fp->ndset);
+	dp->fp->ndim[dp->id] = dp->ndim;
+	dp->fp->dsizes.resize (dp->fp->ndset);
+	for (i = 0; i < ndim; i++) { dp->fp->dsizes[dp->id].cord[i] = dp->dims[i]; }
 
 	// Atts
 	err = H5VL_logi_add_att (dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->dims,
@@ -225,7 +230,7 @@ void *H5VL_log_dataset_open (void *obj,
 	dp->fp->ndim.resize (dp->fp->ndset);
 	dp->fp->ndim[dp->id] = dp->ndim;
 	dp->fp->dsizes.resize (dp->fp->ndset);
-	for (i = 0; i < dp->ndim; i++) { dp->fp->dsizes[dp->id][i] = dp->dims[i]; }
+	for (i = 0; i < dp->ndim; i++) { dp->fp->dsizes[dp->id].cord[i] = dp->dims[i]; }
 
 	TIMER_STOP (dp->fp, TIMER_DATASET_OPEN);
 	goto fn_exit;
@@ -386,7 +391,7 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-//std::vector<H5VL_log_selection> sels;
+// std::vector<H5VL_log_selection> sels;
 herr_t H5VL_log_dataset_write (void *dset,
 							   hid_t mem_type_id,
 							   hid_t mem_space_id,
@@ -430,21 +435,20 @@ herr_t H5VL_log_dataset_write (void *dset,
 
 	TIMER_START;
 	// Setting metadata;
-	r.did	= dp->id;
-	//r.ndim	= dp->ndim;
+	r.did = dp->id;
+	// r.ndim	= dp->ndim;
 	r.ldid	= -1;
 	r.ldoff = 0;
 	r.ubuf	= (char *)buf;
 	r.rsize = 0;  // Nomber of elements in record
-	r.flag=0;
+	r.flag	= 0;
 
-	if(dp->dsteps[0]){
-		r.flag &=LOGVOL_SELCTION_TYPE_OFFSETS;
+	if (dp->dsteps[0]) {
+		r.flag &= LOGVOL_SELCTION_TYPE_OFFSETS;
+	} else {
+		r.flag &= LOGVOL_SELCTION_TYPE_HYPERSLABS;
 	}
-	else{
-		r.flag &=LOGVOL_SELCTION_TYPE_HYPERSLABS;
-	}
-	
+
 	// Gather starts and counts
 	if (stype == H5S_SEL_ALL) {
 		r.sels.resize (1);
@@ -643,7 +647,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
 					err = -1;
 					RET_ERR ("size cannot exceed max size")
 				}
-				dp->dims[i] = dp->fp->dsizes[dp->id][i] = new_sizes[i];
+				dp->dims[i] = dp->fp->dsizes[dp->id].cord[i] = new_sizes[i];
 			}
 			break;
 		}

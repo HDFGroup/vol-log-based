@@ -259,7 +259,7 @@ err_out:;
 herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int mpierr;
-	int i;
+	int i, j;
 	int *cnt;
 	MPI_Offset *mlens = NULL, *mlens_all;
 	MPI_Offset *moffs = NULL, *doffs;
@@ -275,7 +275,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	hsize_t dsize, msize;
 	htri_t has_idx;
 	MPI_Offset seloff, soff, eoff;
-	std::vector<std::array<MPI_Offset, H5S_MAX_RANK>> dsteps (fp->ndset);
+	std::vector<H5VL_log_cord_t> dsteps (fp->ndset);
 	TIMER_START;
 
 	TIMER_START;
@@ -284,22 +284,23 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	mlens_all = mlens + fp->ndset;
 	moffs	  = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->ndset + 1) * 2);
 	doffs	  = moffs + fp->ndset + 1;
-	cnt=(int *)malloc (sizeof (int) *fp->ndset );
+	cnt		  = (int *)malloc (sizeof (int) * fp->ndset);
 	memset (cnt, 0, sizeof (int) * fp->ndset);
 	memset (mlens, 0, sizeof (MPI_Offset) * fp->ndset);
-	if(fp->rank==0){
-		mlens[0]+=sizeof(int)*fp->ndset;
-	}
-	for(i=0;i<fp->ndset;i++){
-		mlens[i]+=sizeof (int) * 2;
+	if (fp->rank == 0) { mlens[0] += sizeof (int) * fp->ndset; }
+	for (i = 0; i < fp->ndset; i++) {
+		mlens[i] += sizeof (int) * 3 + fp->ndim[i] * sizeof (MPI_Offset);
+		dsteps[i].cord[fp->ndim[i] - 1] = 1;
+		for (j = fp->ndim[i] - 2; j > -1; j--) {
+			dsteps[i].cord[j] = dsteps[i].cord[j + 1] * fp->dsizes[i].cord[j + 1];
+		}
 	}
 	for (auto &rp : fp->wreqs) {
-		mlens[rp.did] += (fp->ndim[rp.did] * sizeof (MPI_Offset) * 2 +
-						  sizeof (MPI_Offset) + sizeof (size_t)) *
-						 rp.sels.size ();
-		cnt[rp.did]+=rp.sels.size();
+		mlens[rp.did] +=
+			(sizeof (MPI_Offset) * 2 + sizeof (MPI_Offset) + sizeof (size_t)) * rp.sels.size ();
+		cnt[rp.did] += rp.sels.size ();
 	}
-	moffs[0]=0;
+	moffs[0] = 0;
 	for (i = 0; i < fp->ndset; i++) { moffs[i + 1] = moffs[i] + mlens[i]; }
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_INIT);
 
@@ -312,9 +313,12 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 							   (double)(moffs[fp->ndset]) / 1048576);
 #endif
 
-	for (i = 0; i < fp->ndset; i++) { bufp[i] = buf + moffs[i]; 
+	for (i = 0; i < fp->ndset; i++) {
+		bufp[i]			  = buf + moffs[i];
 		*((int *)bufp[i]) = i;
 		bufp[i] += sizeof (int);
+		memcpy (bufp[i], dsteps[i].cord, sizeof (MPI_Offset) * fp->ndim[i]);
+		bufp[i] += sizeof (MPI_Offset) * fp->ndim[i];
 		*((int *)bufp[i]) = cnt[i];
 		bufp[i] += sizeof (int);
 	}
@@ -322,11 +326,16 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		seloff = 0;
 		for (auto &sp : rp.sels) {
 			//*((int *)bufp[rp.did]) = rp.did;
-			//bufp[rp.did] += sizeof (int);
-			memcpy (bufp[rp.did], sp.start, fp->ndim[rp.did] * sizeof (MPI_Offset));
-			bufp[rp.did] += fp->ndim[rp.did] * sizeof (MPI_Offset);
-			memcpy (bufp[rp.did], sp.count, fp->ndim[rp.did] * sizeof (MPI_Offset));
-			bufp[rp.did] += fp->ndim[rp.did] * sizeof (MPI_Offset);
+			// bufp[rp.did] += sizeof (int);
+			soff = eoff = 0;
+			for (i = 0; i < fp->ndim[rp.did]; i++) {
+				soff += sp.start[i] * dsteps[rp.did].cord[i];
+				eoff += (sp.start[i] + sp.count[i]) * dsteps[rp.did].cord[i];
+			}
+			*((MPI_Offset *)bufp[rp.did]) = soff;
+			bufp[rp.did] += sizeof (MPI_Offset);
+			*((MPI_Offset *)bufp[rp.did]) = eoff;
+			bufp[rp.did] += sizeof (MPI_Offset);
 			*((MPI_Offset *)bufp[rp.did]) = rp.ldoff + seloff;
 			bufp[rp.did] += sizeof (MPI_Offset);
 			*((size_t *)bufp[rp.did]) = rp.rsize;
@@ -461,10 +470,11 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		CHECK_ERR
 
 		csize = dsize;	// Same as dsize
-		if (csize < 1048576)
-			csize = 1048576;  // No less than 1 MiB
+		if (csize == 0)
+			csize = 1048576;  // Min 1MiB
 		else if (csize > 1073741824)
-			csize = 1073741824;	 // No more than 1 GiB
+			csize = 1073741824;	 // 1 GiB cap
+
 		err = H5Pset_chunk (mdcplid, 1, &csize);
 		CHECK_ERR
 
