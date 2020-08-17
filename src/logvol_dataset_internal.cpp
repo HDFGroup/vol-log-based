@@ -275,7 +275,7 @@ void *H5VL_log_dataset_open_with_uo (void *obj,
 	if (loc_params->obj_type == H5I_FILE)
 		dp->fp = (H5VL_log_file_t *)obj;
 	else if (loc_params->obj_type == H5I_GROUP)
-		dp->fp = ((H5VL_log_group_t *)obj)->fp;
+		dp->fp = ((H5VL_log_obj_t *)obj)->fp;
 	else
 		RET_ERR ("container not a file or group")
 	H5VL_log_filei_inc_ref(dp->fp);
@@ -308,5 +308,58 @@ err_out:;
 	dp = NULL;
 fn_exit:;
 
+	return (void *)dp;
+} /* end H5VL_log_dataset_open() */
+
+/*-------------------------------------------------------------------------
+ * Function:    H5VL_log_dataset_open
+ *
+ * Purpose:     Opens a dataset in a container
+ *
+ * Return:      Success:    Pointer to a dataset object
+ *              Failure:    NULL
+ *
+ *-------------------------------------------------------------------------
+ */
+void *H5VL_log_dataset_wrap (void *uo, H5VL_log_wrap_ctx_t *cp) {
+	herr_t err			= 0;
+	H5VL_log_dset_t *dp = NULL;
+	H5VL_loc_params_t locp;
+	va_list args;
+	void *ap;
+	int ndim;
+	TIMER_START;
+
+	dp = new H5VL_log_dset_t ();
+	dp->fp=cp->fp;
+	H5VL_log_filei_inc_ref(dp->fp);
+
+	dp->uo	  = uo;
+	dp->uvlid = cp->uvlid;
+	H5Iinc_ref (dp->uvlid);
+	dp->type = H5I_DATASET;
+	TIMER_START;
+	err = H5VLdataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, H5P_DATASET_XFER_DEFAULT, NULL,
+								   &(dp->dtype));
+	CHECK_ERR
+	TIMER_STOP (dp->fp, TIMER_H5VL_DATASET_GET);
+	dp->esize = H5Tget_size (dp->dtype);
+	CHECK_ID (dp->esize)
+
+	// Atts
+	err = H5VL_logi_get_att_ex (dp, "_dims", H5T_NATIVE_INT64, &(dp->ndim), dp->dims, H5P_DATASET_XFER_DEFAULT);
+	CHECK_ERR
+	err = H5VL_logi_get_att (dp, "_mdims", H5T_NATIVE_INT64, dp->mdims, H5P_DATASET_XFER_DEFAULT);
+	CHECK_ERR
+	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), H5P_DATASET_XFER_DEFAULT);
+	CHECK_ERR
+
+	TIMER_STOP (dp->fp, TIMER_DATASETI_WRAP);
+
+	goto fn_exit;
+err_out:;
+	if (dp) delete dp;
+	dp = NULL;
+fn_exit:;
 	return (void *)dp;
 } /* end H5VL_log_dataset_open() */

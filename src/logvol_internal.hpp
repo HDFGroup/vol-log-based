@@ -294,7 +294,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 } H5VL_log_file_t;
 
 /* The log VOL group object */
-typedef struct H5VL_log_obj_t H5VL_log_group_t;
+//typedef struct H5VL_log_obj_t H5VL_log_group_t;
 
 /* The log VOL dataset object */
 typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
@@ -310,6 +310,7 @@ typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
 typedef struct H5VL_log_wrap_ctx_t {
 	void *uctx;	  // Under context
 	hid_t uvlid;  // Under VolID
+	H5VL_log_file_t *fp;
 } H5VL_log_wrap_ctx_t;
 
 extern int H5VL_log_dataspace_contig_ref;
@@ -341,6 +342,7 @@ extern const H5VL_datatype_class_t H5VL_log_datatype_g;
 extern const H5VL_blob_class_t H5VL_log_blob_g;
 extern const H5VL_link_class_t H5VL_log_link_g;
 extern const H5VL_token_class_t H5VL_log_token_g;
+extern const H5VL_wrap_class_t H5VL_log_wrap_g;
 
 // Utils
 extern MPI_Datatype h5t_to_mpi_type (hid_t type_id);
@@ -439,6 +441,7 @@ void *H5VL_log_dataset_open_with_uo (void *obj,
 									 void *uo,
 									 const H5VL_loc_params_t *loc_params,
 									 hid_t dxpl_id);
+void *H5VL_log_dataset_wrap (void *uo, H5VL_log_wrap_ctx_t *cp);
 
 // Nonblocking
 extern herr_t H5VL_log_nb_flush_read_reqs (H5VL_log_file_t *fp,

@@ -152,6 +152,9 @@ herr_t H5VL_log_nb_flush_write_reqs (H5VL_log_file_t *fp, hid_t dxplid) {
 							   H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
 							   H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
 	CHECK_NERR (ldp);
+
+	
+
 	TIMER_START;
 	err = H5VLdataset_optional_wrapper (ldp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET, dxplid,
 										NULL, &doff);

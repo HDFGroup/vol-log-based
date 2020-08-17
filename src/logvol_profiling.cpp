@@ -82,6 +82,7 @@ const char *const tname[] = {
 	"H5VL_log_filei_metaupdate",
 	"H5VL_log_dataseti_readi_gen_rtypes",
 	"H5VL_log_dataseti_open_with_uo",
+	"H5VL_log_dataseti_wrap",
 	"H5VL_log_dataspacei_get_sel_type",
 	"H5VL_log_dataspacei_get_selection",
 	"H5VL_log_nb_flush_read_reqs",

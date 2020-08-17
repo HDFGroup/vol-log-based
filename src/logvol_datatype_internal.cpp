@@ -29,7 +29,7 @@ void *H5VL_log_datatype_open_with_uo (void *obj, void *uo, const H5VL_loc_params
 	if (loc_params->obj_type == H5I_FILE)
 		tp->fp = (H5VL_log_file_t *)obj;
 	else if (loc_params->obj_type == H5I_GROUP)
-		tp->fp = ((H5VL_log_group_t *)obj)->fp;
+		tp->fp = ((H5VL_log_obj_t *)obj)->fp;
 	else
 		RET_ERR ("container not a file or group")
     H5VL_log_filei_inc_ref(tp->fp);

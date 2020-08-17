@@ -316,3 +316,21 @@ General comments: I suggest the following when adding a new issue.
 
 ---
 
+## H5VLDataset_write may not follow collective property
+### Problem Description
+* The native VOL does not always follow the I/O mode set in the property list when writing to datasets.
+  Under certain circumstances, the native VOL will write a dataset using MPI independent I/O even when collective I/O property is set.
+* The LOG VOL stores the metadata table in an HDF5 chunked dataset called the metadata dataset. 
+  It relies on the native VOL to write to the metadata dataset when flushing the metadata.
+  The performance can be heavily degraded when the native VOL uses independent I/O on the metadata dataset.
+* In a case of IOR benchmark running on 256 processes on 8 cori nodes, it took ~30 sec to write the metadata dataset that is only 12 KiB in size.
+
+### Software Environment
+* HDF5 versions: 1.12.0
+
+### Solutions
+* Replace chunked metadata dataset with a set of contiguous datasets. We create a new metadata dataset on each metadata flush.
+  Using contiguous datasets allows us to bypass the native VOL and write to the file offset of the metadata directly with MPI-IO.
+* Collaborate with the HDF5 team to study the reason the native VOL did not follow the setting in the property list.
+
+---
