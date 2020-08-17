@@ -90,7 +90,7 @@ void *H5VL_log_dataset_create (void *obj,
 	if (loc_params->obj_type == H5I_FILE)
 		dp->fp = (H5VL_log_file_t *)obj;
 	else if (loc_params->obj_type == H5I_GROUP)
-		dp->fp = ((H5VL_log_group_t *)obj)->fp;
+		dp->fp = ((H5VL_log_obj_t *)obj)->fp;
 	else
 		RET_ERR ("container not a file or group")
 	H5VL_log_filei_inc_ref (dp->fp);
@@ -178,7 +178,7 @@ void *H5VL_log_dataset_open (void *obj,
 	if (loc_params->obj_type == H5I_FILE)
 		dp->fp = (H5VL_log_file_t *)obj;
 	else if (loc_params->obj_type == H5I_GROUP)
-		dp->fp = ((H5VL_log_group_t *)obj)->fp;
+		dp->fp = ((H5VL_log_obj_t *)obj)->fp;
 	else
 		RET_ERR ("container not a file or group")
 	H5VL_log_filei_inc_ref (dp->fp);
