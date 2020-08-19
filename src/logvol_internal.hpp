@@ -467,7 +467,7 @@ extern herr_t H5Pset_nonblocking (hid_t plist, int nonblocking);
 extern herr_t H5Pget_nonblocking (hid_t plist, int *nonblocking);
 
 // Internal
-extern void *H5VL_log_group_open_with_uo (void *obj, void *uo, const H5VL_loc_params_t *loc_params);
+extern void *H5VL_log_obj_open_with_uo (void *obj, void *uo, H5I_type_t type, const H5VL_loc_params_t *loc_params);
 
 #ifdef LOGVOL_DEBUG
 extern int H5VL_log_debug_MPI_Type_create_subarray (int ndims,

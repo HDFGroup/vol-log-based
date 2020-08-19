@@ -115,10 +115,8 @@ void *H5VL_log_wrap_object (void *obj, H5I_type_t type, void *_wrap_ctx) {
 			wop->uo	   = uo;
 			wop->uvlid = ctx->uvlid;
 			wop->fp	   = ctx->fp;
-			if (type != H5I_FILE) {
-				H5Iinc_ref (wop->uvlid);
-				H5VL_log_filei_inc_ref (wop->fp);
-			}
+			H5Iinc_ref (wop->uvlid);
+			H5VL_log_filei_inc_ref (wop->fp);
 		}
 	} else
 		wop = NULL;
@@ -151,9 +149,9 @@ void *H5VL_log_unwrap_object (void *obj) {
 		hid_t err_id;
 
 		err_id = H5Eget_current_stack ();
-		if (op->type != H5I_FILE) { H5Idec_ref (op->uvlid); }
+		H5Idec_ref (op->uvlid); 
 		H5Eset_current_stack (err_id);
-		if (op->type != H5I_FILE) { H5VL_log_filei_dec_ref (op->fp); }
+		H5VL_log_filei_dec_ref (op->fp);
 		free (op);
 	}
 
