@@ -81,13 +81,8 @@ void *H5VL_log_object_open (void *obj,
 
 	if (*opened_type == H5I_DATASET) {
 		return H5VL_log_dataset_open_with_uo (obj, uo, loc_params, dxpl_id);
-	} else if (*opened_type == H5I_GROUP) {
-		return H5VL_log_group_open_with_uo (obj, uo, loc_params);
-	} else if (*opened_type == H5I_DATATYPE) {
-		return H5VL_log_datatype_open_with_uo (obj, uo, loc_params);
 	} else {
-		abort();
-		return uo;
+		return H5VL_log_obj_open_with_uo (obj, uo, *opened_type, loc_params);
 	}
 
 err_out:;

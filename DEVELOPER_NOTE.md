@@ -141,7 +141,7 @@ General comments: I suggest the following when adding a new issue.
 
 ## The VOL fail when running E3SM on multi-process through NetCDF4 API
   The issue is still being studied.
-  A H5Aiterate call failed on the second process due to some format decoding error.
+  An H5Aiterate call failed on the second process due to some format decoding error.
 
 ## Native VOL won't close if there are data objects still open
 **Problem description**:
@@ -200,7 +200,7 @@ General comments: I suggest the following when adding a new issue.
   H5P_DEFAULT will also become outdated as it maps to an internally cached property list that is initialized when the library initializes.
 
   In HDF5, properties are not managed by the VOL.
-  If a VOL wants to create it's own property, it must use the same H5Pregister API as applications.
+  If a VOL wants to create its own property, it must use the same H5Pregister API as applications.
   Our log VOL defines two customized properties.
   One is a file access property that indicates the amount of memory available for buffering data.
   Another one is a dataset transfer property to indicate whether an  I/O operation on a dataset is blocking or nonblocking.
@@ -223,16 +223,16 @@ General comments: I suggest the following when adding a new issue.
 ### Problem Description
 * If treating individual calls to H5Dwrite independently, then the log-based
   driver must call HDF5 APIs to query properties of a defined dataset in order
-  to perform sanity check on the user arguments. Such queries can be expensive
+  to perform sanity checks on the user arguments. Such queries can be expensive
   when the number of H5Dwrite calls is high. This is particularly true for
-  applications whose I/O patterns show a large number of non-contiguous subarray
+  applications whose I/O patterns show a large number of non-contiguous subarrays
   requests, such as E3SM.
 * HDF5 currently does not have an API to read/write a large number of
   non-contiguous subarray requests to the same variable. HDF5 group is currently
-  developing "H5Dwrite_multi", a new API that allows to write multiple datasets
+  developing "H5Dwrite_multi", a new API that allows writing multiple datasets
   in a single API call. See HDF5 develop branch ["multi_rd_wd_coll_io"](https://bitbucket.hdfgroup.org/projects/HDFFV/repos/hdf5/browse?at=refs%2Fheads%2Finactive%2Fmulti_rd_wd_coll_io).
 * Before API "H5Dwrite_multi" is officially released, one must either treat a
-  subarray request independently from others, i.e. each by a separate call to
+  subarray request independently from others, i.e., each by a separate call to
   H5Dwrite, or flatten all subarray requests into points and call
   ["H5Sselect_elements"](https://support.hdfgroup.org/HDF5/doc1.8/RM/RM_H5S.html#Dataspace-SelectElements).
   Both approaches can be expensive.
@@ -276,7 +276,7 @@ General comments: I suggest the following when adding a new issue.
 
 ### Solutions
 * The logvol exposes a macro H5S_CONTIG that expands to a preallocated dataspace ID 
-  within the logvol.
+  within the logvol. (Implemented)
   If the dataspace id received by logvol functions as mem_space_id matches H5S_CONTIG,
   the logvol interpret it as a contiguous memory buffer.
   H5S_CONTIG is a scalar dataspace logvol created internally. It serves as a place 
@@ -310,7 +310,7 @@ General comments: I suggest the following when adding a new issue.
     Var D5.lengths: len= 7441216 max= 80 min= 80
     Var D6.lengths: len= 3693225 max= 81 min= 81
     ```
-  + To make use of the above caching idea, **E3SM-IO benchmark** program must
+  + To make use of the caching idea above, **E3SM-IO benchmark** program must
     be adjusted to reuse the memory space identifier if the write request's
     memory layout is the same.
 
@@ -324,6 +324,7 @@ General comments: I suggest the following when adding a new issue.
   It relies on the native VOL to write to the metadata dataset when flushing the metadata.
   The performance can be heavily degraded when the native VOL uses independent I/O on the metadata dataset.
 * In a case of IOR benchmark running on 256 processes on 8 cori nodes, it took ~30 sec to write the metadata dataset that is only 12 KiB in size.
+  The darshan log from the test, [ior_darshan.txt], shows unusually high H5Fclose time.
 
 ### Software Environment
 * HDF5 versions: 1.12.0
@@ -332,5 +333,29 @@ General comments: I suggest the following when adding a new issue.
 * Replace chunked metadata dataset with a set of contiguous datasets. We create a new metadata dataset on each metadata flush.
   Using contiguous datasets allows us to bypass the native VOL and write to the file offset of the metadata directly with MPI-IO.
 * Collaborate with the HDF5 team to study the reason the native VOL did not follow the setting in the property list.
+
+---
+
+## HDF5 dispatcher creates a wrapped VOL object, but never free it
+### Problem Description
+* HDF5 allows applications to keep data objects open after the file containing them is closed. 
+  Applications should be able to access those objects normally.
+* The log VOL support this feature by delaying the file close until all data object is closed. 
+  Internally, it keeps a reference count on every file that represents the number of opened objects that belong to the file. 
+  The count is initialized to 1, representing the file itself.
+  It is increased when an object is opened from the file and decreased when the object is closed.
+  The file closing API in log VOL does not actually close the file but decreases the reference count by 1.
+  When the reference count reaches 0, the log VOL closes the file.
+* There is a bug in HDF5 dispatcher. It opens a VOL object but never closes it.
+  The opened VOL object prevents the VOL form closing the file indefinitely.
+* HDF5 registers a callback in MPI_Finalize to clean up the library. The cleanup routine ensures all open HDF5 objects are closed.
+  It will call the close routine of the corresponding VOL and check if the object is actually closed afterward.
+  After few tries to have the log VOL close the file, it assumes the log VOL has crashed, and calls abort.
+
+### Software Environment
+* HDF5 versions: 1.12.0
+
+### Solutions
+* We are working with the HDF5 team to fix the bug.
 
 ---
