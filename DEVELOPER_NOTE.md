@@ -324,7 +324,7 @@ General comments: I suggest the following when adding a new issue.
   It relies on the native VOL to write to the metadata dataset when flushing the metadata.
   The performance can be heavily degraded when the native VOL uses independent I/O on the metadata dataset.
 * In a case of IOR benchmark running on 256 processes on 8 cori nodes, it took ~30 sec to write the metadata dataset that is only 12 KiB in size.
-  The darshan log from the test, [ior_darshan.txt], shows unusually high H5Fclose time.
+  The darshan log from the test, [ior_darshan.txt](/ior_darshan.txt)(https://github.com/DataLib-ECP/log_io_vol/blob/760a8cbb9f29fe53a6f89ad04594a633d6966457/ior_darshan.txt), shows unusually high H5Fclose time.
 
 ### Software Environment
 * HDF5 versions: 1.12.0
