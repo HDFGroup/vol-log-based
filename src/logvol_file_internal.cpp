@@ -697,6 +697,6 @@ void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp) { fp->refcnt++; }
 
 herr_t H5VL_log_filei_dec_ref (H5VL_log_file_t *fp) {
 	fp->refcnt--;
-	if (fp->refcnt == 0) { return H5VL_log_filei_close (fp); }
+	//if (fp->refcnt == 0) { return H5VL_log_filei_close (fp); }
 	return 0;
 }
