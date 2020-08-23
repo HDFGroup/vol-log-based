@@ -499,5 +499,6 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
-	return H5VL_log_filei_dec_ref ((H5VL_log_file_t *)file);
+	//return H5VL_log_filei_dec_ref ((H5VL_log_file_t *)file);
+	return H5VL_log_filei_close ((H5VL_log_file_t *)file);
 } /* end H5VL_log_file_close() */
