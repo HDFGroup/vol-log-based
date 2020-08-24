@@ -142,7 +142,7 @@ void *H5VL_log_dataset_create (void *obj,
 	dp->fp->ndim.resize (dp->fp->ndset);
 	dp->fp->ndim[dp->id] = dp->ndim;
 	dp->fp->dsizes.resize (dp->fp->ndset);
-	for (i = 0; i < ndim; i++) { dp->fp->dsizes[dp->id].cord[i] = dp->dims[i]; }
+	for (i = 0; i < ndim; i++) { dp->fp->dsizes[dp->id][i] = dp->dims[i]; }
 
 	// Atts
 	err = H5VL_logi_add_att (dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->dims,
@@ -153,9 +153,6 @@ void *H5VL_log_dataset_create (void *obj,
 	CHECK_ERR
 	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id);
 	CHECK_ERR
-
-	dp->fp->ndset++;
-	dp->fp->idx.resize (dp->fp->ndset);
 
 	TIMER_STOP (dp->fp, TIMER_DATASET_CREATE);
 
@@ -233,7 +230,7 @@ void *H5VL_log_dataset_open (void *obj,
 	dp->fp->ndim.resize (dp->fp->ndset);
 	dp->fp->ndim[dp->id] = dp->ndim;
 	dp->fp->dsizes.resize (dp->fp->ndset);
-	for (i = 0; i < dp->ndim; i++) { dp->fp->dsizes[dp->id].cord[i] = dp->dims[i]; }
+	for (i = 0; i < dp->ndim; i++) { dp->fp->dsizes[dp->id][i] = dp->dims[i]; }
 
 	TIMER_STOP (dp->fp, TIMER_DATASET_OPEN);
 	goto fn_exit;
@@ -650,7 +647,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
 					err = -1;
 					RET_ERR ("size cannot exceed max size")
 				}
-				dp->dims[i] = dp->fp->dsizes[dp->id].cord[i] = new_sizes[i];
+				dp->dims[i] = dp->fp->dsizes[dp->id][i] = new_sizes[i];
 			}
 			break;
 		}

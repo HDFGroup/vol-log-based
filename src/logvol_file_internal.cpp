@@ -1,4 +1,5 @@
 #include "logvol_internal.hpp"
+#include "logvol_zip.hpp"
 
 //#define DEFAULT_SIZE 1073741824 // 1 GiB
 #define DEFAULT_SIZE 209715200	// 200 MiB
@@ -251,15 +252,21 @@ err_out:;
 	return err;
 }
 
+#define LOGVOL_META_FLAG_MULTI	0x01
+#define LOGVOL_META_FLAG_ENCODE 0x02
+#define LOGVOL_META_FLAG_ZIP	0x04
+
 herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
-	int *cnt;
+	int *cnt, *flag;
 	MPI_Offset *mlens = NULL, *mlens_all;
 	MPI_Offset *moffs = NULL, *doffs;
 	char *buf		  = NULL;
 	char **bufp		  = NULL;
+	void *cbuf;
+	int clen, inlen;
 	H5VL_loc_params_t loc;
 	void *mdp, *ldp;
 	hid_t dxplid;
@@ -268,7 +275,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	hsize_t dsize, msize;
 	htri_t has_idx;
 	MPI_Offset seloff, soff, eoff;
-	std::vector<H5VL_log_cord_t> dsteps (fp->ndset);
+	std::vector<std::array<MPI_Offset, H5S_MAX_RANK>> dsteps (fp->ndset);
 	TIMER_START;
 
 	TIMER_START;
@@ -277,21 +284,44 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	mlens_all = mlens + fp->ndset;
 	moffs	  = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->ndset + 1) * 2);
 	doffs	  = moffs + fp->ndset + 1;
-	cnt		  = (int *)malloc (sizeof (int) * fp->ndset);
-	memset (cnt, 0, sizeof (int) * fp->ndset);
+	cnt		  = (int *)malloc (sizeof (int) * fp->ndset * 2);
+	memset (cnt, 0, sizeof (int) * fp->ndset * 2);
+	flag = cnt + fp->ndset;
 	memset (mlens, 0, sizeof (MPI_Offset) * fp->ndset);
 	if (fp->rank == 0) { mlens[0] += sizeof (int) * fp->ndset; }
 	for (i = 0; i < fp->ndset; i++) {
-		mlens[i] += sizeof (int) * 3 + fp->ndim[i] * sizeof (MPI_Offset);
-		dsteps[i].cord[fp->ndim[i] - 1] = 1;
+		dsteps[i][fp->ndim[i] - 1] = 1;
 		for (j = fp->ndim[i] - 2; j > -1; j--) {
-			dsteps[i].cord[j] = dsteps[i].cord[j + 1] * fp->dsizes[i].cord[j + 1];
+			dsteps[i][j] = dsteps[i][j + 1] * fp->dsizes[i][j + 1];
+		}
+	}
+	for (auto &rp : fp->wreqs) { cnt[rp.did] += rp.sels.size (); }
+	for (i = 0; i < fp->ndset; i++) {
+		mlens[i] += sizeof (int) * 2;  // ID and flag
+		if (cnt[i] > 1) {			   // Multiple selection
+			flag[i] |= LOGVOL_META_FLAG_MULTI;
+			mlens[i] += sizeof (int);  // nsel
+			if (fp->ndim[i] > 1) {
+				flag[i] |= LOGVOL_META_FLAG_ENCODE;
+				mlens[i] += fp->ndim[i] * sizeof (MPI_Offset);	// dstep
+				mlens[i] +=
+					(sizeof (MPI_Offset) * fp->ndim[i] + sizeof (MPI_Offset) + sizeof (size_t)) *
+					(size_t)cnt[i];
+			} else {
+				mlens[i] += (sizeof (MPI_Offset) * fp->ndim[i] * 2 + sizeof (MPI_Offset) +
+							 sizeof (size_t)) *
+							(size_t)cnt[i];
+			}
+#ifdef HAVE_ZLIB
+			if (cnt[i] > 1024) {  // Compress if we have more than 1k entry
+				flag[i] |= LOGVOL_META_FLAG_ZIP;
+			}
+#endif
 		}
 	}
 	for (auto &rp : fp->wreqs) {
 		mlens[rp.did] +=
 			(sizeof (MPI_Offset) * 2 + sizeof (MPI_Offset) + sizeof (size_t)) * rp.sels.size ();
-		cnt[rp.did] += rp.sels.size ();
 	}
 	moffs[0] = 0;
 	for (i = 0; i < fp->ndset; i++) { moffs[i + 1] = moffs[i] + mlens[i]; }
@@ -301,34 +331,47 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Pack data
 	buf	 = (char *)malloc (sizeof (char) * moffs[fp->ndset]);
 	bufp = (char **)malloc (sizeof (char *) * fp->ndset);
-#ifdef LOGVOL_PROFILING
-	H5VL_log_profile_add_time (fp, TIMER_FILEI_METAFLUSH_SIZE,
-							   (double)(moffs[fp->ndset]) / 1048576);
-#endif
-
 	for (i = 0; i < fp->ndset; i++) {
-		bufp[i]			  = buf + moffs[i];
+		bufp[i] = buf + moffs[i];
+
+		// ID
 		*((int *)bufp[i]) = i;
 		bufp[i] += sizeof (int);
-		memcpy (bufp[i], dsteps[i].cord, sizeof (MPI_Offset) * fp->ndim[i]);
-		bufp[i] += sizeof (MPI_Offset) * fp->ndim[i];
-		*((int *)bufp[i]) = cnt[i];
+		// Flag
+		*((int *)bufp[i]) = i;
 		bufp[i] += sizeof (int);
+		// Nsel
+		if (flag[i] & LOGVOL_META_FLAG_MULTI) {
+			*((int *)bufp[i]) = cnt[i];
+			bufp[i] += sizeof (int);
+		}
+		// Dstep
+		if (flag[i] & LOGVOL_META_FLAG_ENCODE) {
+			memcpy (bufp[i], dsteps[i].data (), sizeof (MPI_Offset) * fp->ndim[i]);
+			bufp[i] += sizeof (MPI_Offset) * fp->ndim[i];
+		}
 	}
 	for (auto &rp : fp->wreqs) {
 		seloff = 0;
 		for (auto &sp : rp.sels) {
 			//*((int *)bufp[rp.did]) = rp.did;
 			// bufp[rp.did] += sizeof (int);
-			soff = eoff = 0;
-			for (i = 0; i < fp->ndim[rp.did]; i++) {
-				soff += sp.start[i] * dsteps[rp.did].cord[i];
-				eoff += (sp.start[i] + sp.count[i]) * dsteps[rp.did].cord[i];
+			if (flag[i] & LOGVOL_META_FLAG_ENCODE) {
+				soff = eoff = 0;
+				for (i = 0; i < fp->ndim[rp.did]; i++) {
+					soff += sp.start[i] * dsteps[rp.did][i];
+					eoff += (sp.start[i] + sp.count[i]) * dsteps[rp.did][i];
+				}
+				*((MPI_Offset *)bufp[rp.did]) = soff;
+				bufp[rp.did] += sizeof (MPI_Offset);
+				*((MPI_Offset *)bufp[rp.did]) = eoff;
+				bufp[rp.did] += sizeof (MPI_Offset);
+			} else {
+				memcpy (bufp[rp.did], sp.start, sizeof (MPI_Offset) * fp->ndim[rp.did]);
+				bufp[rp.did] += sizeof (MPI_Offset) * fp->ndim[i];
+				memcpy (bufp[rp.did], sp.count, sizeof (MPI_Offset) * fp->ndim[rp.did]);
+				bufp[rp.did] += sizeof (MPI_Offset) * fp->ndim[i];
 			}
-			*((MPI_Offset *)bufp[rp.did]) = soff;
-			bufp[rp.did] += sizeof (MPI_Offset);
-			*((MPI_Offset *)bufp[rp.did]) = eoff;
-			bufp[rp.did] += sizeof (MPI_Offset);
 			*((MPI_Offset *)bufp[rp.did]) = rp.ldoff + seloff;
 			bufp[rp.did] += sizeof (MPI_Offset);
 			*((size_t *)bufp[rp.did]) = rp.rsize;
@@ -337,6 +380,41 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		}
 	}
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_PACK);
+
+#ifdef ENABLE_ZLIB
+	TIMER_START;
+	for (i = 0; i < fp->ndset; i++) {
+		if (flag[i] & LOGVOL_META_FLAG_ZIP) {
+			inlen = mlens[i] - sizeof (int) * 3;
+			err =
+				logvol_zip_compress_alloc (buf + moffs[i] + sizeof (int) * 3, inlen, &cbuf, &clen);
+			CHECK_ERR
+			if (clen < inlen) {
+				memcpy (buf + moffs[i] + sizeof (int) * 3, cbuf, clen);
+				mlens[i] = sizeof (int) * 3 + clen;
+			} else {
+				// Compressed size larger, abort compression
+				flag[i] ^= LOGVOL_META_FLAG_ZIP;
+				*((int *)(buf + moffs[i] + sizeof (int))) = flag[i];
+			}
+
+			free(cbuf);
+		}
+	}
+	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_ZIP);
+#endif
+
+#ifdef LOGVOL_PROFILING
+	{	
+		// Recalculate metadata size after comrpession
+		size_t msize=0;	
+		for (i = 0; i < fp->ndset; i++) {
+			msize+=mlens[i];
+		}
+		H5VL_log_profile_add_time (fp, TIMER_FILEI_METAFLUSH_SIZE,
+							   	(double)(msize) / 1048576);
+	}
+#endif
 
 	/* Debug code to dump metadata table
 	{
@@ -718,6 +796,6 @@ void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp) { fp->refcnt++; }
 
 herr_t H5VL_log_filei_dec_ref (H5VL_log_file_t *fp) {
 	fp->refcnt--;
-	//if (fp->refcnt == 0) { return H5VL_log_filei_close (fp); }
+	// if (fp->refcnt == 0) { return H5VL_log_filei_close (fp); }
 	return 0;
 }
