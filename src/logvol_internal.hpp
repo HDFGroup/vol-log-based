@@ -263,10 +263,6 @@ typedef struct H5VL_log_dset_meta_t {
 	// hsize_t esize;
 } H5VL_log_dset_meta_t;
 
-typedef struct H5VL_log_cord_t {
-	MPI_Offset cord[H5S_MAX_RANK];
-}H5VL_log_cord_t;
-
 /* The log VOL file object */
 typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	int rank;
