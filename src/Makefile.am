@@ -44,6 +44,7 @@ CXX_SRCS =  logvol.cpp \
             logvol_req.cpp \
             logvol_util.cpp \
             logvol_wrap.cpp \
+            logvol_zip.cpp \
             logvol_internal.cpp \
             logvol_internal_idx.cpp
             
