@@ -27,6 +27,8 @@ AM_INIT_AUTOMAKE([foreign])
 AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE([enable])
 
+AH_TEMPLATE([ENABLE_ZLIB],              [Define if to enable zlib compression method])
+
 dnl parse the version numbers to 3 env variables
 LOGVOL_VERSION_MAJOR=`echo ${PACKAGE_VERSION} | cut -d. -f1`
 LOGVOL_VERSION_MINOR=`echo ${PACKAGE_VERSION} | cut -d. -f2`
@@ -316,6 +318,63 @@ if test "x$hdf5_parallel_io" = xno ; then
      logvol requires parallel I/O feature enabled in HDF5. Abort.
    -----------------------------------------------------------------------])
 fi
+
+AC_ARG_ENABLE([zlib],
+   [AS_HELP_STRING([--enable-zlib],
+                   [Enable zlib compression method support. @<:@default: disabled@:>@])],
+   [enable_zlib=${enableval}], [enable_zlib=no]
+)
+
+ENABLE_ZLIB=0
+if test "x$enable_zlib" = "xyes" ; then
+   AC_DEFINE(ENABLE_ZLIB)
+   ENABLE_ZLIB=1
+fi
+AC_SUBST(ENABLE_ZLIB)
+AM_CONDITIONAL(ENABLE_ZLIB, [test x$enable_zlib = xyes])
+
+if test "x$enable_zlib" = "xyes" ; then
+   ZLIB_INSTALL=""
+   AC_ARG_WITH(zlib,
+       [AS_HELP_STRING([--with-zlib=/path/to/implementation],
+                       [installation prefix for zlib implementation])],
+       if test "x${withval}" = xyes; then
+          AC_MSG_ERROR(--with-zlib is set but the value is NULL)
+       else
+          ZLIB_INSTALL=${withval}
+       fi
+   )
+   
+   if test "x${ZLIB_INSTALL}" != x ; then
+      CPPFLAGS+=" -I${ZLIB_INSTALL}/include"
+      LDFLAGS+=" -L${ZLIB_INSTALL}/lib"
+      LIBS+=" -lz"
+   fi
+
+   LIBS+=" -lm -ldl"
+
+   have_zlib=no
+   AC_MSG_CHECKING(ZLIB library)
+   AC_SEARCH_LIBS([deflate], [z], [have_zlib=yes], [have_zlib=no])
+   if test "x${have_zlib}" = xyes; then
+      AC_CHECK_HEADERS([zlib.h], [], [have_zlib=no])
+   fi
+
+   if test "x${have_zlib}" = xno; then
+      AC_MSG_ERROR([
+      ------------------------------------------------------------
+      The ZLIB library and header file are required to build
+      log with ZLIB compression support. Use option
+         --with-zlib=/path/to/implementation
+      to specify the location of ZLIB build.
+      Stopping ...
+      Check 'config.log' for more information.
+      ------------------------------------------------------------])
+   fi
+
+   AC_DEFINE(ENABLE_ZLIB)
+fi
+
 AC_LANG_POP(C++)
 
 if test "x$LIBS" = x ; then

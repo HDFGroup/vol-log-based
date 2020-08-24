@@ -1,10 +1,10 @@
-#include "logvol_profiling.hpp"
-
 #include <stdlib.h>
 
 #include "logvol_internal.hpp"
+#include "logvol_profiling.hpp"
 
 static double tmax[NTIMER], tmin[NTIMER], tmean[NTIMER], tvar[NTIMER], tvar_local[NTIMER];
+
 
 const char *const tname[] = {
 	"H5VL_log_file_create",
@@ -72,6 +72,7 @@ const char *const tname[] = {
 	"H5VL_log_filei_metaflush",
 	"H5VL_log_filei_metaflush_init",
 	"H5VL_log_filei_metaflush_pack",
+	"H5VL_log_filei_metaflush_zip",
 	"H5VL_log_filei_metaflush_sync",
 	"H5VL_log_filei_metaflush_create",
 	"H5VL_log_filei_metaflush_write",
