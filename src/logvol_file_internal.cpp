@@ -292,7 +292,33 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		mlens[i] += sizeof (int) * 3 + fp->ndim[i] * sizeof (MPI_Offset);
 		dsteps[i].cord[fp->ndim[i] - 1] = 1;
 		for (j = fp->ndim[i] - 2; j > -1; j--) {
-			dsteps[i].cord[j] = dsteps[i].cord[j + 1] * fp->dsizes[i].cord[j + 1];
+			dsteps[i][j] = dsteps[i][j + 1] * fp->dsizes[i][j + 1];
+		}
+	}
+	for (auto &rp : fp->wreqs) { 
+		cnt[rp.did] += rp.sels.size (); 
+	}
+	for (i = 0; i < fp->ndset; i++) {
+		mlens[i] += sizeof (int) * 2;  // ID and flag
+		if (cnt[i] > 1) {			   // Multiple selection
+			flag[i] |= LOGVOL_META_FLAG_MULTI;
+			mlens[i] += sizeof (int);  // nsel
+			if (fp->ndim[i] > 1) {
+				flag[i] |= LOGVOL_META_FLAG_ENCODE;
+				mlens[i] += fp->ndim[i] * sizeof (MPI_Offset);	// dstep
+				mlens[i] +=
+					(sizeof (MPI_Offset) * 3 + sizeof (size_t)) *
+					(size_t)cnt[i];
+			} else {
+				mlens[i] += (sizeof (MPI_Offset) * fp->ndim[i] * 2 + sizeof (MPI_Offset) +
+							 sizeof (size_t)) *
+							(size_t)cnt[i];
+			}
+#ifdef HAVE_ZLIB
+			if (cnt[i] > 128) {  // Compress if we have more than 1k entry
+				flag[i] |= LOGVOL_META_FLAG_ZIP;
+			}
+#endif
 		}
 	}
 	for (auto &rp : fp->wreqs) {
@@ -356,6 +382,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			if (clen < inlen) {
 				memcpy (buf + moffs[i] + sizeof (int) * 3, cbuf, clen);
 				mlens[i] = sizeof (int) * 3 + clen;
+				if(fp->rank == 0){
+					printf("dataset %d: %d -> %d\n",i,inlen,clen);
+				}
 			} else {
 				// Compressed size larger, abort compression
 				flag[i] ^= LOGVOL_META_FLAG_ZIP;
