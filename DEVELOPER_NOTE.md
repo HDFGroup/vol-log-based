@@ -316,10 +316,12 @@ General comments: I suggest the following when adding a new issue.
 
 ---
 
-## H5VLDataset_write may not follow collective property
+## H5VLDataset_write do not follow collective property
 ### Problem Description
-* The native VOL does not always follow the I/O mode set in the property list when writing to datasets.
-  Under certain circumstances, the native VOL will write a dataset using MPI independent I/O even when collective I/O property is set.
+* It is a confirmed HDF5 bug. The native VOL ignored the dataset transfer property passed from the dispatcher.
+  Instead, it uses the default dataset transfer property set in HDF5.
+  The default property is set in H5Dwrite, so the bug does not affect user applications.
+  However, when VOLs call H5VLDataset_write (the internal version of H5Dwrite for VOLs that takes OVL object instead of hid) form within the HDF5 library, the default property is not set, and the native VOL will always use independent I/O. 
 * The LOG VOL stores the metadata table in an HDF5 chunked dataset called the metadata dataset. 
   It relies on the native VOL to write to the metadata dataset when flushing the metadata.
   The performance can be heavily degraded when the native VOL uses independent I/O on the metadata dataset.
