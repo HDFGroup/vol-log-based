@@ -80,6 +80,7 @@ const char *const tname[] = {
 	"H5VL_log_filei_metaflush_barrier",
 	"H5VL_log_filei_metaflush_finalize",
 	"H5VL_log_filei_metaflush_size",
+    "H5VL_log_filei_metaflush_size_zip",
 	"H5VL_log_filei_metaupdate",
 	"H5VL_log_dataseti_readi_gen_rtypes",
 	"H5VL_log_dataseti_open_with_uo",
