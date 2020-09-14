@@ -166,7 +166,7 @@ General comments: I suggest the following when adding a new issue.
     + When the count reaches 0, and the closing flag is set, the VOL automatically closes the file
     + It may not always be possible as is discussed in https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Close
 
-## Native VOL won't close if there are data objects still open
+## Native VOL is not available when the library is shuting down
   HDF5 dispatcher placed a hook on MPI_Finalize to finalize the HDF5 library.
   When finalizing, the dispatcher will close all files not closed by the application by calling the file close VOL API.
   During that time, the library is marked to be in shutdown status, and the function of the native VOL will become limited.
@@ -360,4 +360,62 @@ General comments: I suggest the following when adding a new issue.
 ### Solutions
 * We are working with the HDF5 team to fix the bug.
 
+---
+
+## Metadata size can be larger than data size on fragment requests
+### Problem Description
+* The log VOL generates a metadata entry for each hyper-slab selection in an H5Dwrite call.
+* Each metadata entry contians the following members:
+  + The ID of the dataset to write (4 byte)
+  + A flag for additional metadata (4 byte)
+    + Endianess of the data in the log dataset
+    + Filters applied to the data
+    + Metadata format (allow different version of metadata encoding)
+  + Starting corrdinate of the selection (8 byte * [dataset dimension])
+  + Size of the selection (8 bytes * [dataset dimension])
+  + Starting position of the data in the log dataset (8 bytes)
+  + Size of data in the log dataset (8 bytes)
+* The size of each metadata entry is (24 + 16 * [dataset dimension]) bytes.
+  For fragment requests, the size of metadata can be larger than the size of data.
+  The overhead of metadata increases the over I/O time and decreases the effective bandwidth.
+* Log entries are generated individually on each process.
+  The number of metadata entries (metadata size) grows linearly with the number of processes when performing collective I/O.
+* We observed up to 3 times the metadata size to the data size in a case study on the E3SM benchmark.
+  The added I/O amount negates the performance improvement from using a log-based I/O pattern.
+### Software Environment
+* HDF5 versions: All
+
+### Solutions
+* Combine metadata that belongs to the same dataset
+  There can be multiple hyper-slab selections in each H5Dwrite.
+  Applications can call H5Dwrite multiple times on the same dataset.
+  We can combine metadata entries that belong to the same dataset.
+  The only difference among entries is in the selection and the location of the data.
+  The dataset ID and flag can be shared to save 8 bytes per entry after a dataset's first entry.
+* Encode selection starting coordinate and size
+  Theoretically, the dataset's size, which is the bound of selected hyper-slabs, can be anywhere within the range of hsize_t (8 bytes).
+  In practice, the dataset must fit within the file of size no more than 2^64 byte due to file system and hardware limitation.
+  We can represent every element's location in the dataset by its offset when flattened into 1-D space using row-major order.
+  Under this representation, the hyper-slab selection only takes 16 bytes (start and end) regardless of the dataset's dimensionality.
+  + Some datasets can be expandable.
+    Changing the shape of the dataset will change the canonical offset of each element.
+    We need to record the dataset's current shape (8 bytes * [dataset dimension]), so the coordinates can be decoded later on.
+    This representation only reduces the metadata size on datasets of 2 or more dimensions when there are more than one selected hyper-slabs.
+* Compress the selection and data location
+  We can compress the metadata to further reduce its size.
+  When the number of selections exceeds a set threshold (currently 128), we compress the selection and data location list.
+  We observed significant metadata size reduction in a case study using the E3SM benchmark.
+* The revised metadata format with the above optimizations is as follow:
+  + The ID of the dataset to write (4 bytes)
+  + A flag for additional metadata (4 bytes)
+    + Endianness of the data in the log dataset
+    + Filters applied to the data
+    + Metadata format (allow different versions of metadata encoding)
+    + Filters applied to metadata
+  + number of selected hyper-slabs
+  + List of selections (can be compressed)
+    + Starting coordinate of the selection (8 bytes)
+    + Ending coordinate of the selection (8 bytes)
+    + Starting position of the data in the log dataset (8 bytes)
+    + size of data in the log dataset (8 bytes)
 ---
