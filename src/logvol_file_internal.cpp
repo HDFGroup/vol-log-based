@@ -375,9 +375,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		err	  = H5VLdataset_specific_wrapper (mdp, fp->uvlid, H5VL_DATASET_SET_EXTENT, fp->dxplid,
 											  NULL, &dsize);
 		CHECK_ERR
-		// dsize = fp->ndset;
-		// err = H5VLdataset_specific_wrapper(ldp, fp->uvlid, H5VL_DATASET_SET_EXTENT, fp->dxplid,
-		// NULL, &dsize); CHECK_ERR
+		// dsize = fp->ndset;log_io_vol
 		TIMER_STOP (fp, TIMER_H5VL_DATASET_SPECIFIC);
 
 		// Get data space
