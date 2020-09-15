@@ -362,58 +362,56 @@ General comments: I suggest the following when adding a new issue.
 
 ---
 
-## Metadata size can be larger than data size on fragment requests
+## Metadata size can be larger than data size
 ### Problem Description
-* The log VOL generates a metadata entry for each hyper-slab selection in an H5Dwrite call.
-* Each metadata entry contians the following members:
-  + The ID of the dataset to write (4 byte)
-  + A flag for additional metadata (4 byte)
-    + Endianess of the data in the log dataset
+* The log VOL creates a metadata entry per hyper-slab selection for each H5Dwrite call.
+* Each metadata entry stores the following members:
+  + The ID of the dataset (a 4-byte integer)
+  + A flag describes the data (a 4-byte integer)
+    + Endianess of the log data stored in file.
     + Filters applied to the data
     + Metadata format (allow different version of metadata encoding)
-  + Starting corrdinate of the selection (8 byte * [dataset dimension])
-  + Size of the selection (8 bytes * [dataset dimension])
-  + Starting position of the data in the log dataset (8 bytes)
-  + Size of data in the log dataset (8 bytes)
-* The size of each metadata entry is (24 + 16 * [dataset dimension]) bytes.
-  For fragment requests, the size of metadata can be larger than the size of data.
-  The overhead of metadata increases the over I/O time and decreases the effective bandwidth.
-* Log entries are generated individually on each process.
-  The number of metadata entries (metadata size) grows linearly with the number of processes when performing collective I/O.
-* We observed up to 3 times the metadata size to the data size in a case study on the E3SM benchmark.
-  The added I/O amount negates the performance improvement from using a log-based I/O pattern.
+  + Starting corrdinate of the subarray selection (8 byte * [number of dataset dimensions])
+  + Size of the selection (8 bytes * [number of dataset dimensions])
+  + The write request's starting offset in the log dataset (8 bytes)
+  + Size of write request (8 bytes)
+* Thus, the total size of each metadata entry is (24 + 16 * [dataset dimension]) bytes.
+  For I/O patterns containing a large number noncontiguous requests, such as E3SM-IO, the size of metadata can be larger wthan the size of data.
+  In this case, writing metadata can significantly increases the I/O time.
+* Log entries are generated individually and independently on each process.
+  The number of metadata entries depends on the degree of noncontiguity of the I/O pattern, and may grows quickly when the number of processes increases.
+* We observed up to 3 times of the metadata size to the data size in a mid-size ne120 F case study of the E3SM-IO benchmark.
+  The cost of writing metadata negates the performance advantage of using a log-based I/O pattern.
 ### Software Environment
 * HDF5 versions: All
 
 ### Solutions
-* Combine metadata that belongs to the same dataset
-  There can be multiple hyper-slab selections in each H5Dwrite.
-  Applications can call H5Dwrite multiple times on the same dataset.
-  We can combine metadata entries that belong to the same dataset.
-  The only difference among entries is in the selection and the location of the data.
-  The dataset ID and flag can be shared to save 8 bytes per entry after a dataset's first entry.
-* Encode selection starting coordinate and size
-  Theoretically, the dataset's size, which is the bound of selected hyper-slabs, can be anywhere within the range of hsize_t (8 bytes).
-  In practice, the dataset must fit within the file of size no more than 2^64 byte due to file system and hardware limitation.
-  We can represent every element's location in the dataset by its offset when flattened into 1-D space using row-major order.
-  Under this representation, the hyper-slab selection only takes 16 bytes (start and end) regardless of the dataset's dimensionality.
-  + Some datasets can be expandable.
-    Changing the shape of the dataset will change the canonical offset of each element.
-    We need to record the dataset's current shape (8 bytes * [dataset dimension]), so the coordinates can be decoded later on.
-    This representation only reduces the metadata size on datasets of 2 or more dimensions when there are more than one selected hyper-slabs.
-* Compress the selection and data location
-  We can compress the metadata to further reduce its size.
-  When the number of selections exceeds a set threshold (currently 128), we compress the selection and data location list.
-  We observed significant metadata size reduction in a case study using the E3SM benchmark.
-* The revised metadata format with the above optimizations is as follow:
+* Combine metadata entries that belongs to the same dataset
+  + When applications call H5Dwrite multiple times on the same dataset, each using a different hyper-slab selection, we can combine metadata entries that belong to the same dataset.
+    The only difference among entries is in the selection and the location of the write requests.
+    The dataset ID and flag can be shared to save 8 bytes per entry.
+* Encode selection starting coordinate and request size
+  + Instead of storing arrays of start indices and request lengths of a request, we can reduce the space requirement by storing only the (flattened) starting and ending offsets.
+  + Under this representation, the hyper-slab selection only takes 16 bytes (start and end) regardless of the dataset's dimensionality.
+  + The starting indices and lengths along each dimension can be reconstructed from the two starting and ending offsets, given the dataset's dimension sizes.
+  + For data datasets containing dimsnsions that are expandable.
+    * Changing the shape of the dataset will change the canonical offset of each element.
+    * We must store the dataset's current shape (8 bytes * [dataset dimension]), so the coordinates can be decoded correctly.
+    * This representation only reduces the metadata size on datasets of 2 or more dimensions when there are more than one selected hyper-slabs.
+* Compress the metadata entries
+  + When metadata contains a long list of noncontiguous requests, we consider to apply data compress on the starting and ending offsets to further reduce its size.
+  + When the number of selections exceeds a set threshold (currently 128), we enable the compression.
+  + When using ZLIB, we observed a significant metadata size reduction for the mid-size ne120 F study of the E3SM benchmark.
+  + **Kai-yuan**, please add the prelimnary performance results (compression ratios, size after compression, and time to compress, etc.
+* The revised metadata format with the above optimizations is given below:
   + The ID of the dataset to write (4 bytes)
   + A flag for additional metadata (4 bytes)
     + Endianness of the data in the log dataset
     + Filters applied to the data
     + Metadata format (allow different versions of metadata encoding)
     + Filters applied to metadata
-  + number of selected hyper-slabs
-  + List of selections (can be compressed)
+  + Number of selected hyper-slabs (subarray access)
+  + A list of selections (can be compressed)
     + Starting coordinate of the selection (8 bytes)
     + Ending coordinate of the selection (8 bytes)
     + Starting position of the data in the log dataset (8 bytes)
