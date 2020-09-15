@@ -93,6 +93,7 @@ General comments: I suggest the following when adding a new issue.
     + Adding the overhead of a merging routine to fix a possible developer mistake may not be worth it.
   * Implement merging in the VOL
 
+---
 ## Log VOL does not report reference count to the underlying VOL it is using (Solved)
 ### Problem description
   Certain types of HDF5 objects can be closed by HDF5 automatically when no longer in use.
@@ -133,6 +134,7 @@ General comments: I suggest the following when adding a new issue.
   => Yes, but only for tracked object types.
 ############################################################################################################################################
 
+---
 ## NetCDF4 support
 **Problem description**:
   According to the design proposal, our VOL will support basic I/O operations on File, Group, Dataset, and Attribute.
@@ -152,10 +154,12 @@ General comments: I suggest the following when adding a new issue.
     + We need to implement VOL API for nearly all HDF5 features to support NetCDF4
     + Code: logvol_obj.cpp, logvol_link.cpp
 
+---
 ## VOL fails when running E3SM on multi-process through NetCDF4 API
   The issue is still being studied.
   An H5Aiterate call failed on the second process due to some format decoding error.
 
+---
 ## Native VOL won't close if there are data objects still open
 **Problem description**:
   The native VOL keeps track of all data object it opens.
@@ -179,6 +183,7 @@ General comments: I suggest the following when adding a new issue.
     + When the count reaches 0, and the closing flag is set, the VOL automatically closes the file
     + It may not always be possible as is discussed in https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Close
 
+---
 ## Native VOL is not available when the library is shuting down
   HDF5 dispatcher placed a hook on MPI_Finalize to finalize the HDF5 library.
   When finalizing, the dispatcher will close all files not closed by the application by calling the file close VOL API.
@@ -197,6 +202,7 @@ General comments: I suggest the following when adding a new issue.
   * Delay file close until the last opened object is closed
     + HDF5 team suggests maintaining a reference count on the number of objects opened for every file. The file is only closed when the reference count reaches 0. The VOL close function will always return success after deducting the reference count, but the file will remain open as long as the reference count remains positive. In this way, the file will only be closed when the last object opened through it is closed.
 
+---
 ## Registering property changes the signature of the property class
   H5Pregister can be used to register new properties to an existing property class (file access, dataset transfer, etc.).
   After registration, any new property list created under this property class will include the registered property.
@@ -328,7 +334,6 @@ General comments: I suggest the following when adding a new issue.
     memory layout is the same.
 
 ---
-
 ## H5VLDataset_write do not follow collective property
 ### Problem Description
 * It is a confirmed HDF5 bug. The native VOL ignored the dataset transfer property passed from the dispatcher.
@@ -350,7 +355,6 @@ General comments: I suggest the following when adding a new issue.
 * Collaborate with the HDF5 team to study the reason the native VOL did not follow the setting in the property list.
 
 ---
-
 ## HDF5 dispatcher creates a wrapped VOL object, but never free it
 ### Problem Description
 * HDF5 allows applications to keep data objects open after the file containing them is closed. 
@@ -374,7 +378,6 @@ General comments: I suggest the following when adding a new issue.
 * We are working with the HDF5 team to fix the bug.
 
 ---
-
 ## Metadata size can be larger than data size
 ### Problem Description
 * The log VOL creates a metadata entry per hyper-slab selection for each H5Dwrite call.
