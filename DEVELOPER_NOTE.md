@@ -1,6 +1,18 @@
 # Developer's Note
 
-- [Issues encountered](#issues-encountered)
++ [HDF5 Predefined Data Type Initialization](#hdf5-predefined-data-type-initialization-solved)
++ [H5Sget_select_hyper_nblocks does not combine selection blocks](#h5sget_select_hyper_nblocks-does-not-combine-selection-blocks-not-a-bug)
++ [Log VOL does not report reference count to the underlying VOL it is using](#log-vol-does-not-report-reference-count-to-the-underlying-vol-it-is-using-solved)
++ [NetCDF4 support](netcdf4-support)
++ [VOL fails when running E3SM on multi-process through NetCDF4 API](#vol-fails-when-running-e3sm-on-multi-process-through-netcdf4-api)
++ [Native VOL won't close if there are data objects still open](#native-vol-wont-close-if-there-are-data-objects-still-open)
++ [Registering property changes the signature of the property class](#registering-property-changes-the-signature-of-the-property-class)
++ [Improve Performance of Posting Dataset Write Requests](#improve-performance-of-posting-dataset-write-requests)
++ [Memory space is always required in H5Dwrite even if the memory buffer is contiguous](#memory-space-is-always-required-in-h5dwrite-even-if-the-memory-buffer-is-contiguous)
++ [H5VLDataset_write do not follow collective property](#h5vldataset_write-do-not-follow-collective-property)
++ [HDF5 dispatcher creates a wrapped VOL object, but never free it](#hdf5-dispatcher-creates-a-wrapped-vol-object-but-never-free-it)
++ [Metadata size can be larger than data size](#metadata-size-can-be-larger-than-data-size)
+
 
 ---
 
@@ -80,7 +92,7 @@ General comments: I suggest the following when adding a new issue.
     + Adding the overhead of a merging routine to fix a possible developer mistake may not be worth it.
   * Implement merging in the VOL
 
-## The log VOL does not report reference count to the underlying VOL it is using (Solved)
+## Log VOL does not report reference count to the underlying VOL it is using (Solved)
 ### Problem description
   Certain types of HDF5 objects can be closed by HDF5 automatically when no longer in use.
   For those objects, HDF5 keeps a reference count on each opened instance.
@@ -139,7 +151,7 @@ General comments: I suggest the following when adding a new issue.
     + We need to implement VOL API for nearly all HDF5 features to support NetCDF4
     + Code: logvol_obj.cpp, logvol_link.cpp
 
-## The VOL fail when running E3SM on multi-process through NetCDF4 API
+## VOL fails when running E3SM on multi-process through NetCDF4 API
   The issue is still being studied.
   An H5Aiterate call failed on the second process due to some format decoding error.
 
