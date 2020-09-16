@@ -6,7 +6,7 @@
 + [NetCDF4 support](#netcdf4-support)
 + [VOL fails when running E3SM on multi-process through NetCDF4 API](#vol-fails-when-running-e3sm-on-multi-process-through-netcdf4-api)
 + [Native VOL won't close if there are data objects still open](#native-vol-wont-close-if-there-are-data-objects-still-open)
-+ [Native VOL is not available when the library is shuting down](#native-vol-is-not-available-when-the-library-is-shuting-down)
++ [Native VOL is not available when the library is shutting down](#native-vol-is-not-available-when-the-library-is-shutting-down)
 + [Registering property changes the signature of the property class](#registering-property-changes-the-signature-of-the-property-class)
 + [Improve Performance of Posting Dataset Write Requests](#improve-performance-of-posting-dataset-write-requests)
 + [Memory space is always required in H5Dwrite even if the memory buffer is contiguous](#memory-space-is-always-required-in-h5dwrite-even-if-the-memory-buffer-is-contiguous)
@@ -23,11 +23,11 @@
 General comments: I suggest the following when adding a new issue.
 
 ## Short title of the issue
-**Problem description**:
+###Problem description
   * HDF5 versions
   * Environment settings
   * Trigger condition, including an example code fragment
-**Proposed solutions**:
+###Proposed solutions
   * Solution 1
     + Description
     + Code fragments or reference links to source files
@@ -47,7 +47,7 @@ General comments: I suggest the following when adding a new issue.
   * Initializing the native VOL will not automatically initialize the predefined data types.
   * They should be initialized by a callback function when the user VOL is initialized (part of file_specific).
   * The HDF5 dispatcher first calls the introspect API of the user VOL to check for the existence of the initialization routine.
-  * If succeeded, the dispatcher will call the user VOL's initialization function when needed (**WKL: when needed?**).
+  * If succeeded, the dispatcher will call the user VOL's initialization function when needed (**when?**).
   * This is not documented in HDF5 user guides. This behavior was found when reading into the source codes of the native VOL.
   * Therefore, a user VOL must call the native VOL's initialization routine first. Otherwise, the values of those global variables will not be valid (remained to be -1).
 
@@ -66,21 +66,25 @@ General comments: I suggest the following when adding a new issue.
 ## H5Sget_select_hyper_nblocks does not combine selection blocks (Not a bug)
 ### Problem Description
   HDF5 supports two types of dataspace selection - point list and hyper-slab.
-  A point list selection is represented by a list of selected points (unit cell) directly.
-  A hyper-slab selection is represented by four attributes - start, count, stride, and block.
-  "Start" means the starting position of the selected blocks.
-  "Count" is the number of blocks selected along each dimension.
-  "Stride" controls the space between selected blocks
-  "Block" is the size of each selected block.
+  + A point list selection is represented by a list of selected points (unit cell) directly.
+  + A hyper-slab selection is represented by four attributes - start, count, stride, and block.
+  + "Start" means the starting position of the selected blocks.
+  + "Count" is the number of blocks selected along each dimension.
+  + "Stride" controls the space between selected blocks
+  + "Block" is the size of each selected block.
 
-  The meaning of "count" in HDF5's hyper-slab selection is different from that in netcdf APIs.
-  NetCDF selection use "count" to refer to the block size while HDF5 uses "block" in hyper-slab selection.
-  Developers transitioning from NetCDF to HDF5 may mistake the "count" argument as the block size when they want to select a single block.
-  In that case, the application will end up selecting the entire region with 1x1 cells.
-  It can greatly affect the performance of our log VOL as we create a metadata entry int he index for every selected block.
-  Before 1.12.0, H5Sget_select_hyper_blocklist will automatically combine those 1x1 selections into a single block before returning to the user.
-  It help mitigates the issue if the developer made mistakes mentioned above.
-  However, they removed this feature 1.12.0 and H5Sget_select_hyper_blocklist returns the selected blocks as is.
+  The meaning of "count" in HDF5's hyper-slab selection is different from that
+  in netcdf APIs.  NetCDF selection use "count" to refer to the block size
+  while HDF5 uses "block" in hyper-slab selection.  Developers transitioning
+  from NetCDF to HDF5 may mistake the "count" argument as the block size when
+  they want to select a single block.  In that case, the application will end
+  up selecting the entire region with 1x1 cells.  It can greatly affect the
+  performance of our log VOL as we create a metadata entry int he index for
+  every selected block.  Before 1.12.0, H5Sget_select_hyper_blocklist will
+  automatically combine those 1x1 selections into a single block before
+  returning to the user.  It help mitigates the issue if the developer made
+  mistakes mentioned above.  However, they removed this feature 1.12.0 and
+  H5Sget_select_hyper_blocklist returns the selected blocks as is.
 
 ### Software Environment
   * HDF5 versions: 1.12.0
@@ -96,19 +100,27 @@ General comments: I suggest the following when adding a new issue.
 ---
 ## Log VOL does not report reference count to the underlying VOL it is using (Solved)
 ### Problem description
-  Certain types of HDF5 objects can be closed by HDF5 automatically when no longer in use.
-  For those objects, HDF5 keeps a reference count on each opened instance.
-  The reference count represents the number of copies of the ID (the token used to refer to the instant) that currently resides in the memory.
-  Should the reference count reaches 0, HDF5 will close the instance automatically.
-  For simplicity, we refer to those objects as "tracked objects."
+  Certain types of HDF5 objects can be closed by HDF5 automatically when no
+  longer in use.  For those objects, HDF5 keeps a reference count on each
+  opened instance.  The reference count represents the number of copies of the
+  ID (the token used to refer to the instant) that currently resides in the
+  memory.  Should the reference count reaches 0, HDF5 will close the instance
+  automatically.  For simplicity, we refer to those objects as "tracked
+  objects."
 
-  To maintain the reference count, HDF5 requires the user to report new references to tracked objects (increase reference count) every time they copy the ID (such as assigning it to a variable) of the object.
-  When a copy of the ID is removed from the memory, the user has to decrease the reference count by calling a corresponding API.
-  If the reference count is not reported correctly, HDF5 may free the object prematurely while the user still needs it.
+  To maintain the reference count, HDF5 requires the user to report new
+  references to tracked objects (increase reference count) every time they copy
+  the ID (such as assigning it to a variable) of the object.  When a copy of
+  the ID is removed from the memory, the user has to decrease the reference
+  count by calling a corresponding API.  If the reference count is not reported
+  correctly, HDF5 may free the object prematurely while the user still needs
+  it.
 
-  VOLs are tracked objects.
-  If our log VOL uses the native VOL internally but does not report reference of the native VOL, HDF5 will close the native VOL when another internal routine that uses the native VOL finishes and decreases the reference count.
-  In consequence, our log VOL receives an error on all native VOL operations afterward.
+  VOLs are tracked objects.  If our log VOL uses the native VOL internally but
+  does not report reference of the native VOL, HDF5 will close the native VOL
+  when another internal routine that uses the native VOL finishes and decreases
+  the reference count.  In consequence, our log VOL receives an error on all
+  native VOL operations afterward.
 
 ### Software Environment
   * HDF5 versions: 1.12.0
@@ -136,20 +148,27 @@ General comments: I suggest the following when adding a new issue.
 
 ---
 ## NetCDF4 support
-**Problem description**:
-  According to the design proposal, our VOL will support basic I/O operations on File, Group, Dataset, and Attribute.
-  We did not plan to support advanced HDF5 features such as Link (H5L*), Object (H5O*), Reference (H5R*), etc.
-  Our VOL also does not support advanced operation on HDF5 objects such as iterating (*iterate).
+###Problem description
+  According to the design proposal, our VOL will support basic I/O operations
+  on File, Group, Dataset, and Attribute.  We did not plan to support advanced
+  HDF5 features such as Link (H5L*), Object (H5O*), Reference (H5R*), etc.  Our
+  VOL also does not support advanced operation on HDF5 objects such as
+  iterating (*iterate).
 
-  The NetCDF library requires many features beyond the design of our VOL for NetCDF4 files.
-  Currently known requirements are Object (H5O*) and Link (H5L*).
-  To support the NetCDF integration, we need to significantly improve the compatibility of the VOL beyond our original plant of attribute, group, and attributes.
-  Many of them can be tackled by passing the request to the native VOL (pass-through), but some require special handling.
-  H5Ocopy is one example. If the object copied is a dataset, we need to update its attribute as well as the metadata in the file since we assign every dataset a unique ID.
+  The NetCDF library requires many features beyond the design of our VOL for
+  NetCDF4 files.  Currently known requirements are Object (H5O*) and Link
+  (H5L*).  To support the NetCDF integration, we need to significantly improve
+  the compatibility of the VOL beyond our original plant of attribute, group,
+  and attributes.  Many of them can be tackled by passing the request to the
+  native VOL (pass-through), but some require special handling.  H5Ocopy is one
+  example. If the object copied is a dataset, we need to update its attribute
+  as well as the metadata in the file since we assign every dataset a unique
+  ID.
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: Using the log VOL in (modified) NetCDF4 library.
-**Current solution (onging)**:
+
+###Current solution (on going)
   * Extend support to other HDF5 objects and advanced functions
     + We need to implement VOL API for nearly all HDF5 features to support NetCDF4
     + Code: logvol_obj.cpp, logvol_link.cpp
@@ -161,7 +180,7 @@ General comments: I suggest the following when adding a new issue.
 
 ---
 ## Native VOL won't close if there are data objects still open
-**Problem description**:
+###Problem description
   The native VOL keeps track of all data object it opens.
   If there are objects associated with a file still open, the native VOL will refuse to close the file and return an error.
   Our VOL wraps around the native VOL. Every object opened by our VOL contains at least one opened object by the native VOL.
@@ -170,7 +189,8 @@ General comments: I suggest the following when adding a new issue.
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: Call H5Fclose when there are other file objects left open.
-**Potential solutions**:
+
+###Potential solutions
   * Catch the error and return to the dispatcher without aborting
     + We need to implement VOL API for nearly all HDF5 features to support NetCDF4
     + Code: logvol_obj.cpp, logvol_link.cpp
@@ -184,7 +204,8 @@ General comments: I suggest the following when adding a new issue.
     + It may not always be possible as is discussed in https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Close
 
 ---
-## Native VOL is not available when the library is shuting down
+## Native VOL is not available when the library is shutting down
+###Problem description
   HDF5 dispatcher placed a hook on MPI_Finalize to finalize the HDF5 library.
   When finalizing, the dispatcher will close all files not closed by the application by calling the file close VOL API.
   During that time, the library is marked to be in shutdown status, and the function of the native VOL will become limited.
@@ -197,13 +218,15 @@ General comments: I suggest the following when adding a new issue.
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: Call MPI_Finalize without closing opened files.
-**possible solutions**:
+
+###Possible solutions
   * Contact the HDF5 team to see if there is a way to reactivate the native VOL during the shutdown status
   * Delay file close until the last opened object is closed
     + HDF5 team suggests maintaining a reference count on the number of objects opened for every file. The file is only closed when the reference count reaches 0. The VOL close function will always return success after deducting the reference count, but the file will remain open as long as the reference count remains positive. In this way, the file will only be closed when the last object opened through it is closed.
 
 ---
 ## Registering property changes the signature of the property class
+###Problem description
   H5Pregister can be used to register new properties to an existing property class (file access, dataset transfer, etc.).
   After registration, any new property list created under this property class will include the registered property.
   It allows applications or third-party plugins to define its own properties.
@@ -231,11 +254,21 @@ General comments: I suggest the following when adding a new issue.
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: Call H5Pregister2 to register a new file access property, then create a file using H5P_DEFAULT as file access property.
-**possible solutions**:
+
+###Possible solutions
   * Contact the HDF5 team to see if there is a way to update all existing property list after the property class is extended.
   * Avoid registering new properties, try to create our own class.
     + Need to study the way to create our own property class.
-  * Solution after discussing with the HDF5 team. Instead of changing the property class to include new properties, new properties are inserted directly into every property list that needs logvol properties to be set. To achieve this, the log VOl exposes a "Set" and "Get" API for each property introduced. In the "Set" API, the VOL check whether the property exists in the property. If not, the property is inserted into the property list.  Then, the value of the property can be in the property list as usual. In the "Get" API, the VOL check whether the property exists in the property. If so, the value is retrieved from the property list. Otherwise, the default value is returned.
+  * Solution after discussing with the HDF5 team. Instead of changing the
+    property class to include new properties, new properties are inserted
+    directly into every property list that needs logvol properties to be set.
+    To achieve this, the log VOl exposes a "Set" and "Get" API for each
+    property introduced. In the "Set" API, the VOL check whether the property
+    exists in the property. If not, the property is inserted into the property
+    list.  Then, the value of the property can be in the property list as
+    usual. In the "Get" API, the VOL check whether the property exists in the
+    property. If so, the value is retrieved from the property list. Otherwise,
+    the default value is returned.
 
 ---
 ## Improve Performance of Posting Dataset Write Requests
@@ -387,15 +420,15 @@ General comments: I suggest the following when adding a new issue.
     + Endianess of the log data stored in file.
     + Filters applied to the data
     + Metadata format (allow different version of metadata encoding)
-  + Starting corrdinate of the subarray selection (8 byte * [number of dataset dimensions])
+  + Starting coordinate of the subarray selection (8 byte * [number of dataset dimensions])
   + Size of the selection (8 bytes * [number of dataset dimensions])
   + The write request's starting offset in the log dataset (8 bytes)
   + Size of write request (8 bytes)
 * Thus, the total size of each metadata entry is (24 + 16 * [dataset dimension]) bytes.
-  For I/O patterns containing a large number noncontiguous requests, such as E3SM-IO, the size of metadata can be larger wthan the size of data.
+  For I/O patterns containing a large number noncontiguous requests, such as E3SM-IO, the size of metadata can be larger than the size of data.
   In this case, writing metadata can significantly increases the I/O time.
 * Log entries are generated individually and independently on each process.
-  The number of metadata entries depends on the degree of noncontiguity of the I/O pattern, and may grows quickly when the number of processes increases.
+  The number of metadata entries depends on the degree of non-contiguity of the I/O pattern, and may grows quickly when the number of processes increases.
 * We observed up to 3 times of the metadata size to the data size in a mid-size ne120 F case study of the E3SM-IO benchmark.
   The cost of writing metadata negates the performance advantage of using a log-based I/O pattern.
 ### Software Environment
@@ -403,22 +436,36 @@ General comments: I suggest the following when adding a new issue.
 
 ### Solutions
 * Combine metadata entries that belongs to the same dataset
-  + When applications call H5Dwrite multiple times on the same dataset, each using a different hyper-slab selection, we can combine metadata entries that belong to the same dataset.
-    The only difference among entries is in the selection and the location of the write requests.
-    The dataset ID and flag can be shared to save 8 bytes per entry.
+  + When applications call H5Dwrite multiple times on the same dataset, each
+    using a different hyper-slab selection, we can combine metadata entries
+    that belong to the same dataset.  The only difference among entries is in
+    the selection and the location of the write requests.  The dataset ID and
+    flag can be shared to save 8 bytes per entry.
 * Encode selection starting coordinate and request size
-  + Instead of storing arrays of start indices and request lengths of a request, we can reduce the space requirement by storing only the (flattened) starting and ending offsets.
-  + Under this representation, the hyper-slab selection only takes 16 bytes (start and end) regardless of the dataset's dimensionality.
-  + The starting indices and lengths along each dimension can be reconstructed from the two starting and ending offsets, given the dataset's dimension sizes.
-  + For data datasets containing dimsnsions that are expandable.
-    * Changing the shape of the dataset will change the canonical offset of each element.
-    * We must store the dataset's current shape (8 bytes * [dataset dimension]), so the coordinates can be decoded correctly.
-    * This representation only reduces the metadata size on datasets of 2 or more dimensions when there are more than one selected hyper-slabs.
+  + Instead of storing arrays of start indices and request lengths of a
+    request, we can reduce the space requirement by storing only the
+    (flattened) starting and ending offsets.
+  + Under this representation, the hyper-slab selection only takes 16 bytes
+    (start and end) regardless of the dataset's dimensionality.
+  + The starting indices and lengths along each dimension can be reconstructed
+    from the two starting and ending offsets, given the dataset's dimension
+    sizes.
+  + For datasets containing dimensions that are expandable.
+    * Changing the shape of the dataset will change the canonical offset of
+      each element.
+    * We must store the dataset's current shape (8 bytes * [dataset
+      dimension]), so the coordinates can be decoded correctly.
+    * This representation only reduces the metadata size on datasets of 2 or
+      more dimensions when there are more than one selected hyper-slabs.
 * Compress the metadata entries
-  + When metadata contains a long list of noncontiguous requests, we consider to apply data compress on the starting and ending offsets to further reduce its size.
-  + When the number of selections exceeds a set threshold (currently 128), we enable the compression.
-  + When using ZLIB, we observed a significant metadata size reduction for the mid-size ne120 F study of the E3SM benchmark.
-  + **Kai-yuan**, please add the prelimnary performance results (compression ratios, size after compression, and time to compress, etc.
+  + When metadata contains a long list of noncontiguous requests, we consider
+    to apply data compress on the starting and ending offsets to further reduce
+    its size.
+  + When the number of selections exceeds a set threshold (currently 128), we
+    enable the compression.
+  + When using ZLIB, we observed a significant metadata size reduction for the
+    mid-size ne120 F study of the E3SM benchmark.
+  + **Kai-yuan**, please add the preliminary performance results (compression ratios, size after compression, and time to compress, etc.
 * The revised metadata format with the above optimizations is given below:
   + The ID of the dataset to write (4 bytes)
   + A flag for additional metadata (4 bytes)
