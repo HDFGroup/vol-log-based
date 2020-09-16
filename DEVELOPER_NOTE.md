@@ -23,11 +23,11 @@
 General comments: I suggest the following when adding a new issue.
 
 ## Short title of the issue
-###Problem description
+### Problem description
   * HDF5 versions
   * Environment settings
   * Trigger condition, including an example code fragment
-###Proposed solutions
+### Proposed solutions
   * Solution 1
     + Description
     + Code fragments or reference links to source files
@@ -164,6 +164,8 @@ General comments: I suggest the following when adding a new issue.
   example. If the object copied is a dataset, we need to update its attribute
   as well as the metadata in the file since we assign every dataset a unique
   ID.
+
+### Software Environment
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: Using the log VOL in (modified) NetCDF4 library.
@@ -186,6 +188,8 @@ General comments: I suggest the following when adding a new issue.
   Our VOL wraps around the native VOL. Every object opened by our VOL contains at least one opened object by the native VOL.
   If the application does not close all opened objects before closing the file, the native VOL will report an error.
   Under our current implementation, the log VOL will abort whenever the native VOL returns an error.
+
+### Software Environment
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: Call H5Fclose when there are other file objects left open.
@@ -215,6 +219,8 @@ General comments: I suggest the following when adding a new issue.
   It relies on the native VOL to update metadata and to create log datasets.
   However, many functions it uses are not available while the library is in shutdown status (H5L_exists to check whether we already have the metadata log and the lookup table).
   Thus, our file closing API will always fail when called by the dispatcher on MPI_Finalize.
+
+### Software Environment
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: Call MPI_Finalize without closing opened files.
@@ -251,6 +257,8 @@ General comments: I suggest the following when adding a new issue.
   The issue is observed when trying to load the log VOL dynamically using environment variables.
   After loading and initializing the log VOL, the dispatcher tries to set it as the default VOL in the default file access property list (the property list used when H5P_DEFAULT is seen) by calling H5Pset_vol.
   H5Pset_vol returns an error because the default file access property list is no longer a file access property.
+
+### Software Environment
   * HDF5 versions: 1.12.0
   * Environment settings: N/A
   * Trigger condition: Call H5Pregister2 to register a new file access property, then create a file using H5P_DEFAULT as file access property.
