@@ -148,7 +148,7 @@ General comments: I suggest the following when adding a new issue.
 
 ---
 ## NetCDF4 support
-###Problem description
+### Problem description
   According to the design proposal, our VOL will support basic I/O operations
   on File, Group, Dataset, and Attribute.  We did not plan to support advanced
   HDF5 features such as Link (H5L*), Object (H5O*), Reference (H5R*), etc.  Our
@@ -168,7 +168,7 @@ General comments: I suggest the following when adding a new issue.
   * Environment settings: N/A
   * Trigger condition: Using the log VOL in (modified) NetCDF4 library.
 
-###Current solution (on going)
+### Current solution (on going)
   * Extend support to other HDF5 objects and advanced functions
     + We need to implement VOL API for nearly all HDF5 features to support NetCDF4
     + Code: logvol_obj.cpp, logvol_link.cpp
@@ -180,7 +180,7 @@ General comments: I suggest the following when adding a new issue.
 
 ---
 ## Native VOL won't close if there are data objects still open
-###Problem description
+### Problem description
   The native VOL keeps track of all data object it opens.
   If there are objects associated with a file still open, the native VOL will refuse to close the file and return an error.
   Our VOL wraps around the native VOL. Every object opened by our VOL contains at least one opened object by the native VOL.
@@ -190,7 +190,7 @@ General comments: I suggest the following when adding a new issue.
   * Environment settings: N/A
   * Trigger condition: Call H5Fclose when there are other file objects left open.
 
-###Potential solutions
+### Potential solutions
   * Catch the error and return to the dispatcher without aborting
     + We need to implement VOL API for nearly all HDF5 features to support NetCDF4
     + Code: logvol_obj.cpp, logvol_link.cpp
@@ -205,7 +205,7 @@ General comments: I suggest the following when adding a new issue.
 
 ---
 ## Native VOL is not available when the library is shutting down
-###Problem description
+### Problem description
   HDF5 dispatcher placed a hook on MPI_Finalize to finalize the HDF5 library.
   When finalizing, the dispatcher will close all files not closed by the application by calling the file close VOL API.
   During that time, the library is marked to be in shutdown status, and the function of the native VOL will become limited.
@@ -219,14 +219,14 @@ General comments: I suggest the following when adding a new issue.
   * Environment settings: N/A
   * Trigger condition: Call MPI_Finalize without closing opened files.
 
-###Possible solutions
+### Possible solutions
   * Contact the HDF5 team to see if there is a way to reactivate the native VOL during the shutdown status
   * Delay file close until the last opened object is closed
     + HDF5 team suggests maintaining a reference count on the number of objects opened for every file. The file is only closed when the reference count reaches 0. The VOL close function will always return success after deducting the reference count, but the file will remain open as long as the reference count remains positive. In this way, the file will only be closed when the last object opened through it is closed.
 
 ---
 ## Registering property changes the signature of the property class
-###Problem description
+### Problem description
   H5Pregister can be used to register new properties to an existing property class (file access, dataset transfer, etc.).
   After registration, any new property list created under this property class will include the registered property.
   It allows applications or third-party plugins to define its own properties.
@@ -255,7 +255,7 @@ General comments: I suggest the following when adding a new issue.
   * Environment settings: N/A
   * Trigger condition: Call H5Pregister2 to register a new file access property, then create a file using H5P_DEFAULT as file access property.
 
-###Possible solutions
+### Possible solutions
   * Contact the HDF5 team to see if there is a way to update all existing property list after the property class is extended.
   * Avoid registering new properties, try to create our own class.
     + Need to study the way to create our own property class.
@@ -272,7 +272,7 @@ General comments: I suggest the following when adding a new issue.
 
 ---
 ## Improve Performance of Posting Dataset Write Requests
-### Problem Description
+###  Problem Description
 * If treating individual calls to H5Dwrite independently, then the log-based
   driver must call HDF5 APIs to query properties of a defined dataset in order
   to perform sanity checks on the user arguments. Such queries can be expensive
