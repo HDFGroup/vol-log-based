@@ -439,6 +439,8 @@ General comments: I suggest the following when adding a new issue.
   The number of metadata entries depends on the degree of non-contiguity of the I/O pattern, and may grows quickly when the number of processes increases.
 * We observed up to 3 times of the metadata size to the data size in a mid-size ne120 F case study of the E3SM-IO benchmark.
   The cost of writing metadata negates the performance advantage of using a log-based I/O pattern.
+  + Data size: 14.425 GiB
+  + Metadata size: 86.38 GiB
 ### Software Environment
 * HDF5 versions: All
 
@@ -473,7 +475,9 @@ General comments: I suggest the following when adding a new issue.
     enable the compression.
   + When using ZLIB, we observed a significant metadata size reduction for the
     mid-size ne120 F study of the E3SM benchmark.
-  + **Kai-yuan**, please add the preliminary performance results (compression ratios, size after compression, and time to compress, etc.
+    + Metadata size reduction: 38.981322 GiB ->	4.3856722 GiB (compression ratios: 8.89)
+    + Compression time: 2.900018 sec
+    + Metadata I/O time reduction: 199.772419 sec -> 195.212039 sec
 * The revised metadata format with the above optimizations is given below:
   + The ID of the dataset to write (4 bytes)
   + A flag for additional metadata (4 bytes)
