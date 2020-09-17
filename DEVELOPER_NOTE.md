@@ -471,13 +471,14 @@ General comments: I suggest the following when adding a new issue.
   + When metadata contains a long list of noncontiguous requests, we consider
     to apply data compress on the starting and ending offsets to further reduce
     its size.
-  + When the number of selections exceeds a set threshold (currently 128), we
-    enable the compression.
+  + When the number of subarray selections exceeds a set threshold (currently set
+    to 128), the compression is enabled.
   + When using ZLIB, we observed a significant metadata size reduction for the
-    mid-size ne120 F study of the E3SM benchmark.
-    + Metadata size reduction: 38.981322 GiB ->	4.3856722 GiB (compression ratios: 8.89)
-    + Compression time: 2.900018 sec
-    + Metadata I/O time reduction: 199.772419 sec -> 195.212039 sec
+    mid-size ne120 F study of the E3SM benchmark, running 1024 MPI processes on
+    Cori Haswell nodes, 32 processes per node.
+    + Metadata size reduction: 38.98 GiB ->	4.39 GiB (compression ratios: 8.89)
+    + Compression time: 2.90 sec
+    + Metadata I/O time reduction: 199.77 sec -> 195.21 sec
 * The revised metadata format with the above optimizations is given below:
   + The ID of the dataset to write (4 bytes)
   + A flag for additional metadata (4 bytes)
