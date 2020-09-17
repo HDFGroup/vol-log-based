@@ -421,75 +421,81 @@ General comments: I suggest the following when adding a new issue.
 ---
 ## Metadata size can be larger than data size
 ### Problem Description
-* The log VOL creates a metadata entry per hyper-slab selection for each H5Dwrite call.
-* Each metadata entry stores the following members:
+* In our original design, the log-based VOL creates a metadata entry per
+  hyper-slab selection (subarray request) at each H5Dwrite call and each
+  metadata entry stores the following members:
   + The ID of the dataset (a 4-byte integer)
-  + A flag describes the data (a 4-byte integer)
+  + A flag describes state the data (a 4-byte integer)
     + Endianess of the log data stored in file.
     + Filters applied to the data
     + Metadata format (allow different version of metadata encoding)
   + Starting coordinate of the subarray selection (8 byte * [number of dataset dimensions])
-  + Size of the selection (8 bytes * [number of dataset dimensions])
-  + The write request's starting offset in the log dataset (8 bytes)
+  + Size of the selection along each dimension (8 bytes * [number of dataset dimensions])
+  + Write request's starting offset in the log dataset (8 bytes)
   + Size of write request (8 bytes)
-* Thus, the total size of each metadata entry is (24 + 16 * [dataset dimension]) bytes.
-  For I/O patterns containing a large number noncontiguous requests, such as E3SM-IO, the size of metadata can be larger than the size of data.
-  In this case, writing metadata can significantly increases the I/O time.
-* Log entries are generated individually and independently on each process.
-  The number of metadata entries depends on the degree of non-contiguity of the I/O pattern, and may grows quickly when the number of processes increases.
-* We observed up to 3 times of the metadata size to the data size in a mid-size ne120 F case study of the E3SM-IO benchmark.
-  The cost of writing metadata negates the performance advantage of using a log-based I/O pattern.
-  + Data size: 14.425 GiB
-  + Metadata size: 86.38 GiB
+* The total size of each metadata entry is (24 + 16 * [dataset dimension]) bytes.
+* For I/O patterns containing a large number noncontiguous requests, such
+  as E3SM-IO, the sum of metadata size can be larger than the data size.
+* We observed up to 3 times of the metadata size (86.4 GiB) to the data size
+  (14.4 GiB) in the mid-size E3SM ne120 F case study. The cost of writing
+  metadata negates the performance advantage of using the log-based I/O to
+  avoid the cost of inter-process communication to arrange data in its
+  canonical order.
+
 ### Software Environment
 * HDF5 versions: All
 
 ### Solutions
-* Combine metadata entries that belongs to the same dataset
+* Combine metadata entries that belong to the same dataset.
   + When applications call H5Dwrite multiple times on the same dataset, each
     using a different hyper-slab selection, we can combine metadata entries
     that belong to the same dataset.  The only difference among entries is in
     the selection and the location of the write requests.  The dataset ID and
-    flag can be shared to save 8 bytes per entry.
-* Encode selection starting coordinate and request size
-  + Instead of storing arrays of start indices and request lengths of a
-    request, we can reduce the space requirement by storing only the
-    (flattened) starting and ending offsets.
-  + Under this representation, the hyper-slab selection only takes 16 bytes
-    (start and end) regardless of the dataset's dimensionality.
-  + The starting indices and lengths along each dimension can be reconstructed
-    from the two starting and ending offsets, given the dataset's dimension
-    sizes.
+    flag can be shared among entries and thus saving a space of 8 bytes.
+* Encode each selection with its starting and ending coordinates
+  + Instead of storing the start indices and request lengths of a subarray
+    request, we can reduce the space by storing only the (flattened) starting
+    and ending offsets, which takes only 16 bytes of space regardless of the
+    dataset's dimensionality.
+  + The starting index and request length along each dimension of a request
+    can be reconstructed from the two starting and ending offsets, given
+    the dataset's dimension sizes.
   + For datasets containing dimensions that are expandable.
-    * Changing the shape of the dataset will change the canonical offset of
-      each element.
-    * We must store the dataset's current shape (8 bytes * [dataset
-      dimension]), so the coordinates can be decoded correctly.
-    * This representation only reduces the metadata size on datasets of 2 or
-      more dimensions when there are more than one selected hyper-slabs.
+    * Because changing the dimension shape of a dataset will change the
+      canonical offset of each array element, we must store the dataset's
+      current shape (8 bytes * [number of dimensions]), so the starting
+      indices and request lengths can be decoded correctly.
+    * Note this representation can only reduce the metadata size for datasets
+      of 2 or more dimensions when there are more than one selected hyper-slabs
+      requests.
 * Compress the metadata entries
   + When metadata contains a long list of noncontiguous requests, we consider
     to apply data compress on the starting and ending offsets to further reduce
     its size.
-  + When the number of subarray selections exceeds a set threshold (currently set
-    to 128), the compression is enabled.
+  + We enables compression for a dataset when the number of its subarray selections
+    exceeds a threshold (currently set to 128).
   + When using ZLIB, we observed a significant metadata size reduction for the
-    mid-size ne120 F study of the E3SM benchmark, running 1024 MPI processes on
-    Cori Haswell nodes, 32 processes per node.
-    + Metadata size reduction: 38.98 GiB ->	4.39 GiB (compression ratios: 8.89)
+    mid-size E3SM ne120 F case, running 1024 MPI processes on Cori Haswell nodes,
+    32 processes per node.
+    + Total metadata size is reduced from 38.98 GiB to	4.39 GiB, a compression
+      ratios of 8.89.
     + Compression time: 2.90 sec
-    + Metadata I/O time reduction: 199.77 sec -> 195.21 sec
-* The revised metadata format with the above optimizations is given below:
+    + Time of writing metadata is reduced from 199.77 sec to 195.21 sec. Note this
+      measurement is done before the
+      [HDF5 collective I/O mode bug](#h5vldataset_write-do-not-follow-collective-property)
+      is fixed.
+      
+* The above revised metadata format is now containing the following components:
   + The ID of the dataset to write (4 bytes)
-  + A flag for additional metadata (4 bytes)
+  + A flag containing various state of the data (4 bytes)
     + Endianness of the data in the log dataset
     + Filters applied to the data
     + Metadata format (allow different versions of metadata encoding)
     + Filters applied to metadata
-  + Number of selected hyper-slabs (subarray access)
+  + Number of selected hyper-slabs (subarray access, 8 bytes)
   + A list of selections (can be compressed)
     + Starting coordinate of the selection (8 bytes)
     + Ending coordinate of the selection (8 bytes)
     + Starting position of the data in the log dataset (8 bytes)
-    + size of data in the log dataset (8 bytes)
+    + Size of data in the log dataset (8 bytes)
 ---
