@@ -277,6 +277,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	void *lgp;
 	int ndset;
 	int nldset;
+    int nmdset;
 
 	MPI_File fh;
 

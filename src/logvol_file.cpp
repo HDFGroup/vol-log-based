@@ -48,6 +48,8 @@ void *H5VL_log_file_create (
 	void *under_vol_info;
 	MPI_Comm comm;
 	hbool_t po_supported;
+    int attbuf[3];
+
 	TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
@@ -104,6 +106,7 @@ void *H5VL_log_file_create (
 	fp		   = new H5VL_log_file_t ();
 	fp->flag   = flags;
 	fp->nldset = 0;
+    fp->nmdset=0;
 	fp->ndset  = 0;
 	MPI_Comm_dup (comm, &(fp->comm));
 	MPI_Comm_rank (comm, &(fp->rank));
@@ -143,11 +146,11 @@ void *H5VL_log_file_create (
 	CHECK_NERR (fp->lgp)
 
 	// Att
+    attbuf[0]=fp->ndset;
+    attbuf[1]=fp->nldset;
+    attbuf[2]=fp->nmdset;
 	err =
-		H5VL_logi_add_att (fp, "_ndset", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(fp->ndset), dxpl_id);
-	CHECK_ERR
-	err = H5VL_logi_add_att (fp, "_nldset", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(fp->nldset),
-							 dxpl_id);
+		H5VL_logi_add_att (fp, "_int_att", H5T_STD_I32LE, H5T_NATIVE_INT32, 3, attbuf, dxpl_id);
 	CHECK_ERR
 
 	// Open the file with MPI
@@ -192,6 +195,8 @@ void *H5VL_log_file_open (
 	hid_t uvlid, under_fapl_id;
 	void *under_vol_info;
 	MPI_Comm comm;
+    int attbuf[3];
+
 	TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
@@ -281,10 +286,11 @@ void *H5VL_log_file_open (
 	TIMER_STOP (fp, TIMER_H5VL_GROUP_OPEN);
 
 	// Att
-	err = H5VL_logi_get_att (fp, "_ndset", H5T_NATIVE_INT32, &(fp->ndset), dxpl_id);
+	err = H5VL_logi_get_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, dxpl_id);
 	CHECK_ERR
-	err = H5VL_logi_get_att (fp, "_nldset", H5T_NATIVE_INT32, &(fp->nldset), dxpl_id);
-	CHECK_ERR
+    fp->ndset=attbuf[0];
+    fp->nldset=attbuf[1];
+    fp->nmdset=attbuf[2];
 	fp->idx.resize (fp->ndset);
 
 	// Open the file with MPI
