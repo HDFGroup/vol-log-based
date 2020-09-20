@@ -562,7 +562,7 @@ herr_t H5VL_log_filei_metaflush(H5VL_log_file_t *fp)
     CHECK_ERR
     if (has_idx)
     {
-        // If the exist, we expand them
+        // If the metadata dataset exist, we expand them
         TIMER_START;
         mdp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT,
                                fp->dxplid, NULL);
@@ -844,6 +844,8 @@ herr_t H5VL_log_filei_close(H5VL_log_file_t *fp)
 {
     herr_t err = 0;
     int mpierr;
+    int attbuf[3];
+
     TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
@@ -879,9 +881,10 @@ herr_t H5VL_log_filei_close(H5VL_log_file_t *fp)
         CHECK_ERR
 
         // Att
-        err = H5VL_logi_put_att(fp, "_ndset", H5T_NATIVE_INT32, &(fp->ndset), H5P_DEFAULT);
-        CHECK_ERR
-        err = H5VL_logi_put_att(fp, "_nldset", H5T_NATIVE_INT32, &(fp->nldset), H5P_DEFAULT);
+        attbuf[0]=fp->ndset;
+        attbuf[1]=fp->nldset;
+        attbuf[2]=fp->nmdset;
+        err = H5VL_logi_put_att(fp, "_ndset", H5T_NATIVE_INT32, attbuf, H5P_DEFAULT);
         CHECK_ERR
     }
 
