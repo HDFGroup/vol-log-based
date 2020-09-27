@@ -15,55 +15,59 @@ if LOGVOL_PROFILING
 endif
 M4FLAGS = -I${top_srcdir}/m4
 
-lib_LTLIBRARIES = liblogvol.la
+lib_LTLIBRARIES = libH5VL_log.la
 
 M4_SRCS = 
 
-H_SRCS =    logvol.h \
-            logvol_internal.h
+H_SRCS =    H5VL_log.h \
+            H5VL_log_internal.h
 
 C_SRCS = 
 
-CXX_SRCS =  logvol.cpp \
-            logvol_att.cpp \
-            logvol_blob.cpp \
-            logvol_datatype.cpp \
-            logvol_dataset.cpp \
-            logvol_dataset_internal.cpp \
-            logvol_dataspace_internal.cpp \
-            logvol_datatype_internal.cpp \
-            logvol_file.cpp \
-            logvol_file_internal.cpp \
-            logvol_introspect.cpp \
-            logvol_group.cpp \
-            logvol_link.cpp \
-            logvol_token.cpp \
-            logvol_property.cpp \
-            logvol_nb.cpp \
-            logvol_obj.cpp \
-            logvol_req.cpp \
-            logvol_util.cpp \
-            logvol_wrap.cpp \
-            logvol_zip.cpp \
-            logvol_internal.cpp \
-            logvol_internal_idx.cpp
+CXX_SRCS =  H5VL_log_att.cpp \
+            H5VL_log_blob.cpp \
+            H5VL_log_dataset.cpp \
+            H5VL_log_dataseti.cpp \
+            H5VL_log_datatype.cpp \
+            H5VL_log_datatypei.cpp \
+            H5VL_log_file.cpp \
+            H5VL_log_filei.cpp \
+            H5VL_log_filei_meta.cpp \
+            H5VL_log_group.cpp \
+            H5VL_log_info.cpp \
+            H5VL_log_introspect.cpp \
+            H5VL_log_link.cpp \
+            H5VL_log_main.cpp \
+            H5VL_log_obj.cpp \
+            H5VL_log_obji.cpp \
+            H5VL_log_req.cpp \
+            H5VL_log_token.cpp \
+            H5VL_log_wrap.cpp \
+            H5VL_log.cpp \
+            H5VL_logi_dataspace.cpp \
+            H5VL_logi_idx.cpp \
+            H5VL_logi_mem.cpp \
+            H5VL_logi_nb.cpp \
+            H5VL_logi_util.cpp \
+            H5VL_logi_wrapper.cpp \
+            H5VL_logi_zip.cpp
             
 if LOGVOL_DEBUG
-   CXX_SRCS += logvol_debug.cpp
+   CXX_SRCS += H5VL_logi_debug.cpp
 endif
 if LOGVOL_PROFILING
-   CXX_SRCS += logvol_profiling.cpp
+   CXX_SRCS += H5VL_logi_profiling.cpp
 endif
 
-include_HEADERS = logvol.h
+include_HEADERS = H5VL_log.h
 
 $(M4_SRCS:.m4=.cpp): Makefile
 
 .m4.cpp:
 	$(M4) $(AM_M4FLAGS) $(M4FLAGS) $< >$@
 
-liblogvol_la_SOURCES = $(C_SRCS) $(CXX_SRCS) $(H_SRCS)
-nodist_liblogvol_la_SOURCES = $(M4_SRCS:.m4=.cpp) $(M4H_SRCS:.m4h=.h)
+libH5VL_log_la_SOURCES = $(C_SRCS) $(CXX_SRCS) $(H_SRCS)
+nodist_libH5VL_log_la_SOURCES = $(M4_SRCS:.m4=.cpp) $(M4H_SRCS:.m4h=.h)
 
 dist-hook:
 	$(SED_I) -e "s|RELEASE_DATE|@LOGVOL_RELEASE_DATE@|g" $(distdir)/main.cpp

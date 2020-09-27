@@ -13,7 +13,7 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 AM_CPPFLAGS = -I$(top_srcdir)/src \
 			  -I$(top_srcdir)/test \
               -I$(srcdir) 
-LDADD = $(top_builddir)/src/.libs/liblogvol.la
+LDADD = $(top_builddir)/src/.libs/libH5VL_log.la
 
 check_PROGRAMS =    file \
                     group \

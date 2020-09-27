@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include <hdf5.h>
-#include "logvol.h"
+#include "H5VL_log.h"
 #include "testutils.hpp"
 
 #define N 10
