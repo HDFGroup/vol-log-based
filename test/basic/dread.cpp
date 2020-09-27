@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include <hdf5.h>
-#include "logvol.h"
+#include "H5VL_log.h"
 #include "testutils.hpp"
 
 int main(int argc, char **argv) {   

@@ -18,7 +18,7 @@ noinst_LTLIBRARIES=libh5test.la
 
 libh5test_la_SOURCES=h5test.c testframe.c testframe.c external_common.c
 
-LDADD = $(top_builddir)/src/.libs/liblogvol.la libh5test.la
+LDADD = $(top_builddir)/src/.libs/libH5VL_log.la libh5test.la
 
 check_PROGRAMS =    dangle \
                     del_many_dense_attrs 

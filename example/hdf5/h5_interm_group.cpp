@@ -17,7 +17,7 @@
  */
 
 #include "hdf5.h"
-#include "logvol.h"
+#include "H5VL_log.h"
 #include <cassert>
 
 #define H5FILE_NAME    "interm_group.h5"
