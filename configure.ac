@@ -243,6 +243,9 @@ AC_ARG_ENABLE([profiling],
    [enable_profiling=${enableval}], [enable_profiling=no]
 )
 AM_CONDITIONAL(LOGVOL_PROFILING, [test "x$enable_profiling" = xyes])
+if test "x${enable_profiling}" = xyes; then
+   AC_DEFINE(LOGVOL_PROFILING, 1, ["Internal profiling"])
+fi
 
 AC_ARG_WITH([hdf5],
    [AS_HELP_STRING([--with-hdf5=/path/to/hdf5], [Specify HDF5 installation path(s):

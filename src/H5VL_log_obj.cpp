@@ -1,6 +1,7 @@
 #include "H5VL_log_obj.hpp"
-#include "H5VL_logi_err.hpp"
+#include "H5VL_log_filei.hpp"
 #include "H5VL_log_dataseti.hpp"
+#include "H5VL_logi.hpp"
 
 /********************* */
 /* Function prototypes */

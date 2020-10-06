@@ -1,6 +1,7 @@
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_log_file.hpp"
 #include "H5VL_logi_nb.hpp"
+#include "H5VL_logi.hpp"
 #include <algorithm>
 #include <vector>
 #include <mpi.h>

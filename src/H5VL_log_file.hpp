@@ -1,10 +1,11 @@
 #pragma once
-#include "H5VL_logi_nb.hpp"
+#include <array>
+#include <string>
 #include "H5VL_log_obj.hpp"
+#include "H5VL_logi.hpp"
+#include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_nb.hpp"
 #include "H5VL_logi_profiling.hpp"
-#include "H5VL_logi_idx.hpp"
-#include <array>
 
 #define LOG_GROUP_NAME "_LOG"
 
@@ -15,7 +16,7 @@ typedef struct H5VL_log_contig_buffer_t {
 
 typedef struct H5VL_log_cord_t {
 	MPI_Offset cord[H5S_MAX_RANK];
-}H5VL_log_cord_t;
+} H5VL_log_cord_t;
 
 /* The log VOL file object */
 typedef struct H5VL_log_file_t : H5VL_log_obj_t {
@@ -31,7 +32,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	void *lgp;
 	int ndset;
 	int nldset;
-    int nmdset;
+	int nmdset;
 
 	MPI_File fh;
 
@@ -41,11 +42,13 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
 	// Should we do metadata caching?
 	std::vector<int> ndim;
-	std::vector<std::array<hsize_t, H5S_MAX_RANK> > dsizes;
+	std::vector<std::array<hsize_t, H5S_MAX_RANK>> dsizes;
 	// std::vector<H5VL_log_dset_meta_t> mdc;
 
 	ssize_t bsize;
 	size_t bused;
+
+	std::string name;
 
 	// H5VL_log_buffer_pool_t data_buf;
 	H5VL_log_contig_buffer_t meta_buf;
@@ -55,10 +58,16 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	bool idxvalid;
 	bool metadirty;
 
-#ifdef LOGVOL_PROFILING
+//#ifdef LOGVOL_PROFILING
+//#pragma message ( "C Preprocessor got here!" )
 	double tlocal[NTIMER];
 	double clocal[NTIMER];
-#endif
+//#endif
+
+	H5VL_log_file_t ();
+	H5VL_log_file_t (hid_t uvlid);
+	H5VL_log_file_t (void *uo, hid_t uvlid);
+	~H5VL_log_file_t ();
 } H5VL_log_file_t;
 
 typedef struct H5VL_log_buffer_block_t {

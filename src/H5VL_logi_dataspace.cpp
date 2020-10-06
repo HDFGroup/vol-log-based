@@ -2,6 +2,7 @@
 #include "H5VL_logi_util.hpp"
 #include "H5VL_logi_err.hpp"
 #include "H5VL_logi_debug.hpp"
+#include "H5VL_logi.hpp"
 #include <vector>
 #include <cstdlib>
 #include <cstring>

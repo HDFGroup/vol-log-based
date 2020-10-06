@@ -22,7 +22,7 @@ hid_t H5VL_LOG_g = H5I_INVALID_HID;
 hid_t H5VL_log_register(void) {
     /* Singleton register the pass-through VOL connector ID */
     if(H5VL_LOG_g < 0)
-        H5VL_LOG_g = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT);
+        H5VL_LOG_g = H5VLregister_connector(&H5VL_log_g, H5P_VOL_INITIALIZE_DEFAULT);
 
     return H5VL_LOG_g;
 } /* end H5VL_log_register() */

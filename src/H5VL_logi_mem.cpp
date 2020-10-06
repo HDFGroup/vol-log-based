@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include "H5VL_logi_mem.hpp"
 #include "H5VL_log_obj.hpp"
+#include "H5VL_logi.hpp"
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL__H5VL_log_new_obj

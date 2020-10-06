@@ -1,11 +1,11 @@
-#include <cstdlib>
-#include <cstdio>
-#include <mpi.h>
 #include "H5VL_logi_profiling.hpp"
+#include <mpi.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
 #include "H5VL_log_file.hpp"
-
+#include "H5VL_logi.hpp"
 static double tmax[NTIMER], tmin[NTIMER], tmean[NTIMER], tvar[NTIMER], tvar_local[NTIMER];
-
 const char *const tname[] = {
 	"H5VL_log_file_create",
 	"H5VL_log_file_open",
@@ -80,7 +80,7 @@ const char *const tname[] = {
 	"H5VL_log_filei_metaflush_barrier",
 	"H5VL_log_filei_metaflush_finalize",
 	"H5VL_log_filei_metaflush_size",
-    "H5VL_log_filei_metaflush_size_zip",
+	"H5VL_log_filei_metaflush_size_zip",
 	"H5VL_log_filei_metaupdate",
 	"H5VL_log_dataseti_readi_gen_rtypes",
 	"H5VL_log_dataseti_open_with_uo",
@@ -93,17 +93,17 @@ const char *const tname[] = {
 };
 
 void H5VL_log_profile_add_time (void *file, int id, double t) {
-	H5VL_log_file_t *fp=(H5VL_log_file_t*)file;
+	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
-	if (id > NTIMER) { return; }
+	assert (id >= 0 && id < NTIMER);
 	fp->tlocal[id] += t;
 	fp->clocal[id]++;
 }
 
 void H5VL_log_profile_sub_time (void *file, int id, double t) {
-	H5VL_log_file_t *fp=(H5VL_log_file_t*)file;
+	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
-	if (id > NTIMER) { return; }
+	assert (id >= 0 && id < NTIMER);
 	fp->tlocal[id] -= t;
 }
 
@@ -111,7 +111,7 @@ void H5VL_log_profile_sub_time (void *file, int id, double t) {
 void H5VL_log_profile_print (void *file) {
 	int i;
 	int np, rank, flag;
-	H5VL_log_file_t *fp=(H5VL_log_file_t*)file;
+	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
 	MPI_Initialized (&flag);
 	if (!flag) { MPI_Init (NULL, NULL); }
@@ -157,7 +157,7 @@ void H5VL_log_profile_print (void *file) {
 }
 void H5VL_log_profile_reset (void *file) {
 	int i;
-	H5VL_log_file_t *fp=(H5VL_log_file_t*)file;
+	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
 	for (i = 0; i < NTIMER; i++) {
 		fp->tlocal[i] = 0;

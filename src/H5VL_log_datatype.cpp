@@ -1,35 +1,10 @@
 #include "H5VL_log_datatype.hpp"
-#include "H5VL_log_obj.hpp"
+
 #include "H5VL_log_filei.hpp"
+#include "H5VL_log_obj.hpp"
 #include "H5VL_logi.hpp"
 
 /* Datatype callbacks */
-static void *H5VL_log_datatype_commit (void *obj,
-									   const H5VL_loc_params_t *loc_params,
-									   const char *name,
-									   hid_t type_id,
-									   hid_t lcpl_id,
-									   hid_t tcpl_id,
-									   hid_t tapl_id,
-									   hid_t dxpl_id,
-									   void **req);
-static void *H5VL_log_datatype_open (void *obj,
-									 const H5VL_loc_params_t *loc_params,
-									 const char *name,
-									 hid_t tapl_id,
-									 hid_t dxpl_id,
-									 void **req);
-static herr_t H5VL_log_datatype_get (
-	void *dt, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-static herr_t H5VL_log_datatype_specific (void *obj,
-										  H5VL_datatype_specific_t specific_type,
-										  hid_t dxpl_id,
-										  void **req,
-										  va_list arguments);
-static herr_t H5VL_log_datatype_optional (
-	void *obj, H5VL_datatype_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments);
-static herr_t H5VL_log_datatype_close (void *dt, hid_t dxpl_id, void **req);
-
 const H5VL_datatype_class_t H5VL_log_datatype_g {
 	H5VL_log_datatype_commit,	/* commit       */
 	H5VL_log_datatype_open,		/* open         */
@@ -61,22 +36,16 @@ static void *H5VL_log_datatype_commit (void *obj,
 	H5VL_log_obj_t *tp;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 
-    tp = new H5VL_log_obj_t();
+	tp = new H5VL_log_obj_t (op,H5I_DATATYPE);
 
-    tp->uo = H5VLdatatype_commit (op->uo, loc_params, op->uvlid, name, type_id,
-								 lcpl_id, tcpl_id, tapl_id, dxpl_id, req); CHECK_NERR(tp->uo);
-    tp->uvlid = op->uvlid;
-	tp->fp=op->fp;
-	H5VL_log_filei_inc_ref (tp->fp);
-    H5Iinc_ref (tp->uvlid);
-    tp->type = H5I_DATATYPE;
+	tp->uo = H5VLdatatype_commit (op->uo, loc_params, op->uvlid, name, type_id, lcpl_id, tcpl_id,
+								  tapl_id, dxpl_id, req);
+	CHECK_NERR (tp->uo);
 
-    return (void *)tp;
-
+	return (void *)tp;
 err_out:;
-    delete tp;
-
-    return NULL;
+	delete tp;
+	return NULL;
 } /* end H5VL_log_datatype_commit() */
 
 /*-------------------------------------------------------------------------
@@ -96,24 +65,19 @@ static void *H5VL_log_datatype_open (void *obj,
 									 hid_t dxpl_id,
 									 void **req) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    H5VL_log_obj_t *tp;
+	H5VL_log_obj_t *tp;
 
-    tp = new H5VL_log_obj_t();
+	tp = new H5VL_log_obj_t (op, H5I_DATATYPE);
 
-    tp->uo = H5VLdatatype_open (op->uo, loc_params, op->uvlid, name, tapl_id, dxpl_id,
-							   req); CHECK_NERR(tp->uo);
-    tp->uvlid = op->uvlid;
-	tp->fp=op->fp;
-	H5VL_log_filei_inc_ref (tp->fp);
-    H5Iinc_ref (tp->uvlid);
-    tp->type = H5I_ATTR;
-    
-    return (void *)tp;
+	tp->uo = H5VLdatatype_open (op->uo, loc_params, op->uvlid, name, tapl_id, dxpl_id, req);
+	CHECK_NERR (tp->uo);
+
+	return (void *)tp;
 
 err_out:;
-    delete tp;
+	delete tp;
 
-    return NULL;
+	return NULL;
 } /* end H5VL_log_datatype_open() */
 
 /*-------------------------------------------------------------------------
@@ -151,8 +115,7 @@ static herr_t H5VL_log_datatype_specific (void *obj,
 										  va_list arguments) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 
-	return H5VLdatatype_specific (op->uo, op->uvlid, specific_type, dxpl_id,
-									   req, arguments);
+	return H5VLdatatype_specific (op->uo, op->uvlid, specific_type, dxpl_id, req, arguments);
 } /* end H5VL_log_datatype_specific() */
 
 /*-------------------------------------------------------------------------
@@ -183,17 +146,14 @@ static herr_t H5VL_log_datatype_optional (
  *-------------------------------------------------------------------------
  */
 static herr_t H5VL_log_datatype_close (void *dt, hid_t dxpl_id, void **req) {
-	herr_t err = 0;
-    H5VL_log_obj_t *tp = (H5VL_log_obj_t *)dt;
+	herr_t err		   = 0;
+	H5VL_log_obj_t *tp = (H5VL_log_obj_t *)dt;
 
-    err = H5VLdatatype_close (tp->uo, tp->uvlid, dxpl_id, req); CHECK_ERR
-
-	err = H5VL_log_filei_dec_ref (tp->fp);
+	err = H5VLdatatype_close (tp->uo, tp->uvlid, dxpl_id, req);
 	CHECK_ERR
 
-    H5Idec_ref(tp->uvlid);
-    delete tp;
-    
+	delete tp;
+
 err_out:;
-    return err;
+	return err;
 } /* end H5VL_log_datatype_close() */
