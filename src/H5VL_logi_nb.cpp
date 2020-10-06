@@ -1,13 +1,11 @@
-#include "H5VL_logi.hpp"
+#include "H5VL_logi_nb.hpp"
 #include "H5VL_log_dataseti.hpp"
 #include "H5VL_log_filei.hpp"
-#include "H5VL_logi_nb.hpp"
+#include "H5VL_logi.hpp"
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_wrapper.hpp"
 
-herr_t H5VL_log_nb_flush_read_reqs (void *file,
-									std::vector<H5VL_log_rreq_t> reqs,
-									hid_t dxplid) {
+herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> reqs, hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
@@ -16,7 +14,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 	std::vector<H5VL_log_search_ret_t> intersections;
 	std::vector<H5VL_log_copy_ctx> overlaps;
 	MPI_Status stat;
-		H5VL_log_file_t *fp=(H5VL_log_file_t*)file;
+	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	TIMER_START;
 
 	if (!(fp->idxvalid)) {
@@ -113,7 +111,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	haddr_t doff;
 	H5VL_loc_params_t loc;
 	char dname[16];
-	H5VL_log_file_t *fp=(H5VL_log_file_t*)file;
+	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	TIMER_START;
 
 	cnt = fp->wreqs.size () - fp->nflushed;
@@ -150,50 +148,52 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 
 	// Create log dataset
 	dsize = (hsize_t)fsize_all;
-	ldsid = H5Screate_simple (1, &dsize, &dsize);
-	CHECK_ID (ldsid)
-	sprintf (dname, "_ld_%d", fp->nldset);
-	loc.obj_type = H5I_GROUP;
-	loc.type	 = H5VL_OBJECT_BY_SELF;
-	ldp			 = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
-							   H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
-							   H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
-	CHECK_NERR (ldp);
+	if (dsize) {
+		ldsid = H5Screate_simple (1, &dsize, &dsize);
+		CHECK_ID (ldsid)
+		sprintf (dname, "_ld_%d", fp->nldset);
+		loc.obj_type = H5I_GROUP;
+		loc.type	 = H5VL_OBJECT_BY_SELF;
+		ldp			 = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
+								   H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
+								   H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
+		CHECK_NERR (ldp);
 
-	TIMER_START;
-	err = H5VL_logi_dataset_optional_wrapper (ldp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET, dxplid,
-										NULL, &doff);
-	CHECK_ERR  // Get dataset file offset
-	TIMER_STOP (fp, TIMER_H5VL_DATASET_OPTIONAL);
+		TIMER_START;
+		err = H5VL_logi_dataset_optional_wrapper (ldp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET,
+												  dxplid, NULL, &doff);
+		CHECK_ERR  // Get dataset file offset
+		TIMER_STOP (fp, TIMER_H5VL_DATASET_OPTIONAL);
 
-	err = H5VLdataset_close (ldp, fp->uvlid, dxplid, NULL);
-	CHECK_ERR  // Close the dataset
+		err = H5VLdataset_close (ldp, fp->uvlid, dxplid, NULL);
+		CHECK_ERR  // Close the dataset
 
-	// Write the data
-	foff += doff;
-	if (mtype == MPI_DATATYPE_NULL) {
-		mpierr = MPI_File_write_at_all (fp->fh, foff, MPI_BOTTOM, 0, MPI_INT, &stat);
-		CHECK_MPIERR
-	} else {
-		mpierr = MPI_File_write_at_all (fp->fh, foff, MPI_BOTTOM, 1, mtype, &stat);
-		CHECK_MPIERR
-	}
-
-	// Update metadata
-	for (i = fp->nflushed; i < fp->wreqs.size (); i++) {
-		fp->wreqs[i].ldid = fp->nldset;
-		fp->wreqs[i].ldoff += foff;
-		if (fp->wreqs[i].xbuf != fp->wreqs[i].ubuf) {
-			// H5VL_log_filei_bfree (fp, (void *)(fp->wreqs[i].xbuf));
+		// Write the data
+		foff += doff;
+		if (mtype == MPI_DATATYPE_NULL) {
+			mpierr = MPI_File_write_at_all (fp->fh, foff, MPI_BOTTOM, 0, MPI_INT, &stat);
+			CHECK_MPIERR
+		} else {
+			mpierr = MPI_File_write_at_all (fp->fh, foff, MPI_BOTTOM, 1, mtype, &stat);
+			CHECK_MPIERR
 		}
+
+		// Update metadata
+		for (i = fp->nflushed; i < fp->wreqs.size (); i++) {
+			fp->wreqs[i].ldid = fp->nldset;
+			fp->wreqs[i].ldoff += foff;
+			if (fp->wreqs[i].xbuf != fp->wreqs[i].ubuf) {
+				// H5VL_log_filei_bfree (fp, (void *)(fp->wreqs[i].xbuf));
+			}
+		}
+		(fp->nldset)++;
+		fp->nflushed = fp->wreqs.size ();
+
+		if (fsize_all) { fp->metadirty = true; }
+
+		// err = H5VL_log_filei_pool_free (&(fp->data_buf));
+		// CHECK_ERR
 	}
-	(fp->nldset)++;
-	fp->nflushed = fp->wreqs.size ();
-
-	if (fsize_all) { fp->metadirty = true; }
-
-	// err = H5VL_log_filei_pool_free (&(fp->data_buf));
-	// CHECK_ERR
 
 	TIMER_STOP (fp, TIMER_NB_FLUSH_WRITE_REQ);
 err_out:

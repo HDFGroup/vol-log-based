@@ -1,7 +1,8 @@
-#include "H5VL_logi.hpp"
 #include "H5VL_log_att.hpp"
-#include "H5VL_log_obj.hpp"
+
 #include "H5VL_log_filei.hpp"
+#include "H5VL_log_obj.hpp"
+#include "H5VL_logi.hpp"
 
 /********************* */
 /* Function prototypes */
@@ -41,19 +42,13 @@ void *H5VL_log_attr_create (void *obj,
 	H5VL_log_obj_t *ap;
 	TIMER_START;
 
-	ap = new H5VL_log_obj_t ();
-	ap->uvlid = op->uvlid;
-	ap->fp	  = op->fp;
-	H5VL_log_filei_inc_ref (ap->fp);
+	ap = new H5VL_log_obj_t (op, H5I_ATTR);
 
 	TIMER_START;
 	ap->uo = H5VLattr_create (op->uo, loc_params, op->uvlid, name, type_id, space_id, acpl_id,
 							  aapl_id, dxpl_id, NULL);
 	CHECK_NERR (ap->uo);
 	TIMER_STOP (ap->fp, TIMER_H5VL_ATT_CREATE);
-
-	H5Iinc_ref (ap->uvlid);
-	ap->type = H5I_ATTR;
 
 	TIMER_STOP (ap->fp, TIMER_ATT_CREATE);
 	return (void *)ap;
@@ -84,18 +79,12 @@ void *H5VL_log_attr_open (void *obj,
 	H5VL_log_obj_t *ap;
 	TIMER_START;
 
-	ap = new H5VL_log_obj_t ();
-	ap->uvlid = op->uvlid;
-	ap->fp	  = op->fp;
-	H5VL_log_filei_inc_ref (ap->fp);
+	ap = new H5VL_log_obj_t (op, H5I_ATTR);
 
 	TIMER_START;
 	ap->uo = H5VLattr_open (op->uo, loc_params, op->uvlid, name, aapl_id, dxpl_id, req);
 	CHECK_NERR (ap->uo);
 	TIMER_STOP (ap->fp, TIMER_H5VL_ATT_OPEN);
-
-	H5Iinc_ref (ap->uvlid);
-	ap->type = H5I_ATTR;
 
 	TIMER_STOP (ap->fp, TIMER_ATT_OPEN);
 	return (void *)ap;
@@ -253,10 +242,6 @@ herr_t H5VL_log_attr_close (void *attr, hid_t dxpl_id, void **req) {
 
 	TIMER_STOP (ap->fp, TIMER_ATT_CLOSE);
 
-	err = H5VL_log_filei_dec_ref (ap->fp);
-	CHECK_ERR
-
-	H5Idec_ref (ap->uvlid);
 	delete ap;
 
 err_out:;

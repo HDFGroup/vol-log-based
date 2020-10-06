@@ -1,4 +1,5 @@
 #include "H5VL_logi_wrapper.hpp"
+#include "H5VL_logi.hpp"
 
 herr_t H5VL_logi_file_optional_wrapper(void *obj, hid_t connector_id, H5VL_file_optional_t opt_type, hid_t dxpl_id, void **req, ...) {
     herr_t err = 0;

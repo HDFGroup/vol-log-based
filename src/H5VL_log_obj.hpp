@@ -8,6 +8,13 @@ typedef struct H5VL_log_obj_t {
 	void *uo;					 // Under obj
 	hid_t uvlid;				 // Under VolID
 	struct H5VL_log_file_t *fp;	 // File object
+
+	H5VL_log_obj_t ();
+	H5VL_log_obj_t (struct H5VL_log_obj_t *pp);
+	H5VL_log_obj_t (struct H5VL_log_obj_t *pp, H5I_type_t type);
+	H5VL_log_obj_t (struct H5VL_log_obj_t *pp, H5I_type_t type, void *uo);
+
+	~H5VL_log_obj_t ();
 } H5VL_log_obj_t;
 
 extern const H5VL_object_class_t H5VL_log_object_g;
@@ -42,6 +49,8 @@ herr_t H5VL_log_object_specific (void *obj,
 herr_t H5VL_log_object_optional (
 	void *obj, H5VL_object_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments);
 
-
 // Internal
-extern void *H5VL_log_obj_open_with_uo (void *obj, void *uo, H5I_type_t type, const H5VL_loc_params_t *loc_params);
+extern void *H5VL_log_obj_open_with_uo (void *obj,
+										void *uo,
+										H5I_type_t type,
+										const H5VL_loc_params_t *loc_params);

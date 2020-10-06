@@ -1,8 +1,9 @@
 #include "H5VL_log_file.hpp"
+
+#include "H5VL_log_filei.hpp"
+#include "H5VL_log_info.hpp"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_util.hpp"
-#include "H5VL_log_info.hpp"
-#include "H5VL_log_filei.hpp"
 
 /********************* */
 /* Function prototypes */
@@ -94,35 +95,27 @@ void *H5VL_log_file_create (
 	}
 
 	// Init file obj
-	fp		   = new H5VL_log_file_t ();
+	fp		   = new H5VL_log_file_t (uvlid);
 	fp->flag   = flags;
 	fp->nldset = 0;
 	fp->nmdset = 0;
 	fp->ndset  = 0;
 	MPI_Comm_dup (comm, &(fp->comm));
 	MPI_Comm_rank (comm, &(fp->rank));
-	fp->uvlid = uvlid;
-	H5Iinc_ref (fp->uvlid);
-	fp->nflushed  = 0;
-	fp->dxplid	  = dxpl_id;
-	fp->type	  = H5I_FILE;
-	fp->idxvalid  = false;
-	fp->metadirty = false;
-	fp->fp		  = fp;
-	fp->refcnt	  = 1;
-	err			  = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
+	fp->dxplid = H5Pcopy (dxpl_id);
+	fp->name   = std::string (name);
+	err		   = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
 	CHECK_ERR
 	// err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
 	// CHECK_ERR
 	err = H5VL_log_filei_contig_buffer_init (&(fp->meta_buf), 2097152);	 // 200 MiB
 	CHECK_ERR
-#ifdef LOGVOL_PROFILING
-	H5VL_log_profile_reset (fp);
-#endif
 
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
 	H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
+	H5Pset_all_coll_metadata_ops( under_fapl_id, (hbool_t)false );
+	H5Pset_coll_metadata_write( under_fapl_id, (hbool_t)true );
 	TIMER_START;
 	fp->uo = H5VLfile_create (name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL);
 	CHECK_NERR (fp->uo)
@@ -133,7 +126,7 @@ void *H5VL_log_file_create (
 	loc.obj_type = H5I_FILE;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
 	fp->lgp = H5VLgroup_create (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_LINK_CREATE_DEFAULT,
-								H5P_GROUP_CREATE_DEFAULT, H5P_DEFAULT, dxpl_id, NULL);
+								H5P_GROUP_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
 	CHECK_NERR (fp->lgp)
 
 	// Att
@@ -234,29 +227,18 @@ void *H5VL_log_file_open (
 	}
 
 	// Init file obj
-	fp			= new H5VL_log_file_t ();
-	fp->closing = false;
-	fp->flag	= flags;
+	fp		 = new H5VL_log_file_t (uvlid);
+	fp->flag = flags;
 	MPI_Comm_dup (comm, &(fp->comm));
 	MPI_Comm_rank (comm, &(fp->rank));
-	fp->uvlid = uvlid;
-	H5Iinc_ref (fp->uvlid);
-	fp->nflushed  = 0;
-	fp->dxplid	  = dxpl_id;
-	fp->type	  = H5I_FILE;
-	fp->idxvalid  = false;
-	fp->metadirty = false;
-	fp->fp		  = fp;
-	fp->refcnt	  = 1;
-	err			  = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
+	fp->dxplid = H5Pcopy (dxpl_id);
+	fp->name   = std::string (name);
+	err		   = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
 	CHECK_ERR
 	// err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
 	// CHECK_ERR
 	err = H5VL_log_filei_contig_buffer_init (&(fp->meta_buf), 2097152);	 // 200 MiB
 	CHECK_ERR
-#ifdef LOGVOL_PROFILING
-	H5VL_log_profile_reset (fp);
-#endif
 
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
@@ -271,7 +253,8 @@ void *H5VL_log_file_open (
 	loc.obj_type = H5I_FILE;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
 	TIMER_START
-	fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_DEFAULT, dxpl_id, NULL);
+	fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_GROUP_ACCESS_DEFAULT,
+							  dxpl_id, NULL);
 	CHECK_NERR (fp->lgp)
 	TIMER_STOP (fp, TIMER_H5VL_GROUP_OPEN);
 
@@ -495,6 +478,6 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
-	// return H5VL_log_filei_dec_ref ((H5VL_log_file_t *)file);
-	return H5VL_log_filei_close ((H5VL_log_file_t *)file);
+	return H5VL_log_filei_dec_ref ((H5VL_log_file_t *)file);
+	//return H5VL_log_filei_close ((H5VL_log_file_t *)file);
 } /* end H5VL_log_file_close() */

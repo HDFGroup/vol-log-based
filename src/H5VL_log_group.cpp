@@ -43,23 +43,13 @@ void *H5VL_log_group_create (void *obj,
 	if (loc_params->type != H5VL_OBJECT_BY_SELF)
 		RET_ERR ("loc_params->type is not H5VL_OBJECT_BY_SELF")
 
-	gp = new H5VL_log_obj_t ();
-	if (loc_params->obj_type == H5I_FILE)
-		gp->fp = (H5VL_log_file_t *)obj;
-	else if (loc_params->obj_type == H5I_GROUP)
-		gp->fp = ((H5VL_log_obj_t *)obj)->fp;
-	else
-		RET_ERR ("container not a file or group")
-	H5VL_log_filei_inc_ref (gp->fp);
+	gp = new H5VL_log_obj_t (op,H5I_GROUP);
 
 	TIMER_START;
 	gp->uo = H5VLgroup_create (op->uo, loc_params, op->uvlid, name, lcpl_id, gcpl_id, gapl_id,
 							   dxpl_id, NULL);
 	CHECK_NERR (gp->uo)
 	TIMER_STOP (op->fp, TIMER_H5VL_GROUP_CREATE);
-	gp->uvlid = op->uvlid;
-	H5Iinc_ref (gp->uvlid);
-	gp->type = H5I_GROUP;
 
 	TIMER_STOP (gp->fp, TIMER_GROUP_CREATE);
 
@@ -95,30 +85,18 @@ void *H5VL_log_group_open (void *obj,
 	if (loc_params->type != H5VL_OBJECT_BY_SELF)
 		RET_ERR ("loc_params->type is not H5VL_OBJECT_BY_SELF")
 
-	gp = new H5VL_log_obj_t ();
-	if (loc_params->obj_type == H5I_FILE)
-		gp->fp = (H5VL_log_file_t *)obj;
-	else if (loc_params->obj_type == H5I_GROUP)
-		gp->fp = ((H5VL_log_obj_t *)obj)->fp;
-	else
-		RET_ERR ("container not a file or group")
-	H5VL_log_filei_inc_ref (gp->fp);
+	gp = new H5VL_log_obj_t (op,H5I_GROUP);
 
 	TIMER_START;
 	gp->uo = H5VLgroup_open (op->uo, loc_params, op->uvlid, name, gapl_id, dxpl_id, NULL);
 	CHECK_NERR (gp->uo)
 	TIMER_STOP (op->fp, TIMER_H5VL_GROUP_OPEN);
-	gp->uvlid = op->uvlid;
-	H5Iinc_ref (gp->uvlid);
-	gp->type = H5I_GROUP;
 
 	TIMER_STOP (gp->fp, TIMER_GROUP_OPEN);
 
 	return (void *)gp;
-
 err_out:;
 	delete gp;
-
 	return NULL;
 } /* end H5VL_log_group_open() */
 
@@ -216,10 +194,6 @@ herr_t H5VL_log_group_close (void *grp, hid_t dxpl_id, void **req) {
 
 	TIMER_STOP (gp->fp, TIMER_GROUP_CLOSE);
 
-	err = H5VL_log_filei_dec_ref (gp->fp);
-	CHECK_ERR
-
-	H5Idec_ref (gp->uvlid);
 	delete gp;
 
 err_out:;

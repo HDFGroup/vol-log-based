@@ -1,11 +1,12 @@
-#include "H5VL_logi_zip.hpp"
-#include "H5VL_log_file.hpp"
 #include "H5VL_log_filei.hpp"
+
+#include <array>
+
+#include "H5VL_log_file.hpp"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_util.hpp"
-#include "H5VL_logi_zip.hpp"
 #include "H5VL_logi_wrapper.hpp"
-#include <array>
+#include "H5VL_logi_zip.hpp"
 
 //#define DEFAULT_SIZE 1073741824 // 1 GiB
 #define DEFAULT_SIZE 209715200	// 200 MiB
@@ -284,7 +285,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	if (fp->flag != H5F_ACC_RDONLY) {
 		// Flush write requests
 		if (fp->wreqs.size () > fp->nflushed) {
-			err = H5VL_log_nb_flush_write_reqs (fp, H5P_DEFAULT);
+			err = H5VL_log_nb_flush_write_reqs (fp, fp->dxplid);
 			CHECK_ERR
 		}
 
@@ -296,13 +297,13 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 		attbuf[0] = fp->ndset;
 		attbuf[1] = fp->nldset;
 		attbuf[2] = fp->nmdset;
-		err		  = H5VL_logi_put_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, H5P_DEFAULT);
+		err		  = H5VL_logi_put_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
 		CHECK_ERR
 	}
 
 	// Close log group
 	TIMER_START
-	err = H5VLgroup_close (fp->lgp, fp->uvlid, H5P_DEFAULT, NULL);
+	err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
 	CHECK_ERR
 	TIMER_STOP (fp, TIMER_H5VL_GROUP_CLOSE);
 
@@ -329,17 +330,105 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 
 	// Clean up
 	MPI_Comm_free (&(fp->comm));
-	H5Idec_ref (fp->uvlid);
 	delete fp;
 
 err_out:
 	return err;
 } /* end H5VL_log_file_close() */
 
+/*-------------------------------------------------------------------------
+ * Function:    H5VL_log_dataset_open
+ *
+ * Purpose:     Opens a dataset in a container
+ *
+ * Return:      Success:    Pointer to a dataset object
+ *              Failure:    NULL
+ *
+ *-------------------------------------------------------------------------
+ */
+void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
+	herr_t err = 0;
+	int mpierr;
+	H5VL_log_file_t *fp = NULL;
+	H5VL_loc_params_t loc;
+	int attbuf[3];
+	TIMER_START;
+
+	/*
+		fp = new H5VL_log_file_t (uo, cp->uvlid);
+		CHECK_NERR (fp)
+		fp->flag = cp->fp->flag;
+		MPI_Comm_dup (cp->fp->comm, &(fp->comm));
+		fp->rank   = cp->fp->rank;
+		fp->dxplid = H5Pcopy (cp->fp->dxplid);
+		fp->bsize  = cp->fp->bsize;
+		fp->name   = cp->fp->name;
+
+		// err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
+		// CHECK_ERR
+		err = H5VL_log_filei_contig_buffer_init (&(fp->meta_buf), 2097152);	 // 200 MiB
+		CHECK_ERR
+
+		// Create LOG group
+		loc.obj_type = H5I_FILE;
+		loc.type	 = H5VL_OBJECT_BY_SELF;
+		TIMER_START
+		fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_GROUP_ACCESS_DEFAULT,
+								  fp->dxplid, NULL);
+		CHECK_NERR (fp->lgp)
+		TIMER_STOP (fp, TIMER_H5VL_GROUP_OPEN);
+
+		// Att
+		err = H5VL_logi_get_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
+		CHECK_ERR
+		fp->ndset  = attbuf[0];
+		fp->nldset = attbuf[1];
+		fp->nmdset = attbuf[2];
+		fp->idx.resize (fp->ndset);
+
+		// Open the file with MPI
+		mpierr = MPI_File_open (fp->comm, fp->name.c_str (), MPI_MODE_RDWR, MPI_INFO_NULL,
+	   &(fp->fh)); CHECK_MPIERR
+	*/
+
+	fp = cp->fp;
+
+	TIMER_STOP (fp, TIMER_FILE_OPEN);
+
+	goto fn_exit;
+err_out:;
+	if (fp) { delete fp; }
+	fp = NULL;
+fn_exit:;
+	return (void *)fp;
+} /* end H5VL_log_dataset_open() */
+
 void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp) { fp->refcnt++; }
 
 herr_t H5VL_log_filei_dec_ref (H5VL_log_file_t *fp) {
 	fp->refcnt--;
-	// if (fp->refcnt == 0) { return H5VL_log_filei_close (fp); }
+	if (fp->refcnt == 0) { return H5VL_log_filei_close (fp); }
 	return 0;
 }
+
+H5VL_log_file_t::H5VL_log_file_t () {
+	this->refcnt	= 1;
+	this->closing	= false;
+	this->fp		= this;
+	this->type		= H5I_FILE;
+	this->nflushed	= 0;
+	this->type		= H5I_FILE;
+	this->idxvalid	= false;
+	this->metadirty = false;
+#ifdef LOGVOL_PROFILING
+	H5VL_log_profile_reset (fp);
+#endif
+}
+H5VL_log_file_t::H5VL_log_file_t (hid_t uvlid) : H5VL_log_file_t () {
+	this->uvlid = uvlid;
+	H5Iinc_ref (this->uvlid);
+}
+H5VL_log_file_t::H5VL_log_file_t (void *uo, hid_t uvlid) : H5VL_log_file_t (uvlid) {
+	this->uo = uo;
+}
+H5VL_log_file_t::~H5VL_log_file_t () { H5Idec_ref (this->uvlid); }

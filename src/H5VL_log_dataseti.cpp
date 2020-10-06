@@ -1,12 +1,14 @@
+#include "H5VL_log_dataseti.hpp"
+
 #include <algorithm>
 #include <vector>
-#include "H5VL_logi.hpp"
+
 #include "H5VL_log_dataset.hpp"
-#include "H5VL_log_dataseti.hpp"
 #include "H5VL_log_filei.hpp"
+#include "H5VL_logi.hpp"
+#include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_util.hpp"
 #include "H5VL_logi_wrapper.hpp"
-#include "H5VL_logi_idx.hpp"
 
 static bool interleve (int ndim, int *sa, int *ca, int *sb) {
 	int i;
@@ -276,24 +278,15 @@ void *H5VL_log_dataseti_open_with_uo (void *obj,
 	int ndim;
 	TIMER_START;
 
-	dp = new H5VL_log_dset_t ();
-	if (loc_params->obj_type == H5I_FILE)
-		dp->fp = (H5VL_log_file_t *)obj;
-	else if (loc_params->obj_type == H5I_GROUP)
-		dp->fp = ((H5VL_log_obj_t *)obj)->fp;
-	else
-		RET_ERR ("container not a file or group")
-	H5VL_log_filei_inc_ref (dp->fp);
+	dp = new H5VL_log_dset_t (op, H5I_DATASET, uo);
+	CHECK_NERR (dp)
 
-	dp->uo	  = uo;
-	dp->uvlid = op->uvlid;
-	H5Iinc_ref (dp->uvlid);
-	dp->type = H5I_DATASET;
 	TIMER_START;
 	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, NULL,
 										 &(dp->dtype));
 	CHECK_ERR
 	TIMER_STOP (dp->fp, TIMER_H5VL_DATASET_GET);
+
 	dp->esize = H5Tget_size (dp->dtype);
 	CHECK_ID (dp->esize)
 
@@ -306,13 +299,12 @@ void *H5VL_log_dataseti_open_with_uo (void *obj,
 	CHECK_ERR
 
 	TIMER_STOP (dp->fp, TIMER_DATASETI_OPEN_UO);
+
 	goto fn_exit;
 err_out:;
-	printf ("%d\n", err);
 	if (dp) delete dp;
 	dp = NULL;
 fn_exit:;
-
 	return (void *)dp;
 } /* end H5VL_log_dataset_open() */
 
@@ -326,7 +318,7 @@ fn_exit:;
  *
  *-------------------------------------------------------------------------
  */
-void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_wrap_ctx_t *cp) {
+void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_obj_t *cp) {
 	herr_t err			= 0;
 	H5VL_log_dset_t *dp = NULL;
 	H5VL_loc_params_t locp;
@@ -335,14 +327,9 @@ void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_wrap_ctx_t *cp) {
 	int ndim;
 	TIMER_START;
 
-	dp	   = new H5VL_log_dset_t ();
-	dp->fp = cp->fp;
-	H5VL_log_filei_inc_ref (dp->fp);
+	dp = new H5VL_log_dset_t (cp, H5I_DATASET, uo);
+	CHECK_NERR (dp)
 
-	dp->uo	  = uo;
-	dp->uvlid = cp->uvlid;
-	H5Iinc_ref (dp->uvlid);
-	dp->type = H5I_DATASET;
 	TIMER_START;
 	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE,
 										 H5P_DATASET_XFER_DEFAULT, NULL, &(dp->dtype));

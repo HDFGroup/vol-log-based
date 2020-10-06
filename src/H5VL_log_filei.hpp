@@ -22,3 +22,5 @@ extern void *H5VL_log_filei_contig_buffer_alloc (H5VL_log_contig_buffer_t *bp, s
 extern herr_t H5VL_log_filei_close (H5VL_log_file_t *fp);
 extern void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_dec_ref (H5VL_log_file_t *fp);
+
+extern void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp);

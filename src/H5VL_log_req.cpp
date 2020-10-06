@@ -1,6 +1,7 @@
 #include "H5VL_log_req.hpp"
 #include "H5VL_log_obj.hpp"
 #include "H5VL_logi.hpp"
+#include <cstdlib>
 #include <cassert>
 
 /********************* */

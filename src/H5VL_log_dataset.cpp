@@ -8,43 +8,6 @@
 /********************* */
 /* Function prototypes */
 /********************* */
-void *H5VL_log_dataset_create (void *obj,
-							   const H5VL_loc_params_t *loc_params,
-							   const char *name,
-							   hid_t lcpl_id,
-							   hid_t type_id,
-							   hid_t space_id,
-							   hid_t dcpl_id,
-							   hid_t dapl_id,
-							   hid_t dxpl_id,
-							   void **req);
-void *H5VL_log_dataset_open (void *obj,
-							 const H5VL_loc_params_t *loc_params,
-							 const char *name,
-							 hid_t dapl_id,
-							 hid_t dxpl_id,
-							 void **req);
-herr_t H5VL_log_dataset_read (void *dset,
-							  hid_t mem_type_id,
-							  hid_t mem_space_id,
-							  hid_t file_space_id,
-							  hid_t plist_id,
-							  void *buf,
-							  void **req);
-herr_t H5VL_log_dataset_write (void *dset,
-							   hid_t mem_type_id,
-							   hid_t mem_space_id,
-							   hid_t file_space_id,
-							   hid_t plist_id,
-							   const void *buf,
-							   void **req);
-herr_t H5VL_log_dataset_get (
-	void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_dataset_specific (
-	void *obj, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_dataset_optional (
-	void *obj, H5VL_dataset_optional_t optional_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req);
 
 const H5VL_dataset_class_t H5VL_log_dataset_g {
 	H5VL_log_dataset_create,   /* create       */
@@ -92,14 +55,7 @@ void *H5VL_log_dataset_create (void *obj,
 	err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
 	CHECK_ERR
 
-	dp = new H5VL_log_dset_t ();
-	if (loc_params->obj_type == H5I_FILE)
-		dp->fp = (H5VL_log_file_t *)obj;
-	else if (loc_params->obj_type == H5I_GROUP)
-		dp->fp = ((H5VL_log_obj_t *)obj)->fp;
-	else
-		RET_ERR ("container not a file or group")
-	H5VL_log_filei_inc_ref (dp->fp);
+	dp = new H5VL_log_dset_t (op,H5I_DATASET);
 
 	TIMER_START;
 	dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid,
@@ -107,9 +63,6 @@ void *H5VL_log_dataset_create (void *obj,
 	CHECK_NERR (dp->uo)
 	TIMER_STOP (dp->fp, TIMER_H5VL_DATASET_CREATE);
 
-	dp->uvlid = op->uvlid;
-	H5Iinc_ref (dp->uvlid);
-	dp->type  = H5I_DATASET;
 	dp->dtype = H5Tcopy (type_id);
 	CHECK_ID (dp->dtype)
 	dp->esize = H5Tget_size (type_id);
@@ -163,13 +116,11 @@ void *H5VL_log_dataset_create (void *obj,
 
 	goto fn_exit;
 err_out:;
-	printf ("%d\n", err);
 	if (dp) {
 		delete dp;
 		dp = NULL;
 	}
 fn_exit:;
-
 	return (void *)dp;
 } /* end H5VL_log_dataset_create() */
 
@@ -198,22 +149,13 @@ void *H5VL_log_dataset_open (void *obj,
 	void *ap;
 
 	TIMER_START;
-	dp = new H5VL_log_dset_t ();
-	if (loc_params->obj_type == H5I_FILE)
-		dp->fp = (H5VL_log_file_t *)obj;
-	else if (loc_params->obj_type == H5I_GROUP)
-		dp->fp = ((H5VL_log_obj_t *)obj)->fp;
-	else
-		RET_ERR ("container not a file or group")
-	H5VL_log_filei_inc_ref (dp->fp);
+	dp = new H5VL_log_dset_t (op,H5I_DATASET);
 
 	TIMER_START;
 	dp->uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);
 	CHECK_NERR (dp->uo);
 	TIMER_STOP (dp->fp, TIMER_H5VL_DATASET_OPEN);
-	dp->uvlid = op->uvlid;
-	H5Iinc_ref (dp->uvlid);
-	dp->type = H5I_DATASET;
+
 	TIMER_START;
 	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, NULL,
 								   &(dp->dtype));
@@ -238,13 +180,12 @@ void *H5VL_log_dataset_open (void *obj,
 	for (i = 0; i < dp->ndim; i++) { dp->fp->dsizes[dp->id][i] = dp->dims[i]; }
 
 	TIMER_STOP (dp->fp, TIMER_DATASET_OPEN);
+
 	goto fn_exit;
 err_out:;
-	printf ("%d\n", err);
 	if (dp) delete dp;
 	dp = NULL;
 fn_exit:;
-
 	return (void *)dp;
 } /* end H5VL_log_dataset_open() */
 
@@ -448,11 +389,13 @@ herr_t H5VL_log_dataset_write (void *dset,
 	r.rsize = 0;  // Nomber of elements in record
 	r.flag	= 0;
 
+/*
 	if (dp->dsteps[0]) {
 		r.flag &= LOGVOL_SELCTION_TYPE_OFFSETS;
 	} else {
 		r.flag &= LOGVOL_SELCTION_TYPE_HYPERSLABS;
 	}
+*/
 
 	// Gather starts and counts
 	if (stype == H5S_SEL_ALL) {
@@ -717,11 +660,6 @@ herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 	H5Tclose (dp->dtype);
 
 	TIMER_STOP (dp->fp, TIMER_DATASET_CLOSE);
-
-	err = H5VL_log_filei_dec_ref (dp->fp);
-	CHECK_ERR
-
-	H5Idec_ref (dp->uvlid);
 
 	delete dp;
 
