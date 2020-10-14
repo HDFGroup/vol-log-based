@@ -149,31 +149,28 @@ General comments: I suggest the following when adding a new issue.
 ---
 ## NetCDF4 support
 ### Problem description
-  According to the design proposal, our VOL will support basic I/O operations
-  on File, Group, Dataset, and Attribute.  We did not plan to support advanced
-  HDF5 features such as Link (H5L*), Object (H5O*), Reference (H5R*), etc.  Our
-  VOL also does not support advanced operation on HDF5 objects such as
-  iterating (*iterate).
+  The log VOL fails when running the E3SM I/O benchmark (https://github.com/Parallel-NetCDF/E3SM-IO/tree/nc4) through NetCDF4 API on multiple processes.
+  When we run the benchmark on more than one process, the native VOL underneath returns an error on an H5VLattr_specific call on a dataset attribute.
+  The error source is that the native VOL fails to decode a packet (HDF5 internal file data structure) on an attribute.
+  It does not happen when running on a single process.
 
-  The NetCDF library requires many features beyond the design of our VOL for
-  NetCDF4 files.  Currently known requirements are Object (H5O*) and Link
-  (H5L*).  To support the NetCDF integration, we need to significantly improve
-  the compatibility of the VOL beyond our original plant of attribute, group,
-  and attributes.  Many of them can be tackled by passing the request to the
-  native VOL (pass-through), but some require special handling.  H5Ocopy is one
-  example. If the object copied is a dataset, we need to update its attribute
-  as well as the metadata in the file since we assign every dataset a unique
-  ID.
+  We found that the issue is related to the added attributes on datasets.
+  The log VOL creates attributes on every dataset to store its internal metadata.
+  If the log VOL does not create those attributes, the E3SM I/O benchmark runs without issue on multiple processes.
+  We can recreate the issue in the pass_through VOL by applying modification in [nc4_attr_bug.patch](/nc4_attr_bug.patch).
+  We believe it is either a bug in the native VOL or a limitation of the VOL interface.
 
 ### Software Environment
   * HDF5 versions: 1.12.0
+  * NetCDF version: 4.7.4
   * Environment settings: N/A
-  * Trigger condition: Using the log VOL in (modified) NetCDF4 library.
+  * Trigger condition: Use log VOL to run the nc4 branch of the E3SM I/O benchmark on multiple processes.
 
 ### Current solution (on going)
-  * Extend support to other HDF5 objects and advanced functions
-    + We need to implement VOL API for nearly all HDF5 features to support NetCDF4
-    + Code: logvol_obj.cpp, logvol_link.cpp
+  * Discuss with the HDF5 development team about possible fix of the bug
+  * The bug can be avoided by not adding attributes to datasets.
+    + We must store dataset metadata elsewhere.
+    + We only consider this workaround if the bug takes too long to fix.
 
 ---
 ## VOL fails when running E3SM on multi-process through NetCDF4 API
@@ -396,27 +393,28 @@ General comments: I suggest the following when adding a new issue.
 * Collaborate with the HDF5 team to study the reason the native VOL did not follow the setting in the property list.
 
 ---
-## HDF5 dispatcher creates a wrapped VOL object, but never free it
+## HDF5 dispatcher creates a wrapped VOL object but never free it
 ### Problem Description
 * HDF5 allows applications to keep data objects open after the file containing them is closed. 
   Applications should be able to access those objects normally.
 * The log VOL support this feature by delaying the file close until all data object is closed. 
-  Internally, it keeps a reference count on every file that represents the number of opened objects that belong to the file. 
+  Internally, it keeps a reference count on every file representing the number of opened objects that belong to the file. 
   The count is initialized to 1, representing the file itself.
   It is increased when an object is opened from the file and decreased when the object is closed.
   The file closing API in log VOL does not actually close the file but decreases the reference count by 1.
   When the reference count reaches 0, the log VOL closes the file.
-* There is a bug in HDF5 dispatcher. It opens a VOL object but never closes it.
-  The opened VOL object prevents the VOL form closing the file indefinitely.
+* There is a bug in the HDF5 dispatcher. After creating a new file, the dispatcher calls the VOL wrap API to create a wrapped file object.
+  The wrapped file object is never closed. It prevents the VOL from closing the file indefinitely.
 * HDF5 registers a callback in MPI_Finalize to clean up the library. The cleanup routine ensures all open HDF5 objects are closed.
-  It will call the close routine of the corresponding VOL and check if the object is actually closed afterward.
-  After few tries to have the log VOL close the file, it assumes the log VOL has crashed, and calls abort.
+  It will call the corresponding VOL's close API and check if the object is closed afterward.
+  After few tries to have the log VOL close the file, it assumes the log VOL has crashed and calls abort.
 
 ### Software Environment
 * HDF5 versions: 1.12.0
 
 ### Solutions
-* We are working with the HDF5 team to fix the bug.
+* We have reported the bug to the HDF5 development team.
+  + A bug report (https://jira.hdfgroup.org/browse/HDFFV-11140) is created
 
 ---
 ## Metadata size can be larger than data size
