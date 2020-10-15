@@ -1,5 +1,6 @@
 #include "H5VL_logi_zip.hpp"
 #include "H5VL_logi.hpp"
+#include <cstdlib>
 #include <zlib.h>
 
 /* If out_len is large enough, compress the data at in and save it to out. out_len is set to actual compressed size
