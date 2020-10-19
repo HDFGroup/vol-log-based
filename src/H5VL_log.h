@@ -52,6 +52,11 @@ typedef enum H5VL_log_req_type_t {
     H5VL_LOG_REQ_NONBLOCKING = 1
 } H5VL_log_req_type_t;
 
+typedef enum H5VL_log_sel_encoding_t {
+    H5VL_LOG_ENCODING_OFFSET = 0, 		// Default
+    H5VL_LOG_ENCODING_CANONICAL = 1
+} H5VL_log_sel_encoding_t;
+
 extern hid_t H5VL_log_dataspace_contig;
 extern const H5VL_class_t H5VL_log_g;
 
@@ -68,6 +73,14 @@ herr_t H5Pget_nonblocking(hid_t plist, H5VL_log_req_type_t *nonblocking);
 herr_t H5Pset_nb_buffer_size (hid_t plist, size_t size);
 herr_t H5Pget_nb_buffer_size (hid_t plist, ssize_t *size);
 
+herr_t H5Pset_meta_merge (hid_t plist, hbool_t merge);
+herr_t H5Pget_meta_merge (hid_t plist, hbool_t *merge);
+
+herr_t H5Pset_meta_zip (hid_t plist, hbool_t zip);
+herr_t H5Pget_meta_zip (hid_t plist, hbool_t *zip);
+
+herr_t H5Pset_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t encoding);
+herr_t H5Pget_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t *encoding);
 
 #ifdef __cplusplus
 }

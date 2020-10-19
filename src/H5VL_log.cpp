@@ -59,8 +59,6 @@ err_out:
 }
 
 #define NB_PROPERTY_NAME	"H5VL_log_nonblocking"
-#define BSIZE_PROPERTY_NAME "H5VL_log_nb_buffer_size"
-
 herr_t H5Pset_nonblocking (hid_t plist, H5VL_log_req_type_t nonblocking) {
 	herr_t err = 0;
 	htri_t isdxpl, pexist;
@@ -109,6 +107,7 @@ err_out:;
 	return err;
 }
 
+#define BSIZE_PROPERTY_NAME "H5VL_log_nb_buffer_size"
 herr_t H5Pset_nb_buffer_size (hid_t plist, size_t size) {
 	herr_t err = 0;
 	htri_t isfapl;
@@ -154,6 +153,165 @@ herr_t H5Pget_nb_buffer_size (hid_t plist, ssize_t *size) {
 
 		} else {
 			*size = LOG_VOL_BSIZE_UNLIMITED;
+		}
+	}
+
+err_out:;
+	return err;
+}
+
+#define MERGE_META_NAME_PROPERTY_NAME "H5VL_log_metadata_merge"
+herr_t H5Pset_meta_merge (hid_t plist, hbool_t merge) {
+	herr_t err = 0;
+	htri_t isfapl;
+	htri_t isdxpl, pexist;
+
+	// TODO: Fix pclass problem
+	return 0;
+
+	isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
+	CHECK_ID (isfapl)
+	if (isfapl == 0) RET_ERR ("Not faplid")
+
+	pexist = H5Pexist (plist, MERGE_META_NAME_PROPERTY_NAME);
+	CHECK_ID (pexist)
+	if (!pexist) {
+		hbool_t f = false;
+		err = H5Pinsert2 (plist, MERGE_META_NAME_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL, NULL,
+						  NULL, NULL, NULL);
+		CHECK_ERR
+	}
+
+	err = H5Pset (plist, MERGE_META_NAME_PROPERTY_NAME, &merge);
+	CHECK_ERR
+
+err_out:;
+	return err;
+}
+
+herr_t H5Pget_meta_merge (hid_t plist, hbool_t *merge) {
+	herr_t err = 0;
+	htri_t isdxpl, pexist;
+
+	isdxpl = H5Pisa_class (plist, H5P_FILE_CREATE);
+	CHECK_ID (isdxpl)
+	if (isdxpl == 0)
+		*merge = false;  // Default property will not pass class check
+	else {
+		pexist = H5Pexist (plist, MERGE_META_NAME_PROPERTY_NAME);
+		CHECK_ID (pexist)
+		if (pexist) {
+			err = H5Pget (plist, MERGE_META_NAME_PROPERTY_NAME, merge);
+			CHECK_ERR
+
+		} else {
+			*merge = false;
+		}
+	}
+
+err_out:;
+	return err;
+}
+
+#define ZIP_META_NAME_PROPERTY_NAME "H5VL_log_metadata_zip"
+herr_t H5Pset_meta_zip (hid_t plist, hbool_t zip) {
+	herr_t err = 0;
+	htri_t isfapl;
+	htri_t isdxpl, pexist;
+
+	// TODO: Fix pclass problem
+	return 0;
+
+	isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
+	CHECK_ID (isfapl)
+	if (isfapl == 0) RET_ERR ("Not faplid")
+
+	pexist = H5Pexist (plist, ZIP_META_NAME_PROPERTY_NAME);
+	CHECK_ID (pexist)
+	if (!pexist) {
+		hbool_t f = false;
+		err = H5Pinsert2 (plist, ZIP_META_NAME_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL, NULL,
+						  NULL, NULL, NULL);
+		CHECK_ERR
+	}
+
+	err = H5Pset (plist, ZIP_META_NAME_PROPERTY_NAME, &zip);
+	CHECK_ERR
+
+err_out:;
+	return err;
+}
+
+herr_t H5Pget_meta_zip (hid_t plist, hbool_t *zip) {
+	herr_t err = 0;
+	htri_t isdxpl, pexist;
+
+	isdxpl = H5Pisa_class (plist, H5P_FILE_ACCESS);
+	CHECK_ID (isdxpl)
+	if (isdxpl == 0)
+		*zip = false;  // Default property will not pass class check
+	else {
+		pexist = H5Pexist (plist, ZIP_META_NAME_PROPERTY_NAME);
+		CHECK_ID (pexist)
+		if (pexist) {
+			err = H5Pget (plist, ZIP_META_NAME_PROPERTY_NAME, zip);
+			CHECK_ERR
+
+		} else {
+			*zip = false;
+		}
+	}
+
+err_out:;
+	return err;
+}
+
+#define SEL_ENCODING_PROPERTY_NAME "H5VL_log_sel_encoding"
+herr_t H5Pset_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t encoding) {
+	herr_t err = 0;
+	htri_t isfapl;
+	htri_t isdxpl, pexist;
+
+	// TODO: Fix pclass problem
+	return 0;
+
+	isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
+	CHECK_ID (isfapl)
+	if (isfapl == 0) RET_ERR ("Not faplid")
+
+	pexist = H5Pexist (plist, SEL_ENCODING_PROPERTY_NAME);
+	CHECK_ID (pexist)
+	if (!pexist) {
+		H5VL_log_sel_encoding_t offset = H5VL_LOG_ENCODING_OFFSET;
+		err = H5Pinsert2 (plist, SEL_ENCODING_PROPERTY_NAME, sizeof (size_t), &offset, NULL, NULL, NULL,
+						  NULL, NULL, NULL);
+		CHECK_ERR
+	}
+
+	err = H5Pset (plist, SEL_ENCODING_PROPERTY_NAME, &encoding);
+	CHECK_ERR
+
+err_out:;
+	return err;
+}
+
+herr_t H5Pget_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t *encoding) {
+	herr_t err = 0;
+	htri_t isdxpl, pexist;
+
+	isdxpl = H5Pisa_class (plist, H5P_FILE_CREATE);
+	CHECK_ID (isdxpl)
+	if (isdxpl == 0)
+		*encoding = H5VL_LOG_ENCODING_OFFSET;  // Default property will not pass class check
+	else {
+		pexist = H5Pexist (plist, SEL_ENCODING_PROPERTY_NAME);
+		CHECK_ID (pexist)
+		if (pexist) {
+			err = H5Pget (plist, SEL_ENCODING_PROPERTY_NAME, encoding);
+			CHECK_ERR
+
+		} else {
+			*encoding = H5VL_LOG_ENCODING_OFFSET;
 		}
 	}
 

@@ -110,12 +110,14 @@ void *H5VL_log_file_create (
 	// CHECK_ERR
 	err = H5VL_log_filei_contig_buffer_init (&(fp->meta_buf), 2097152);	 // 200 MiB
 	CHECK_ERR
+	err = H5VL_log_filei_parse_fapl (fp, fapl_id);
+	CHECK_ERR
 
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
 	H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
-	H5Pset_all_coll_metadata_ops( under_fapl_id, (hbool_t)false );
-	H5Pset_coll_metadata_write( under_fapl_id, (hbool_t)true );
+	H5Pset_all_coll_metadata_ops (under_fapl_id, (hbool_t) false);
+	H5Pset_coll_metadata_write (under_fapl_id, (hbool_t) true);
 	TIMER_START;
 	fp->uo = H5VLfile_create (name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL);
 	CHECK_NERR (fp->uo)
@@ -238,6 +240,8 @@ void *H5VL_log_file_open (
 	// err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
 	// CHECK_ERR
 	err = H5VL_log_filei_contig_buffer_init (&(fp->meta_buf), 2097152);	 // 200 MiB
+	CHECK_ERR
+	err = H5VL_log_filei_parse_fapl (fp, fapl_id);
 	CHECK_ERR
 
 	// Create the file with underlying VOL
@@ -479,5 +483,5 @@ err_out:;
  */
 herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
 	return H5VL_log_filei_dec_ref ((H5VL_log_file_t *)file);
-	//return H5VL_log_filei_close ((H5VL_log_file_t *)file);
+	// return H5VL_log_filei_close ((H5VL_log_file_t *)file);
 } /* end H5VL_log_file_close() */

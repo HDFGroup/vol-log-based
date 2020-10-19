@@ -10,10 +10,6 @@
 #include "H5VL_logi_wrapper.hpp"
 #include "H5VL_logi_zip.hpp"
 
-#define LOGVOL_META_FLAG_MULTI	0x01
-#define LOGVOL_META_FLAG_ENCODE 0x02
-#define LOGVOL_META_FLAG_ZIP	0x04
-
 herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int mpierr;
@@ -69,10 +65,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	for (i = 0; i < fp->ndset; i++) {
 		mlens[i] += sizeof (int) * 2;  // ID and flag
 		if (cnt[i] > 0) {			   // Multiple selection
-			flag[i] |= LOGVOL_META_FLAG_MULTI;
+			flag[i] |= H5VL_FILEI_CONFIG_METADATA_MERGE;
 			mlens[i] += sizeof (int);  // nsel
 			if (fp->ndim[i] > 1) {
-				flag[i] |= LOGVOL_META_FLAG_ENCODE;
+				flag[i] |= H5VL_FILEI_CONFIG_METADATA_ENCODE;
 				mlens[i] += fp->ndim[i] * sizeof (MPI_Offset);	// dstep
 				mlens[i] += (sizeof (MPI_Offset) * 3 + sizeof (size_t)) * (size_t)cnt[i];
 			} else {
@@ -82,7 +78,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			}
 #ifdef ENABLE_ZLIB
 			if (cnt[i] > 0) {  // Compress if we have more than 1k entry
-				flag[i] |= LOGVOL_META_FLAG_ZIP;
+				flag[i] |= H5VL_FILEI_CONFIG_METADATA_ZIP;
 			}
 #endif
 		}
@@ -118,12 +114,12 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		*((int *)bufp[i]) = i;
 		bufp[i] += sizeof (int);
 		// Nsel
-		if (flag[i] & LOGVOL_META_FLAG_MULTI) {
+		if (flag[i] & H5VL_FILEI_CONFIG_METADATA_MERGE) {
 			*((int *)bufp[i]) = cnt[i];
 			bufp[i] += sizeof (int);
 		}
 		// Dstep
-		if (flag[i] & LOGVOL_META_FLAG_ENCODE) {
+		if (flag[i] & H5VL_FILEI_CONFIG_METADATA_ENCODE) {
 			memcpy (bufp[i], dsteps[i].data (), sizeof (MPI_Offset) * fp->ndim[i]);
 			bufp[i] += sizeof (MPI_Offset) * fp->ndim[i];
 		}
@@ -133,7 +129,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		for (auto &sp : rp.sels) {
 			//*((int *)bufp[rp.did]) = rp.did;
 			// bufp[rp.did] += sizeof (int);
-			if (flag[rp.did] & LOGVOL_META_FLAG_ENCODE) {
+			if (flag[rp.did] & H5VL_FILEI_CONFIG_METADATA_ENCODE) {
 				soff = eoff = 0;
 				for (i = 0; i < fp->ndim[rp.did]; i++) {
 					soff += sp.start[i] * dsteps[rp.did][i];
@@ -165,7 +161,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 #ifdef ENABLE_ZLIB
 	TIMER_START;
 	for (i = 0; i < fp->ndset; i++) {
-		if (flag[i] & LOGVOL_META_FLAG_ZIP) {
+		if (flag[i] & H5VL_FILEI_CONFIG_METADATA_ZIP) {
 			inlen = mlens[i] - sizeof (int) * 3;
 			clen  = max_mlen;
 			err	  = H5VL_log_zip_compress (buf + moffs[i] + sizeof (int) * 3, inlen, zbuf, &clen);
@@ -174,7 +170,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 				mlens[i] = sizeof (int) * 3 + clen;
 			} else {
 				// Compressed size larger, abort compression
-				flag[i] ^= LOGVOL_META_FLAG_ZIP;
+				flag[i] ^= H5VL_FILEI_CONFIG_METADATA_ZIP;
 				*((int *)(buf + moffs[i] + sizeof (int))) = flag[i];
 			}
 		}
@@ -191,6 +187,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 #endif
 
 	// Create memory datatype
+	
 	TIMER_START;
 #ifdef ENABLE_ZLIB
 	// moffs will be reused as file offset, create memory type first
