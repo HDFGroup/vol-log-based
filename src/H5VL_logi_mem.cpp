@@ -22,7 +22,7 @@ H5VL_log_obj_t *H5VL_log_new_obj(void *under_obj, hid_t uvlid) {
     new_obj = (H5VL_log_obj_t *)calloc(1, sizeof(H5VL_log_obj_t));
     new_obj->uo = under_obj;
     new_obj->uvlid = uvlid;
-    H5Iinc_ref(new_obj->uvlid);
+    H5VL_logi_inc_ref(new_obj->uvlid);
 
     return new_obj;
 } /* end H5VL__H5VL_log_new_obj() */
@@ -51,7 +51,7 @@ herr_t H5VL_log_free_obj(H5VL_log_obj_t *obj) {
 
     //err_id = H5Eget_current_stack();
 
-    H5Idec_ref(obj->uvlid);
+    H5VL_logi_dec_ref(obj->uvlid);
 
     //H5Eset_current_stack(err_id);
 

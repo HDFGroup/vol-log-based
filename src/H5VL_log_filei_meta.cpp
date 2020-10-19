@@ -15,8 +15,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	int mpierr;
 	int i, j;
 	int *cnt, *flag;
-	MPI_Offset *mlens = NULL, *mlens_all;
-	MPI_Offset *moffs = NULL, *doffs;
+	MPI_Offset *mlens = NULL;
+	MPI_Offset *moffs = NULL;
+	MPI_Offset doff;	// Local metadata offset within the metadata dataset
+	MPI_Offset mdsize_all;	// Global metadata size
 	MPI_Aint *offs	  = NULL;
 	int *lens		  = NULL;
 #ifdef ENABLE_ZLIB
@@ -30,13 +32,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	H5VL_loc_params_t loc;
 	void *mdp;
 	hid_t mdsid = -1;
-	// hid_t ldsid = -1,lmsid = -1;
-	hsize_t start, count, one = 1;
-	hsize_t dsize, msize;
-	htri_t has_idx;
+	hsize_t dsize;
 	MPI_Offset seloff, soff, eoff;
-	haddr_t mdoff;
-	MPI_Datatype mdtype = MPI_DATATYPE_NULL, mmtype = MPI_DATATYPE_NULL;
+	haddr_t mdoff;	// File offset of the metadata dataset
+	MPI_Datatype mmtype = MPI_DATATYPE_NULL;
 	MPI_Status stat;
 	std::vector<std::array<MPI_Offset, H5S_MAX_RANK>> dsteps (fp->ndset);
 
@@ -46,10 +45,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Calculate size and offset of the metadata per dataset
 	offs	  = (MPI_Aint *)malloc (sizeof (MPI_Aint) * fp->ndset);
 	lens	  = (int *)malloc (sizeof (int) * fp->ndset);
-	mlens	  = (MPI_Offset *)malloc (sizeof (MPI_Offset) * fp->ndset * 2);
-	mlens_all = mlens + fp->ndset;
-	moffs	  = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->ndset + 1) * 2);
-	doffs	  = moffs + fp->ndset + 1;
+	mlens	  = (MPI_Offset *)malloc (sizeof (MPI_Offset) * fp->ndset);
+	moffs	  = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->ndset + 1));
 	cnt		  = (int *)malloc (sizeof (int) * fp->ndset * 2);
 	memset (cnt, 0, sizeof (int) * fp->ndset * 2);
 	flag = cnt + fp->ndset;
@@ -187,7 +184,6 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 #endif
 
 	// Create memory datatype
-	
 	TIMER_START;
 #ifdef ENABLE_ZLIB
 	// moffs will be reused as file offset, create memory type first
@@ -207,23 +203,18 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 	// Sync metadata size
 	TIMER_START;
-	mpierr = MPI_Allreduce (mlens, mlens_all, fp->ndset, MPI_LONG_LONG, MPI_SUM, fp->comm);
+	mpierr = MPI_Allreduce (moffs + fp->ndset, &mdsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	CHECK_MPIERR
 	// NOTE: Some MPI implementation do not produce output for rank 0, moffs must ne initialized to
 	// 0
-	memset (moffs, 0, sizeof (MPI_Offset) * fp->ndset);
-	mpierr = MPI_Exscan (mlens, moffs, fp->ndset, MPI_LONG_LONG, MPI_SUM, fp->comm);
+	doff=0;
+	mpierr = MPI_Exscan (moffs + fp->ndset, &doff, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	CHECK_MPIERR
-	doffs[0] = 0;
-	for (i = 0; i < fp->ndset; i++) {
-		doffs[i + 1] = doffs[i] + mlens_all[i];
-		moffs[i] += doffs[i];
-	}
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_SYNC);
 
-	// Create metadata dataset
-	dsize = (hsize_t)doffs[fp->ndset];
+	dsize = (hsize_t)mdsize_all;
 	if (dsize > 0) {
+		// Create metadata dataset
 		TIMER_START;
 		mdsid = H5Screate_simple (1, &dsize, &dsize);
 		CHECK_ID (mdsid)
@@ -235,8 +226,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 								  H5T_STD_B8LE, mdsid, H5P_DATASET_CREATE_DEFAULT,
 								  H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
 		CHECK_NERR (mdp);
-		TIMER_STOP (fp, TIMER_H5VL_DATASET_CREATE);
 		fp->nmdset++;
+		TIMER_STOP (fp, TIMER_H5VL_DATASET_CREATE);
+
 		// Get metadata dataset file offset
 		TIMER_START;
 		err = H5VL_logi_dataset_optional_wrapper (mdp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET,
@@ -250,32 +242,12 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		TIMER_START;
 		err = H5VLdataset_close (mdp, fp->uvlid, fp->dxplid, NULL);
 		CHECK_ERR
-		// err = H5VLdataset_close (ldp, fp->uvlid, fp->dxplid, NULL);
-		// CHECK_ERR
 		TIMER_STOP (fp, TIMER_H5VL_DATASET_CLOSE);
-
-		if (moffs[fp->ndset] > 0) { fp->idxvalid = false; }
-
-		fp->metadirty = false;
 		TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_CLOSE);
 
 		// Write metadata
 		TIMER_START;  // TIMER_FILEI_METAFLUSH_WRITE
-		// Create file datatype
-		for (i = 0; i < fp->ndset; i++) {
-			offs[i] = (MPI_Aint)moffs[i];
-			lens[i] = (int)mlens[i];
-		}
-		mpierr = MPI_Type_hindexed (fp->ndset, lens, offs, MPI_BYTE, &mdtype);
-		CHECK_MPIERR
-		mpierr = MPI_Type_commit (&mdtype);
-		CHECK_MPIERR
-		// MPI file write
-		mpierr = MPI_File_set_view (fp->fh, (MPI_Offset)mdoff, MPI_BYTE, mdtype, "native",
-									MPI_INFO_NULL);
-		CHECK_MPIERR
-
-		err = MPI_File_write_all (fp->fh, buf, 1, mmtype, &stat);
+		err = MPI_File_write_at_all (fp->fh, mdoff + doff, buf, 1, mmtype, &stat);
 		CHECK_MPIERR
 		TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_WRITE);
 
@@ -284,6 +256,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		// writing
 		MPI_Barrier (MPI_COMM_WORLD);
 		TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_BARR);
+
+		// Update status
+		fp->idxvalid = false;
+		fp->metadirty = false;
 	}
 
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH);
@@ -297,12 +273,7 @@ err_out:
 	H5VL_log_free (bufp);
 	H5VL_log_free (mlens);
 	H5VL_log_Sclose (mdsid);
-	// H5VL_log_Sclose(ldsid);
-	// H5VL_log_Sclose(mmsid);
-	// H5VL_log_Sclose(lmsid);
 	if (mmtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mmtype); }
-	if (mdtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mdtype); }
-
 	return err;
 }
 

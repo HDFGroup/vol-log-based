@@ -33,7 +33,7 @@ void *H5VL_log_info_copy (const void *_info) {
 	new_info = (H5VL_log_info_t *)calloc (1, sizeof (H5VL_log_info_t));
 
 	new_info->uvlid = info->uvlid;
-	H5Iinc_ref (new_info->uvlid);
+	H5VL_logi_inc_ref (new_info->uvlid);
 
 	if (info->under_vol_info)
 		H5VLcopy_connector_info (new_info->uvlid, &(new_info->under_vol_info),
@@ -97,7 +97,7 @@ herr_t H5VL_log_info_free (void *_info) {
 
 	/* Release underlying VOL ID and info */
 	if (info->uvlid) H5VLfree_connector_info (info->uvlid, info->under_vol_info);
-	H5Idec_ref (info->uvlid);
+	H5VL_logi_dec_ref (info->uvlid);
 
 	H5Eset_current_stack (err_id);
 

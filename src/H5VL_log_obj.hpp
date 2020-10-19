@@ -15,6 +15,10 @@ typedef struct H5VL_log_obj_t {
 	H5VL_log_obj_t (struct H5VL_log_obj_t *pp, H5I_type_t type, void *uo);
 
 	~H5VL_log_obj_t ();
+
+#ifdef LOGVOL_DEBUG
+	int ext_ref;
+#endif
 } H5VL_log_obj_t;
 
 extern const H5VL_object_class_t H5VL_log_object_g;
