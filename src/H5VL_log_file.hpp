@@ -58,11 +58,14 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	bool idxvalid;
 	bool metadirty;
 
-//#ifdef LOGVOL_PROFILING
+	// Configuration flag
+	int config;
+
+#ifdef LOGVOL_PROFILING
 //#pragma message ( "C Preprocessor got here!" )
 	double tlocal[NTIMER];
 	double clocal[NTIMER];
-//#endif
+#endif
 
 	H5VL_log_file_t ();
 	H5VL_log_file_t (hid_t uvlid);
