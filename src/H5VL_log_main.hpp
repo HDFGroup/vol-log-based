@@ -13,3 +13,4 @@
 herr_t H5VL_log_init (hid_t vipl_id);
 herr_t H5VL_log_obj_term (void);
 herr_t H5VL_log_optional (void *obj, int op_type, hid_t dxpl_id, void **req, va_list arguments);
+

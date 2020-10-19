@@ -70,7 +70,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	H5VL_log_file_t ();
 	H5VL_log_file_t (hid_t uvlid);
 	H5VL_log_file_t (void *uo, hid_t uvlid);
-	~H5VL_log_file_t ();
+	//~H5VL_log_file_t ();
 } H5VL_log_file_t;
 
 typedef struct H5VL_log_buffer_block_t {

@@ -466,15 +466,29 @@ H5VL_log_file_t::H5VL_log_file_t () {
 	this->type		= H5I_FILE;
 	this->idxvalid	= false;
 	this->metadirty = false;
+#ifdef LOGVOL_DEBUG
+	this->ext_ref = 0;
+#endif
 #ifdef LOGVOL_PROFILING
 	H5VL_log_profile_reset (fp);
 #endif
 }
 H5VL_log_file_t::H5VL_log_file_t (hid_t uvlid) : H5VL_log_file_t () {
 	this->uvlid = uvlid;
-	H5Iinc_ref (this->uvlid);
+#ifdef LOGVOL_DEBUG
+	this->ext_ref = 1;
+#endif
+	H5VL_logi_inc_ref (this->uvlid);
 }
 H5VL_log_file_t::H5VL_log_file_t (void *uo, hid_t uvlid) : H5VL_log_file_t (uvlid) {
 	this->uo = uo;
 }
-H5VL_log_file_t::~H5VL_log_file_t () { H5Idec_ref (this->uvlid); }
+/*
+H5VL_log_file_t::~H5VL_log_file_t () {
+#ifdef LOGVOL_DEBUG
+	this->ext_ref--;
+	assert (this->ext_ref >= 0);
+#endif
+	H5VL_logi_dec_ref (this->uvlid);
+}
+*/

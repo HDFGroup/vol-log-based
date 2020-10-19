@@ -2,6 +2,7 @@
 
 #include <mpi.h>
 #include <cstdio>
+#include <H5VLpublic.h>
 
 #ifdef LOGVOL_DEBUG
 extern int H5VL_log_debug_MPI_Type_create_subarray (int ndims,
@@ -14,6 +15,10 @@ extern int H5VL_log_debug_MPI_Type_create_subarray (int ndims,
 extern void hexDump (char *desc, void *addr, size_t len, char *fname);
 extern void hexDump (char *desc, void *addr, size_t len);
 extern void hexDump (char *desc, void *addr, size_t len, FILE *fp);
+extern int H5VL_logi_inc_ref (hid_t);
+extern int H5VL_logi_dec_ref (hid_t);
 #else
 #define H5VL_log_debug_MPI_Type_create_subarray MPI_Type_create_subarray
+#define H5VL_logi_inc_ref						H5Iinc_ref
+#define H5VL_logi_dec_ref						H5Idec_ref
 #endif

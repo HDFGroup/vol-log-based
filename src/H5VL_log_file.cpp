@@ -39,7 +39,7 @@ void *H5VL_log_file_create (
 	H5VL_loc_params_t loc;
 	hid_t uvlid, under_fapl_id;
 	void *under_vol_info;
-	MPI_Comm comm;
+	MPI_Comm comm = MPI_COMM_WORLD;
 	hbool_t po_supported;
 	int attbuf[3];
 	TIMER_START;
