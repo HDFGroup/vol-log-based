@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "H5VL_log_link.hpp"
 #include "H5VL_log_obj.hpp"
 #include "H5VL_logi.hpp"

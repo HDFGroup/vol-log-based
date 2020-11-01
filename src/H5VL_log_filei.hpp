@@ -1,6 +1,6 @@
 #pragma once
 
-#include "H5VL_log_int.hpp"
+#include "H5VL_logi.hpp"
 #include "H5VL_log_file.hpp"
 
 #define H5VL_FILEI_CONFIG_METADATA_MERGE	0x01

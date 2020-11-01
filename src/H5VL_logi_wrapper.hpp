@@ -1,6 +1,6 @@
 #pragma once
 
-#include "H5VL_log_int.hpp"
+#include "H5VL_logi.hpp"
 
 // Wraper
 extern herr_t H5VL_logi_dataset_specific_wrapper (void *obj,

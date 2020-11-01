@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <H5VLpublic.h>
 
 struct H5VL_log_file_t;

@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "H5VL_logi_debug.hpp"
 
 #include <cassert>
@@ -24,6 +28,7 @@ int H5VL_log_debug_MPI_Type_create_subarray (int ndims,
 									 order, oldtype, newtype);
 }
 
+#ifdef LOGVOL_DEBUG
 void hexDump (char *desc, void *addr, size_t len, char *fname) {
 	FILE *fp;
 
@@ -78,7 +83,6 @@ void hexDump (char *desc, void *addr, size_t len, FILE *fp) {
 	fprintf (fp, "  %s\n", buff);
 }
 
-#ifdef LOGVOL_DEBUG
 static int ext_ref_cnt = 0;
 int H5VL_logi_inc_ref (hid_t id) {
 	ext_ref_cnt++;

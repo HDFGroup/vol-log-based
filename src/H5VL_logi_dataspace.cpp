@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "H5VL_logi_dataspace.hpp"
 #include "H5VL_logi_util.hpp"
 #include "H5VL_logi_err.hpp"

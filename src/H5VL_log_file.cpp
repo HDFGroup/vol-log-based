@@ -1,5 +1,9 @@
-#include "H5VL_log_file.hpp"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
+#include "H5VL_log_file.hpp"
+#include "H5VL_log.h"
 #include "H5VL_log_filei.hpp"
 #include "H5VL_log_info.hpp"
 #include "H5VL_logi.hpp"
@@ -100,8 +104,10 @@ void *H5VL_log_file_create (
 	fp->nldset = 0;
 	fp->nmdset = 0;
 	fp->ndset  = 0;
-	MPI_Comm_dup (comm, &(fp->comm));
-	MPI_Comm_rank (comm, &(fp->rank));
+	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
+	CHECK_MPIERR
+	mpierr = MPI_Comm_rank (comm, &(fp->rank));
+	CHECK_MPIERR
 	fp->dxplid = H5Pcopy (dxpl_id);
 	fp->name   = std::string (name);
 	err		   = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
@@ -147,6 +153,14 @@ void *H5VL_log_file_create (
 	H5VL_log_dataspace_contig_ref++;
 
 	TIMER_STOP (fp, TIMER_FILE_CREATE);
+
+
+	{
+		MPI_Offset t1, t2;
+		int mpierr;
+		mpierr = MPI_Allreduce (&t1, &t2, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
+		assert (mpierr == MPI_SUCCESS);
+	}
 
 	goto fn_exit;
 err_out:;
