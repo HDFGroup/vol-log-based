@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "H5VL_logi_profiling.hpp"
 #include <mpi.h>
 #include <cassert>

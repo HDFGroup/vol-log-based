@@ -1,7 +1,13 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "H5VL_log_dataseti.hpp"
 
 #include <algorithm>
 #include <vector>
+#include <cstdlib>
+#include <cstring>
 
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_filei.hpp"

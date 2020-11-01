@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef LOGVOL_DEBUG
 #include <cstdlib>
 #include <cstring>

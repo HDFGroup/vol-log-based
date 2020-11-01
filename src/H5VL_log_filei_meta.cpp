@@ -1,6 +1,11 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <mpi.h>
 
 #include <array>
+#include <cstring>
 #include <vector>
 
 #include "H5VL_log_file.hpp"

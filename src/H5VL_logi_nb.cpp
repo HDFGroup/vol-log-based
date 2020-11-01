@@ -1,3 +1,9 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <cstring>
+
 #include "H5VL_logi_nb.hpp"
 #include "H5VL_log_dataseti.hpp"
 #include "H5VL_log_filei.hpp"
