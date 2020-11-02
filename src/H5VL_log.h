@@ -57,6 +57,12 @@ typedef enum H5VL_log_sel_encoding_t {
     H5VL_LOG_ENCODING_CANONICAL = 1
 } H5VL_log_sel_encoding_t;
 
+typedef struct H5VL_log_multisel_arg_t {
+    int n;
+    MPI_Offset **starts;
+    MPI_Offset **counts;
+} H5VL_log_multisel_arg_t;
+
 extern hid_t H5VL_log_dataspace_contig;
 extern const H5VL_class_t H5VL_log_g;
 
@@ -66,9 +72,15 @@ hid_t H5VL_log_register(void);
 H5PL_type_t H5PLget_plugin_type(void);
 const void *H5PLget_plugin_info(void);
 
+// Varn
+herr_t H5Dwriten(hid_t did,hid_t mem_type_id, int n, MPI_Offset **starts, MPI_Offset **counts, hid_t dxplid, void *buf);
+
 // Helper functions
 herr_t H5Pset_nonblocking(hid_t plist, H5VL_log_req_type_t nonblocking);
 herr_t H5Pget_nonblocking(hid_t plist, H5VL_log_req_type_t *nonblocking);
+
+herr_t H5Pset_multisel(hid_t plist, H5VL_log_multisel_arg_t arg);
+herr_t H5Pget_multisel(hid_t plist, H5VL_log_multisel_arg_t *arg);
 
 herr_t H5Pset_nb_buffer_size (hid_t plist, size_t size);
 herr_t H5Pget_nb_buffer_size (hid_t plist, ssize_t *size);

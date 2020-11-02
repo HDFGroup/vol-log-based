@@ -154,14 +154,6 @@ void *H5VL_log_file_create (
 
 	TIMER_STOP (fp, TIMER_FILE_CREATE);
 
-
-	{
-		MPI_Offset t1, t2;
-		int mpierr;
-		mpierr = MPI_Allreduce (&t1, &t2, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
-		assert (mpierr == MPI_SUCCESS);
-	}
-
 	goto fn_exit;
 err_out:;
 	if (fp) { delete fp; }
