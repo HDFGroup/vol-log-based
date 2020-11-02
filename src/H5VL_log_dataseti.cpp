@@ -2,14 +2,14 @@
 #include <config.h>
 #endif
 
-#include "H5VL_log_dataseti.hpp"
-
 #include <algorithm>
-#include <vector>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
+#include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
+#include "H5VL_log_dataseti.hpp"
 #include "H5VL_log_filei.hpp"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_idx.hpp"
@@ -362,3 +362,114 @@ err_out:;
 fn_exit:;
 	return (void *)dp;
 } /* end H5VL_log_dataset_open() */
+
+herr_t H5VL_log_dataseti_writen (hid_t did,
+				  hid_t mem_type_id,
+				  int n,
+				  MPI_Offset **starts,
+				  MPI_Offset **counts,
+				  hid_t dxplid,
+				  void *buf) {
+	herr_t err			= 0;
+	H5VL_log_dset_t *dp = NULL;
+	int i, j, k, l;
+	size_t esize;
+	H5VL_log_wreq_t r;
+	htri_t eqtype;
+	H5VL_log_req_type_t rtype;
+	MPI_Datatype ptype = MPI_DATATYPE_NULL;
+	TIMER_START;
+
+	TIMER_START;
+
+	// Get VOL object
+	dp = (H5VL_log_dset_t *)H5VLobject (did);
+	CHECK_NERR (dp)
+
+	// Sanity check
+	if (!buf) RET_ERR ("user buffer can't be NULL");
+
+	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_INIT);
+
+	TIMER_START;
+	// Setting metadata;
+	r.did = dp->id;
+	// r.ndim	= dp->ndim;
+	r.ldid	= -1;
+	r.ldoff = 0;
+	r.ubuf	= (char *)buf;
+	r.rsize = 0;  // Nomber of elements in record
+	r.flag	= 0;
+
+	// Gather starts and counts
+	r.sels.resize (n);
+	for (i = 0; i < n; i++) {
+		r.sels[i].size = 1;
+		for (j = 0; j < dp->ndim; j++) {
+			r.sels[i].start[j] = starts[i][j];
+			r.sels[i].count[j] = counts[i][j];
+			r.sels[i].size *= r.sels[i].count[j];
+		}
+		r.rsize += r.sels[i].size;
+		r.sels[i].size *= dp->esize;
+	}
+	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_DECODE);
+
+	// Non-blocking?
+	err = H5Pget_nonblocking (dxplid, &rtype);
+	CHECK_ERR
+
+	// Need convert?
+	eqtype = H5Tequal (dp->dtype, mem_type_id);
+
+	// Can reuse user buffer
+	if (rtype == H5VL_LOG_REQ_NONBLOCKING && eqtype > 0) {
+		r.xbuf = r.ubuf;
+	} else {  // Need internal buffer
+		TIMER_START;
+		// Get element size
+		esize = H5Tget_size (mem_type_id);
+		CHECK_ID (esize)
+
+		// HDF5 type conversion is in place, allocate for whatever larger
+		err = H5VL_log_filei_balloc (dp->fp, r.rsize * std::max (esize, (size_t) (dp->esize)),
+									 (void **)(&(r.xbuf)));
+		// err = H5VL_log_filei_pool_alloc (&(dp->fp->data_buf),
+		//								 r.rsize * std::max (esize, (size_t) (dp->esize)),
+		//								 (void **)(&(r.xbuf)));
+		// CHECK_ERR
+
+		// Copy data
+		memcpy (r.xbuf, r.ubuf, r.rsize * esize);
+
+		TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_PACK);
+
+		TIMER_START;
+		// Need convert
+		if (eqtype == 0) {
+			void *bg = NULL;
+
+			if (H5Tget_class (dp->dtype) == H5T_COMPOUND) bg = malloc (r.rsize * dp->esize);
+			err = H5Tconvert (mem_type_id, dp->dtype, r.rsize, r.xbuf, bg, dxplid);
+			free (bg);
+		}
+		TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_CONVERT);
+	}
+
+	TIMER_START;
+	// Convert request size to number of bytes to be used by later routines
+	r.rsize *= dp->esize;
+
+	// Put request in queue
+	dp->fp->wreqs.push_back (r);
+	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_FINALIZE);
+
+	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE);
+err_out:;
+	if (err) {
+		// if (r.xbuf != r.ubuf) H5VL_log_filei_bfree (dp->fp, r.xbuf);
+	}
+	H5VL_log_type_free (ptype);
+
+	return err;
+}

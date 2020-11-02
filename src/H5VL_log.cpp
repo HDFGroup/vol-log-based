@@ -23,12 +23,12 @@ hid_t H5VL_LOG_g = H5I_INVALID_HID;
  *
  *-------------------------------------------------------------------------
  */
-hid_t H5VL_log_register(void) {
-    /* Singleton register the pass-through VOL connector ID */
-    if(H5VL_LOG_g < 0)
-        H5VL_LOG_g = H5VLregister_connector(&H5VL_log_g, H5P_VOL_INITIALIZE_DEFAULT);
+hid_t H5VL_log_register (void) {
+	/* Singleton register the pass-through VOL connector ID */
+	if (H5VL_LOG_g < 0)
+		H5VL_LOG_g = H5VLregister_connector (&H5VL_log_g, H5P_VOL_INITIALIZE_DEFAULT);
 
-    return H5VL_LOG_g;
+	return H5VL_LOG_g;
 } /* end H5VL_log_register() */
 
 /*-------------------------------------------------------------------------
@@ -62,7 +62,36 @@ err_out:
 	return err;
 }
 
-#define NB_PROPERTY_NAME	"H5VL_log_nonblocking"
+herr_t H5Dwriten (hid_t did,
+				  hid_t mem_type_id,
+				  int n,
+				  MPI_Offset **starts,
+				  MPI_Offset **counts,
+				  hid_t dxplid,
+				  void *buf) {
+	herr_t err		   = 0;
+	hid_t dxplid_clone = -1;
+	H5VL_log_multisel_arg_t arg;
+
+	arg.n	   = n;
+	arg.starts = starts;
+	arg.counts = counts;
+
+	dxplid_clone = H5Pcopy (dxplid);
+	CHECK_ID (dxplid_clone)
+
+	err = H5Pset_multisel (dxplid_clone, arg);
+	CHECK_ERR
+
+	err = H5Dwrite (did, mem_type_id, H5S_ALL, H5S_ALL, dxplid_clone, buf);
+	CHECK_ERR
+
+err_out:
+	if (dxplid_clone >= 0) { H5Pclose (dxplid_clone); }
+	return err;
+}
+
+#define NB_PROPERTY_NAME "H5VL_log_nonblocking"
 herr_t H5Pset_nonblocking (hid_t plist, H5VL_log_req_type_t nonblocking) {
 	herr_t err = 0;
 	htri_t isdxpl, pexist;
@@ -104,6 +133,58 @@ herr_t H5Pget_nonblocking (hid_t plist, H5VL_log_req_type_t *nonblocking) {
 
 		} else {
 			*nonblocking = H5VL_LOG_REQ_BLOCKING;
+		}
+	}
+
+err_out:;
+	return err;
+}
+
+#define MULTISEL_PROPERTY_NAME "H5VL_log_multisel"
+herr_t H5Pset_multisel (hid_t plist, H5VL_log_multisel_arg_t arg) {
+	herr_t err = 0;
+	htri_t isdxpl, pexist;
+
+	isdxpl = H5Pisa_class (plist, H5P_DATASET_XFER);
+	CHECK_ID (isdxpl)
+	if (isdxpl == 0) RET_ERR ("Not dxplid")
+
+	pexist = H5Pexist (plist, MULTISEL_PROPERTY_NAME);
+	CHECK_ID (pexist)
+	if (!pexist) {
+		H5VL_log_multisel_arg_t nosel;
+
+		nosel.n		 = 0;
+		nosel.counts = nosel.starts = NULL;
+		err = H5Pinsert2 (plist, MULTISEL_PROPERTY_NAME, sizeof (H5VL_log_multisel_arg_t), &nosel,
+						  NULL, NULL, NULL, NULL, NULL, NULL);
+		CHECK_ERR
+	}
+
+	err = H5Pset (plist, MULTISEL_PROPERTY_NAME, &arg);
+	CHECK_ERR
+
+err_out:;
+	return err;
+}
+
+herr_t H5Pget_multisel (hid_t plist, H5VL_log_multisel_arg_t *arg) {
+	herr_t err = 0;
+	htri_t isdxpl, pexist;
+
+	isdxpl = H5Pisa_class (plist, H5P_DATASET_XFER);
+	CHECK_ID (isdxpl)
+	if (isdxpl == 0)
+		arg->n = 0;	 // Default to no selection
+	else {
+		pexist = H5Pexist (plist, MULTISEL_PROPERTY_NAME);
+		CHECK_ID (pexist)
+		if (pexist) {
+			err = H5Pget (plist, MULTISEL_PROPERTY_NAME, arg);
+			CHECK_ERR
+
+		} else {
+			arg->n = 0;
 		}
 	}
 
@@ -181,8 +262,8 @@ herr_t H5Pset_meta_merge (hid_t plist, hbool_t merge) {
 	CHECK_ID (pexist)
 	if (!pexist) {
 		hbool_t f = false;
-		err = H5Pinsert2 (plist, MERGE_META_NAME_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL, NULL,
-						  NULL, NULL, NULL);
+		err = H5Pinsert2 (plist, MERGE_META_NAME_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL,
+						  NULL, NULL, NULL, NULL);
 		CHECK_ERR
 	}
 
@@ -200,7 +281,7 @@ herr_t H5Pget_meta_merge (hid_t plist, hbool_t *merge) {
 	isdxpl = H5Pisa_class (plist, H5P_FILE_CREATE);
 	CHECK_ID (isdxpl)
 	if (isdxpl == 0)
-		*merge = false;  // Default property will not pass class check
+		*merge = false;	 // Default property will not pass class check
 	else {
 		pexist = H5Pexist (plist, MERGE_META_NAME_PROPERTY_NAME);
 		CHECK_ID (pexist)
@@ -234,8 +315,8 @@ herr_t H5Pset_meta_zip (hid_t plist, hbool_t zip) {
 	CHECK_ID (pexist)
 	if (!pexist) {
 		hbool_t f = false;
-		err = H5Pinsert2 (plist, ZIP_META_NAME_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL, NULL,
-						  NULL, NULL, NULL);
+		err = H5Pinsert2 (plist, ZIP_META_NAME_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL,
+						  NULL, NULL, NULL, NULL);
 		CHECK_ERR
 	}
 
@@ -287,8 +368,8 @@ herr_t H5Pset_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t encoding) {
 	CHECK_ID (pexist)
 	if (!pexist) {
 		H5VL_log_sel_encoding_t offset = H5VL_LOG_ENCODING_OFFSET;
-		err = H5Pinsert2 (plist, SEL_ENCODING_PROPERTY_NAME, sizeof (size_t), &offset, NULL, NULL, NULL,
-						  NULL, NULL, NULL);
+		err = H5Pinsert2 (plist, SEL_ENCODING_PROPERTY_NAME, sizeof (size_t), &offset, NULL, NULL,
+						  NULL, NULL, NULL, NULL);
 		CHECK_ERR
 	}
 
