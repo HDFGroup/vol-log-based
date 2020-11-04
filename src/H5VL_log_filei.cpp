@@ -312,6 +312,7 @@ err_out:;
 
 herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	herr_t err = 0;
+	double t1, t2;
 	int mpierr;
 	int attbuf[3];
 
@@ -369,6 +370,26 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	if (H5VL_log_dataspace_contig_ref == 0) { H5Sclose (H5VL_log_dataspace_contig); }
 
 	// Close the file with under VOL
+	TIMER_START;
+	MPI_Barrier(fp->comm);
+	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_BARR);
+	TIMER_START;
+	t1=MPI_Wtime();
+	{
+		hid_t dxplid;
+		dxplid=H5Pcreate(H5P_DATASET_XFER);
+		CHECK_ID(dxplid)
+		err = H5Pset_dxpl_mpio(dxplid, H5FD_MPIO_COLLECTIVE);
+		CHECK_ERR
+		err = H5VL_logi_file_specific_wrapper (fp->uo, fp->uvlid, H5VL_FILE_FLUSH, dxplid, NULL, H5I_FILE, H5F_SCOPE_GLOBAL);
+		CHECK_ERR
+		H5Pclose(dxplid);
+	}
+	t2=MPI_Wtime();
+	TIMER_STOP (fp, TIMER_H5VL_FILE_SPECIFIC);
+	if(fp->rank == 0){
+		printf ("#%%$: H5Fflush_before_close: %lf\n", t2 - t1);
+	}
 	TIMER_START;
 	err = H5VLfile_close (fp->uo, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
 	CHECK_ERR

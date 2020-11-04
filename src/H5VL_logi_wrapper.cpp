@@ -16,6 +16,17 @@ herr_t H5VL_logi_file_optional_wrapper(void *obj, hid_t connector_id, H5VL_file_
     return err;
 }
 
+herr_t H5VL_logi_file_specific_wrapper(void *obj, hid_t connector_id, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, ...) {
+    herr_t err = 0;
+    va_list args;
+
+    va_start(args, req);
+    err = H5VLfile_specific(obj, connector_id, specific_type, dxpl_id, req, args);
+    va_end(args);
+
+    return err;
+}
+
 herr_t H5VL_logi_attr_get_wrapper(void *obj, hid_t connector_id, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, ...) {
     herr_t err = 0;
     va_list args;

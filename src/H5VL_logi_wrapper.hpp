@@ -19,6 +19,7 @@ extern herr_t H5VL_logi_dataset_optional_wrapper (void *obj,
 											...);
 extern herr_t H5VL_logi_file_optional_wrapper (
 	void *obj, hid_t connector_id, H5VL_file_optional_t opt_type, hid_t dxpl_id, void **req, ...);
+extern herr_t H5VL_logi_file_specific_wrapper(void *obj, hid_t connector_id, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, ...);
 
 extern herr_t H5VL_logi_attr_get_wrapper(void *obj, hid_t connector_id, H5VL_attr_get_t get_type, hid_t dxpl_id, void **req, ...);
 
