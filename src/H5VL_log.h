@@ -63,6 +63,11 @@ typedef struct H5VL_log_multisel_arg_t {
     MPI_Offset **counts;
 } H5VL_log_multisel_arg_t;
 
+typedef enum H5VL_log_data_layout_t {
+    H5VL_LOG_DATA_LAYOUT_CONTIG = 0, 		// Default
+    H5VL_LOG_DATA_LAYOUT_CHUNK_ALIGNED = 1
+} H5VL_log_data_layout_t;
+
 extern hid_t H5VL_log_dataspace_contig;
 extern const H5VL_class_t H5VL_log_g;
 
@@ -93,6 +98,9 @@ herr_t H5Pget_meta_zip (hid_t plist, hbool_t *zip);
 
 herr_t H5Pset_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t encoding);
 herr_t H5Pget_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t *encoding);
+
+herr_t H5Pset_data_layout (hid_t plist, H5VL_log_data_layout_t layout);
+herr_t H5Pget_data_layout (hid_t plist, H5VL_log_data_layout_t *layout);
 
 #ifdef __cplusplus
 }

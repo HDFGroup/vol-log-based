@@ -10,6 +10,12 @@
 #include "H5VL_log_file.hpp"
 #include "H5VL_logi.hpp"
 static double tmax[NTIMER], tmin[NTIMER], tmean[NTIMER], tvar[NTIMER], tvar_local[NTIMER];
+
+
+
+
+
+
 const char *const tname[] = {
 	"H5VL_log_file_create",
 	"H5VL_log_file_open",
@@ -93,6 +99,7 @@ const char *const tname[] = {
 	"H5VL_logi_get_dataspace_selection",
 	"H5VL_log_nb_flush_read_reqs",
 	"H5VL_log_nb_flush_write_reqs",
+	"H5VL_log_nb_write_reqs_aligned",
 	"H5VL_log_nb_flush_write_reqs_size",
 };
 

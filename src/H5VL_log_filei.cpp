@@ -2,12 +2,13 @@
 #include <config.h>
 #endif
 
-#include "H5VL_log_filei.hpp"
+#include <unistd.h>
 
 #include <array>
 
-#include "H5VL_log_file.hpp"
 #include "H5VL_log.h"
+#include "H5VL_log_file.hpp"
+#include "H5VL_log_filei.hpp"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_util.hpp"
 #include "H5VL_logi_wrapper.hpp"
@@ -96,6 +97,32 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 
 		} else {
 			fp->config |= H5VL_FILEI_CONFIG_METADATA_ZIP;
+		}
+	}
+
+err_out:;
+	return err;
+}
+
+herr_t H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
+	herr_t err = 0;
+	hbool_t ret;
+	H5VL_log_data_layout_t layout;
+	char *env;
+
+	err = H5Pget_data_layout (fcplid, &layout);
+	CHECK_ERR
+	if (layout == H5VL_LOG_DATA_LAYOUT_CHUNK_ALIGNED) {
+		fp->config |= H5VL_FILEI_CONFIG_DATA_ALIGN;
+	}
+
+	env = getenv ("H5VL_LOG_DATA_LAYOUT");
+	if (env) {
+		if (strcmp (env, "align") == 0) {
+			fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
+
+		} else {
+			fp->config |= H5VL_FILEI_CONFIG_DATA_ALIGN;
 		}
 	}
 
@@ -295,7 +322,11 @@ herr_t H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid) {
 	TIMER_START;
 
 	if (fp->wreqs.size () > 0) {
-		err = H5VL_log_nb_flush_write_reqs (fp, dxplid);
+		if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
+			err = H5VL_log_nb_flush_write_reqs_align (fp, dxplid);
+		} else {
+			err = H5VL_log_nb_flush_write_reqs (fp, dxplid);
+		}
 		CHECK_ERR
 	}
 
@@ -336,7 +367,11 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	if (fp->flag != H5F_ACC_RDONLY) {
 		// Flush write requests
 		if (fp->wreqs.size () > fp->nflushed) {
-			err = H5VL_log_nb_flush_write_reqs (fp, fp->dxplid);
+			if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
+				err = H5VL_log_nb_flush_write_reqs_align (fp, fp->dxplid);
+			} else {
+				err = H5VL_log_nb_flush_write_reqs (fp, fp->dxplid);
+			}
 			CHECK_ERR
 		}
 
@@ -362,6 +397,9 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	mpierr = MPI_File_close (&(fp->fh));
 	CHECK_MPIERR
 
+	// Close the file with posix
+	close (fp->fd);
+
 	H5VL_log_filei_contig_buffer_free (&(fp->meta_buf));
 
 	// Close contig dataspacce ID
@@ -386,6 +424,91 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 err_out:
 	return err;
 } /* end H5VL_log_file_close() */
+
+herr_t H5VL_log_filei_parse_strip_info (H5VL_log_file_t *fp) {
+	herr_t err	  = 0;
+	MPI_Info info = MPI_INFO_NULL;
+	int mpierr;
+	int exist;
+	char val[128];
+
+	mpierr = MPI_File_get_info (fp->fh, &info);
+	CHECK_MPIERR
+
+	fp->scount = -1;
+	fp->ssize  = -1;
+
+	mpierr = MPI_Info_get (info, "striping_factor", 128, val, &exist);
+	CHECK_MPIERR
+	if (exist) { fp->scount = atoi (val); }
+	mpierr = MPI_Info_get (info, "striping_unit", 128, val, &exist);
+	CHECK_MPIERR
+	if (exist) { fp->ssize = (size_t)atoll (val); }
+
+err_out:
+	if (info != MPI_INFO_NULL) MPI_Info_free (&info);
+	return err;
+}
+
+herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
+	herr_t err = 0;
+	int mpierr;
+	int i, j;
+	MPI_Info info = MPI_INFO_NULL;
+	int np;
+	int *noderanks;
+
+	mpierr = MPI_Comm_size (fp->comm, &np);
+
+	noderanks = (int *)malloc (sizeof (int) * np);
+	CHECK_NERR (noderanks);
+
+	mpierr =
+		MPI_Comm_split_type (fp->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &(fp->nodecomm));
+	mpierr = MPI_Comm_rank (fp->nodecomm, &(fp->noderank));
+
+	mpierr = MPI_Allgather (&(fp->noderank), 1, MPI_INT, noderanks, 1, MPI_INT, fp->comm);
+	CHECK_MPIERR
+
+	fp->nodeid = 0;
+	for (i = 0; i < fp->rank; i++) {
+		if (noderanks[i] == 0) { fp->nodeid++; }
+	}
+
+	mpierr = MPI_Bcast (&(fp->nodeid), 1, MPI_INT, 0, fp->nodecomm);
+	CHECK_MPIERR
+
+	// What ost it should write to
+	fp->target_ost = fp->nodeid % fp->scount;
+
+	// Find previous node sharing the ost
+	fp->prev_rank = -1;
+	fp->next_rank = -1;
+	j			  = fp->scount;
+	for (i = fp->rank - 1; i > -1; i--) {
+		if (noderanks[i] == 0) {
+			j--;
+			if (j == 0) {
+				fp->prev_rank = i;
+				break;
+			}
+		}
+	}
+	j = fp->scount;
+	for (i = fp->rank + 1; i < np; i++) {
+		if (noderanks[i] == 0) {
+			j--;
+			if (j == 0) {
+				fp->next_rank = i;
+				break;
+			}
+		}
+	}
+
+err_out:
+	if (info != MPI_INFO_NULL) MPI_Info_free (&info);
+	return err;
+}
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_dataset_open
