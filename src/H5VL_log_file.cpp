@@ -2,8 +2,12 @@
 #include <config.h>
 #endif
 
-#include "H5VL_log_file.hpp"
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include "H5VL_log.h"
+#include "H5VL_log_file.hpp"
 #include "H5VL_log_filei.hpp"
 #include "H5VL_log_info.hpp"
 #include "H5VL_logi.hpp"
@@ -45,7 +49,7 @@ void *H5VL_log_file_create (
 	void *under_vol_info;
 	MPI_Comm comm = MPI_COMM_WORLD;
 	hbool_t po_supported;
-	int attbuf[3];
+	int attbuf[4];
 	TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
@@ -118,6 +122,8 @@ void *H5VL_log_file_create (
 	CHECK_ERR
 	err = H5VL_log_filei_parse_fapl (fp, fapl_id);
 	CHECK_ERR
+	err = H5VL_log_filei_parse_fcpl (fp, fcpl_id);
+	CHECK_ERR
 
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
@@ -137,16 +143,41 @@ void *H5VL_log_file_create (
 								H5P_GROUP_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
 	CHECK_NERR (fp->lgp)
 
+	// Open the file with MPI
+	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, MPI_INFO_NULL, &(fp->fh));
+	CHECK_MPIERR
+
+	// Figure out lustre configuration
+	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
+		err = H5VL_log_filei_parse_strip_info (fp);
+		CHECK_ERR
+		// For debugging without lustre
+		// fp->scount=2;
+		// fp->ssize=8388608;
+		if ((fp->scount <= 0) || (fp->ssize <= 0)) {
+			fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
+			if(fp->rank==0){
+				printf("Warning: Cannot retrive stripping info, disable aligned data layout\n");
+			}
+		} else {
+			err = H5VL_log_filei_calc_node_rank (fp);
+			CHECK_ERR
+		}
+	}
+	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
+		fp->fd = open (name, O_RDWR);
+		if (fp->fd < 0) { RET_ERR ("open fail") }
+	} else {
+		fp->fd = -1;
+	}
+
 	// Att
 	attbuf[0] = fp->ndset;
 	attbuf[1] = fp->nldset;
 	attbuf[2] = fp->nmdset;
-	err = H5VL_logi_add_att (fp, "_int_att", H5T_STD_I32LE, H5T_NATIVE_INT32, 3, attbuf, dxpl_id);
+	attbuf[3] = fp->config;
+	err = H5VL_logi_add_att (fp, "_int_att", H5T_STD_I32LE, H5T_NATIVE_INT32, 4, attbuf, dxpl_id);
 	CHECK_ERR
-
-	// Open the file with MPI
-	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, MPI_INFO_NULL, &(fp->fh));
-	CHECK_MPIERR
 
 	// create the contig SID
 	if (H5VL_log_dataspace_contig_ref == 0) { H5VL_log_dataspace_contig = H5Screate (H5S_SCALAR); }
@@ -186,7 +217,7 @@ void *H5VL_log_file_open (
 	hid_t uvlid, under_fapl_id;
 	void *under_vol_info;
 	MPI_Comm comm;
-	int attbuf[3];
+	int attbuf[4];
 
 	TIMER_START;
 
@@ -247,8 +278,6 @@ void *H5VL_log_file_open (
 	// CHECK_ERR
 	err = H5VL_log_filei_contig_buffer_init (&(fp->meta_buf), 2097152);	 // 200 MiB
 	CHECK_ERR
-	err = H5VL_log_filei_parse_fapl (fp, fapl_id);
-	CHECK_ERR
 
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
@@ -274,7 +303,12 @@ void *H5VL_log_file_open (
 	fp->ndset  = attbuf[0];
 	fp->nldset = attbuf[1];
 	fp->nmdset = attbuf[2];
+	fp->config = attbuf[3];
 	fp->idx.resize (fp->ndset);
+
+	// Fapl property can overwrite config in file, parse after loading config
+	err = H5VL_log_filei_parse_fapl (fp, fapl_id);
+	CHECK_ERR
 
 	// Open the file with MPI
 	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, MPI_INFO_NULL, &(fp->fh));
@@ -418,7 +452,11 @@ herr_t H5VL_log_file_specific (
 			va_end (saved_args);
 		} break;
 		case H5VL_FILE_FLUSH: {
-			err = H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
+			if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
+				err = H5VL_log_nb_flush_write_reqs_align (fp, dxpl_id);
+			} else {
+				err = H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
+			}
 			break;
 		} break;
 		default:

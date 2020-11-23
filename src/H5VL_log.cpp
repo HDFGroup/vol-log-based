@@ -225,7 +225,7 @@ herr_t H5Pget_nb_buffer_size (hid_t plist, ssize_t *size) {
 	herr_t err = 0;
 	htri_t isdxpl, pexist;
 
-	isdxpl = H5Pisa_class (plist, H5P_FILE_CREATE);
+	isdxpl = H5Pisa_class (plist, H5P_FILE_ACCESS);
 	CHECK_ID (isdxpl)
 	if (isdxpl == 0)
 		*size = LOG_VOL_BSIZE_UNLIMITED;  // Default property will not pass class check
@@ -278,7 +278,7 @@ herr_t H5Pget_meta_merge (hid_t plist, hbool_t *merge) {
 	herr_t err = 0;
 	htri_t isdxpl, pexist;
 
-	isdxpl = H5Pisa_class (plist, H5P_FILE_CREATE);
+	isdxpl = H5Pisa_class (plist, H5P_FILE_ACCESS);
 	CHECK_ID (isdxpl)
 	if (isdxpl == 0)
 		*merge = false;	 // Default property will not pass class check
@@ -384,7 +384,7 @@ herr_t H5Pget_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t *encoding) {
 	herr_t err = 0;
 	htri_t isdxpl, pexist;
 
-	isdxpl = H5Pisa_class (plist, H5P_FILE_CREATE);
+	isdxpl = H5Pisa_class (plist, H5P_FILE_ACCESS);
 	CHECK_ID (isdxpl)
 	if (isdxpl == 0)
 		*encoding = H5VL_LOG_ENCODING_OFFSET;  // Default property will not pass class check
@@ -397,6 +397,57 @@ herr_t H5Pget_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t *encoding) {
 
 		} else {
 			*encoding = H5VL_LOG_ENCODING_OFFSET;
+		}
+	}
+
+err_out:;
+	return err;
+}
+
+
+#define DATA_LAYOUT_PROPERTY_NAME "H5VL_log_data_layout"
+herr_t H5Pset_data_layout (hid_t plist, H5VL_log_data_layout_t layout) {
+	herr_t err = 0;
+	htri_t isfapl;
+	htri_t isdxpl, pexist;
+
+	isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
+	CHECK_ID (isfapl)
+	if (isfapl == 0) RET_ERR ("Not faplid")
+
+	pexist = H5Pexist (plist, DATA_LAYOUT_PROPERTY_NAME);
+	CHECK_ID (pexist)
+	if (!pexist) {
+		H5VL_log_data_layout_t contig = H5VL_LOG_DATA_LAYOUT_CONTIG;
+		err = H5Pinsert2 (plist, DATA_LAYOUT_PROPERTY_NAME, sizeof (H5VL_log_data_layout_t), &contig, NULL, NULL,
+						  NULL, NULL, NULL, NULL);
+		CHECK_ERR
+	}
+
+	err = H5Pset (plist, DATA_LAYOUT_PROPERTY_NAME, &layout);
+	CHECK_ERR
+
+err_out:;
+	return err;
+}
+
+herr_t H5Pget_data_layout (hid_t plist, H5VL_log_data_layout_t *layout) {
+	herr_t err = 0;
+	htri_t isdxpl, pexist;
+
+	isdxpl = H5Pisa_class (plist, H5P_FILE_CREATE);
+	CHECK_ID (isdxpl)
+	if (isdxpl == 0)
+		*layout = H5VL_LOG_DATA_LAYOUT_CONTIG;  // Default property will not pass class check
+	else {
+		pexist = H5Pexist (plist, DATA_LAYOUT_PROPERTY_NAME);
+		CHECK_ID (pexist)
+		if (pexist) {
+			err = H5Pget (plist, DATA_LAYOUT_PROPERTY_NAME, layout);
+			CHECK_ERR
+
+		} else {
+			*layout = H5VL_LOG_DATA_LAYOUT_CONTIG;
 		}
 	}
 

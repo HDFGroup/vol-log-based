@@ -7,6 +7,7 @@
 #include <array>
 #include <string>
 #include "H5VL_log_obj.hpp"
+#include "H5VL_log.h"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_nb.hpp"
@@ -26,7 +27,19 @@ typedef struct H5VL_log_cord_t {
 /* The log VOL file object */
 typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	int rank;
+	int np;
 	MPI_Comm comm;
+
+	/* Aligned data layout */
+	int nnode;
+	int nodeid;
+	int noderank;
+	int prev_rank;
+	int next_rank;
+	int target_ost;
+	size_t ssize;
+	int scount;
+	MPI_Comm nodecomm;
 
 	int refcnt;
 	bool closing;
@@ -40,6 +53,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	int nmdset;
 
 	MPI_File fh;
+	int fd;
 
 	std::vector<H5VL_log_wreq_t> wreqs;
 	int nflushed;

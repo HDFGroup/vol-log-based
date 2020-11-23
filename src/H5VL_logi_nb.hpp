@@ -48,3 +48,5 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 										   std::vector<H5VL_log_rreq_t> reqs,
 										   hid_t dxplid);
 herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid);
+herr_t H5VL_log_nb_ost_write (void *file, off64_t doff, off64_t off, int cnt, int *mlens, off64_t *moffs);
+herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid);
