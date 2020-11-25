@@ -311,6 +311,47 @@ General comments: I suggest the following when adding a new issue.
   subarray requests to a variable after another.
 
 ---
+## H5Dwrite does not allow writing to multiple blocks within a dataset
+###  Problem Description
+* The HDF5 API to write data to a dataset is H5Dwrite. 
+  Applications specify the region within the dataset to write by selecting the region in the corresponding dataspace.
+  The selection can either be a subarray (H5Sselect_hyperslab) or a list of points (H5Sselect_elements).
+  Multiple selections can be combined to select an irregular region.
+* Although HDF5 allows applications to select multiple blocks by combining multiple hyper-slab selections, 
+  HDF5 interprets them as a unit instead of a list of hyper-slabs.
+  HDF5 assumes that the data in the memory buffer is ordered according to its file offset in a contiguous data layout.
+  For example, in a 2-D dataset, HDF5 will always write the dataset row-wise even if the application makes selections column-wise.
+* In the E3SM case study, each process writes many blocks (subarrays) in every dataset.
+  The data is arranged block-wise in the memory.
+  Based on how HDF5 dataspace selection works, the program must either reorder its data in the memory or call H5Dwrite for each block.
+  In the high-resolution (ne120) F case, there are 2.7 M H5Dwrite calls per process. It took around 10.5 sec just for posting the I/O operation with H5Dwrite alone.
+* PnetCDF has a set of API (*varn) that allows applications to write multiple blocks within a variable with data arranged by blocks in the memory.
+  The varn API gives PnetCDF a huge advantage in posting write requests.
+
+### Software Environment
+* HDF5 versions: All
+
+### Solutions
+* Implement varn-like API inside the log-based VOL
+  + The signature of H5Dwrite (H5VLdataset_write from within the VOL) cannot be modified.
+    The dataspace argument is the only argument to indicate the selected regions to write.
+    A simple approach is to have the log-based VOL interpret the data in the memory buffer as following the order of dataspace selections.
+    However, doing so will alter H5Dwrite semantic, causing compatibility issues.
+  + We implemented a separate H5Dwriten function in the log-based VOL.
+    Instead of taking a dataspace that contains the selection, the H5Dwriten function takes a list of start and count similar to PnetCDF varn API.
+    It writes data directly to the log and record all subarrays in the metadata dataset.
+  + Inside the H5Dwriten function, the library needs to retrieve the correct VOL object from the ID (hid) passed by the application.
+    The current VOL architecture does not include a VOL API to retrieve VOL objects by IDs (hid_t).
+    To retrieve the VOL object from an ID (hid_t), we must call an HDF5 user-level API.
+    The HDF5 dispatcher will then call the corresponding VOL callback function with the desired VOL object.
+  + We introduce a new dataset transfer property called "H5VL_log_multisel"
+    It contains a list of blocks to write in the form similar to the arguments of *varn API in PnetCDF.
+    When this property presents in the dataset transfer property list (dxpl), the H5Dwrite call is interpreted as a varn-like call.
+    The log-based VOl will disregard the dataspace and use the block list stored in the property as blocks to write, and the data in the memory buffer is assumed to be ordered by blocks.
+    The H5Dwriten function sets the H5VL_log_multisel property with arguments passed from the application and calls H5Dwrite.
+  + Using H5Dwriten reduces the number of H5Dwrite calls in the high-resolution (ne120) E3SM F case dataset to 413.
+    The time spent on posting write requests reduced to 1.7 sec.
+---
 ## Memory space is always required in H5Dwrite even if the memory buffer is contiguous
 ### Problem Description
 * According to the specification of H5Dwrite 
@@ -388,10 +429,41 @@ General comments: I suggest the following when adding a new issue.
 * HDF5 versions: 1.12.0
 
 ### Solutions
-* Replace chunked metadata dataset with a set of contiguous datasets. We create a new metadata dataset on each metadata flush.
-  Using contiguous datasets allows us to bypass the native VOL and write to the file offset of the metadata directly with MPI-IO.
+* Replace chunked metadata dataset with a set of contiguous datasets.
+  As a workaround, we can use MPI-IO to write the metadata directly.
+  For a simpler design, we replace the chunked, extendable metadata dataset with contiguous datasets.
+  We create a new metadata dataset when we need to store more metadata.
+  The log-based VOL retrieves the file offset of the metadata dataset from the native VOL and then write the metadata in a similar way it writes log data.
+  After switching to contiguous metadata datasets, metadata flush time on F case high-resolution (ne120) dataset reduced to around 6 sec.
 * Collaborate with the HDF5 team to study the reason the native VOL did not follow the setting in the property list.
 
+---
+## The native VOL does now use MPI file view when performing an independent write to chunked datasets
+### Problem Description
+* When using the MPI VFD driver, H5Dwrite can either perform a collective or independent write to the dataset.
+  For a chunked dataset, an H5Dwrite operation can write to multiple chunks, and hence, multiple locations in the file.
+  Writing to multiple files offset in a single MPI file write call requires the use of file view to mask off the gap between chunks.
+  The native VOL does not use the file view when writing to a chunked dataset independently.
+  Instead, it writes one chunk at a time by calling the MPI file write on each individual location to write. 
+  The performance may suffer if there is an independent write involving a large number of chunks.
+  The reason behind such a design is unknown.
+* The log VOL stored the log metadata (index) in a chunked HDF5 dataset.
+  Chunking is required because the metadata, and hence the metadata dataset, can grow when more data is written to datasets.
+  The log-based VOL relies on the native VOL to write metadata to the metadata dataset.
+  In conjunction with the bug that ignores collective property, this issue results in extremely slow metadata flushing.
+* In the E3SM case study, it took around 195 sec to write 8 GiB of metadata on the F case high-resolution (ne120) dataset. 
+
+### Software Environment
+* HDF5 versions: 1.12.0
+
+### Solutions
+* Replace chunked metadata dataset with a set of contiguous datasets.
+  As a workaround, we can use MPI-IO to write the metadata directly.
+  For a simpler design, we replace the chunked, extendable metadata dataset with contiguous datasets.
+  We create a new metadata dataset when we need to store more metadata.
+  The log-based VOL retrieves the file offset of the metadata dataset from the native VOL and then write the metadata in a similar way it writes log data.
+  After switching to contiguous metadata datasets, metadata flush time on F case high-resolution (ne120) dataset reduced to around 6 sec.
+ 
 ---
 ## HDF5 dispatcher creates a wrapped VOL object but never free it
 ### Problem Description
@@ -497,3 +569,15 @@ General comments: I suggest the following when adding a new issue.
     + Starting position of the data in the log dataset (8 bytes)
     + Size of data in the log dataset (8 bytes)
 ---
+
+## The log-base VOL does not check for dataset write boundary
+### Problem Description
+* For now, the log-base VOL does not perform a sanity check on dataspace selection.
+  On a write operation, the VOL takes the data and metadata as-is and records them in the LOG.
+  On a read operation, the VOL searches through LOG entries for matching records without considering the dataspace's boundary.
+* It is a feature work to check whether a given dataspace selection is within the dataset's space.
+### Software Environment
+* HDF5 versions: All
+
+### Solutions
+* Implement sanity check in dataspace selection boundary on dataset I/O.
