@@ -52,7 +52,7 @@ void *H5VL_log_dataset_create (void *obj,
 	H5VL_loc_params_t locp;
 	hid_t sid = -1;
 	void *ap;
-	int ndim;
+	int ndim, nfilter;
 	TIMER_START;
 
 	sid = H5Screate (H5S_SCALAR);
@@ -117,6 +117,18 @@ void *H5VL_log_dataset_create (void *obj,
 	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id);
 	CHECK_ERR
 
+	// Filters
+	nfilter = H5Pget_nfilters (dcpl_id);
+	CHECK_ID (nfilter);
+	dp->filters.resize (nfilter);
+	for (i = 0; i < nfilter; i++) {
+		dp->filters[i].id = H5Pget_filter2 (dcpl_id, (unsigned int)i, &(dp->filters[i].flags),
+											&(dp->filters[i].cd_nelmts), dp->filters[i].cd_values,
+											LOGVOL_FILTER_NAME_MAX, dp->filters[i].name,
+											&(dp->filters[i].filter_config));
+		CHECK_ID (dp->filters[i].id);
+	}
+
 	TIMER_STOP (dp->fp, TIMER_DATASET_CREATE);
 
 	goto fn_exit;
@@ -151,6 +163,8 @@ void *H5VL_log_dataset_open (void *obj,
 	H5VL_log_dset_t *dp = NULL;
 	H5VL_loc_params_t locp;
 	va_list args;
+	int nfilter;
+	hid_t dcpl_id = -1;
 	void *ap;
 
 	TIMER_START;
@@ -184,6 +198,21 @@ void *H5VL_log_dataset_open (void *obj,
 	dp->fp->dsizes.resize (dp->fp->ndset);
 	for (i = 0; i < dp->ndim; i++) { dp->fp->dsizes[dp->id][i] = dp->dims[i]; }
 
+	// Filters
+	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_DCPL, dxpl_id, NULL,
+										 &(dcpl_id));
+	CHECK_ERR
+	nfilter = H5Pget_nfilters (dcpl_id);
+	CHECK_ID (nfilter);
+	dp->filters.resize (nfilter);
+	for (i = 0; i < nfilter; i++) {
+		dp->filters[i].id = H5Pget_filter2 (dcpl_id, (unsigned int)i, &(dp->filters[i].flags),
+											&(dp->filters[i].cd_nelmts), dp->filters[i].cd_values,
+											LOGVOL_FILTER_NAME_MAX, dp->filters[i].name,
+											&(dp->filters[i].filter_config));
+		CHECK_ID (dp->filters[i].id);
+	}
+
 	TIMER_STOP (dp->fp, TIMER_DATASET_OPEN);
 
 	goto fn_exit;
@@ -191,6 +220,7 @@ err_out:;
 	if (dp) delete dp;
 	dp = NULL;
 fn_exit:;
+	if (dcpl_id >= 0) { H5Pclose (dcpl_id); }
 	return (void *)dp;
 } /* end H5VL_log_dataset_open() */
 
