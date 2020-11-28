@@ -24,6 +24,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	MPI_Offset *moffs = NULL;
 	MPI_Offset doff;	// Local metadata offset within the metadata dataset
 	MPI_Offset mdsize_all;	// Global metadata size
+	MPI_Offset mdsize;
 	MPI_Aint *offs	  = NULL;
 	int *lens		  = NULL;
 #ifdef ENABLE_ZLIB
@@ -162,6 +163,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 #ifdef ENABLE_ZLIB
 	TIMER_START;
+	mdsize = 0;
 	for (i = 0; i < fp->ndset; i++) {
 		if (flag[i] & H5VL_FILEI_CONFIG_METADATA_ZIP) {
 			inlen = mlens[i] - sizeof (int) * 3;
@@ -176,15 +178,12 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 				*((int *)(buf + moffs[i] + sizeof (int))) = flag[i];
 			}
 		}
+		// Recalculate metadata size after comrpession
+		mdsize += mlens[i];
 	}
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_ZIP);
 #ifdef LOGVOL_PROFILING
-	{
-		// Recalculate metadata size after comrpession
-		size_t msize = 0;
-		for (i = 0; i < fp->ndset; i++) { msize += mlens[i]; }
-		H5VL_log_profile_add_time (fp, TIMER_FILEI_METAFLUSH_SIZE_ZIP, (double)(msize) / 1048576);
-	}
+		H5VL_log_profile_add_time (fp, TIMER_FILEI_METAFLUSH_SIZE_ZIP, (double)(mdsize) / 1048576);
 #endif
 #endif
 
@@ -208,12 +207,12 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 	// Sync metadata size
 	TIMER_START;
-	mpierr = MPI_Allreduce (moffs + fp->ndset, &mdsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
+	mpierr = MPI_Allreduce (&mdsize, &mdsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	CHECK_MPIERR
 	// NOTE: Some MPI implementation do not produce output for rank 0, moffs must ne initialized to
 	// 0
 	doff=0;
-	mpierr = MPI_Exscan (moffs + fp->ndset, &doff, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
+	mpierr = MPI_Exscan (&mdsize, &doff, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	CHECK_MPIERR
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_SYNC);
 

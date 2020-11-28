@@ -108,6 +108,7 @@ void *H5VL_log_file_create (
 	fp->nldset = 0;
 	fp->nmdset = 0;
 	fp->ndset  = 0;
+	fp->config  = 0;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR
 	mpierr = MPI_Comm_rank (comm, &(fp->rank));
@@ -268,6 +269,7 @@ void *H5VL_log_file_open (
 	// Init file obj
 	fp		 = new H5VL_log_file_t (uvlid);
 	fp->flag = flags;
+	fp->config  = 0;
 	MPI_Comm_dup (comm, &(fp->comm));
 	MPI_Comm_rank (comm, &(fp->rank));
 	fp->dxplid = H5Pcopy (dxpl_id);

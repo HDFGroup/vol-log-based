@@ -398,7 +398,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	CHECK_MPIERR
 
 	// Close the file with posix
-	close (fp->fd);
+	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) { close (fp->fd); }
 
 	H5VL_log_filei_contig_buffer_free (&(fp->meta_buf));
 

@@ -5,11 +5,11 @@
 
 #include "H5VL_log_obj.hpp"
 #include "H5VL_log_wrap.hpp"
-
+#include "H5VL_logi_filter.hpp"
 
 #define LOGVOL_SELCTION_TYPE_HYPERSLABS 0x01
-#define LOGVOL_SELCTION_TYPE_POINTS 0x02
-#define LOGVOL_SELCTION_TYPE_OFFSETS 0x04
+#define LOGVOL_SELCTION_TYPE_POINTS		0x02
+#define LOGVOL_SELCTION_TYPE_OFFSETS	0x04
 
 /* The log VOL dataset object */
 typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
@@ -17,10 +17,12 @@ typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
 	hsize_t ndim;
 	hsize_t dims[H5S_MAX_RANK];
 	hsize_t mdims[H5S_MAX_RANK];
-	//hsize_t dsteps[H5S_MAX_RANK];
+	// hsize_t dsteps[H5S_MAX_RANK];
 
 	hid_t dtype;
 	hsize_t esize;
+
+	std::vector<H5VL_log_filter_t> filters;
 
 	using H5VL_log_obj_t::H5VL_log_obj_t;
 } H5VL_log_dset_t;
