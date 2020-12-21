@@ -4,6 +4,8 @@
 #include <config.h>
 #endif
 
+#include <H5Epublic.h>
+
 #ifdef LOGVOL_DEBUG
 #include <cstdlib>
 #include <cstring>
