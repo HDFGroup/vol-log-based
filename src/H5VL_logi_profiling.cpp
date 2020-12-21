@@ -45,6 +45,7 @@ const char *const tname[] = {
 	"H5VL_log_dataset_write_start_count",
 	"H5VL_log_dataset_write_pack",
 	"H5VL_log_dataset_write_convert",
+	"H5VL_log_dataset_write_filter",
 	"H5VL_log_dataset_write_finalize",
 	"H5VL_log_dataset_get",
 	"H5VL_log_dataset_specific",

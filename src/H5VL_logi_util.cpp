@@ -20,7 +20,7 @@ herr_t H5VL_logi_add_att(H5VL_log_obj_t *op, const char *name, hid_t atype, hid_
     loc.obj_type = op->type;
     loc.type = H5VL_OBJECT_BY_SELF;
 
-    ap = H5VLattr_create(op->uo, &loc, op->uvlid, name, atype, asid, H5P_ATTRIBUTE_CREATE_DEFAULT, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
+    ap = H5VLattr_create(op->uo, &loc, op->uvlid, name, atype, asid, H5P_ATTRIBUTE_CREATE_DEFAULT, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_PTR(ap);
     err = H5VLattr_write(ap, op->uvlid, mtype, buf, dxpl_id, NULL); CHECK_ERR;
     err = H5VLattr_close(ap, op->uvlid, dxpl_id, NULL); CHECK_ERR
 
@@ -38,7 +38,7 @@ herr_t H5VL_logi_put_att(H5VL_log_obj_t *op, const char *name, hid_t mtype, void
     loc.obj_type = op->type;
     loc.type = H5VL_OBJECT_BY_SELF;
 
-    ap = H5VLattr_open(op->uo, &loc, op->uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
+    ap = H5VLattr_open(op->uo, &loc, op->uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_PTR(ap);
     err = H5VLattr_write(ap, op->uvlid, mtype, buf, dxpl_id, NULL); CHECK_ERR;
     err = H5VLattr_close(ap, op->uvlid, dxpl_id, NULL); CHECK_ERR
 
@@ -54,7 +54,7 @@ herr_t H5VL_logi_get_att(H5VL_log_obj_t *op, const char *name, hid_t mtype, void
     loc.obj_type = op->type;
     loc.type = H5VL_OBJECT_BY_SELF;
 
-    ap = H5VLattr_open(op->uo, &loc, op->uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
+    ap = H5VLattr_open(op->uo, &loc, op->uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_PTR(ap);
     err = H5VLattr_read(ap, op->uvlid, mtype, buf, dxpl_id, NULL); CHECK_ERR;
     err = H5VLattr_close(ap, op->uvlid, dxpl_id, NULL); CHECK_ERR
 
@@ -72,7 +72,7 @@ herr_t H5VL_logi_get_att_ex(H5VL_log_obj_t *op, const char *name, hid_t mtype, h
     loc.obj_type = op->type;
     loc.type = H5VL_OBJECT_BY_SELF;
 
-    ap = H5VLattr_open(op->uo, &loc, op->uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_NERR(ap);
+    ap = H5VLattr_open(op->uo, &loc, op->uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL); CHECK_PTR(ap);
     err = H5VL_logi_attr_get_wrapper(ap, op->uvlid, H5VL_ATTR_GET_SPACE, dxpl_id, NULL, &asid); CHECK_ERR
     ndim = H5Sget_simple_extent_dims(asid, len, NULL); CHECK_ID(ndim)
     LOG_VOL_ASSERT(ndim == 1);

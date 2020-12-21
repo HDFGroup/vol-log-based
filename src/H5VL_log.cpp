@@ -98,7 +98,7 @@ herr_t H5Pset_nonblocking (hid_t plist, H5VL_log_req_type_t nonblocking) {
 
 	isdxpl = H5Pisa_class (plist, H5P_DATASET_XFER);
 	CHECK_ID (isdxpl)
-	if (isdxpl == 0) RET_ERR ("Not dxplid")
+	if (isdxpl == 0) ERR_OUT ("Not dxplid")
 
 	pexist = H5Pexist (plist, NB_PROPERTY_NAME);
 	CHECK_ID (pexist)
@@ -147,7 +147,7 @@ herr_t H5Pset_multisel (hid_t plist, H5VL_log_multisel_arg_t arg) {
 
 	isdxpl = H5Pisa_class (plist, H5P_DATASET_XFER);
 	CHECK_ID (isdxpl)
-	if (isdxpl == 0) RET_ERR ("Not dxplid")
+	if (isdxpl == 0) ERR_OUT ("Not dxplid")
 
 	pexist = H5Pexist (plist, MULTISEL_PROPERTY_NAME);
 	CHECK_ID (pexist)
@@ -203,7 +203,7 @@ herr_t H5Pset_nb_buffer_size (hid_t plist, size_t size) {
 
 	isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
 	CHECK_ID (isfapl)
-	if (isfapl == 0) RET_ERR ("Not faplid")
+	if (isfapl == 0) ERR_OUT ("Not faplid")
 
 	pexist = H5Pexist (plist, BSIZE_PROPERTY_NAME);
 	CHECK_ID (pexist)
@@ -256,7 +256,7 @@ herr_t H5Pset_meta_merge (hid_t plist, hbool_t merge) {
 
 	isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
 	CHECK_ID (isfapl)
-	if (isfapl == 0) RET_ERR ("Not faplid")
+	if (isfapl == 0) ERR_OUT ("Not faplid")
 
 	pexist = H5Pexist (plist, MERGE_META_NAME_PROPERTY_NAME);
 	CHECK_ID (pexist)
@@ -309,7 +309,7 @@ herr_t H5Pset_meta_zip (hid_t plist, hbool_t zip) {
 
 	isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
 	CHECK_ID (isfapl)
-	if (isfapl == 0) RET_ERR ("Not faplid")
+	if (isfapl == 0) ERR_OUT ("Not faplid")
 
 	pexist = H5Pexist (plist, ZIP_META_NAME_PROPERTY_NAME);
 	CHECK_ID (pexist)
@@ -362,7 +362,7 @@ herr_t H5Pset_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t encoding) {
 
 	isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
 	CHECK_ID (isfapl)
-	if (isfapl == 0) RET_ERR ("Not faplid")
+	if (isfapl == 0) ERR_OUT ("Not faplid")
 
 	pexist = H5Pexist (plist, SEL_ENCODING_PROPERTY_NAME);
 	CHECK_ID (pexist)
@@ -413,7 +413,7 @@ herr_t H5Pset_data_layout (hid_t plist, H5VL_log_data_layout_t layout) {
 
 	isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
 	CHECK_ID (isfapl)
-	if (isfapl == 0) RET_ERR ("Not faplid")
+	if (isfapl == 0) ERR_OUT ("Not faplid")
 
 	pexist = H5Pexist (plist, DATA_LAYOUT_PROPERTY_NAME);
 	CHECK_ID (pexist)

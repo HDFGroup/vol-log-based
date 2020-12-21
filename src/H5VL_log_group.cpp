@@ -45,14 +45,14 @@ void *H5VL_log_group_create (void *obj,
 
 	/* Check arguments */
 	if (loc_params->type != H5VL_OBJECT_BY_SELF)
-		RET_ERR ("loc_params->type is not H5VL_OBJECT_BY_SELF")
+		ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
 
 	gp = new H5VL_log_obj_t (op,H5I_GROUP);
 
 	TIMER_START;
 	gp->uo = H5VLgroup_create (op->uo, loc_params, op->uvlid, name, lcpl_id, gcpl_id, gapl_id,
 							   dxpl_id, NULL);
-	CHECK_NERR (gp->uo)
+	CHECK_PTR (gp->uo)
 	TIMER_STOP (op->fp, TIMER_H5VL_GROUP_CREATE);
 
 	TIMER_STOP (gp->fp, TIMER_GROUP_CREATE);
@@ -87,13 +87,13 @@ void *H5VL_log_group_open (void *obj,
 
 	/* Check arguments */
 	if (loc_params->type != H5VL_OBJECT_BY_SELF)
-		RET_ERR ("loc_params->type is not H5VL_OBJECT_BY_SELF")
+		ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
 
 	gp = new H5VL_log_obj_t (op,H5I_GROUP);
 
 	TIMER_START;
 	gp->uo = H5VLgroup_open (op->uo, loc_params, op->uvlid, name, gapl_id, dxpl_id, NULL);
-	CHECK_NERR (gp->uo)
+	CHECK_PTR (gp->uo)
 	TIMER_STOP (op->fp, TIMER_H5VL_GROUP_OPEN);
 
 	TIMER_STOP (gp->fp, TIMER_GROUP_OPEN);

@@ -166,7 +166,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 		ldp			 = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
 								   H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
 								   H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
-		CHECK_NERR (ldp);
+		CHECK_PTR (ldp);
 
 		TIMER_START;
 		err = H5VL_logi_dataset_optional_wrapper (ldp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET,
@@ -222,7 +222,7 @@ inline herr_t H5VL_log_nb_flush_posix_write (int fd, char *buf, size_t count) {
 
 	while (count > 0) {
 		wsize = write (fd, buf, count);
-		if (wsize < 0) { RET_ERR ("write fail") }
+		if (wsize < 0) { ERR_OUT ("write fail") }
 		buf += wsize;
 		count -= wsize;
 	}
@@ -260,7 +260,7 @@ herr_t H5VL_log_nb_ost_write (
 	cur_off	  = ost_base + (off / fp->ssize) * stride;
 	skip_size = off % fp->ssize;
 	seek_off  = lseek64 (fp->fd, cur_off + skip_size, SEEK_SET);
-	if (seek_off < 0) { RET_ERR ("lseek64 fail"); }
+	if (seek_off < 0) { ERR_OUT ("lseek64 fail"); }
 	bp = bs + skip_size;
 
 	for (i = 0; i < cnt; i++) {
@@ -282,7 +282,7 @@ herr_t H5VL_log_nb_ost_write (
 
 				// Move to next stride
 				seek_off = lseek64 (fp->fd, stride, SEEK_CUR);
-				if (seek_off < 0) { RET_ERR ("lseek64 fail"); }
+				if (seek_off < 0) { ERR_OUT ("lseek64 fail"); }
 
 				// Bytes written
 				mlen -= be - bp;
@@ -376,7 +376,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 		ldp			 = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
 								   H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
 								   H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
-		CHECK_NERR (ldp);
+		CHECK_PTR (ldp);
 
 		TIMER_START;
 		err = H5VL_logi_dataset_optional_wrapper (ldp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET,

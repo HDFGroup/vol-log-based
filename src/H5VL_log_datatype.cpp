@@ -44,7 +44,7 @@ static void *H5VL_log_datatype_commit (void *obj,
 
 	tp->uo = H5VLdatatype_commit (op->uo, loc_params, op->uvlid, name, type_id, lcpl_id, tcpl_id,
 								  tapl_id, dxpl_id, req);
-	CHECK_NERR (tp->uo);
+	CHECK_PTR (tp->uo);
 
 	return (void *)tp;
 err_out:;
@@ -74,7 +74,7 @@ static void *H5VL_log_datatype_open (void *obj,
 	tp = new H5VL_log_obj_t (op, H5I_DATATYPE);
 
 	tp->uo = H5VLdatatype_open (op->uo, loc_params, op->uvlid, name, tapl_id, dxpl_id, req);
-	CHECK_NERR (tp->uo);
+	CHECK_PTR (tp->uo);
 
 	return (void *)tp;
 

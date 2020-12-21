@@ -229,7 +229,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		mdp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
 								  H5T_STD_B8LE, mdsid, H5P_DATASET_CREATE_DEFAULT,
 								  H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
-		CHECK_NERR (mdp);
+		CHECK_PTR (mdp);
 		fp->nmdset++;
 		TIMER_STOP (fp, TIMER_H5VL_DATASET_CREATE);
 
@@ -307,9 +307,9 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	if (mdexist > 0) {
 		mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT,
 								fp->dxplid, NULL);
-		CHECK_NERR (mdp)
+		CHECK_PTR (mdp)
 		// ldp = H5VLdataset_open(fp->lgp, &loc, fp->uvlid, "_lookup", H5P_DATASET_ACCESS_DEFAULT,
-		// fp->dxplid, NULL); CHECK_NERR(ldp)
+		// fp->dxplid, NULL); CHECK_PTR(ldp)
 
 		// Get data space and size
 		TIMER_START;

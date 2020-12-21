@@ -90,7 +90,7 @@ void *H5VL_log_file_create (
 	} else {  // If no under VOL specified, use the native VOL
 		htri_t ret;
 		ret = H5VLis_connector_registered_by_name ("native");
-		if (ret != 1) { RET_ERR ("Native VOL not found") }
+		if (ret != 1) { ERR_OUT ("Native VOL not found") }
 		uvlid = H5VLpeek_connector_id_by_name ("native");
 		CHECK_ID (uvlid)
 		under_vol_info = NULL;
@@ -133,7 +133,7 @@ void *H5VL_log_file_create (
 	H5Pset_coll_metadata_write (under_fapl_id, (hbool_t) true);
 	TIMER_START;
 	fp->uo = H5VLfile_create (name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL);
-	CHECK_NERR (fp->uo)
+	CHECK_PTR (fp->uo)
 	TIMER_STOP (fp, TIMER_H5VL_FILE_CREATE);
 	H5Pclose (under_fapl_id);
 
@@ -142,7 +142,7 @@ void *H5VL_log_file_create (
 	loc.type	 = H5VL_OBJECT_BY_SELF;
 	fp->lgp = H5VLgroup_create (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_LINK_CREATE_DEFAULT,
 								H5P_GROUP_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
-	CHECK_NERR (fp->lgp)
+	CHECK_PTR (fp->lgp)
 
 	// Open the file with MPI
 	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, MPI_INFO_NULL, &(fp->fh));
@@ -167,7 +167,7 @@ void *H5VL_log_file_create (
 	}
 	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
 		fp->fd = open (name, O_RDWR);
-		if (fp->fd < 0) { RET_ERR ("open fail") }
+		if (fp->fd < 0) { ERR_OUT ("open fail") }
 	} else {
 		fp->fd = -1;
 	}
@@ -253,7 +253,7 @@ void *H5VL_log_file_open (
 	} else {  // If no under VOL specified, use the native VOL
 		htri_t ret;
 		ret = H5VLis_connector_registered_by_name ("native");
-		if (ret != 1) { RET_ERR ("Native VOL not found") }
+		if (ret != 1) { ERR_OUT ("Native VOL not found") }
 		uvlid = H5VLpeek_connector_id_by_name ("native");
 		CHECK_ID (uvlid)
 		under_vol_info = NULL;
@@ -286,7 +286,7 @@ void *H5VL_log_file_open (
 	H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
 	TIMER_START;
 	fp->uo = H5VLfile_open (name, flags, under_fapl_id, dxpl_id, NULL);
-	CHECK_NERR (fp->uo)
+	CHECK_PTR (fp->uo)
 	TIMER_STOP (fp, TIMER_H5VL_FILE_OPEN);
 	H5Pclose (under_fapl_id);
 
@@ -296,7 +296,7 @@ void *H5VL_log_file_open (
 	TIMER_START
 	fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_GROUP_ACCESS_DEFAULT,
 							  dxpl_id, NULL);
-	CHECK_NERR (fp->lgp)
+	CHECK_PTR (fp->lgp)
 	TIMER_STOP (fp, TIMER_H5VL_GROUP_OPEN);
 
 	// Att
@@ -436,7 +436,7 @@ herr_t H5VL_log_file_specific (
 			} else {  // If no under VOL specified, use the native VOL
 				htri_t ret;
 				ret = H5VLis_connector_registered_by_name ("native");
-				if (ret != 1) { RET_ERR ("Native VOL not found") }
+				if (ret != 1) { ERR_OUT ("Native VOL not found") }
 				uvlid = H5VLpeek_connector_id_by_name ("native");
 				CHECK_ID (uvlid)
 				under_vol_info = NULL;
@@ -462,7 +462,7 @@ herr_t H5VL_log_file_specific (
 			break;
 		} break;
 		default:
-			RET_ERR ("Unsupported specific_type")
+			ERR_OUT ("Unsupported specific_type")
 	} /* end select */
 
 	TIMER_STOP (fp, TIMER_FILE_SPECIFIC);

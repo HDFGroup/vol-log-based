@@ -58,7 +58,7 @@ herr_t H5VL_log_get_wrap_ctx (const void *obj, void **wrap_ctx) {
 
 	/* Allocate new VOL object wrapping context for the pass through connector */
 	ctx = new H5VL_log_obj_t (op, H5I_NTYPES);
-	CHECK_NERR (ctx)
+	CHECK_PTR (ctx)
 
 	/* Increment reference count on underlying VOL ID, and copy the VOL info */
 	err = H5VLget_wrap_ctx (op->uo, op->uvlid, &(ctx->uo));

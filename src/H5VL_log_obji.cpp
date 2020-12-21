@@ -17,11 +17,11 @@ void *H5VL_log_obj_open_with_uo (void *obj,
 	H5VL_log_obj_t *op = NULL;
 
 	/* Check arguments */
-	// if(loc_params->type != H5VL_OBJECT_BY_SELF) RET_ERR("loc_params->type is not
+	// if(loc_params->type != H5VL_OBJECT_BY_SELF) ERR_OUT("loc_params->type is not
 	// H5VL_OBJECT_BY_SELF")
 
 	op = new H5VL_log_obj_t (pp, type, uo);
-	CHECK_NERR (op);
+	CHECK_PTR (op);
 
 	return (void *)op;
 

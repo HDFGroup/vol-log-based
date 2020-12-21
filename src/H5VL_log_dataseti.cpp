@@ -285,7 +285,7 @@ void *H5VL_log_dataseti_open_with_uo (void *obj,
 	TIMER_START;
 
 	dp = new H5VL_log_dset_t (op, H5I_DATASET, uo);
-	CHECK_NERR (dp)
+	CHECK_PTR (dp)
 
 	TIMER_START;
 	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, NULL,
@@ -334,7 +334,7 @@ void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_obj_t *cp) {
 	TIMER_START;
 
 	dp = new H5VL_log_dset_t (cp, H5I_DATASET, uo);
-	CHECK_NERR (dp)
+	CHECK_PTR (dp)
 
 	TIMER_START;
 	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE,
@@ -384,10 +384,10 @@ herr_t H5VL_log_dataseti_writen (hid_t did,
 
 	// Get VOL object
 	dp = (H5VL_log_dset_t *)H5VLobject (did);
-	CHECK_NERR (dp)
+	CHECK_PTR (dp)
 
 	// Sanity check
-	if (!buf) RET_ERR ("user buffer can't be NULL");
+	if (!buf) ERR_OUT ("user buffer can't be NULL");
 
 	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_INIT);
 
