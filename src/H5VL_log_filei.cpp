@@ -27,7 +27,7 @@ herr_t H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf) {
 	if (fp->bsize != LOG_VOL_BSIZE_UNLIMITED) {
 		if (fp->bused + size > fp->bsize) {
 			err = -1;
-			RET_ERR ("Out of buffer")
+			ERR_OUT ("Out of buffer")
 		}
 	}
 
@@ -35,7 +35,7 @@ herr_t H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf) {
 	if (bp == NULL) {
 		err = -1;
 
-		RET_ERR ("OOM")
+		ERR_OUT ("OOM")
 	}
 	*bp	 = size;
 	*buf = bp + 1;
@@ -137,10 +137,10 @@ H5VL_log_buffer_block_t *H5VL_log_filei_pool_new_block (size_t bsize) {
 	assert (bsize > 0);
 
 	bp = (H5VL_log_buffer_block_t *)malloc (sizeof (H5VL_log_buffer_block_t));
-	CHECK_NERR (bp)
+	CHECK_PTR (bp)
 
 	bp->cur = bp->begin = (char *)malloc (bsize);
-	CHECK_NERR (bp->begin);
+	CHECK_PTR (bp->begin);
 	bp->end = bp->begin + bsize;
 
 	bp->next = NULL;
@@ -162,7 +162,7 @@ herr_t H5VL_log_filei_pool_alloc (H5VL_log_buffer_pool_t *p, size_t bsize, void 
 		size_t asize;
 		if (!(p->inf)) {
 			err = -1;
-			RET_ERR ("Out of buffer")
+			ERR_OUT ("Out of buffer")
 		}
 
 		asize = p->bsize;
@@ -177,7 +177,7 @@ herr_t H5VL_log_filei_pool_alloc (H5VL_log_buffer_pool_t *p, size_t bsize, void 
 			}
 		}
 		if (!bp) err = -1;
-		CHECK_NERR (bp)
+		CHECK_PTR (bp)
 
 		bp->next = p->head;
 		p->head	 = bp;
@@ -203,7 +203,7 @@ herr_t H5VL_log_filei_pool_init (H5VL_log_buffer_pool_t *p, ssize_t bsize) {
 
 	if (p->bsize) {
 		p->head = H5VL_log_filei_pool_new_block ((size_t) (p->bsize));
-		CHECK_NERR (p->head);
+		CHECK_PTR (p->head);
 	} else {
 		p->head = NULL;
 	}
@@ -260,7 +260,7 @@ herr_t H5VL_log_filei_contig_buffer_init (H5VL_log_contig_buffer_t *bp, size_t i
 	herr_t err = 0;
 
 	bp->begin = (char *)malloc (init_size);
-	CHECK_NERR (bp->begin);
+	CHECK_PTR (bp->begin);
 
 	bp->cur = bp->begin;
 	bp->end += init_size;
@@ -461,7 +461,7 @@ herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
 	mpierr = MPI_Comm_size (fp->comm, &np);
 
 	noderanks = (int *)malloc (sizeof (int) * np);
-	CHECK_NERR (noderanks);
+	CHECK_PTR (noderanks);
 
 	mpierr =
 		MPI_Comm_split_type (fp->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &(fp->nodecomm));
@@ -530,7 +530,7 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 
 	/*
 		fp = new H5VL_log_file_t (uo, cp->uvlid);
-		CHECK_NERR (fp)
+		CHECK_PTR (fp)
 		fp->flag = cp->fp->flag;
 		MPI_Comm_dup (cp->fp->comm, &(fp->comm));
 		fp->rank   = cp->fp->rank;
@@ -549,7 +549,7 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 		TIMER_START
 		fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_GROUP_ACCESS_DEFAULT,
 								  fp->dxplid, NULL);
-		CHECK_NERR (fp->lgp)
+		CHECK_PTR (fp->lgp)
 		TIMER_STOP (fp, TIMER_H5VL_GROUP_OPEN);
 
 		// Att

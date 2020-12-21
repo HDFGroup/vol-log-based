@@ -363,7 +363,7 @@ herr_t H5VL_logi_get_dataspace_selection (hid_t sid, std::vector<H5VL_log_select
 
 		} break;
 		default:
-			RET_ERR ("Unsupported selection type");
+			ERR_OUT ("Unsupported selection type");
 	}
 
 err_out:;
@@ -555,7 +555,7 @@ old_nreq);
 			}
 			break;
 		default:
-			RET_ERR("Unsupported selection type");
+			ERR_OUT("Unsupported selection type");
 	}
 
 err_out:;

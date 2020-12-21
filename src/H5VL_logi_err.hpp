@@ -57,7 +57,7 @@
 		}                                                             \
 	}
 
-#define CHECK_NERR(A)                                                 \
+#define CHECK_PTR(A)                                                 \
 	{                                                                 \
 		if (A == NULL) {                                              \
 			printf ("Error at line %d in %s:\n", __LINE__, __FILE__); \
@@ -67,9 +67,15 @@
 		}                                                             \
 	}
 
-#define RET_ERR(A)                                                      \
+#define ERR_OUT(A)                                                      \
 	{                                                                   \
 		printf ("Error at line %d in %s: %s\n", __LINE__, __FILE__, A); \
 		DEBUG_ABORT                                                     \
 		goto err_out;                                                   \
+	}
+
+#define RET_ERR(A)  \
+	{               \
+		err = -1;   \
+		ERR_OUT (A) \
 	}

@@ -55,7 +55,7 @@ void *H5VL_log_object_open (void *obj,
 	}
 #endif
 	uo = H5VLobject_open (op->uo, loc_params, op->uvlid, opened_type, dxpl_id, req);
-	if (uo == NULL) { CHECK_NERR (uo); }
+	if (uo == NULL) { CHECK_PTR (uo); }
 
 	if (*opened_type == H5I_DATASET) {
 		return H5VL_log_dataseti_open_with_uo (obj, uo, loc_params, dxpl_id);
@@ -118,7 +118,7 @@ herr_t H5VL_log_object_copy (void *src_obj,
 				src_name, dst_obj, dst_loc_params, dst_name, vname[0], vname[1], vname[2], req);
 	}
 #endif
-	RET_ERR ("H5VL_log_object_copy Not Supported")
+	ERR_OUT ("H5VL_log_object_copy Not Supported")
 err_out:;
 	return -1;
 

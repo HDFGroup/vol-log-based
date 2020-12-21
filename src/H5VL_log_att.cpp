@@ -51,7 +51,7 @@ void *H5VL_log_attr_create (void *obj,
 	TIMER_START;
 	ap->uo = H5VLattr_create (op->uo, loc_params, op->uvlid, name, type_id, space_id, acpl_id,
 							  aapl_id, dxpl_id, NULL);
-	CHECK_NERR (ap->uo);
+	CHECK_PTR (ap->uo);
 	TIMER_STOP (ap->fp, TIMER_H5VL_ATT_CREATE);
 
 	TIMER_STOP (ap->fp, TIMER_ATT_CREATE);
@@ -87,7 +87,7 @@ void *H5VL_log_attr_open (void *obj,
 
 	TIMER_START;
 	ap->uo = H5VLattr_open (op->uo, loc_params, op->uvlid, name, aapl_id, dxpl_id, req);
-	CHECK_NERR (ap->uo);
+	CHECK_PTR (ap->uo);
 	TIMER_STOP (ap->fp, TIMER_H5VL_ATT_OPEN);
 
 	TIMER_STOP (ap->fp, TIMER_ATT_OPEN);

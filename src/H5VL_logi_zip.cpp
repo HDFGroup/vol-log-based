@@ -36,21 +36,21 @@ herr_t H5VL_log_zip_compress(void *in, int in_len, void *out, int *out_len)
     zerr = deflateInit(&defstream, Z_DEFAULT_COMPRESSION);
     if (zerr != Z_OK)
     {
-        RET_ERR("deflateInit fail")
+        ERR_OUT("deflateInit fail")
     }
     zerr = deflate(&defstream, Z_FINISH);
     if (zerr != Z_STREAM_END)
     {
         if (zerr < 0)
         {
-            RET_ERR("deflate fail")
+            ERR_OUT("deflate fail")
         }
         return -1;
     }
     zerr = deflateEnd(&defstream);
     if (zerr != Z_OK)
     {
-        RET_ERR("deflateEnd fail")
+        ERR_OUT("deflateEnd fail")
     }
 
     // If buffer not large enough
@@ -102,7 +102,7 @@ herr_t H5VL_log_zip_compress_alloc(void *in, int in_len, void **out, int *out_le
     zerr = deflateInit(&defstream, Z_DEFAULT_COMPRESSION);
     if (zerr != Z_OK)
     {
-        RET_ERR("deflateInit fail")
+        ERR_OUT("deflateInit fail")
     }
 
     // The actual compression work
@@ -130,7 +130,7 @@ herr_t H5VL_log_zip_compress_alloc(void *in, int in_len, void **out, int *out_le
     zerr = deflateEnd(&defstream);
     if (zerr != Z_OK)
     {
-        RET_ERR("deflateEnd fail")
+        ERR_OUT("deflateEnd fail")
     }
 
     // Size of comrpessed data
@@ -176,23 +176,23 @@ herr_t H5VL_log_zip_decompress(void *in, int in_len, void *out, int *out_len)
     zerr = inflateInit(&infstream);
     if (zerr != Z_OK)
     {
-        RET_ERR("inflateInit fail")
+        ERR_OUT("inflateInit fail")
     }
     zerr = inflate(&infstream, Z_FINISH);
     if (zerr != Z_STREAM_END)
     {
-        RET_ERR("inflate fail")
+        ERR_OUT("inflate fail")
     }
     zerr = inflateEnd(&infstream);
     if (zerr != Z_OK)
     {
-        RET_ERR("inflateEnd fail")
+        ERR_OUT("inflateEnd fail")
     }
 
     // If buffer not large enough
     if (infstream.avail_in > 0)
     {
-        RET_ERR("buffer too small")
+        ERR_OUT("buffer too small")
     }
 
     // Size of decomrpessed data
@@ -233,7 +233,7 @@ herr_t H5VL_log_zip_decompress_alloc(void *in, int in_len, void **out, int *out_
     zerr = inflateInit(&infstream);
     if (zerr != Z_OK)
     {
-        RET_ERR("inflateInit fail")
+        ERR_OUT("inflateInit fail")
     }
 
     // The actual decompression work
@@ -261,7 +261,7 @@ herr_t H5VL_log_zip_decompress_alloc(void *in, int in_len, void **out, int *out_
     zerr = inflateEnd(&infstream);
     if (zerr != Z_OK)
     {
-        RET_ERR("inflateEnd fail")
+        ERR_OUT("inflateEnd fail")
     }
 
     // Size of comrpessed data

@@ -9,6 +9,7 @@
 #include "H5VL_logi_dataspace.hpp"
 #include "H5VL_logi_util.hpp"
 #include "H5VL_logi_wrapper.hpp"
+#include "H5VL_logi_filter.hpp"
 
 /********************* */
 /* Function prototypes */
@@ -65,7 +66,7 @@ void *H5VL_log_dataset_create (void *obj,
 	TIMER_START;
 	dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid,
 								 dcpl_id, dapl_id, dxpl_id, NULL);
-	CHECK_NERR (dp->uo)
+	CHECK_PTR (dp->uo)
 	TIMER_STOP (dp->fp, TIMER_H5VL_DATASET_CREATE);
 
 	dp->dtype = H5Tcopy (type_id);
@@ -172,7 +173,7 @@ void *H5VL_log_dataset_open (void *obj,
 
 	TIMER_START;
 	dp->uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);
-	CHECK_NERR (dp->uo);
+	CHECK_PTR (dp->uo);
 	TIMER_STOP (dp->fp, TIMER_H5VL_DATASET_OPEN);
 
 	TIMER_START;
@@ -420,7 +421,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	}
 	// Sanity check
 	if (stype == H5S_SEL_NONE) goto err_out;
-	if (!buf) RET_ERR ("user buffer can't be NULL");
+	if (!buf) ERR_OUT ("user buffer can't be NULL");
 	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_INIT);
 
 	TIMER_START;
@@ -532,9 +533,29 @@ herr_t H5VL_log_dataset_write (void *dset,
 		TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_CONVERT);
 	}
 
-	TIMER_START;
 	// Convert request size to number of bytes to be used by later routines
 	r.rsize *= dp->esize;
+
+	// Filtering
+	TIMER_START;
+	if (dp->filters.size()){
+		char *buf=NULL;
+		int csize=0;
+
+		err=H5VL_logi_filter(dp->filters,r.xbuf,r.rsize,(void**)&buf,&csize);
+		CHECK_ERR
+
+		if (r.xbuf!=r.ubuf){
+			err=H5VL_log_filei_bfree(dp->fp,&(r.xbuf));
+	CHECK_ERR
+		}
+
+		r.xbuf=buf;
+		r.rsize = csize;
+	}
+	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_FILTER);
+
+	TIMER_START;
 
 	// Put request in queue
 	dp->fp->wreqs.push_back (r);
@@ -593,14 +614,14 @@ herr_t H5VL_log_dataset_get (
 		/* H5Dget_create_plist */
 		case H5VL_DATASET_GET_DCPL: {
 			err = -1;
-			RET_ERR ("get_type not supported")
+			ERR_OUT ("get_type not supported")
 			break;
 		}
 
 		/* H5Dget_access_plist */
 		case H5VL_DATASET_GET_DAPL: {
 			err = -1;
-			RET_ERR ("get_type not supported")
+			ERR_OUT ("get_type not supported")
 			break;
 		}
 
@@ -608,11 +629,11 @@ herr_t H5VL_log_dataset_get (
 		case H5VL_DATASET_GET_STORAGE_SIZE: {
 			hsize_t *ret = va_arg (arguments, hsize_t *);
 			err			 = -1;
-			RET_ERR ("get_type not supported")
+			ERR_OUT ("get_type not supported")
 			break;
 		}
 		default:
-			RET_ERR ("get_type not supported")
+			ERR_OUT ("get_type not supported")
 	} /* end switch */
 
 	TIMER_STOP (dp->fp, TIMER_DATASET_GET);
@@ -647,11 +668,11 @@ herr_t H5VL_log_dataset_specific (void *obj,
 			for (i = 0; i < dp->ndim; i++) {
 				if (new_sizes[i] < 0) {
 					err = -1;
-					RET_ERR ("size cannot be negative")
+					ERR_OUT ("size cannot be negative")
 				}
 				if (dp->mdims[i] != H5S_UNLIMITED && new_sizes[i] > dp->mdims[i]) {
 					err = -1;
-					RET_ERR ("size cannot exceed max size")
+					ERR_OUT ("size cannot exceed max size")
 				}
 				dp->dims[i] = dp->fp->dsizes[dp->id][i] = new_sizes[i];
 			}
