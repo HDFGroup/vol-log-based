@@ -121,14 +121,18 @@ void *H5VL_log_dataset_create (void *obj,
 
 	// Atts
 	err = H5VL_logi_add_att (dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->dims,
-							 dxpl_id);
+							 dxpl_id,ureqp);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
 	err = H5VL_logi_add_att (dp, "_mdims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->mdims,
-							 dxpl_id);
+							 dxpl_id,ureqp);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
+<<<<<<< HEAD
 	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id);
+=======
+	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id,ureqp);
+>>>>>>> req callbacks
 	CHECK_ERR
 	if (req) {
 		rp->append (ureq);

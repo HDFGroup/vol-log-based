@@ -22,11 +22,11 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	int *cnt, *flag;
 	MPI_Offset *mlens = NULL;
 	MPI_Offset *moffs = NULL;
-	MPI_Offset doff;	// Local metadata offset within the metadata dataset
+	MPI_Offset doff;		// Local metadata offset within the metadata dataset
 	MPI_Offset mdsize_all;	// Global metadata size
 	MPI_Offset mdsize;
-	MPI_Aint *offs	  = NULL;
-	int *lens		  = NULL;
+	MPI_Aint *offs = NULL;
+	int *lens	   = NULL;
 #ifdef ENABLE_ZLIB
 	MPI_Offset max_mlen;
 	char *zbuf;
@@ -48,30 +48,37 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	TIMER_START;
 
 	TIMER_START;
+
+	// Record the information to decode selection in case the dataset's size changes
+	if (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+		for (i = 0; i < fp->ndset; i++) {
+			dsteps[i][fp->ndim[i] - 1] = 1;
+			for (j = fp->ndim[i] - 2; j > -1; j--) {
+				dsteps[i][j] = dsteps[i][j + 1] * fp->dsizes[i][j + 1];
+			}
+		}
+	}
+	// if (fp->rank == 0) { mlens[0] += sizeof (int) * fp->ndset; }
+
 	// Calculate size and offset of the metadata per dataset
-	offs	  = (MPI_Aint *)malloc (sizeof (MPI_Aint) * fp->ndset);
-	lens	  = (int *)malloc (sizeof (int) * fp->ndset);
-	mlens	  = (MPI_Offset *)malloc (sizeof (MPI_Offset) * fp->ndset);
-	moffs	  = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->ndset + 1));
-	cnt		  = (int *)malloc (sizeof (int) * fp->ndset * 2);
+	offs  = (MPI_Aint *)malloc (sizeof (MPI_Aint) * fp->ndset);
+	lens  = (int *)malloc (sizeof (int) * fp->ndset);
+	mlens = (MPI_Offset *)malloc (sizeof (MPI_Offset) * fp->ndset);
+	moffs = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->ndset + 1));
+	cnt	  = (int *)malloc (sizeof (int) * fp->ndset * 2);
 	memset (cnt, 0, sizeof (int) * fp->ndset * 2);
 	flag = cnt + fp->ndset;
 	memset (mlens, 0, sizeof (MPI_Offset) * fp->ndset);
-	// if (fp->rank == 0) { mlens[0] += sizeof (int) * fp->ndset; }
-	for (i = 0; i < fp->ndset; i++) {
-		dsteps[i][fp->ndim[i] - 1] = 1;
-		for (j = fp->ndim[i] - 2; j > -1; j--) {
-			dsteps[i][j] = dsteps[i][j + 1] * fp->dsizes[i][j + 1];
-		}
-	}
+
 	for (auto &rp : fp->wreqs) { cnt[rp.did] += rp.sels.size (); }
+
 	for (i = 0; i < fp->ndset; i++) {
 		mlens[i] += sizeof (int) * 2;  // ID and flag
 		if (cnt[i] > 0) {			   // Multiple selection
-			flag[i] |= H5VL_FILEI_CONFIG_METADATA_MERGE;
+			flag[i] |= H5VL_LOGI_META_FLAG_MULTI_SEL;
 			mlens[i] += sizeof (int);  // nsel
-			if (fp->ndim[i] > 1) {
-				flag[i] |= H5VL_FILEI_CONFIG_METADATA_ENCODE;
+			if ( (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) && (fp->ndim[i] > 1) ){
+				flag[i] |= H5VL_FILEI_CONFIG_SEL_ENCODE;
 				mlens[i] += fp->ndim[i] * sizeof (MPI_Offset);	// dstep
 				mlens[i] += (sizeof (MPI_Offset) * 3 + sizeof (size_t)) * (size_t)cnt[i];
 			} else {
@@ -80,12 +87,13 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 							(size_t)cnt[i];
 			}
 #ifdef ENABLE_ZLIB
-			if (cnt[i] > 0) {  // Compress if we have more than 1k entry
-				flag[i] |= H5VL_FILEI_CONFIG_METADATA_ZIP;
+			if ((fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) && (cnt[i] > 0)) {  // Compress if we have more than 1k entry
+				flag[i] |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
 			}
 #endif
 		}
 	}
+	
 #ifdef ENABLE_ZLIB
 	max_mlen = 0;
 #endif
@@ -96,6 +104,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		if (max_mlen < mlens[i]) { max_mlen = mlens[i]; }
 #endif
 	}
+
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_INIT);
 
 	TIMER_START;
@@ -114,7 +123,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		*((int *)bufp[i]) = i;
 		bufp[i] += sizeof (int);
 		// Flag
-		*((int *)bufp[i]) = i;
+		*((int *)bufp[i]) = flag[i];
 		bufp[i] += sizeof (int);
 		// Nsel
 		if (flag[i] & H5VL_FILEI_CONFIG_METADATA_MERGE) {
@@ -122,7 +131,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			bufp[i] += sizeof (int);
 		}
 		// Dstep
-		if (flag[i] & H5VL_FILEI_CONFIG_METADATA_ENCODE) {
+		if (flag[i] & H5VL_FILEI_CONFIG_SEL_ENCODE) {
 			memcpy (bufp[i], dsteps[i].data (), sizeof (MPI_Offset) * fp->ndim[i]);
 			bufp[i] += sizeof (MPI_Offset) * fp->ndim[i];
 		}
@@ -132,7 +141,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		for (auto &sp : rp.sels) {
 			//*((int *)bufp[rp.did]) = rp.did;
 			// bufp[rp.did] += sizeof (int);
-			if (flag[rp.did] & H5VL_FILEI_CONFIG_METADATA_ENCODE) {
+			if (flag[rp.did] & H5VL_FILEI_CONFIG_SEL_ENCODE) {
 				soff = eoff = 0;
 				for (i = 0; i < fp->ndim[rp.did]; i++) {
 					soff += sp.start[i] * dsteps[rp.did][i];
@@ -165,7 +174,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	TIMER_START;
 	mdsize = 0;
 	for (i = 0; i < fp->ndset; i++) {
-		if (flag[i] & H5VL_FILEI_CONFIG_METADATA_ZIP) {
+		if (flag[i] & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
 			inlen = mlens[i] - sizeof (int) * 3;
 			clen  = max_mlen;
 			err	  = H5VL_log_zip_compress (buf + moffs[i] + sizeof (int) * 3, inlen, zbuf, &clen);
@@ -174,7 +183,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 				mlens[i] = sizeof (int) * 3 + clen;
 			} else {
 				// Compressed size larger, abort compression
-				flag[i] ^= H5VL_FILEI_CONFIG_METADATA_ZIP;
+				flag[i] ^= H5VL_FILEI_CONFIG_SEL_DEFLATE;
 				*((int *)(buf + moffs[i] + sizeof (int))) = flag[i];
 			}
 		}
@@ -183,7 +192,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	}
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_ZIP);
 #ifdef LOGVOL_PROFILING
-		H5VL_log_profile_add_time (fp, TIMER_FILEI_METAFLUSH_SIZE_ZIP, (double)(mdsize) / 1048576);
+	H5VL_log_profile_add_time (fp, TIMER_FILEI_METAFLUSH_SIZE_ZIP, (double)(mdsize) / 1048576);
 #endif
 #endif
 
@@ -211,7 +220,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	CHECK_MPIERR
 	// NOTE: Some MPI implementation do not produce output for rank 0, moffs must ne initialized to
 	// 0
-	doff=0;
+	doff   = 0;
 	mpierr = MPI_Exscan (&mdsize, &doff, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	CHECK_MPIERR
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_SYNC);
@@ -262,7 +271,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_BARR);
 
 		// Update status
-		fp->idxvalid = false;
+		fp->idxvalid  = false;
 		fp->metadirty = false;
 	}
 

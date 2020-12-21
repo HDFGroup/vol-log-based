@@ -20,7 +20,7 @@ extern herr_t H5VL_logi_add_att (H5VL_log_obj_t *op,
 								 hid_t mtype,
 								 hsize_t len,
 								 void *buf,
-								 hid_t dxpl_id);
+								 hid_t dxpl_id, void **req);
 extern herr_t H5VL_logi_put_att (
 	H5VL_log_obj_t *op, const char *name, hid_t mtype, void *buf, hid_t dxpl_id);
 extern herr_t H5VL_logi_get_att (

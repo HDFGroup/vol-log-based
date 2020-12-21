@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <cassert>
 
-herr_t H5VL_logi_add_att(H5VL_log_obj_t *op, const char *name, hid_t atype, hid_t mtype, hsize_t len, void *buf, hid_t dxpl_id) {
+herr_t H5VL_logi_add_att(H5VL_log_obj_t *op, const char *name, hid_t atype, hid_t mtype, hsize_t len, void *buf, hid_t dxpl_id, void **req) {
     herr_t err = 0;
     H5VL_loc_params_t loc;
     hid_t asid = -1;
