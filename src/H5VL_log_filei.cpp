@@ -69,10 +69,10 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 	if (ret) { fp->config |= H5VL_FILEI_CONFIG_METADATA_MERGE; }
 	err = H5Pget_meta_zip (faplid, &ret);
 	CHECK_ERR
-	if (ret) { fp->config |= H5VL_FILEI_CONFIG_METADATA_ZIP; }
+	if (ret) { fp->config |= H5VL_FILEI_CONFIG_SEL_DEFLATE; }
 	err = H5Pget_sel_encoding (faplid, &encoding);
 	CHECK_ERR
-	if (ret) { fp->config |= H5VL_FILEI_CONFIG_METADATA_ENCODE; }
+	if (ret) { fp->config |= H5VL_FILEI_CONFIG_SEL_ENCODE; }
 
 	env = getenv ("H5VL_LOG_METADATA_MERGE");
 	if (env) {
@@ -85,18 +85,18 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 	env = getenv ("H5VL_LOG_METADATA_ZIP");
 	if (env) {
 		if (strcmp (env, "1") == 0) {
-			fp->config |= H5VL_FILEI_CONFIG_METADATA_ZIP;
+			fp->config |= H5VL_FILEI_CONFIG_SEL_DEFLATE;
 		} else {
-			fp->config &= ~H5VL_FILEI_CONFIG_METADATA_ZIP;
+			fp->config &= ~H5VL_FILEI_CONFIG_SEL_DEFLATE;
 		}
 	}
 	env = getenv ("H5VL_LOG_SEL_ENCODING");
 	if (env) {
 		if (strcmp (env, "canonical") == 0) {
-			fp->config &= ~H5VL_FILEI_CONFIG_METADATA_ENCODE;
+			fp->config &= ~H5VL_FILEI_CONFIG_SEL_ENCODE;
 
 		} else {
-			fp->config |= H5VL_FILEI_CONFIG_METADATA_ZIP;
+			fp->config |= H5VL_FILEI_CONFIG_SEL_DEFLATE;
 		}
 	}
 

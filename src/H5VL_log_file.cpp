@@ -177,7 +177,7 @@ void *H5VL_log_file_create (
 	attbuf[1] = fp->nldset;
 	attbuf[2] = fp->nmdset;
 	attbuf[3] = fp->config;
-	err = H5VL_logi_add_att (fp, "_int_att", H5T_STD_I32LE, H5T_NATIVE_INT32, 4, attbuf, dxpl_id);
+	err = H5VL_logi_add_att (fp, "_int_att", H5T_STD_I32LE, H5T_NATIVE_INT32, 4, attbuf, dxpl_id,NULL);
 	CHECK_ERR
 
 	// create the contig SID
