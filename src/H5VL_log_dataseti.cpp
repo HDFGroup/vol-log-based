@@ -363,6 +363,7 @@ fn_exit:;
 	return (void *)dp;
 } /* end H5VL_log_dataset_open() */
 
+/*
 herr_t H5VL_log_dataseti_writen (hid_t did,
 				  hid_t mem_type_id,
 				  int n,
@@ -473,3 +474,4 @@ err_out:;
 
 	return err;
 }
+*/

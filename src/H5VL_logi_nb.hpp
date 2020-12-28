@@ -6,15 +6,22 @@
 
 #include "H5VL_logi_dataspace.hpp"
 
+#define H5VL_LOGI_META_FLAG_MUL_SEL 0x01
+#define H5VL_LOGI_META_FLAG_MUL_SELX 0x02
+#define H5VL_LOGI_META_FLAG_SEL_ENCODE 0x04
+#define H5VL_LOGI_META_FLAG_SEL_DEFLATE 0x08
+
 typedef struct H5VL_log_wreq_t {
 	int did;   // Target dataset ID
 	//int ndim;  // Dim of the target dataset
 	// MPI_Offset start[H5S_MAX_RANK];
 	// MPI_Offset count[H5S_MAX_RANK];
 	int flag;
-	std::vector<H5VL_log_selection> sels;  // Selections within the dataset
+	//std::vector<H5VL_log_selection> sels;  // Selections within the dataset
 
-	// int nsel;
+	char *esel;
+	int nsel;
+	size_t ssize;
 
 	int ldid;		   // Log dataset ID
 	MPI_Offset ldoff;  // Offset in log dataset
