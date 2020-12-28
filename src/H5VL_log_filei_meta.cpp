@@ -270,7 +270,7 @@ nmd++;
 			bufp[i] = buf + moffs[i];
 			// Don't generate merged entry if there is none
 			if (cnt[i] > 0) {
-				// ID
+				// Size of the entry
 				*((int *)bufp[i]) = mlens[i];
 				bufp[i] += sizeof (int);
 				// ID
@@ -286,7 +286,7 @@ nmd++;
 	for (auto &rp : fp->wreqs) {
 		if (rp.nsel >= merge_threshould) {  // Part of merged entries
 			sbuf=rp.esel;
-			// ID
+			// Size of the entry
 			*((int *)sbuf) = rp.ssize;
 			sbuf += sizeof (int);
 			// ID
