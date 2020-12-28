@@ -11,6 +11,7 @@
 #include "H5VL_logi_filter.hpp"
 #include "H5VL_logi_util.hpp"
 #include "H5VL_logi_wrapper.hpp"
+#include "H5VL_logi_zip.hpp"
 
 /********************* */
 /* Function prototypes */
@@ -90,21 +91,6 @@ void *H5VL_log_dataset_create (void *obj,
 	CHECK_ID (ndim)
 	dp->ndim = (hsize_t)ndim;
 
-	/*
-	for(i=dp->ndim-1;i>0;i--){
-		if(dp->mdims[i]==H5S_UNLIMITED) break;
-	}
-	if(i>0){
-		dp->dsteps[0]=0;	// Cannot encode into offset as there are unlimited dim
-	}
-	else{
-		dp->dsteps[0]=1;	// Can use offset
-		dp->dsteps[dp->ndim-1]=1;
-		for(i=dp->ndim-2;i>0;i--){
-			dp->dsteps[i]=dp->dsteps[i+1]*dp->mdims[i+1];
-		}
-	}
-	*/
 	dp->id = (dp->fp->ndset)++;
 	/*
 	if (dp->fp->mdc.size() < dp->id + 1){
@@ -119,20 +105,31 @@ void *H5VL_log_dataset_create (void *obj,
 	dp->fp->dsizes.resize (dp->fp->ndset);
 	for (i = 0; i < ndim; i++) { dp->fp->dsizes[dp->id][i] = dp->dims[i]; }
 
+	// Dstep for encoding selection
+	if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+		dp->dsteps[dp->ndim - 1] = 1;
+		for (i = dp->ndim - 2; i > -1; i--) { dp->dsteps[i] = dp->dsteps[i + 1] * dp->dims[i + 1]; }
+	}
+
 	// Atts
 	err = H5VL_logi_add_att (dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->dims,
-							 dxpl_id,ureqp);
+							 dxpl_id, ureqp);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
 	err = H5VL_logi_add_att (dp, "_mdims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->mdims,
-							 dxpl_id,ureqp);
+							 dxpl_id, ureqp);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
+<<<<<<< HEAD
 <<<<<<< HEAD
 	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id);
 =======
 	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id,ureqp);
 >>>>>>> req callbacks
+=======
+	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id,
+							 ureqp);
+>>>>>>> metadata format for varn;make metadata merging and filtering optional;encode metadata on dwrite
 	CHECK_ERR
 	if (req) {
 		rp->append (ureq);
@@ -228,6 +225,12 @@ void *H5VL_log_dataset_open (void *obj,
 	if (req) {
 		rp->append (ureq);
 		*req = rp;
+	}
+
+	// Dstep for encoding selection
+	if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+		dp->dsteps[dp->ndim - 1] = 1;
+		for (i = dp->ndim - 2; i > -1; i--) { dp->dsteps[i] = dp->dsteps[i + 1] * dp->dims[i + 1]; }
 	}
 
 	// Record metadata in fp
@@ -413,7 +416,6 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-// std::vector<H5VL_log_selection> sels;
 herr_t H5VL_log_dataset_write (void *dset,
 							   hid_t mem_type_id,
 							   hid_t mem_space_id,
@@ -424,7 +426,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	herr_t err			= 0;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	int i, j, k, l;
-	size_t esize;
+	size_t esize, ssize;
 	H5VL_log_wreq_t r;
 	htri_t eqtype;
 	H5S_sel_type stype, mstype;
@@ -432,7 +434,9 @@ herr_t H5VL_log_dataset_write (void *dset,
 	MPI_Datatype ptype = MPI_DATATYPE_NULL;
 	H5VL_log_multisel_arg_t arg;
 	H5VL_log_req_t *rp;
+	std::vector<H5VL_log_selection> sels;
 	void **ureqp, *ureq;
+	char *mbuf, *zbuf;
 	TIMER_START;
 
 	TIMER_START;
@@ -474,53 +478,137 @@ herr_t H5VL_log_dataset_write (void *dset,
 	r.ldoff = 0;
 	r.ubuf	= (char *)buf;
 	r.rsize = 0;  // Nomber of elements in record
-	r.flag	= 0;
-
-	/*
-		if (dp->dsteps[0]) {
-			r.flag &= LOGVOL_SELCTION_TYPE_OFFSETS;
-		} else {
-			r.flag &= LOGVOL_SELCTION_TYPE_HYPERSLABS;
-		}
-	*/
-
-	// Gather starts and counts
 	if (arg.n) {
-		r.sels.resize (arg.n);
-		for (i = 0; i < arg.n; i++) {
-			r.sels[i].size = 1;
-			for (j = 0; j < dp->ndim; j++) {
-				r.sels[i].start[j] = arg.starts[i][j];
-				r.sels[i].count[j] = arg.counts[i][j];
-				r.sels[i].size *= r.sels[i].count[j];
+		r.nsel = arg.n;
+	} else if (stype == H5S_SEL_ALL) {
+		r.nsel = 1;
+	} else {
+		TIMER_START;
+		err = H5VL_logi_get_dataspace_selection (file_space_id, sels);
+		CHECK_ERR
+		TIMER_STOP (dp->fp, TIMER_DATASPACEI_GET_SEL);
+		r.nsel = sels.size ();
+	}
+
+	// Flags
+	r.flag = 0;
+	if (r.nsel > 1) {
+		if ((dp->ndim > 1) && (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
+			r.flag |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
+		}
+		r.flag |= H5VL_LOGI_META_FLAG_MUL_SEL;
+
+		if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
+			r.flag |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
+		}
+	}
+
+	// Selection buffer
+	r.ssize=sizeof(int) * 3 + sizeof(MPI_Offset) * 2;
+	if (r.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
+		r.ssize += sizeof (MPI_Offset) * (dp->ndim + r.nsel * 2);
+	} else {
+		r.ssize += sizeof (MPI_Offset) * (dp->ndim * r.nsel * 2);
+	}
+#ifdef ENABLE_ZLIB
+	if (dp->fp->config & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
+		r.esel = (char *)malloc (r.ssize * 2);
+		zbuf   = r.esel + r.ssize;
+	} else
+#endif
+	{
+		r.esel = (char *)malloc (r.ssize);
+	}
+	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_DECODE);
+
+	// Encode and pack selections
+	TIMER_START
+	mbuf = r.esel + sizeof(int)*3+sizeof(MPI_Offset)*2;
+	if (r.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
+		MPI_Offset soff, eoff;
+		if (arg.n) {
+			r.nsel	= arg.n;
+			r.rsize = 0;
+			for (i = 0; i < arg.n; i++) {
+				ssize = 1;
+				soff = eoff = 0;
+				for (j = 0; j < dp->ndim; j++) {
+					ssize *= arg.counts[i][j];	// Size of the selection
+					soff +=
+						arg.starts[i][j] * dp->dsteps[j];  // Starting offset of the bounding box
+					eoff += (arg.starts[i][j] + arg.counts[i][j]) *
+							dp->dsteps[j];	// Ending offset of the bounding box
+				}
+				*((MPI_Offset *)mbuf) = soff;
+				mbuf += sizeof (MPI_Offset);
+				*((MPI_Offset *)mbuf) = eoff;
+				mbuf += sizeof (MPI_Offset);
+				// Record overall size of the write req
+				r.rsize += ssize;
 			}
-			r.rsize += r.sels[i].size;
-			r.sels[i].size *= dp->esize;
+		} else {
+			// We won't encode single H5S_ALL
+			r.nsel	= sels.size ();
+			r.rsize = 0;
+			for (i = 0; i < sels.size (); i++) {
+				ssize = 1;
+				soff = eoff = 0;
+				for (j = 0; j < dp->ndim; j++) {
+					ssize *= sels[i].count[j];	// Size of the selection
+					soff +=
+						sels[i].start[j] * dp->dsteps[j];  // Starting offset of the bounding box
+					eoff += (sels[i].start[j] + sels[i].count[j]) *
+							dp->dsteps[j];	// Ending offset of the bounding box
+				}
+				*((MPI_Offset *)mbuf) = soff;
+				mbuf += sizeof (MPI_Offset);
+				*((MPI_Offset *)mbuf) = eoff;
+				mbuf += sizeof (MPI_Offset);
+				// Record overall size of the write req
+				r.rsize += ssize;
+			}
 		}
 	} else {
-		if (stype == H5S_SEL_ALL) {
-			r.sels.resize (1);
-			r.rsize = 1;
-			for (j = 0; j < dp->ndim; j++) {
-				r.sels[0].start[j] = 0;
-				r.sels[0].count[j] = dp->dims[j];
-				r.rsize *= r.sels[0].count[j];
+		if (arg.n) {
+			r.nsel = arg.n;
+			for (i = 0; i < arg.n; i++) {
+				ssize = 1;
+				for (j = 0; j < dp->ndim; j++) {
+					ssize *= arg.counts[i][j];	// Size of the selection
+					*((MPI_Offset *)mbuf) = arg.starts[i][j];
+					mbuf += sizeof (MPI_Offset);
+					*((MPI_Offset *)mbuf) = arg.counts[i][j];
+					mbuf += sizeof (MPI_Offset);
+				}
+				// Record overall size of the write req
+				r.rsize += ssize;
 			}
-			r.sels[0].size *= dp->esize;
 		} else {
-			TIMER_START;
-			err = H5VL_logi_get_dataspace_selection (file_space_id, r.sels);
-			CHECK_ERR
-			TIMER_STOP (dp->fp, TIMER_DATASPACEI_GET_SEL);
-			for (i = 0; i < r.sels.size (); i++) {
-				r.sels[i].size = 1;
-				for (j = 0; j < dp->ndim; j++) r.sels[i].size *= r.sels[i].count[j];
-				r.rsize += r.sels[i].size;
-				r.sels[i].size *= dp->esize;
+			if (stype == H5S_SEL_ALL) {
+				r.rsize = 1;
+				for (j = 0; j < dp->ndim; j++) {
+					*((MPI_Offset *)mbuf) = 0;
+					mbuf += sizeof (MPI_Offset);
+					*((MPI_Offset *)mbuf) = dp->dims[j];
+					mbuf += sizeof (MPI_Offset);
+					r.rsize *= dp->dims[j];	 // Size of the selection
+				}
+			} else {
+				for (i = 0; i < sels.size (); i++) {
+					ssize = 1;
+					for (j = 0; j < dp->ndim; j++) {
+						ssize *= sels[i].count[j];
+						*((MPI_Offset *)mbuf) = sels[i].start[j];
+						mbuf += sizeof (MPI_Offset);
+						*((MPI_Offset *)mbuf) = sels[i].count[j];
+						mbuf += sizeof (MPI_Offset);
+					}
+					r.rsize += ssize;
+				}
 			}
 		}
 	}
-	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_DECODE);
+	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_ENCODE);
 
 	// Non-blocking?
 	err = H5Pget_nonblocking (plist_id, &rtype);
