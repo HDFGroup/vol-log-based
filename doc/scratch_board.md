@@ -113,3 +113,78 @@ Everyone is encouraged to discuss and make suggestions on this document.
     + We should avoid creating many hidden data object (datasets, groups)
       Metadata operations are relatively expensive compared to NetCDF.
       They may involve multiple read operations.
+
+
+### Updated metadata format
+The log metadata table is defined as an HDF5 dataset of type H5T_STD_U8LE
+(unsigned byte in Little Endian format). It is a byte stream containing the
+information of all write requests logged by the log driver. Below is the format
+specification of the metadata table in the form of Backus Normal Form (BNF)
+grammar notation.
+```
+metadata_table		= signature endianness entry_list
+
+signature		= 'L' 'O' 'G' VERSION
+VERSION			= \x01
+endianness		= ZERO |	// little Endian
+			  ONE		// big Endian
+
+entry_list		= nelems [entry_off ...] [entry_len ...] index_table
+entry_off		= INT64		// starting file offset of an entry
+entry_len		= INT64		// byte size of an entry
+					// entry_off and entry_len are pairwise
+
+index_table		= [entry ...]	// log index table
+entry			= dsetid flag location
+					// A log entry contains metadata of
+					// write requests to a dataset. One
+					// dataset may have more than one
+					// entry.
+
+dsetid			= INT64		// dataset ID as ordered in var_list
+
+flag		= is_varn_loc is_merged_loc is_offset_loc is_zip_loc
+is_varn_loc = FALSE1 | TRUE1
+is_merged_loc = FALSE1 | TRUE1
+is_offset_loc = FALSE1 | TRUE1
+is_zip_loc = FALSE1 | TRUE1
+
+location = zip_location | raw_location
+zip_location = [BYTE...]
+raw_location = loc_encode_into location_data
+loc_encode_into = [INT64 ...] // Information to translate start and count to flattened offsets
+
+location_data = varn_loc | merged_loc | simple_loc
+
+varn_loc = file_loc dset_loc dset_loc [dset_loc ...]
+
+file_loc		= file_off file_size 
+file_off = INT64		// starting file offset storing the logged dataset contents
+file_size = INT64		// size of the data
+
+dset_loc = encoded_dset_loc | raw_dset_loc
+encoded_dset_loc = start_off end_off
+start_off = INT64
+end_off = INT64
+raw_dset_loc = start_cord count
+start_cord = [INT64 ...]
+count = [INT64 ...]
+simple_loc= file_loc dset_loc
+merged_loc = [simple_loc ...]
+
+FALSE1    = 0	// 1-bit integer in native representation
+TRUE1     = 1	// 1-bit integer in native representation
+NONE			= ZERO
+ZLIB			= ONE
+TRUE			= ONE
+FALSE			= ZERO
+BYTE			= <8-bit byte>
+CHAR			= BYTE
+INT32			= <32-bit signed integer, native representation>
+INT64			= <64-bit signed integer, native representation>
+ZERO			= 0	// 4-byte integer in native representation
+ONE			= 1	// 4-byte integer in native representation
+TWO			= 2	// 4-byte integer in native representation
+THREE			= 3	// 4-byte integer in native representation
+```
+
