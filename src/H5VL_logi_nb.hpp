@@ -11,17 +11,25 @@
 #define H5VL_LOGI_META_FLAG_SEL_ENCODE 0x04
 #define H5VL_LOGI_META_FLAG_SEL_DEFLATE 0x08
 
+typedef struct H5VL_logi_meta_hdr {
+	int meta_size;	// Size of the metadata entry
+	int did;	// Target dataset ID
+	int flag;	
+} H5VL_logi_meta_hdr;
+
 typedef struct H5VL_log_wreq_t {
+	H5VL_logi_meta_hdr hdr;
 	int did;   // Target dataset ID
 	//int ndim;  // Dim of the target dataset
 	// MPI_Offset start[H5S_MAX_RANK];
 	// MPI_Offset count[H5S_MAX_RANK];
-	int flag;
+	//int flag;
 	//std::vector<H5VL_log_selection> sels;  // Selections within the dataset
 
-	char *esel;
+	//H5VL_logi_meta_hdr *meta_hdr;
+	char *meta_buf;
 	int nsel;
-	size_t ssize;
+	//size_t meta_size;
 
 	int ldid;		   // Log dataset ID
 	MPI_Offset ldoff;  // Offset in log dataset
@@ -33,7 +41,8 @@ typedef struct H5VL_log_wreq_t {
 } H5VL_log_wreq_t;
 
 typedef struct H5VL_log_rreq_t {
-	int did;							   // Source dataset ID
+	H5VL_logi_meta_hdr hdr;
+	//int did;							   // Source dataset ID
 	int ndim;							   // Dim of the source dataset
 	std::vector<H5VL_log_selection> sels;  // Selections within the dataset
 	// MPI_Offset start[H5S_MAX_RANK];

@@ -263,7 +263,7 @@ herr_t H5VL_log_filei_contig_buffer_init (H5VL_log_contig_buffer_t *bp, size_t i
 	CHECK_PTR (bp->begin);
 
 	bp->cur = bp->begin;
-	bp->end += init_size;
+	bp->end = bp->begin + init_size;
 
 err_out:;
 	return err;
@@ -400,6 +400,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	// Close the file with posix
 	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) { close (fp->fd); }
 
+	// Free the metadata buffer
 	H5VL_log_filei_contig_buffer_free (&(fp->meta_buf));
 
 	// Close contig dataspacce ID
@@ -581,7 +582,9 @@ void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp) { fp->refcnt++; }
 
 herr_t H5VL_log_filei_dec_ref (H5VL_log_file_t *fp) {
 	fp->refcnt--;
-	if (fp->refcnt == 0) { return H5VL_log_filei_close (fp); }
+	if (fp->refcnt == 0) { 
+		return H5VL_log_filei_close (fp); 
+		}
 	return 0;
 }
 

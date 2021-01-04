@@ -17,7 +17,7 @@ typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
 	hsize_t ndim;
 	hsize_t dims[H5S_MAX_RANK];
 	hsize_t mdims[H5S_MAX_RANK];
-	hsize_t dsteps[H5S_MAX_RANK];
+	MPI_Offset dsteps[H5S_MAX_RANK];
 
 	hid_t dtype;
 	hsize_t esize;
