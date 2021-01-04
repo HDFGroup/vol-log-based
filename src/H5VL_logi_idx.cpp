@@ -32,7 +32,7 @@ herr_t H5VL_logi_idx_search(void *file, H5VL_log_rreq_t &req, std::vector<H5VL_l
 
     soff = 0;
     for(auto sel : req.sels){
-        for(auto &ent : fp->idx[req.did]){
+        for(auto &ent : fp->idx[req.hdr.did]){
             if(intersect(req.ndim, ent.start, ent.count, sel.start, sel.count, os, oc)){
                 for(j = 0; j < req.ndim; j++){
                     cur.fstart[j] = os[j] - ent.start[j];

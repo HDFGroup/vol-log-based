@@ -394,13 +394,13 @@ herr_t H5VL_log_dataseti_writen (hid_t did,
 
 	TIMER_START;
 	// Setting metadata;
-	r.did = dp->id;
+	r.hdr.did = dp->id;
 	// r.ndim	= dp->ndim;
 	r.ldid	= -1;
 	r.ldoff = 0;
 	r.ubuf	= (char *)buf;
 	r.rsize = 0;  // Nomber of elements in record
-	r.flag	= 0;
+	r.hdr.flag	= 0;
 
 	// Gather starts and counts
 	r.sels.resize (n);

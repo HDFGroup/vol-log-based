@@ -1,7 +1,7 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
+#include <assert.h>
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_filei.hpp"
@@ -120,16 +120,8 @@ void *H5VL_log_dataset_create (void *obj,
 							 dxpl_id, ureqp);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
-<<<<<<< HEAD
-<<<<<<< HEAD
-	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id);
-=======
+
 	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id,ureqp);
->>>>>>> req callbacks
-=======
-	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id,
-							 ureqp);
->>>>>>> metadata format for varn;make metadata merging and filtering optional;encode metadata on dwrite
 	CHECK_ERR
 	if (req) {
 		rp->append (ureq);
@@ -321,7 +313,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 		mstype = H5Sget_select_type (mem_space_id);
 
 	// Setting metadata;
-	r.did	= dp->id;
+	r.hdr.did	= dp->id;
 	r.ndim	= dp->ndim;
 	r.ubuf	= (char *)buf;
 	r.ptype = MPI_DATATYPE_NULL;
@@ -436,7 +428,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	H5VL_log_req_t *rp;
 	std::vector<H5VL_log_selection> sels;
 	void **ureqp, *ureq;
-	char *mbuf, *zbuf;
+	char *mbuf, *zbuf=NULL;
 	TIMER_START;
 
 	TIMER_START;
@@ -472,12 +464,10 @@ herr_t H5VL_log_dataset_write (void *dset,
 
 	TIMER_START;
 	// Setting metadata;
-	r.did = dp->id;
+	r.hdr.did = dp->id;
 	// r.ndim	= dp->ndim;
-	r.ldid	= -1;
-	r.ldoff = 0;
 	r.ubuf	= (char *)buf;
-	r.rsize = 0;  // Nomber of elements in record
+	r.rsize = 0;  // Nomber of data elements in the record
 	if (arg.n) {
 		r.nsel = arg.n;
 	} else if (stype == H5S_SEL_ALL) {
@@ -491,41 +481,54 @@ herr_t H5VL_log_dataset_write (void *dset,
 	}
 
 	// Flags
-	r.flag = 0;
+	r.hdr.flag = 0;
 	if (r.nsel > 1) {
 		if ((dp->ndim > 1) && (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
-			r.flag |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
+			r.hdr.flag |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
 		}
-		r.flag |= H5VL_LOGI_META_FLAG_MUL_SEL;
+		r.hdr.flag |= H5VL_LOGI_META_FLAG_MUL_SEL;
 
 		if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
-			r.flag |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
+			r.hdr.flag |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
 		}
 	}
 
 	// Selection buffer
-	r.ssize=sizeof(int) * 3 + sizeof(MPI_Offset) * 2;
-	if (r.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-		r.ssize += sizeof (MPI_Offset) * (dp->ndim + r.nsel * 2);
-	} else {
-		r.ssize += sizeof (MPI_Offset) * (dp->ndim * r.nsel * 2);
+	r.hdr.meta_size=sizeof(H5VL_logi_meta_hdr);	// Header
+	if (r.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
+		r.hdr.meta_size+=sizeof(int);	// N
 	}
+	if (r.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
+		r.hdr.meta_size += sizeof (MPI_Offset) * (dp->ndim - 1 + r.nsel * 2) + sizeof(MPI_Offset) * 2;	
+	} else {
+		r.hdr.meta_size += sizeof (MPI_Offset) * (dp->ndim * r.nsel * 2) + sizeof(MPI_Offset) * 2;
+	}
+	//r.meta_buf = (char *)H5VL_log_filei_contig_buffer_alloc (&(dp->fp->meta_buf), r.hdr.meta_size);
+	r.meta_buf = (char *)malloc (r.hdr.meta_size);
+
 #ifdef ENABLE_ZLIB
 	if (dp->fp->config & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
-		r.esel = (char *)malloc (r.ssize * 2);
-		zbuf   = r.esel + r.ssize;
-	} else
-#endif
-	{
-		r.esel = (char *)malloc (r.ssize);
+		zbuf   = (char *)malloc (r.hdr.meta_size);
 	}
+#endif
+
 	TIMER_STOP (dp->fp, TIMER_DATASET_WRITE_DECODE);
 
 	// Encode and pack selections
 	TIMER_START
-	mbuf = r.esel + sizeof(int)*3+sizeof(MPI_Offset)*2;
-	if (r.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
+	// Jump to logical selection
+	mbuf = r.meta_buf + sizeof(H5VL_logi_meta_hdr)+sizeof(MPI_Offset) * 2;	// Header, file offset, size
+	if (r.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
 		MPI_Offset soff, eoff;
+
+		// Dsteps
+		memcpy(mbuf,dp->dsteps,sizeof(MPI_Offset) * (dp->ndim-1));
+		mbuf+=sizeof(MPI_Offset) * (dp->ndim-1);
+
+		// Encoded format must be multiple sel, add n block field
+		*((int *)mbuf) = r.nsel;
+		mbuf += sizeof (int);
+
 		if (arg.n) {
 			r.nsel	= arg.n;
 			r.rsize = 0;
@@ -546,8 +549,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 				// Record overall size of the write req
 				r.rsize += ssize;
 			}
-		} else {
-			// We won't encode single H5S_ALL
+		} else {			// We won't encode single H5S_ALL, so it must be multi-block case
 			r.nsel	= sels.size ();
 			r.rsize = 0;
 			for (i = 0; i < sels.size (); i++) {
@@ -569,12 +571,23 @@ herr_t H5VL_log_dataset_write (void *dset,
 			}
 		}
 	} else {
+		// Add nreq field if more than 1 blocks
+		if (r.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
+			*((int *)mbuf) = r.nsel;
+			mbuf += sizeof (int);
+		}
+
 		if (arg.n) {
 			r.nsel = arg.n;
 			for (i = 0; i < arg.n; i++) {
 				ssize = 1;
+				/*memcpy(mbuf,arg.starts[i],sizeof(MPI_Offset)*dp->ndim);
+				mbuf += sizeof (MPI_Offset)*dp->ndim;
+				memcpy(mbuf,arg.starts[i],sizeof(MPI_Offset)*dp->ndim);
+				mbuf += sizeof (MPI_Offset)*dp->ndim;*/
 				for (j = 0; j < dp->ndim; j++) {
 					ssize *= arg.counts[i][j];	// Size of the selection
+						assert(mbuf-r.meta_buf	<r.hdr.meta_size);
 					*((MPI_Offset *)mbuf) = arg.starts[i][j];
 					mbuf += sizeof (MPI_Offset);
 					*((MPI_Offset *)mbuf) = arg.counts[i][j];
@@ -697,6 +710,9 @@ err_out:;
 		// if (r.xbuf != r.ubuf) H5VL_log_filei_bfree (dp->fp, r.xbuf);
 	}
 	H5VL_log_type_free (ptype);
+	if(zbuf){
+		free(zbuf);
+	}
 
 	return err;
 } /* end H5VL_log_dataset_write() */

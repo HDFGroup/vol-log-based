@@ -408,6 +408,7 @@ AC_CONFIG_FILES(Makefile \
                 test/parallel/Makefile \
                 test/hdf5/Makefile \
                 test/phdf5/Makefile \
+                utils/Makefile \
                 example/Makefile \
                 example/hdf5/Makefile \
                 )

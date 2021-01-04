@@ -41,10 +41,13 @@ CXX_SRCS =  H5VL_log_att.cpp \
             H5VL_log_obj.cpp \
             H5VL_log_obji.cpp \
             H5VL_log_req.cpp \
+            H5VL_log_reqi.cpp \
             H5VL_log_token.cpp \
             H5VL_log_wrap.cpp \
             H5VL_log.cpp \
             H5VL_logi_dataspace.cpp \
+            H5VL_logi_filter.cpp \
+            H5VL_logi_filter_deflate.cpp \
             H5VL_logi_idx.cpp \
             H5VL_logi_mem.cpp \
             H5VL_logi_nb.cpp \

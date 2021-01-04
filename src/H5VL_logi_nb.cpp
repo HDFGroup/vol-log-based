@@ -192,7 +192,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 			fp->wreqs[i].ldid = fp->nldset;
 			fp->wreqs[i].ldoff += foff;
 			if (fp->wreqs[i].xbuf != fp->wreqs[i].ubuf) {
-				// H5VL_log_filei_bfree (fp, (void *)(fp->wreqs[i].xbuf));
+				H5VL_log_filei_bfree (fp, (void *)(fp->wreqs[i].xbuf));
 			}
 		}
 		(fp->nldset)++;
@@ -298,7 +298,9 @@ herr_t H5VL_log_nb_ost_write (
 		}
 	}
 	// Last stripe
-	if (bp > bs) { err = H5VL_log_nb_flush_posix_write (fp->fd, bs + skip_size, bp - bs - skip_size); }
+	if (bp > bs) {
+		err = H5VL_log_nb_flush_posix_write (fp->fd, bs + skip_size, bp - bs - skip_size);
+	}
 
 	TIMER_STOP (fp, TIMER_NB_WRITE_REQ_ALIGNED);
 err_out:
