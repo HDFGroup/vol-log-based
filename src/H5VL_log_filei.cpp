@@ -94,9 +94,8 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 	if (env) {
 		if (strcmp (env, "canonical") == 0) {
 			fp->config &= ~H5VL_FILEI_CONFIG_SEL_ENCODE;
-
 		} else {
-			fp->config |= H5VL_FILEI_CONFIG_SEL_DEFLATE;
+			fp->config |= H5VL_FILEI_CONFIG_SEL_ENCODE;
 		}
 	}
 
