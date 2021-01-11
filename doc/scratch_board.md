@@ -102,8 +102,8 @@ Everyone is encouraged to discuss and make suggestions on this document.
       It requires the file to be opened in read-only mode, so HDF5 will not try to lock the file.
       As a result, read and write modes are not supported.
 
-## Other lessons we learned that is related to the design
-### Metadata operation cost
+# Other lessons we learned that is related to the design
+## Metadata operation cost
   * Expensive B-tree operations
     Everything in HDF5 is indexed using B-tree.
     There is a B-tree under each group to track data objects within that group.
@@ -114,8 +114,9 @@ Everyone is encouraged to discuss and make suggestions on this document.
       Metadata operations are relatively expensive compared to NetCDF.
       They may involve multiple read operations.
 
+# Reducing metadata overhead
 
-### Updated metadata format
+## Updated metadata format
 The log metadata table is defined as an HDF5 dataset of type H5T_STD_U8LE
 (unsigned byte in Little Endian format). It is a byte stream containing the
 information of all write requests logged by the log driver. Below is the format

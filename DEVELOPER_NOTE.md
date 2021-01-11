@@ -332,7 +332,8 @@ General comments: I suggest the following when adding a new issue.
 * HDF5 versions: All
 
 ### Solutions
-* Implement varn-like API inside the log-based VOL
+* Provide a customized H5Dwriten API inside the log-based VOL
+  + Works similar to varn APIs in PnetCDF.
   + The signature of H5Dwrite (H5VLdataset_write from within the VOL) cannot be modified.
     The dataspace argument is the only argument to indicate the selected regions to write.
     A simple approach is to have the log-based VOL interpret the data in the memory buffer as following the order of dataspace selections.
@@ -346,11 +347,13 @@ General comments: I suggest the following when adding a new issue.
     The HDF5 dispatcher will then call the corresponding VOL callback function with the desired VOL object.
   + We introduce a new dataset transfer property called "H5VL_log_multisel"
     It contains a list of blocks to write in the form similar to the arguments of *varn API in PnetCDF.
-    When this property presents in the dataset transfer property list (dxpl), the H5Dwrite call is interpreted as a varn-like call.
+    When this property presents in the dataset transfer property list (dxpl), the H5Dwrite call is interpreted as a H5Dwriten call.
     The log-based VOl will disregard the dataspace and use the block list stored in the property as blocks to write, and the data in the memory buffer is assumed to be ordered by blocks.
     The H5Dwriten function sets the H5VL_log_multisel property with arguments passed from the application and calls H5Dwrite.
-  + Using H5Dwriten reduces the number of H5Dwrite calls in the high-resolution (ne120) E3SM F case dataset to 413.
-    The time spent on posting write requests reduced to 1.7 sec.
+  + Using H5Dwriten reduces the number of H5Dwrite calls in the high-resolution 
+    (ne120) E3SM F case dataset on 1024 processes from 2755063 to 413.
+    The time spent on posting write requests reduced from 10.9 sec to 1.7 sec 
+    when running on 32 Cori Haswell nodes (32 processes/node).
 ---
 ## Memory space is always required in H5Dwrite even if the memory buffer is contiguous
 ### Problem Description
@@ -538,6 +541,24 @@ General comments: I suggest the following when adding a new issue.
     * Note this representation can only reduce the metadata size for datasets
       of 2 or more dimensions when there are more than one selected hyper-slabs
       requests.
+* Store data that belong to the same dataset in the adjacent space in the file.
+  + It can be achieved in 2 ways:
+    * Reordering the same dataset's data to adjacent space when flushing, then 
+      combine the metadata entries as described in the first point. It involves 
+      only memory operations and does not affect the I/O pattern.
+    * Use our customized H5DwriteN API to generate a log entry with multiple 
+      blocks that are flushed together (into contiguous space).
+  + If multiple blocks of data are stored contiguously in the file, the file 
+    offset of a block can be calculated from the file offset of the previous 
+    block and the previous block's size. We only need to store the first block's
+    file offset to calculate the file offset of the remaining blocks. It reduces
+    the metadata size of the remaining blocks (except the first block) by 25%.
+  + The block size in the file is the same as the size of the selection in the 
+    dataset. We have a file size field in the metadata to support compression or 
+    other types of filters. If we filter (compress) all the blocks together, we 
+    can eliminate the blocks' file size field after the first block. Doing so 
+    gives another 25% reduction in metadata size. A side effect is that all the 
+    blocks must be decompressed to read even just one of them.
 * Compress the metadata entries
   + When metadata contains a long list of noncontiguous requests, we consider
     to apply data compress on the starting and ending offsets to further reduce
@@ -561,13 +582,19 @@ General comments: I suggest the following when adding a new issue.
     + Endianness of the data in the log dataset
     + Filters applied to the data
     + Metadata format (allow different versions of metadata encoding)
+      + Single selection (A)
+      + Multiple selections (B)
+      + Multiple selections with data blocks stored contiguously in the file (C)
     + Filters applied to metadata
   + Number of selected hyper-slabs (subarray access, 8 bytes)
+    + Only appear in metadata format (B) and (C)
   + A list of selections (can be compressed)
     + Starting coordinate of the selection (8 bytes)
     + Ending coordinate of the selection (8 bytes)
     + Starting position of the data in the log dataset (8 bytes)
+      + Only appear in the first selection in metadata format and (C)
     + Size of data in the log dataset (8 bytes)
+      + Only appear in the first selection in metadata format and (C)
 ---
 
 ## The log-base VOL does not check for dataset write boundary
