@@ -559,7 +559,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 					ssize *= sels[i].count[j];	// Size of the selection
 					soff +=
 						sels[i].start[j] * dp->dsteps[j];  // Starting offset of the bounding box
-					eoff += (sels[i].start[j] + sels[i].count[j]) *
+					eoff += (sels[i].count[j]) *
 							dp->dsteps[j];	// Ending offset of the bounding box
 				}
 				*((MPI_Offset *)mbuf) = soff;
@@ -670,6 +670,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 			void *bg = NULL;
 
 			if (H5Tget_class (dp->dtype) == H5T_COMPOUND) bg = malloc (r.rsize * dp->esize);
+			
 			err = H5Tconvert (mem_type_id, dp->dtype, r.rsize, r.xbuf, bg, plist_id);
 			free (bg);
 		}

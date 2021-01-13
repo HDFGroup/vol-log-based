@@ -88,11 +88,11 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			mdsize += rp.hdr.meta_size;
 			nentry++;
 
-			ptr=rp.meta_buf+sizeof(H5VL_logi_meta_hdr);
-			*((MPI_Offset*)ptr)=rp.ldoff;
-			ptr+=sizeof(MPI_Offset);
-			*((MPI_Offset*)ptr)=rp.rsize;
-			ptr+=sizeof(MPI_Offset);
+			ptr					 = rp.meta_buf + sizeof (H5VL_logi_meta_hdr);
+			*((MPI_Offset *)ptr) = rp.ldoff;
+			ptr += sizeof (MPI_Offset);
+			*((MPI_Offset *)ptr) = rp.rsize;
+			ptr += sizeof (MPI_Offset);
 		}
 	}
 
@@ -126,7 +126,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		if (zbsize < mlens[i]) { zbsize = mlens[i]; }
 #endif
 	}
-	
+
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH_INIT);
 
 #ifdef LOGVOL_PROFILING
@@ -192,7 +192,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 					for (i = 0; i < fp->ndim[rp.hdr.did]; i++) {
 						soff += start[i] *
 								dsteps[rp.hdr.did][i];	// Starting offset of the bounding box
-						eoff += (start[i] + count[i]) *
+						eoff += (count[i]) *
 								dsteps[rp.hdr.did][i];	// Ending offset of the bounding box
 					}
 					*((MPI_Offset *)bufp[rp.hdr.did]) = soff;
@@ -375,9 +375,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	}
 
 	for (auto &rp : fp->wreqs) {
-		if(rp.meta_buf){
-		free(rp.meta_buf);
-		}
+		if (rp.meta_buf) { free (rp.meta_buf); }
 	}
 	TIMER_STOP (fp, TIMER_FILEI_METAFLUSH);
 err_out:
