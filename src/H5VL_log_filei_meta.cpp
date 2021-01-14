@@ -305,7 +305,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		}
 	}
 
-	mpierr = MPI_Type_hindexed (fp->ndset, lens, offs, MPI_BYTE, &mmtype);
+	mpierr = MPI_Type_hindexed (nentry, lens, offs, MPI_BYTE, &mmtype);
 	CHECK_MPIERR
 	mpierr = MPI_Type_commit (&mmtype);
 	CHECK_MPIERR
