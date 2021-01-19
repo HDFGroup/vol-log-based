@@ -7,6 +7,7 @@
 # @configure_input@
 
 AM_CPPFLAGS = -I$(top_srcdir)/src \
+              -I$(top_srcdir) \
               -I$(srcdir) 
 if LOGVOL_DEBUG
    AM_CPPFLAGS += -DLOGVOL_DEBUG=1

@@ -141,7 +141,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 #else
 	buf = (char *)malloc (moffs[fp->ndset]);
 #endif
-	bufp = (char **)malloc (sizeof (char *) * fp->ndset);
+	bufp = (char **)malloc (sizeof (char *) * fp->ndset * 2);
 
 	// Pack data for the merged requests
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
@@ -149,7 +149,6 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		// Header for merged entries
 		for (i = 0; i < fp->ndset; i++) {
 			bufp[i] = buf + moffs[i] + sizeof (H5VL_logi_meta_hdr);	 // Skip the header for now
-
 			flag[i] = 0;
 			// Fill the header
 			// Don't generate merged entry if there is none
@@ -169,16 +168,22 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 					bufp[i] += sizeof (int);
 				}
 			}
+			bufp[i + fp->ndset] = bufp[i] + sizeof (MPI_Offset) * cnt[i] * 2;
 		}
 
 		// Pack selection
 		for (auto &rp : fp->wreqs) {
 			if (rp.nsel < merge_threshould) {  // Part of merged entries
-				// File offset and size
-				*((MPI_Offset *)bufp[rp.hdr.did]) = rp.ldoff;
+				char *ptr;
+
+				ptr = bufp[rp.hdr.did];
 				bufp[rp.hdr.did] += sizeof (MPI_Offset);
-				*((size_t *)bufp[rp.hdr.did]) = rp.rsize;
-				bufp[rp.hdr.did] += sizeof (size_t);
+
+				// File offset and size
+				*((MPI_Offset *)ptr) = rp.ldoff;
+				ptr += sizeof (MPI_Offset) * cnt[rp.did];
+				*((size_t *)ptr) = rp.rsize;
+				ptr += sizeof (size_t) * cnt[rp.did];
 
 				// Start and count
 				if (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
@@ -195,15 +200,22 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 						eoff += (count[i]) *
 								dsteps[rp.hdr.did][i];	// Ending offset of the bounding box
 					}
-					*((MPI_Offset *)bufp[rp.hdr.did]) = soff;
-					bufp[rp.hdr.did] += sizeof (MPI_Offset);
-					*((MPI_Offset *)bufp[rp.hdr.did]) = eoff;
-					bufp[rp.hdr.did] += sizeof (MPI_Offset);
+					ptr = bufp[rp.hdr.did + fp->ndset];
+					bufp[rp.hdr.did + fp->ndset] += sizeof (MPI_Offset);
+					*((MPI_Offset *)ptr) = soff;
+					ptr += sizeof (MPI_Offset) * cnt[rp.did];
+					*((MPI_Offset *)ptr) = eoff;
+					ptr += sizeof (MPI_Offset) * cnt[rp.did];
 				} else {
-					memcpy (bufp[rp.hdr.did],
+					ptr = bufp[rp.hdr.did + fp->ndset];
+					bufp[rp.hdr.did + fp->ndset] += sizeof (MPI_Offset) * cnt[rp.did];
+					memcpy (ptr,
 							rp.meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2,
-							sizeof (MPI_Offset) * fp->ndim[rp.hdr.did] * 2);
-					bufp[rp.hdr.did] += sizeof (MPI_Offset) * fp->ndim[rp.hdr.did] * 2;
+							sizeof (MPI_Offset) * fp->ndim[rp.hdr.did]);
+					ptr += sizeof (MPI_Offset) * fp->ndim[rp.hdr.did] * cnt[rp.did];
+					memcpy (ptr,
+							rp.meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2,
+							sizeof (MPI_Offset) * fp->ndim[rp.hdr.did]);
 				}
 			}
 		}

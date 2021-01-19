@@ -32,16 +32,12 @@
 		}                                                             \
 	}
 
-typedef struct h5replay_copy_handler_arg {
-    hid_t fid;
-    hid_t *dids;
-}h5replay_copy_handler_arg;
+
+typedef struct dset_info {
+	int ndim;
+	hid_t id;
+	hsize_t esize;
+} dset_info;
 
 herr_t h5replay_core (std::string &inpath, std::string &outpath) ;
 
-herr_t h5replay_copy_handler (hid_t o_id,
-								   const char *name,
-								   const H5O_info_t *object_info,
-								   void *op_data);
-
-herr_t h5replay_attr_copy_handler( hid_t location_id, const char *attr_name, const H5A_info_t *ainfo, void *op_data);
