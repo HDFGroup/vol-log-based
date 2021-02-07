@@ -181,9 +181,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 				// File offset and size
 				*((MPI_Offset *)ptr) = rp.ldoff;
-				ptr += sizeof (MPI_Offset) * cnt[rp.did];
+				ptr += sizeof (MPI_Offset) * cnt[rp.hdr.did];
 				*((size_t *)ptr) = rp.rsize;
-				ptr += sizeof (size_t) * cnt[rp.did];
+				ptr += sizeof (size_t) * cnt[rp.hdr.did];
 
 				// Start and count
 				if (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
@@ -203,16 +203,16 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 					ptr = bufp[rp.hdr.did + fp->ndset];
 					bufp[rp.hdr.did + fp->ndset] += sizeof (MPI_Offset);
 					*((MPI_Offset *)ptr) = soff;
-					ptr += sizeof (MPI_Offset) * cnt[rp.did];
+					ptr += sizeof (MPI_Offset) * cnt[rp.hdr.did];
 					*((MPI_Offset *)ptr) = eoff;
-					ptr += sizeof (MPI_Offset) * cnt[rp.did];
+					ptr += sizeof (MPI_Offset) * cnt[rp.hdr.did];
 				} else {
 					ptr = bufp[rp.hdr.did + fp->ndset];
-					bufp[rp.hdr.did + fp->ndset] += sizeof (MPI_Offset) * cnt[rp.did];
+					bufp[rp.hdr.did + fp->ndset] += sizeof (MPI_Offset) * cnt[rp.hdr.did];
 					memcpy (ptr,
 							rp.meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2,
 							sizeof (MPI_Offset) * fp->ndim[rp.hdr.did]);
-					ptr += sizeof (MPI_Offset) * fp->ndim[rp.hdr.did] * cnt[rp.did];
+					ptr += sizeof (MPI_Offset) * fp->ndim[rp.hdr.did] * cnt[rp.hdr.did];
 					memcpy (ptr,
 							rp.meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2,
 							sizeof (MPI_Offset) * fp->ndim[rp.hdr.did]);
