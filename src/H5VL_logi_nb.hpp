@@ -19,7 +19,6 @@ typedef struct H5VL_logi_meta_hdr {
 
 typedef struct H5VL_log_wreq_t {
 	H5VL_logi_meta_hdr hdr;
-	int did;   // Target dataset ID
 	//int ndim;  // Dim of the target dataset
 	// MPI_Offset start[H5S_MAX_RANK];
 	// MPI_Offset count[H5S_MAX_RANK];
