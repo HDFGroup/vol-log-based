@@ -609,3 +609,49 @@ General comments: I suggest the following when adding a new issue.
 ### Solutions
 * Implement sanity check in dataspace selection boundary on dataset I/O.
 
+---
+## HDF5 cannot be configured on Theta
+###  Problem Description
+* Trying to configure HDF5 on ALCF Theta results in the following error.
+  ```
+  CC=cc ./configure --prefix=/home/khou/.local/hdf5/1.12.0 --enable-parallel --enable-hl --enable-build-mode=production --enable-shared
+  ...
+  configure: error: cannot run C compiled programs.
+  If you meant to cross compile, use `--host'.
+  See `config.log' for more details
+  ```
+* The message suggests enabling cross-compiling, but HDF5 does not support it. Enabling cross-compiling will result in the following error.
+  ```
+  CC=cc ./configure --prefix=/home/khou/.local/hdf5/1.12.0 --enable-parallel --enable-hl --enable-build-mode=production --enable-shared --host=cray
+  ...
+  configure: error: in `/home/khou/hdf5/1.12.0':
+  configure: error: cannot run test program while cross compiling
+  See `config.log' for more details
+  ```
+* On Theta, compute nodes have KNL CPUs while login nodes have Haswell CPUs.
+  The error is related to the AVX512 instruction, which is available on KNL, but Haswell CPUs. 
+  The default compiler (cc) on Theta builds programs intended to run on compute nodes and hence contains the AVX512 instruction.
+  The configure script checks whether the compiler works by compiling and running a test program.
+  Since the login node does not support the AVX512 instruction, the test program fails to run, and the configure script reports the error above.
+  
+### Software Environment
+* HDF5 versions: 1.12.0, 1.10.1
+
+### Solutions
+* Use the toolchain for Haswell CPUs when configuring HDF5
+  + Programs built for Haswell CPUs will run on both login nodes and compute nodes.
+  + According to the ALCF helpdesk, using the Haswell toolchain will not affect HDF5 performance on KNL compute nodes.
+  + HDF5 calls dlopen to open the shared VOL object if the VOL is not statically linked to the application.
+    + dlopen requires libifcoremt.so which is not in the default library path on compute nodes.
+    + The program crashes on compute nodes as the system cannot find libifcoremt.so.
+    + Adding the directory containing the correct libifcoremt.so solves the problem.
+      + export LD_LIBRARY_PATH=/opt/intel/compilers_and_libraries_2020.0.166/linux/compiler/lib/intel64:#{LD_LIBRARY_PATH}
+    + Changing the default linking mode to dynamic to make sure we are actually using the libifcoremt.so in LD_LIBRARY_PATH
+      + export CRAYPE_LINK_TYPE=dynamic
+  + Steps
+  ```
+  module swap craype-mic-knl craype-haswell 
+  CC=cc ./configure --prefix=/home/khou/.local/hdf5/1.12.0 --enable-parallel --enable-hl --enable-build-mode=production --enable-shared
+  module swap craype-haswell craype-mic-knl 
+  ```
+---
