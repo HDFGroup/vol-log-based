@@ -4,7 +4,7 @@
 #
 # @configure_input@
 
-SUBDIRS = src test example
+SUBDIRS = src test example utils
 DIST_SUBDIRS = src test example
 EXTRA_DIST = 
 

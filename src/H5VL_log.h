@@ -48,7 +48,7 @@ extern "C" {
 
 // Non-blocking I/O flags
 typedef enum H5VL_log_req_type_t {
-    H5VL_LOG_REQ_BLOCKING = 0, 		// Default
+    H5VL_LOG_meta_blockING = 0, 		// Default
     H5VL_LOG_REQ_NONBLOCKING = 1
 } H5VL_log_req_type_t;
 

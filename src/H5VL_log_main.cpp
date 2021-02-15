@@ -63,7 +63,7 @@ int mpi_inited;
 herr_t H5VL_log_init (hid_t vipl_id) {
 	herr_t err = 0;
 	int mpierr;
-	H5VL_log_req_type_t blocking = H5VL_LOG_REQ_BLOCKING;
+	H5VL_log_req_type_t blocking = H5VL_LOG_meta_blockING;
 	ssize_t infty				 = LOG_VOL_BSIZE_UNLIMITED;
 	htri_t exist;
 

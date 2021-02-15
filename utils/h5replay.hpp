@@ -1,6 +1,7 @@
 #pragma once
 
 #include <hdf5.h>
+#include <string>
 
 #define CHECK_ERR                                                     \
 	{                                                                 \
@@ -37,7 +38,8 @@ typedef struct dset_info {
 	int ndim;
 	hid_t id;
 	hsize_t esize;
+	hid_t type;
 } dset_info;
 
-herr_t h5replay_core (std::string &inpath, std::string &outpath) ;
+herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int np) ;
 

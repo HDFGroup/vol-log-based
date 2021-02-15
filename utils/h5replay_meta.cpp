@@ -22,7 +22,7 @@ herr_t h5replay_parse_meta (int rank,
 							hid_t lgid,
 							int nmdset,
 							std::vector<dset_info> &dsets,
-							std::vector<req_block> &reqs) {
+							std::vector<std::vector<meta_block>> &reqs) {
 	herr_t err = 0;
 	int i, j, k, l;
 	hid_t did = -1;
@@ -109,8 +109,8 @@ herr_t h5replay_parse_meta (int rank,
 			if ((j - sec.off) % sec.stride == 0) {
 				int nsel;
 				MPI_Offset *bp;
-				MPI_Offset *dsteps;
-				req_block req;
+				MPI_Offset dsteps[H5S_MAX_RANK];
+				meta_block req;
 
 				// Extract the metadata
 				if (hdr->flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
@@ -126,9 +126,9 @@ herr_t h5replay_parse_meta (int rank,
 						bsize = 0;
 						if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {  // Logical location
 							esize += nsel * sizeof (MPI_Offset) * 2;
-							bsize += sizeof (MPI_Offset) * (ndims[hdr->did] - 1);
+							bsize += sizeof (MPI_Offset) * (dsets[hdr->did].ndim - 1);
 						} else {
-							esize += nsel * sizeof (MPI_Offset) * 2 * ndims[hdr->did];
+							esize += nsel * sizeof (MPI_Offset) * 2 * dsets[hdr->did].ndim;
 						}
 						if (hdr->flag & H5VL_LOGI_META_FLAG_MUL_SELX) {	 // Physical location
 							esize += sizeof (MPI_Offset) * 2;
@@ -158,12 +158,12 @@ herr_t h5replay_parse_meta (int rank,
 				// Convert to req
 				bp = (MPI_Offset *)zbuf;
 				if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-					dsteps = bp;
-					bp += ndims[hdr->did] - 1;
+					memcpy (dsteps, bp, sizeof (MPI_Offset) * (dsets[hdr->did].ndim - 1));
+					dsteps[dsets[hdr->did].ndim - 1] = 1;
+					bp += dsets[hdr->did].ndim - 1;
 				}
 
-				req.doff = 0;
-				req.did	 = hdr->did;
+				req.did = hdr->did;
 				if (hdr->flag & H5VL_LOGI_META_FLAG_MUL_SELX) {
 					req.foff = *((MPI_Offset *)bp);
 					bp++;
@@ -172,44 +172,45 @@ herr_t h5replay_parse_meta (int rank,
 				}
 
 				for (k = 0; k < nsel; k++) {
+					meta_sel sel;
 					if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
 						MPI_Offset off;
 
 						// Decode start
 						off = *((MPI_Offset *)bp);
 						bp++;
-						for (l = 0; l < ndims[req.did]; l++) {
-							req.start[l] = off / dsteps[l];
-							off %= dsteps;
+						for (l = 0; l < dsets[req.did].ndim; l++) {
+							sel.start[l] = off / dsteps[l];
+							off %= dsteps[l];
 						}
 						// Decode count
 						off = *((MPI_Offset *)bp);
 						bp++;
-						for (l = 0; l < ndims[req.did]; l++) {
-							req.count[l] = off / dsteps[l];
-							off %= dsteps;
+						for (l = 0; l < dsets[req.did].ndim; l++) {
+							sel.count[l] = off / dsteps[l];
+							off %= dsteps[l];
 						}
 					} else {
-						memcpy (req.start, bp, sizef (MPI_Offset) * ndims[req.did]);
-						bp += sizef (MPI_Offset) * ndims[req.did];
-						memcpy (req.start, bp, sizef (MPI_Offset) * ndims[req.did]);
-						bp += sizef (MPI_Offset) * ndims[req.did];
+						memcpy (sel.start, bp, sizeof (MPI_Offset) * dsets[req.did].ndim);
+						bp += sizeof (MPI_Offset) * dsets[req.did].ndim;
+						memcpy (sel.start, bp, sizeof (MPI_Offset) * dsets[req.did].ndim);
+						bp += sizeof (MPI_Offset) * dsets[req.did].ndim;
 					}
+					req.sels.push_back(sel);
 
 					if (!(hdr->flag & H5VL_LOGI_META_FLAG_MUL_SELX)) {
 						req.foff = *((MPI_Offset *)bp);
 						bp++;
 						req.fsize = *((MPI_Offset *)bp);
 						bp++;
-					} else {
-						req.fsize = 0;	// 0 menas sharing with previous req
+						reqs[req.did].push_back (req);	// treat as separate meta block
+						req.sels.clear();
 					}
-
-					reqs[req.did].push_back (req);
-					if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
-						free (zbuf);
-						zbuf = NULL;
-					}
+				}
+				reqs[req.did].push_back (req);
+				if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
+					free (zbuf);
+					zbuf = NULL;
 				}
 			}
 			ep += hdr->meta_size;

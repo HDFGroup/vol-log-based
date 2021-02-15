@@ -103,7 +103,7 @@ herr_t H5Pset_nonblocking (hid_t plist, H5VL_log_req_type_t nonblocking) {
 	pexist = H5Pexist (plist, NB_PROPERTY_NAME);
 	CHECK_ID (pexist)
 	if (!pexist) {
-		H5VL_log_req_type_t blocking = H5VL_LOG_REQ_BLOCKING;
+		H5VL_log_req_type_t blocking = H5VL_LOG_meta_blockING;
 		err = H5Pinsert2 (plist, NB_PROPERTY_NAME, sizeof (H5VL_log_req_type_t), &blocking, NULL,
 						  NULL, NULL, NULL, NULL, NULL);
 		CHECK_ERR
@@ -123,7 +123,7 @@ herr_t H5Pget_nonblocking (hid_t plist, H5VL_log_req_type_t *nonblocking) {
 	isdxpl = H5Pisa_class (plist, H5P_DATASET_XFER);
 	CHECK_ID (isdxpl)
 	if (isdxpl == 0)
-		*nonblocking = H5VL_LOG_REQ_BLOCKING;  // Default property will not pass class check
+		*nonblocking = H5VL_LOG_meta_blockING;  // Default property will not pass class check
 	else {
 		pexist = H5Pexist (plist, NB_PROPERTY_NAME);
 		CHECK_ID (pexist)
@@ -132,7 +132,7 @@ herr_t H5Pget_nonblocking (hid_t plist, H5VL_log_req_type_t *nonblocking) {
 			CHECK_ERR
 
 		} else {
-			*nonblocking = H5VL_LOG_REQ_BLOCKING;
+			*nonblocking = H5VL_LOG_meta_blockING;
 		}
 	}
 

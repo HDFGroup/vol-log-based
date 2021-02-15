@@ -2,6 +2,8 @@
 
 #include "h5replay.hpp"
 #include "h5replay_copy.hpp"
+#include <iostream>
+#include <cstdio>
 
 herr_t h5replay_copy_handler (hid_t o_id,
 							  const char *name,
@@ -17,7 +19,7 @@ herr_t h5replay_copy_handler (hid_t o_id,
 	h5replay_copy_handler_arg *argp = (h5replay_copy_handler_arg *)op_data;
 
 #ifdef LOGVOL_DEBUG
-	cout << "Copying " << name << endl;
+	std::cout << "Copying " << name << std::endl;
 #endif
 
 	// Skip unnamed and hidden object
@@ -61,6 +63,8 @@ herr_t h5replay_copy_handler (hid_t o_id,
 		CHECK_ERR
 		H5Aclose (aid);
 		aid = -1;
+		// Datatype and esize
+		tid=H5Dget_type(src_did); CHECK_ID(tid)
 
 		// Create dst dataset
 		err = H5Pset_layout (dcplid, H5D_CONTIGUOUS);
@@ -77,6 +81,8 @@ herr_t h5replay_copy_handler (hid_t o_id,
         // Record did for replaying data
         // Do not close dst_did
         argp->dsets[id].id=dst_did;
+		argp->dsets[id].type=tid;
+		argp->dsets[id].esize=H5Tget_size(tid);
 		argp->dsets[id].ndim=ndim;
 	} else {  // Copy anything else as is
 		err = H5Ocopy (o_id, name, argp->fid, name, H5P_DEFAULT, H5P_DEFAULT);
