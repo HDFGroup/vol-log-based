@@ -320,7 +320,12 @@ General comments: I suggest the following when adding a new issue.
 * Although HDF5 allows applications to select multiple blocks by combining multiple hyper-slab selections, 
   HDF5 interprets them as a unit instead of a list of hyper-slabs.
   HDF5 assumes that the data in the memory buffer is ordered according to its file offset in a contiguous data layout.
-  For example, in a 2-D dataset, HDF5 will always write the dataset row-wise even if the application makes selections column-wise.
+  Thus, HDF5 will always write the dataset row-wise even if the application makes selections column-wise.
+  + For example, we have a 2 * 2 dataset D. The two hyper-slabs we want to write are (start=[0,0], count=[0,2]) and (start=[0,1],
+    count=[0,2]) (the first and the second column). 
+    + If we call H5Dwrite_n, the data in the buffer should be D[0][0], D[1][0], D[0][1], D[1][1]
+    + If we H5S_SELECT_OR to select the 2 hyper-slabs and call H5Dwrite, the data in the buffer should be D[0][0], D[0][1], D[1][0], D[1][1]
+    + The two approaches write to the same region in a dataset except that the data must be ordered differently in memory. 
 * In the E3SM case study, each process writes many blocks (subarrays) in every dataset.
   The data is arranged block-wise in the memory.
   Based on how HDF5 dataspace selection works, the program must either reorder its data in the memory or call H5Dwrite for each block.
@@ -332,25 +337,32 @@ General comments: I suggest the following when adding a new issue.
 * HDF5 versions: All
 
 ### Solutions
-* Provide a customized H5Dwriten API inside the log-based VOL
+* Provide a customized H5Dwrite_n API inside the log-based VOL
   + Works similar to varn APIs in PnetCDF.
   + The signature of H5Dwrite (H5VLdataset_write from within the VOL) cannot be modified.
     The dataspace argument is the only argument to indicate the selected regions to write.
     A simple approach is to have the log-based VOL interpret the data in the memory buffer as following the order of dataspace selections.
-    However, doing so will alter H5Dwrite semantic, causing compatibility issues.
-  + We implemented a separate H5Dwriten function in the log-based VOL.
-    Instead of taking a dataspace that contains the selection, the H5Dwriten function takes a list of start and count similar to PnetCDF varn API.
-    It writes data directly to the log and record all subarrays in the metadata dataset.
-  + Inside the H5Dwriten function, the library needs to retrieve the correct VOL object from the ID (hid) passed by the application.
+    However, doing so will alter the H5Dwrite semantic, causing compatibility issues.
+  + We implemented a separate H5Dwrite_n function in the log-based VOL.
+    H5Dwrite_n writes to multiple hyper-slabs in a dataset in the order given by the application.
+    The data in the memory buffer should be arranged by hyper-slabs (data of the first hyper-slab followed by data of the second hyper-slab and so on).
+  + H5Dwrite_n takes the hyper-slabs in the form of a list of start and count similar to PnetCDF varn API instead of HDF5 dataspaces.
+    + HDF5 dataspaces are not managed by VOLs. 
+    + To retrieve the hyper-slab selected in a dataspace, the VOL uses the same H5Sget_select_hyper_blocklist API used by applications.
+    + According to the HDF5 manual (https://portal.hdfgroup.org/display/HDF5/H5S_GET_SELECT_HYPER_BLOCKLIST), 
+      H5Sget_select_hyper_blocklist does not guarantee the order of returned hyper-slabs. We also observed that HDF5 1.10 might return a completely different set of hyper-slabs that covers the same region as the hyper-slabs given by the application.
+    + H5Dwrite_n needs to know the order of the hyper-slabs given by the application, which is lost when represented as dataspace selections.
+    + Bypassing HDF5 dataspace altogether also removes the overhead to retrieve the hyper-slabs from the dataspace.
+  + Inside the H5Dwrite_n function, the library needs to retrieve the correct VOL object from the ID (hid) passed by the application.
     The current VOL architecture does not include a VOL API to retrieve VOL objects by IDs (hid_t).
     To retrieve the VOL object from an ID (hid_t), we must call an HDF5 user-level API.
     The HDF5 dispatcher will then call the corresponding VOL callback function with the desired VOL object.
   + We introduce a new dataset transfer property called "H5VL_log_multisel"
     It contains a list of blocks to write in the form similar to the arguments of *varn API in PnetCDF.
-    When this property presents in the dataset transfer property list (dxpl), the H5Dwrite call is interpreted as a H5Dwriten call.
+    When this property presents in the dataset transfer property list (dxpl), the H5Dwrite call is interpreted as an H5Dwrite_n call.
     The log-based VOl will disregard the dataspace and use the block list stored in the property as blocks to write, and the data in the memory buffer is assumed to be ordered by blocks.
-    The H5Dwriten function sets the H5VL_log_multisel property with arguments passed from the application and calls H5Dwrite.
-  + Using H5Dwriten reduces the number of H5Dwrite calls in the high-resolution 
+    The H5Dwrite_n function sets the H5VL_log_multisel property with arguments passed from the application and calls H5Dwrite.
+  + Using H5Dwrite_n reduces the number of H5Dwrite calls in the high-resolution 
     (ne120) E3SM F case dataset on 1024 processes from 2755063 to 413.
     The time spent on posting write requests reduced from 10.9 sec to 1.7 sec 
     when running on 32 Cori Haswell nodes (32 processes/node).
@@ -436,8 +448,10 @@ General comments: I suggest the following when adding a new issue.
   As a workaround, we can use MPI-IO to write the metadata directly.
   For a simpler design, we replace the chunked, extendable metadata dataset with contiguous datasets.
   We create a new metadata dataset when we need to store more metadata.
-  The log-based VOL retrieves the file offset of the metadata dataset from the native VOL and then write the metadata in a similar way it writes log data.
-  After switching to contiguous metadata datasets, metadata flush time on F case high-resolution (ne120) dataset reduced to around 6 sec.
+  The log-based VOL retrieves the file offset of the metadata dataset from the native VOL and then writes the metadata in a similar way it writes log data.
+  + The user-level API to retrieve the file offset of a dataset is H5Dget_offset. Its corresponding VOL API is H5VLdataset_optional(obj, connector_id, 
+    H5VL_NATIVE_DATASET_GET_OFFSET, dxpl_id, NULL, &offset).
+  + After switching to contiguous metadata datasets, metadata flush time on F case high-resolution (ne120) dataset reduced to around 6 sec.
 * Collaborate with the HDF5 team to study the reason the native VOL did not follow the setting in the property list.
 
 ---
@@ -546,7 +560,7 @@ General comments: I suggest the following when adding a new issue.
     * Reordering the same dataset's data to adjacent space when flushing, then 
       combine the metadata entries as described in the first point. It involves 
       only memory operations and does not affect the I/O pattern.
-    * Use our customized H5DwriteN API to generate a log entry with multiple 
+    * Use our customized H5Dwrite_n API to generate a log entry with multiple 
       blocks that are flushed together (into contiguous space).
   + If multiple blocks of data are stored contiguously in the file, the file 
     offset of a block can be calculated from the file offset of the previous 
