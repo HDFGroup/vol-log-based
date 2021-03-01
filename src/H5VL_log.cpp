@@ -62,11 +62,11 @@ err_out:
 	return err;
 }
 
-herr_t H5Dwriten (hid_t did,
+herr_t H5Dwrite_n (hid_t did,
 				  hid_t mem_type_id,
 				  int n,
-				  MPI_Offset **starts,
-				  MPI_Offset **counts,
+				  hsize_t **starts,
+				  hsize_t **counts,
 				  hid_t dxplid,
 				  void *buf) {
 	herr_t err		   = 0;

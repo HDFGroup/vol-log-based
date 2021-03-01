@@ -543,7 +543,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 				for (j = 0; j < dp->ndim; j++) {
 					ssize *= arg.counts[i][j];	// Size of the selection
 					soff +=
-						arg.starts[i][j] * dp->dsteps[j];  // Starting offset of the bounding box
+						(MPI_Offset)arg.starts[i][j] * dp->dsteps[j];  // Starting offset of the bounding box
 				}
 				*((MPI_Offset *)mbuf) = soff;
 				mbuf += sizeof (MPI_Offset);
@@ -553,7 +553,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 			for (i = 0; i < arg.n; i++) {
 				eoff = 0;
 				for (j = 0; j < dp->ndim; j++) {
-					eoff += arg.counts[i][j] * dp->dsteps[j];  // Ending offset of the bounding box
+					eoff += (MPI_Offset)arg.counts[i][j] * dp->dsteps[j];  // Ending offset of the bounding box
 				}
 				*((MPI_Offset *)mbuf) = eoff;
 				mbuf += sizeof (MPI_Offset);
@@ -603,7 +603,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 				for (j = 0; j < dp->ndim; j++) {
 					ssize *= arg.counts[i][j];	// Size of the selection
 					assert (mbuf - r.meta_buf < r.hdr.meta_size);
-					*((MPI_Offset *)mbuf) = arg.starts[i][j];
+					*((MPI_Offset *)mbuf) = (MPI_Offset)arg.starts[i][j];
 					mbuf += sizeof (MPI_Offset);
 				}
 				// Record overall size of the write req
@@ -615,7 +615,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 				memcpy(mbuf,arg.starts[i],sizeof(MPI_Offset)*dp->ndim);
 				mbuf += sizeof (MPI_Offset)*dp->ndim;*/
 				for (j = 0; j < dp->ndim; j++) {
-					*((MPI_Offset *)mbuf) = arg.counts[i][j];
+					*((MPI_Offset *)mbuf) = (MPI_Offset)arg.counts[i][j];
 					mbuf += sizeof (MPI_Offset);
 				}
 			}
