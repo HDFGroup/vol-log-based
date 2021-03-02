@@ -413,8 +413,12 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	TIMER_STOP (fp, TIMER_H5VL_FILE_CLOSE);
 
 	TIMER_STOP (fp, TIMER_FILE_CLOSE);
+	
 #ifdef LOGVOL_PROFILING
-	H5VL_log_profile_print (fp);
+	{
+		char *_env_str = getenv ("LOGVOL_SHOW_PROFILING_INFO");
+		if (_env_str != NULL && *_env_str != '0') { H5VL_log_profile_print (fp); }
+	}
 #endif
 
 	// Clean up
@@ -581,9 +585,7 @@ void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp) { fp->refcnt++; }
 
 herr_t H5VL_log_filei_dec_ref (H5VL_log_file_t *fp) {
 	fp->refcnt--;
-	if (fp->refcnt == 0) { 
-		return H5VL_log_filei_close (fp); 
-		}
+	if (fp->refcnt == 0) { return H5VL_log_filei_close (fp); }
 	return 0;
 }
 
