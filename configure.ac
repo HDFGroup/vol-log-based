@@ -20,6 +20,7 @@ AH_TOP([/*
  */
 ])
 AC_CONFIG_SRCDIR([src/H5VL_log.h])
+AC_CONFIG_MACRO_DIRS([m4])
 
 AC_CONFIG_AUX_DIR([./scripts])
 
@@ -28,6 +29,13 @@ AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE([enable])
 
 AH_TEMPLATE([ENABLE_ZLIB],              [Define if to enable zlib compression method])
+
+AC_DEFUN([UD_MSG_DEBUG],
+         [if test "x${pnc_ac_debug}" = xyes ; then
+             AC_MSG_NOTICE([DEBUG: $1])
+          fi
+         ]
+)
 
 dnl parse the version numbers to 3 env variables
 LOGVOL_VERSION_MAJOR=`echo ${PACKAGE_VERSION} | cut -d. -f1`
@@ -55,6 +63,8 @@ AC_PROG_SED
 dnl check sed command option -i and set SED_I (this requires RM defined)
 UD_PROG_SED_I
 AC_PROG_EGREP
+
+UD_PROG_M4
 
 MPI_INSTALL=
 AC_ARG_WITH(mpi,

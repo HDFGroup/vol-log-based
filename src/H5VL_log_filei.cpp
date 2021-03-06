@@ -318,7 +318,7 @@ err_out:;
 
 herr_t H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid) {
 	herr_t err = 0;
-	TIMER_START;
+	TIMER_H5VL_LOG_START;
 
 	if (fp->wreqs.size () > 0) {
 		if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
@@ -335,7 +335,7 @@ herr_t H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid) {
 		fp->rreqs.clear ();
 	}
 
-	TIMER_STOP (fp, TIMER_FILEI_FLUSH);
+	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_FLUSH);
 err_out:;
 	return err;
 }
@@ -345,7 +345,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	int mpierr;
 	int attbuf[3];
 
-	TIMER_START;
+	TIMER_H5VL_LOG_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -387,10 +387,10 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	}
 
 	// Close log group
-	TIMER_START
+	TIMER_H5VL_LOG_START
 	err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
 	CHECK_ERR
-	TIMER_STOP (fp, TIMER_H5VL_GROUP_CLOSE);
+	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLGROUP_CLOSE);
 
 	// Close the file with MPI
 	mpierr = MPI_File_close (&(fp->fh));
@@ -407,12 +407,12 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	if (H5VL_log_dataspace_contig_ref == 0) { H5Sclose (H5VL_log_dataspace_contig); }
 
 	// Close the file with under VOL
-	TIMER_START;
+	TIMER_H5VL_LOG_START;
 	err = H5VLfile_close (fp->uo, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
 	CHECK_ERR
-	TIMER_STOP (fp, TIMER_H5VL_FILE_CLOSE);
+	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLFILE_CLOSE);
 
-	TIMER_STOP (fp, TIMER_FILE_CLOSE);
+	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILE_CLOSE);
 	
 #ifdef LOGVOL_PROFILING
 	{
@@ -530,7 +530,7 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 	H5VL_log_file_t *fp = NULL;
 	H5VL_loc_params_t loc;
 	int attbuf[3];
-	TIMER_START;
+	TIMER_H5VL_LOG_START;
 
 	/*
 		fp = new H5VL_log_file_t (uo, cp->uvlid);
@@ -550,11 +550,11 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 		// Create LOG group
 		loc.obj_type = H5I_FILE;
 		loc.type	 = H5VL_OBJECT_BY_SELF;
-		TIMER_START
+		TIMER_H5VL_LOG_START
 		fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_GROUP_ACCESS_DEFAULT,
 								  fp->dxplid, NULL);
 		CHECK_PTR (fp->lgp)
-		TIMER_STOP (fp, TIMER_H5VL_GROUP_OPEN);
+		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLGROUP_OPEN);
 
 		// Att
 		err = H5VL_logi_get_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
@@ -571,7 +571,7 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 
 	fp = cp->fp;
 
-	TIMER_STOP (fp, TIMER_FILE_OPEN);
+	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
 
 	goto fn_exit;
 err_out:;

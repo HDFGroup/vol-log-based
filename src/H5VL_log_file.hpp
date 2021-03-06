@@ -82,8 +82,8 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
 #ifdef LOGVOL_PROFILING
 //#pragma message ( "C Preprocessor got here!" )
-	double tlocal[NTIMER];
-	double clocal[NTIMER];
+	double tlocal[H5VL_LOG_NTIMER];
+	double clocal[H5VL_LOG_NTIMER];
 #endif
 
 	H5VL_log_file_t ();
