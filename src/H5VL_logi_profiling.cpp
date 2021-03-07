@@ -112,6 +112,10 @@ const char * const tname[H5VL_LOG_NTIMER]={
 "H5VL_logi_get_dataspace_selection",
 "H5VL_log_nb_flush_read_reqs",
 "H5VL_log_nb_flush_write_reqs",
+"H5VL_log_nb_flush_write_reqs_init",
+"H5VL_log_nb_flush_write_reqs_sync",
+"H5VL_log_nb_flush_write_reqs_create",
+"H5VL_log_nb_flush_write_reqs_wr",
 "H5VL_log_nb_write_reqs_aligned",
 "H5VL_log_nb_flush_write_reqs_size",
 };

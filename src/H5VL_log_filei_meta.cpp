@@ -49,9 +49,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	MPI_Status stat;
 	std::vector<std::array<MPI_Offset, H5S_MAX_RANK>> dsteps (fp->ndset);
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	mlens = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->ndset * 2 + 1));
 	memset (mlens, 0, sizeof (MPI_Offset) * fp->ndset);
@@ -127,14 +127,14 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 #endif
 	}
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_INIT);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_INIT);
 
 #ifdef LOGVOL_PROFILING
 	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE, (double)(mdsize) / 1048576);
 #endif
 
 	// Pack data
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 #ifdef ENABLE_ZLIB
 	buf	 = (char *)malloc (moffs[fp->ndset] + zbsize);
 	zbuf = buf + moffs[fp->ndset];
@@ -221,10 +221,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		}
 	}
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_PACK);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_PACK);
 
 #ifdef ENABLE_ZLIB
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	// Recount mdsize after compression
 	mdsize = 0;
 	// Compress merged entries
@@ -267,14 +267,14 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			}
 		}
 	}
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_ZIP);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_ZIP);
 #ifdef LOGVOL_PROFILING
 	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE_ZIP, (double)(mdsize) / 1048576);
 #endif
 #endif
 
 	// Write entry header later after compression
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	// Header for the merged requests
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
 		// Header for merged entries
@@ -292,10 +292,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		}
 	}
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_PACK);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_PACK);
 
 	// Write metadata to file
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	// Create memory datatype
 	offs = (MPI_Aint *)malloc (sizeof (MPI_Aint) * nentry);
 	lens = (int *)malloc (sizeof (int) * nentry);
@@ -321,10 +321,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	CHECK_MPIERR
 	mpierr = MPI_Type_commit (&mmtype);
 	CHECK_MPIERR
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);  // Part of writing
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);  // Part of writing
 
 	// Sync metadata size
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	mpierr = MPI_Allreduce (&mdsize, &mdsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	CHECK_MPIERR
 	// NOTE: Some MPI implementation do not produce output for rank 0, moffs must ne initialized
@@ -332,54 +332,54 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	doff   = 0;
 	mpierr = MPI_Exscan (&mdsize, &doff, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	CHECK_MPIERR
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SYNC);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SYNC);
 
 	dsize = (hsize_t)mdsize_all;
 	if (dsize > 0) {
 		H5VL_loc_params_t loc;
 
 		// Create metadata dataset
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		mdsid = H5Screate_simple (1, &dsize, &dsize);
 		CHECK_ID (mdsid)
 		sprintf (mdname, "_md_%d", fp->nmdset);
 		loc.obj_type = H5I_GROUP;
 		loc.type	 = H5VL_OBJECT_BY_SELF;
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		mdp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, mdname, H5P_LINK_CREATE_DEFAULT,
 								  H5T_STD_B8LE, mdsid, H5P_DATASET_CREATE_DEFAULT,
 								  H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
 		CHECK_PTR (mdp);
 		fp->nmdset++;
-		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLDATASET_CREATE);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 
 		// Get metadata dataset file offset
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VL_logi_dataset_optional_wrapper (mdp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET,
 												  fp->dxplid, NULL, &mdoff);
 		CHECK_ERR
-		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
-		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_CREATE);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_CREATE);
 
 		// Close the metadata dataset
-		TIMER_H5VL_LOG_START;
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VLdataset_close (mdp, fp->uvlid, fp->dxplid, NULL);
 		CHECK_ERR
-		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLDATASET_CLOSE);
-		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_CLOSE);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CLOSE);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_CLOSE);
 
 		// Write metadata
-		TIMER_H5VL_LOG_START;  // TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE
+		H5VL_LOGI_PROFILING_TIMER_START;  // TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE
 		err = MPI_File_write_at_all (fp->fh, mdoff + doff, MPI_BOTTOM, 1, mmtype, &stat);
 		CHECK_MPIERR
-		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
 
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		// This barrier is required to ensure no process read metadata before everyone finishes
 		// writing
 		MPI_Barrier (MPI_COMM_WORLD);
-		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_BARRIER);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_BARRIER);
 
 		// Update status
 		fp->idxvalid  = false;
@@ -389,7 +389,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	for (auto &rp : fp->wreqs) {
 		if (rp.meta_buf) { free (rp.meta_buf); }
 	}
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
 err_out:
 	// Cleanup
 	H5VL_log_free (offs);
@@ -415,7 +415,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	char *buf = NULL, *bufp;
 	int ndim;
 	H5VL_log_metaentry_t entry;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	if (fp->metadirty) { H5VL_log_filei_metaflush (fp); }
 
@@ -435,11 +435,11 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		// H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_PTR(ldp)
 
 		// Get data space and size
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VL_logi_dataset_get_wrapper (mdp, fp->uvlid, H5VL_DATASET_GET_SPACE, fp->dxplid,
 											 NULL, &mdsid);
 		CHECK_ERR
-		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLDATASET_GET);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_GET);
 		// err = H5VL_logi_dataset_get_wrapper(ldp, fp->uvlid, H5VL_DATASET_GET_SPACE,
 		// fp->dxplid, NULL, &ldsid); CHECK_ERR
 		ndim = H5Sget_simple_extent_dims (mdsid, &mdsize, NULL);
@@ -502,7 +502,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 
 	fp->idxvalid = true;
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILEI_METAUPDATE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAUPDATE);
 err_out:;
 
 	// Cleanup

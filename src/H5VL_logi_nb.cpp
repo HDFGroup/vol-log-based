@@ -24,7 +24,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 	std::vector<H5VL_log_copy_ctx> overlaps;
 	MPI_Status stat;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	if (!(fp->idxvalid)) {
 		err = H5VL_log_filei_metaupdate (fp);
@@ -37,10 +37,10 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 	}
 
 	if (intersections.size () > 0) {
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VL_log_dataset_readi_gen_rtypes (intersections, &ftype, &mtype, overlaps);
 		CHECK_ERR
-		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_DATASETI_READI_GEN_RTYPES);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_DATASETI_READI_GEN_RTYPES);
 		mpierr = MPI_Type_commit (&mtype);
 		CHECK_MPIERR
 		mpierr = MPI_Type_commit (&ftype);
@@ -98,7 +98,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 
 	reqs.clear ();
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS);
 err_out:;
 
 	return err;
@@ -121,7 +121,9 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	H5VL_loc_params_t loc;
 	char dname[16];
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
-	TIMER_H5VL_LOG_START;
+	
+	H5VL_LOGI_PROFILING_TIMER_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	cnt = fp->wreqs.size () - fp->nflushed;
 
@@ -147,6 +149,9 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_SIZE, (double)(fsize_local) / 1048576);
 #endif
 
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_INIT);
+	H5VL_LOGI_PROFILING_TIMER_START;
+
 	// Get file offset and total size
 	mpierr = MPI_Allreduce (&fsize_local, &fsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	CHECK_MPIERR
@@ -155,27 +160,36 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	mpierr = MPI_Exscan (&fsize_local, &foff, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	CHECK_MPIERR
 
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_SYNC);
+
 	// Create log dataset
 	dsize = (hsize_t)fsize_all;
 	if (dsize) {
+		H5VL_LOGI_PROFILING_TIMER_START;
+
 		ldsid = H5Screate_simple (1, &dsize, &dsize);
 		CHECK_ID (ldsid)
 		sprintf (dname, "_ld_%d", fp->nldset);
 		loc.obj_type = H5I_GROUP;
 		loc.type	 = H5VL_OBJECT_BY_SELF;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		ldp			 = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
 								   H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
 								   H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
 		CHECK_PTR (ldp);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VL_logi_dataset_optional_wrapper (ldp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET,
 												  dxplid, NULL, &doff);
 		CHECK_ERR  // Get dataset file offset
-		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
 
 		err = H5VLdataset_close (ldp, fp->uvlid, dxplid, NULL);
 		CHECK_ERR  // Close the dataset
+
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_CREATE);
+		H5VL_LOGI_PROFILING_TIMER_START;
 
 		// Write the data
 		foff += doff;
@@ -186,6 +200,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 			mpierr = MPI_File_write_at_all (fp->fh, foff, MPI_BOTTOM, 1, mtype, &stat);
 			CHECK_MPIERR
 		}
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
 
 		// Update metadata
 		for (i = fp->nflushed; i < fp->wreqs.size (); i++) {
@@ -204,7 +219,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 		// CHECK_ERR
 	}
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS);
 err_out:
 	// Cleanup
 	if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
@@ -247,7 +262,7 @@ herr_t H5VL_log_nb_ost_write (
 	size_t stride;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Buffer of a stripe
 	bs = (char *)malloc (fp->ssize);
@@ -302,7 +317,7 @@ herr_t H5VL_log_nb_ost_write (
 		err = H5VL_log_nb_flush_posix_write (fp->fd, bs + skip_size, bp - bs - skip_size);
 	}
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_NB_WRITE_REQS_ALIGNED);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_WRITE_REQS_ALIGNED);
 err_out:
 
 	// Cleanup
@@ -328,7 +343,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 	H5VL_loc_params_t loc;
 	char dname[16];
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	cnt = fp->wreqs.size () - fp->nflushed;
 
@@ -380,14 +395,14 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 								   H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
 		CHECK_PTR (ldp);
 
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VL_logi_dataset_optional_wrapper (ldp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET,
 												  dxplid, NULL, &doff);
 		CHECK_ERR	   // Get dataset file offset
 		if (remain) {  // Align to the next stripe
 			doff += fp->ssize - remain;
 		}
-		TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
 
 		err = H5VLdataset_close (ldp, fp->uvlid, dxplid, NULL);
 		CHECK_ERR  // Close the dataset
@@ -439,7 +454,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 		// CHECK_ERR
 	}
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS);
 err_out:
 	// Cleanup
 	if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);

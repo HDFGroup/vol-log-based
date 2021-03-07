@@ -19,7 +19,7 @@
  */
 #ifdef LOGVOL_PROFILING
 
-#define H5VL_LOG_NTIMER 87
+#define H5VL_LOG_NTIMER 91
 
 #define TIMER_H5VL_LOG_FILE_CREATE 0
 #define TIMER_H5VL_LOG_FILE_OPEN 1
@@ -106,24 +106,28 @@
 #define TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION 82
 #define TIMER_H5VL_LOG_NB_FLUSH_READ_REQS 83
 #define TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS 84
-#define TIMER_H5VL_LOG_NB_WRITE_REQS_ALIGNED 85
-#define TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_SIZE 86
+#define TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_INIT 85
+#define TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_SYNC 86
+#define TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_CREATE 87
+#define TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR 88
+#define TIMER_H5VL_LOG_NB_WRITE_REQS_ALIGNED 89
+#define TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_SIZE 90
 #endif
 
 #ifdef LOGVOL_PROFILING
 #include "H5VL_logi_profiling.hpp"
-#define TIMER_H5VL_LOG_START          \
+#define H5VL_LOGI_PROFILING_TIMER_START          \
 	{                        \
 		double tstart, tend; \
 		tstart = MPI_Wtime ();
-#define TIMER_H5VL_LOG_STOP(A, B)                             \
+#define H5VL_LOGI_PROFILING_TIMER_STOP(A, B)                             \
 	tend = MPI_Wtime ();                             \
 	H5VL_log_profile_add_time (A, B, tend - tstart); \
 	}
 #else
-#define TIMER_H5VL_LOG_START \
+#define H5VL_LOGI_PROFILING_TIMER_START \
 	{}
-#define TIMER_H5VL_LOG_STOP(A, B) \
+#define H5VL_LOGI_PROFILING_TIMER_STOP(A, B) \
 	{}
 #endif
 
