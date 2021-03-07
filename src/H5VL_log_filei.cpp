@@ -416,7 +416,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	
 #ifdef LOGVOL_PROFILING
 	{
-		char *_env_str = getenv ("LOGVOL_SHOW_PROFILING_INFO");
+		char *_env_str = getenv ("H5VL_LOG_SHOW_PROFILING_INFO");
 		if (_env_str != NULL && *_env_str != '0') { H5VL_log_profile_print (fp); }
 	}
 #endif
