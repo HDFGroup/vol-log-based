@@ -282,16 +282,16 @@ void *H5VL_log_dataseti_open_with_uo (void *obj,
 	va_list args;
 	void *ap;
 	int ndim;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	dp = new H5VL_log_dset_t (op, H5I_DATASET, uo);
 	CHECK_PTR (dp)
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, NULL,
 										 &(dp->dtype));
 	CHECK_ERR
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VLDATASET_GET);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_GET);
 
 	dp->esize = H5Tget_size (dp->dtype);
 	CHECK_ID (dp->esize)
@@ -304,7 +304,7 @@ void *H5VL_log_dataseti_open_with_uo (void *obj,
 	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), dxpl_id);
 	CHECK_ERR
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASETI_OPEN_WITH_UO);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASETI_OPEN_WITH_UO);
 
 	goto fn_exit;
 err_out:;
@@ -331,16 +331,16 @@ void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_obj_t *cp) {
 	va_list args;
 	void *ap;
 	int ndim;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	dp = new H5VL_log_dset_t (cp, H5I_DATASET, uo);
 	CHECK_PTR (dp)
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE,
 										 H5P_DATASET_XFER_DEFAULT, NULL, &(dp->dtype));
 	CHECK_ERR
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VLDATASET_GET);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_GET);
 	dp->esize = H5Tget_size (dp->dtype);
 	CHECK_ID (dp->esize)
 
@@ -353,7 +353,7 @@ void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_obj_t *cp) {
 	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), H5P_DATASET_XFER_DEFAULT);
 	CHECK_ERR
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASETI_WRAP);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASETI_WRAP);
 
 	goto fn_exit;
 err_out:;
@@ -379,9 +379,9 @@ herr_t H5VL_log_dataseti_writen (hid_t did,
 	htri_t eqtype;
 	H5VL_log_req_type_t rtype;
 	MPI_Datatype ptype = MPI_DATATYPE_NULL;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Get VOL object
 	dp = (H5VL_log_dset_t *)H5VLobject (did);
@@ -390,9 +390,9 @@ herr_t H5VL_log_dataseti_writen (hid_t did,
 	// Sanity check
 	if (!buf) ERR_OUT ("user buffer can't be NULL");
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_INIT);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_INIT);
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	// Setting metadata;
 	r.hdr.did = dp->id;
 	// r.ndim	= dp->ndim;
@@ -414,7 +414,7 @@ herr_t H5VL_log_dataseti_writen (hid_t did,
 		r.rsize += r.sels[i].size;
 		r.sels[i].size *= dp->esize;
 	}
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_START_COUNT);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_START_COUNT);
 
 	// Non-blocking?
 	err = H5Pget_nonblocking (dxplid, &rtype);
@@ -427,7 +427,7 @@ herr_t H5VL_log_dataseti_writen (hid_t did,
 	if (rtype == H5VL_LOG_REQ_NONBLOCKING && eqtype > 0) {
 		r.xbuf = r.ubuf;
 	} else {  // Need internal buffer
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		// Get element size
 		esize = H5Tget_size (mem_type_id);
 		CHECK_ID (esize)
@@ -443,9 +443,9 @@ herr_t H5VL_log_dataseti_writen (hid_t did,
 		// Copy data
 		memcpy (r.xbuf, r.ubuf, r.rsize * esize);
 
-		TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_PACK);
+		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_PACK);
 
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		// Need convert
 		if (eqtype == 0) {
 			void *bg = NULL;
@@ -454,18 +454,18 @@ herr_t H5VL_log_dataseti_writen (hid_t did,
 			err = H5Tconvert (mem_type_id, dp->dtype, r.rsize, r.xbuf, bg, dxplid);
 			free (bg);
 		}
-		TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_CONVERT);
+		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_CONVERT);
 	}
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	// Convert request size to number of bytes to be used by later routines
 	r.rsize *= dp->esize;
 
 	// Put request in queue
 	dp->fp->wreqs.push_back (r);
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_FINALIZE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_FINALIZE);
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE);
 err_out:;
 	if (err) {
 		// if (r.xbuf != r.ubuf) H5VL_log_filei_bfree (dp->fp, r.xbuf);

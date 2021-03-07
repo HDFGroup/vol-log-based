@@ -59,7 +59,7 @@ void *H5VL_log_dataset_create (void *obj,
 	int ndim, nfilter;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	sid = H5Screate (H5S_SCALAR);
 	CHECK_ID (sid);
@@ -75,10 +75,10 @@ void *H5VL_log_dataset_create (void *obj,
 		ureqp = NULL;
 	}
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid,
 								 dcpl_id, dapl_id, dxpl_id, ureqp);
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VLDATASET_CREATE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_CREATE);
 	CHECK_PTR (dp->uo)
 	if (req) { rp->append (ureq); }
 
@@ -142,7 +142,7 @@ void *H5VL_log_dataset_create (void *obj,
 		CHECK_ID (dp->filters[i].id);
 	}
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CREATE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CREATE);
 
 	goto fn_exit;
 err_out:;
@@ -181,7 +181,7 @@ void *H5VL_log_dataset_open (void *obj,
 	void *ap;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	dp = new H5VL_log_dset_t (op, H5I_DATASET);
 
@@ -192,16 +192,16 @@ void *H5VL_log_dataset_open (void *obj,
 		ureqp = NULL;
 	}
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	dp->uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);
 	CHECK_PTR (dp->uo);
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VLDATASET_OPEN);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_OPEN);
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, ureqp,
 										 &(dp->dtype));
 	CHECK_ERR
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VLDATASET_GET);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_GET);
 	if (req) { rp->append (ureq); }
 
 	dp->esize = H5Tget_size (dp->dtype);
@@ -249,7 +249,7 @@ void *H5VL_log_dataset_open (void *obj,
 		CHECK_ID (dp->filters[i].id);
 	}
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_OPEN);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_OPEN);
 
 	goto fn_exit;
 err_out:;
@@ -289,7 +289,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Check mem space selection
 	if (file_space_id == H5S_ALL)
@@ -335,10 +335,10 @@ herr_t H5VL_log_dataset_read (void *dset,
 		}
 		r.sels[0].size *= dp->esize;
 	} else {
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VL_logi_get_dataspace_selection (file_space_id, r.sels);
 		CHECK_ERR
-		TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
+		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
 
 		for (i = 0; i < r.sels.size (); i++) {
 			r.sels[i].size = 1;
@@ -371,10 +371,10 @@ herr_t H5VL_log_dataset_read (void *dset,
 
 		// Need packing
 		if (mstype != H5S_SEL_ALL) {
-			TIMER_H5VL_LOG_START;
+			H5VL_LOGI_PROFILING_TIMER_START;
 			err = H5VL_logi_get_dataspace_sel_type (mem_space_id, esize, &(r.ptype));
 			CHECK_ERR
-			TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SEL_TYPE);
+			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SEL_TYPE);
 		}
 
 		// Need convert
@@ -394,7 +394,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 		dp->fp->rreqs.push_back (r);
 	}
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_READ);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_READ);
 err_out:;
 
 	return err;
@@ -431,9 +431,9 @@ herr_t H5VL_log_dataset_write (void *dset,
 	std::vector<H5VL_log_selection> sels;
 	void **ureqp, *ureq;
 	char *mbuf, *zbuf = NULL;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	// Varn ?
 	err = H5Pget_multisel (plist_id, &arg);
 	CHECK_ERR
@@ -462,9 +462,9 @@ herr_t H5VL_log_dataset_write (void *dset,
 	// Sanity check
 	if (stype == H5S_SEL_NONE) goto err_out;
 	if (!buf) ERR_OUT ("user buffer can't be NULL");
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_INIT);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_INIT);
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	// Setting metadata;
 	r.hdr.did = dp->id;
 	// r.ndim	= dp->ndim;
@@ -475,10 +475,10 @@ herr_t H5VL_log_dataset_write (void *dset,
 	} else if (stype == H5S_SEL_ALL) {
 		r.nsel = 1;
 	} else {
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VL_logi_get_dataspace_selection (file_space_id, sels);
 		CHECK_ERR
-		TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
+		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
 		r.nsel = sels.size ();
 	}
 
@@ -516,10 +516,10 @@ herr_t H5VL_log_dataset_write (void *dset,
 	}
 #endif
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_START_COUNT);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_START_COUNT);
 
 	// Encode and pack selections
-	TIMER_H5VL_LOG_START
+	H5VL_LOGI_PROFILING_TIMER_START
 	// Jump to logical selection
 	mbuf = r.meta_buf + sizeof (H5VL_logi_meta_hdr) +
 		   sizeof (MPI_Offset) * 2;	 // Header, file offset, size
@@ -650,7 +650,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 			}
 		}
 	}
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_ENCODE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_ENCODE);
 
 	// Non-blocking?
 	err = H5Pget_nonblocking (plist_id, &rtype);
@@ -663,7 +663,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	if (rtype == H5VL_LOG_REQ_NONBLOCKING && eqtype > 0 && mstype == H5S_SEL_ALL) {
 		r.xbuf = r.ubuf;
 	} else {  // Need internal buffer
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		// Get element size
 		esize = H5Tget_size (mem_type_id);
 		CHECK_ID (esize)
@@ -680,10 +680,10 @@ herr_t H5VL_log_dataset_write (void *dset,
 		if (mstype != H5S_SEL_ALL) {
 			i = 0;
 
-			TIMER_H5VL_LOG_START
+			H5VL_LOGI_PROFILING_TIMER_START
 			err = H5VL_logi_get_dataspace_sel_type (mem_space_id, esize, &ptype);
 			CHECK_ERR
-			TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SEL_TYPE);
+			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SEL_TYPE);
 
 			MPI_Pack (r.ubuf, 1, ptype, r.xbuf, r.rsize * esize, &i, dp->fp->comm);
 
@@ -691,9 +691,9 @@ herr_t H5VL_log_dataset_write (void *dset,
 		} else {
 			memcpy (r.xbuf, r.ubuf, r.rsize * esize);
 		}
-		TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_PACK);
+		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_PACK);
 
-		TIMER_H5VL_LOG_START;
+		H5VL_LOGI_PROFILING_TIMER_START;
 		// Need convert
 		if (eqtype == 0) {
 			void *bg = NULL;
@@ -703,14 +703,14 @@ herr_t H5VL_log_dataset_write (void *dset,
 			err = H5Tconvert (mem_type_id, dp->dtype, r.rsize, r.xbuf, bg, plist_id);
 			free (bg);
 		}
-		TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_CONVERT);
+		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_CONVERT);
 	}
 
 	// Convert request size to number of bytes to be used by later routines
 	r.rsize *= dp->esize;
 
 	// Filtering
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	if (dp->filters.size ()) {
 		char *buf = NULL;
 		int csize = 0;
@@ -726,15 +726,15 @@ herr_t H5VL_log_dataset_write (void *dset,
 		r.xbuf	= buf;
 		r.rsize = csize;
 	}
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_FILTER);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_FILTER);
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Put request in queue
 	dp->fp->wreqs.push_back (r);
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_FINALIZE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_FINALIZE);
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE);
 err_out:;
 	if (err) {
 		// if (r.xbuf != r.ubuf) H5VL_log_filei_bfree (dp->fp, r.xbuf);
@@ -761,7 +761,7 @@ herr_t H5VL_log_dataset_get (
 	herr_t err			= 0;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	switch (get_type) {
 		/* H5Dget_space */
@@ -812,7 +812,7 @@ herr_t H5VL_log_dataset_get (
 			ERR_OUT ("get_type not supported")
 	} /* end switch */
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_GET);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_GET);
 err_out:;
 	return err;
 } /* end H5VL_log_dataset_get() */
@@ -836,7 +836,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
 	herr_t err			= 0;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	switch (specific_type) {
 		case H5VL_DATASET_SET_EXTENT: { /* H5Dset_extent */
@@ -857,12 +857,12 @@ herr_t H5VL_log_dataset_specific (void *obj,
 			break;
 		}
 		default:
-			TIMER_H5VL_LOG_START;
+			H5VL_LOGI_PROFILING_TIMER_START;
 			err = H5VLdataset_specific (dp->uo, dp->uvlid, specific_type, dxpl_id, req, arguments);
-			TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VLDATASET_SPECIFIC);
+			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_SPECIFIC);
 	}
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_SPECIFIC);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_SPECIFIC);
 err_out:;
 	return err;
 } /* end H5VL_log_dataset_specific() */
@@ -886,7 +886,7 @@ herr_t H5VL_log_dataset_optional (void *obj,
 	herr_t err		   = 0;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 	if (req) {
 		rp	  = new H5VL_log_req_t ();
@@ -895,16 +895,16 @@ herr_t H5VL_log_dataset_optional (void *obj,
 		ureqp = NULL;
 	}
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VLdataset_optional (op->uo, op->uvlid, optional_type, dxpl_id, req, arguments);
-	TIMER_H5VL_LOG_STOP (op->fp, TIMER_H5VLDATASET_OPTIONAL);
+	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLDATASET_OPTIONAL);
 
 	if (req) {
 		rp->append (ureq);
 		*req = rp;
 	}
 
-	TIMER_H5VL_LOG_STOP (op->fp, TIMER_H5VL_LOG_DATASET_OPTIONAL);
+	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_DATASET_OPTIONAL);
 	return err;
 } /* end H5VL_log_dataset_optional() */
 
@@ -921,16 +921,16 @@ herr_t H5VL_log_dataset_optional (void *obj,
 herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 	herr_t err			= 0;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VLdataset_close (dp->uo, dp->uvlid, dxpl_id, NULL);
 	CHECK_ERR
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VLDATASET_CLOSE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_CLOSE);
 
 	H5Tclose (dp->dtype);
 
-	TIMER_H5VL_LOG_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CLOSE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CLOSE);
 
 	delete dp;
 

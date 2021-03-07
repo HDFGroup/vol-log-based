@@ -37,18 +37,18 @@ foreach_idx(`t', `i', H5VL_LOG_TIMERS, `#define CONCATE(`TIMER_', upcase(t)) i
 
 #ifdef LOGVOL_PROFILING
 #include "H5VL_logi_profiling.hpp"
-#define TIMER_H5VL_LOG_START          \
+#define H5VL_LOGI_PROFILING_TIMER_START          \
 	{                        \
 		double tstart, tend; \
 		tstart = MPI_Wtime ();
-#define TIMER_H5VL_LOG_STOP(A, B)                             \
+#define H5VL_LOGI_PROFILING_TIMER_STOP(A, B)                             \
 	tend = MPI_Wtime ();                             \
 	H5VL_log_profile_add_time (A, B, tend - tstart); \
 	}
 #else
-#define TIMER_H5VL_LOG_START \
+#define H5VL_LOGI_PROFILING_TIMER_START \
 	{}
-#define TIMER_H5VL_LOG_STOP(A, B) \
+#define H5VL_LOGI_PROFILING_TIMER_STOP(A, B) \
 	{}
 #endif
 

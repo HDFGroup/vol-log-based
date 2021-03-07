@@ -50,7 +50,7 @@ void *H5VL_log_file_create (
 	MPI_Comm comm = MPI_COMM_WORLD;
 	hbool_t po_supported;
 	int attbuf[4];
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -131,10 +131,10 @@ void *H5VL_log_file_create (
 	H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
 	H5Pset_all_coll_metadata_ops (under_fapl_id, (hbool_t) false);
 	H5Pset_coll_metadata_write (under_fapl_id, (hbool_t) true);
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	fp->uo = H5VLfile_create (name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL);
 	CHECK_PTR (fp->uo)
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLFILE_CREATE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
 	H5Pclose (under_fapl_id);
 
 	// Create LOG group
@@ -184,7 +184,7 @@ void *H5VL_log_file_create (
 	if (H5VL_log_dataspace_contig_ref == 0) { H5VL_log_dataspace_contig = H5Screate (H5S_SCALAR); }
 	H5VL_log_dataspace_contig_ref++;
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE);
 
 	goto fn_exit;
 err_out:;
@@ -220,7 +220,7 @@ void *H5VL_log_file_open (
 	MPI_Comm comm;
 	int attbuf[4];
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -284,20 +284,20 @@ void *H5VL_log_file_open (
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
 	H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	fp->uo = H5VLfile_open (name, flags, under_fapl_id, dxpl_id, NULL);
 	CHECK_PTR (fp->uo)
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLFILE_OPEN);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_OPEN);
 	H5Pclose (under_fapl_id);
 
 	// Create LOG group
 	loc.obj_type = H5I_FILE;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
-	TIMER_H5VL_LOG_START
+	H5VL_LOGI_PROFILING_TIMER_START
 	fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_GROUP_ACCESS_DEFAULT,
 							  dxpl_id, NULL);
 	CHECK_PTR (fp->lgp)
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLGROUP_OPEN);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
 
 	// Att
 	err = H5VL_logi_get_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, dxpl_id);
@@ -316,7 +316,7 @@ void *H5VL_log_file_open (
 	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, MPI_INFO_NULL, &(fp->fh));
 	CHECK_MPIERR
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
 
 	goto fn_exit;
 err_out:;
@@ -343,7 +343,7 @@ herr_t H5VL_log_file_get (
 	void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
 	herr_t err			= 0;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -367,12 +367,12 @@ herr_t H5VL_log_file_get (
 	}
 #endif
 
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VLfile_get (fp->uo, fp->uvlid, get_type, dxpl_id, req, arguments);
 	CHECK_ERR
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLFILE_GET);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_GET);
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILE_GET);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_GET);
 
 err_out:;
 	return err;
@@ -392,7 +392,7 @@ herr_t H5VL_log_file_specific (
 	void *file, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
 	herr_t err			= 0;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -445,10 +445,10 @@ herr_t H5VL_log_file_specific (
 			/* Call specific of under VOL */
 			under_fapl_id = H5Pcopy (fapl_id);
 			H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
-			TIMER_H5VL_LOG_START;
+			H5VL_LOGI_PROFILING_TIMER_START;
 			err = H5VLfile_specific (NULL, uvlid, specific_type, dxpl_id, req, saved_args);
 			CHECK_ERR
-			TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLFILE_SPECIFIC);
+			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_SPECIFIC);
 			H5Pclose (under_fapl_id);
 
 			va_end (saved_args);
@@ -465,7 +465,7 @@ herr_t H5VL_log_file_specific (
 			ERR_OUT ("Unsupported specific_type")
 	} /* end select */
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILE_SPECIFIC);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_SPECIFIC);
 err_out:;
 	return err;
 } /* end H5VL_log_file_specific() */
@@ -484,7 +484,7 @@ herr_t H5VL_log_file_optional (
 	void *file, H5VL_file_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
 	herr_t err			= 0;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -507,12 +507,12 @@ herr_t H5VL_log_file_optional (
 		printf ("H5VL_log_file_optional(%p, %s, %s, %p, ...)\n", file, vname[0], vname[1], req);
 	}
 #endif
-	TIMER_H5VL_LOG_START;
+	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VLfile_optional (fp->uo, fp->uvlid, opt_type, dxpl_id, req, arguments);
 	CHECK_ERR
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VLFILE_OPTIONAL);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_OPTIONAL);
 
-	TIMER_H5VL_LOG_STOP (fp, TIMER_H5VL_LOG_FILE_OPTIONAL);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPTIONAL);
 err_out:;
 	return err;
 } /* end H5VL_log_file_optional() */
