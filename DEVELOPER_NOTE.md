@@ -669,3 +669,34 @@ General comments: I suggest the following when adding a new issue.
   module swap craype-haswell craype-mic-knl 
   ```
 ---
+## Log-styled I/O pattern may not always result in the best I/O performance
+### Problem Description
+* The log VOL loses to PnetCDF on the Flash I/O benchmark. 
+  We ran the experiment ran on 1024, 2048, and 4096 Cori Haswell nodes with 32 processes per node. 
+  The file system is a Lustre with 1 MiB stripe size and 64 stripes. 
+* Flash I/O benchmark contains 24 variables. Each process writes a contiguous block in each variable.
+  The blocks append one after another according to the rank of the processes. 
+  That is, the I/O pattern within a single variable is in log-style. 
+  The total I/O amount across all variables is around 75 MiB per process. 
+* While the overhead remains low, the logvol spent significantly more time in raw data I/O than PnetCDF, 
+  even with a simpler I/O pattern. 
+  The I/O strategy of the two libraries differs in that the log VOL place blocks of a process in 
+  contiguous space while PnetCDF does not rearrange the blocks. The  I/O pattern of the log VOL is 
+  similar to writing a single variable of the combined size. 
+  The I/O pattern of PnetCDF resembles a strided pattern with a block size of 2 to 3 MiB and 24 strides.
+* The lustre stripe size is set to 1 MiB. 
+  Since one process writes around 75 MiB in Flash I/O benchmark, each process's block spans around 75 strides. 
+  With only 64 strides, and hence, aggregators, a process need to communicate with all aggregators to carry out the I/O operation. 
+  Also, the default aggregation buffer size is 16 MiB, so the aggregators can handle the request of 
+  at most 16 processes in one round while all other processes were sitting idle. 
+  The larger block size per process does not provide any benefit on I/O performance. 
+  The additional communication overhead slows down the overall performance.
+
+### Software Environment
+* HDF5 versions: All
+
+### Solutions
+* Support other storage layouts
+  + Limit a process's access to a subset of strides
+* Flush the data in multiple rounds so that the I/O size per process per round is close to the file system stride size
+  + Reduce communication overhead
