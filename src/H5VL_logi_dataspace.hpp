@@ -4,8 +4,8 @@
 #include <vector>
 
 typedef struct H5VL_log_selection {
-	MPI_Offset start[H5S_MAX_RANK];	 // Start of selection
-	MPI_Offset count[H5S_MAX_RANK];	 // Count of selection
+	hsize_t start[H5S_MAX_RANK];	 // Start of selection
+	hsize_t count[H5S_MAX_RANK];	 // Count of selection
 	size_t size;					 // Size of the selection (bytes)
 } H5VL_log_selection;
 

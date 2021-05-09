@@ -1,7 +1,9 @@
 #pragma once
 
-#include <hdf5.h>
 #include <vector>
+//
+#include <hdf5.h>
+//
 #include "h5replay.hpp"
 
 typedef struct h5replay_copy_handler_arg {

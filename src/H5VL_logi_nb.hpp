@@ -5,17 +5,12 @@
 #include <vector>
 
 #include "H5VL_logi_dataspace.hpp"
+#include "H5VL_logi_meta.hpp"
 
 #define H5VL_LOGI_META_FLAG_MUL_SEL 0x01
 #define H5VL_LOGI_META_FLAG_MUL_SELX 0x02
 #define H5VL_LOGI_META_FLAG_SEL_ENCODE 0x04
 #define H5VL_LOGI_META_FLAG_SEL_DEFLATE 0x08
-
-typedef struct H5VL_logi_meta_hdr {
-	int meta_size;	// Size of the metadata entry
-	int did;	// Target dataset ID
-	int flag;	
-} H5VL_logi_meta_hdr;
 
 typedef struct H5VL_log_wreq_t {
 	H5VL_logi_meta_hdr hdr;

@@ -35,8 +35,8 @@ typedef struct H5VL_log_search_ret_t {
 
 typedef struct H5VL_log_metaentry_t {
 	int did;
-	MPI_Offset start[H5S_MAX_RANK];
-	MPI_Offset count[H5S_MAX_RANK];
+	hsize_t start[H5S_MAX_RANK];
+	hsize_t count[H5S_MAX_RANK];
 	MPI_Offset ldoff;
 	size_t rsize;
 } H5VL_log_metaentry_t;

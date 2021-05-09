@@ -6,6 +6,7 @@
 
 #include <array>
 #include <string>
+#include "H5VL_log_dataset.hpp"
 #include "H5VL_log_obj.hpp"
 #include "H5VL_log.h"
 #include "H5VL_logi.hpp"
@@ -60,8 +61,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	std::vector<H5VL_log_rreq_t> rreqs;
 
 	// Should we do metadata caching?
-	std::vector<int> ndim;
-	std::vector<std::array<hsize_t, H5S_MAX_RANK>> dsizes;
+		std::vector<H5VL_log_dset_info_t> dsets;
 	// std::vector<H5VL_log_dset_meta_t> mdc;
 
 	ssize_t bsize;

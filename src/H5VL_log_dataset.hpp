@@ -12,20 +12,22 @@
 #define LOGVOL_SELCTION_TYPE_OFFSETS	0x04
 
 /* The log VOL dataset object */
-typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
-	int id;
+typedef struct H5VL_log_dset_info_t {
 	hsize_t ndim;
-	hsize_t dims[H5S_MAX_RANK];
-	hsize_t mdims[H5S_MAX_RANK];
-	MPI_Offset dsteps[H5S_MAX_RANK];
-
-	hid_t dtype;
 	hsize_t esize;
-
+	hid_t dtype;
+	hsize_t dims[H5S_MAX_RANK];
+	MPI_Offset dsteps[H5S_MAX_RANK];
 	std::vector<H5VL_log_filter_t> filters;
+} H5VL_log_dset_info_t;
 
+/* The log VOL dataset object */
+typedef struct H5VL_log_dset_t : H5VL_log_obj_t, H5VL_log_dset_info_t {
+	hsize_t mdims[H5S_MAX_RANK];
+	int id;
 	using H5VL_log_obj_t::H5VL_log_obj_t;
 } H5VL_log_dset_t;
+
 
 void *H5VL_log_dataset_create (void *obj,
 							   const H5VL_loc_params_t *loc_params,

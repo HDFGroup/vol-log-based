@@ -65,9 +65,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		// Calculate the information to encode and decode selection
 		if (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
 			for (i = 0; i < fp->ndset; i++) {
-				dsteps[i][fp->ndim[i] - 1] = 1;
-				for (j = fp->ndim[i] - 2; j > -1; j--) {
-					dsteps[i][j] = dsteps[i][j + 1] * fp->dsizes[i][j + 1];
+				dsteps[i][fp->dsets[i].ndim - 1] = 1;
+				for (j = fp->dsets[i].ndim - 2; j > -1; j--) {
+					dsteps[i][j] = dsteps[i][j + 1] * fp->dsets[i].dims[j + 1];
 				}
 			}
 		}
@@ -106,10 +106,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 				if (cnt[i] > 1) { mlens[i] += sizeof (int); }
 				// Selection list
 				if (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-					mlens[i] += fp->ndim[i] * sizeof (MPI_Offset);	// dstep
+					mlens[i] += fp->dsets[i].ndim * sizeof (MPI_Offset);	// dstep
 					mlens[i] += (sizeof (MPI_Offset) * 3 + sizeof (size_t)) * (size_t)cnt[i];
 				} else {
-					mlens[i] += (sizeof (MPI_Offset) * fp->ndim[i] * 2 + sizeof (MPI_Offset) +
+					mlens[i] += (sizeof (MPI_Offset) * fp->dsets[i].ndim * 2 + sizeof (MPI_Offset) +
 								 sizeof (size_t)) *
 								(size_t)cnt[i];
 				}
@@ -153,7 +153,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			// Fill the header
 			// Don't generate merged entry if there is none
 			if (cnt[i] > 0) {
-				if ((fp->ndim[i] > 1) && (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
+				if ((fp->dsets[i].ndim > 1) && (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
 					flag[i] |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
 				}
 				if (cnt[i] > 1) {
@@ -192,9 +192,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 					start = (MPI_Offset *)(rp.meta_buf + sizeof (H5VL_logi_meta_hdr) +
 										   sizeof (MPI_Offset) * 2);
-					count = start + fp->ndim[rp.hdr.did];
+					count = start + fp->dsets[rp.hdr.did].ndim;
 					soff = eoff = 0;
-					for (i = 0; i < fp->ndim[rp.hdr.did]; i++) {
+					for (i = 0; i < fp->dsets[rp.hdr.did].ndim; i++) {
 						soff += start[i] *
 								dsteps[rp.hdr.did][i];	// Starting offset of the bounding box
 						eoff += (count[i]) *
@@ -211,11 +211,11 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 					bufp[rp.hdr.did + fp->ndset] += sizeof (MPI_Offset) * cnt[rp.hdr.did];
 					memcpy (ptr,
 							rp.meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2,
-							sizeof (MPI_Offset) * fp->ndim[rp.hdr.did]);
-					ptr += sizeof (MPI_Offset) * fp->ndim[rp.hdr.did] * cnt[rp.hdr.did];
+							sizeof (MPI_Offset) * fp->dsets[rp.hdr.did].ndim);
+					ptr += sizeof (MPI_Offset) * fp->dsets[rp.hdr.did].ndim * cnt[rp.hdr.did];
 					memcpy (ptr,
 							rp.meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2,
-							sizeof (MPI_Offset) * fp->ndim[rp.hdr.did]);
+							sizeof (MPI_Offset) * fp->dsets[rp.hdr.did].ndim);
 				}
 			}
 		}

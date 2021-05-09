@@ -93,19 +93,11 @@ void *H5VL_log_dataset_create (void *obj,
 	dp->ndim = (hsize_t)ndim;
 
 	dp->id = (dp->fp->ndset)++;
-	/*
-	if (dp->fp->mdc.size() < dp->id + 1){
-		dp->fp->mdc.resize(dp->id + 1);
-	}
-	dp->fp->mdc[dp->id] = {ndim, dp->dtype, dp->esize};
-	*/
+
 	// Record metadata in fp
 	dp->fp->idx.resize (dp->fp->ndset);
-	dp->fp->ndim.resize (dp->fp->ndset);
-	dp->fp->ndim[dp->id] = dp->ndim;
-	dp->fp->dsizes.resize (dp->fp->ndset);
-	for (i = 0; i < ndim; i++) { dp->fp->dsizes[dp->id][i] = dp->dims[i]; }
-
+	dp->fp->dsets.resize (dp->fp->ndset);
+	dp->fp->dsets[dp->id] = *dp;
 	// Dstep for encoding selection
 	if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
 		dp->dsteps[dp->ndim - 1] = 1;
@@ -229,10 +221,8 @@ void *H5VL_log_dataset_open (void *obj,
 
 	// Record metadata in fp
 	dp->fp->idx.resize (dp->fp->ndset);
-	dp->fp->ndim.resize (dp->fp->ndset);
-	dp->fp->ndim[dp->id] = dp->ndim;
-	dp->fp->dsizes.resize (dp->fp->ndset);
-	for (i = 0; i < dp->ndim; i++) { dp->fp->dsizes[dp->id][i] = dp->dims[i]; }
+	dp->fp->dsets.resize (dp->fp->ndset);
+	dp->fp->dsets[dp->id] = *dp;
 
 	// Filters
 	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_DCPL, dxpl_id, NULL,
@@ -852,7 +842,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
 					err = -1;
 					ERR_OUT ("size cannot exceed max size")
 				}
-				dp->dims[i] = dp->fp->dsizes[dp->id][i] = new_sizes[i];
+				dp->dims[i] = dp->fp->dsets[dp->id].dims[i] = new_sizes[i];
 			}
 			break;
 		}

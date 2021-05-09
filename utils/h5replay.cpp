@@ -1,15 +1,16 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
-#include <hdf5.h>
-
+//
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
-
+//
+#include <hdf5.h>
+//
 #include "H5VL_log_file.hpp"
 #include "H5VL_logi_nb.hpp"
 #include "h5replay.hpp"
@@ -54,6 +55,7 @@ int main (int argc, char *argv[]) {
 
 herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int np) {
 	herr_t err = 0;
+	int mpierr;
 	int i;
 	hid_t finid = -1, foutid = -1;
 	hid_t faplid = -1;
@@ -75,7 +77,9 @@ herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int n
 	std::vector<MPI_Offset> mend;
 	std::vector<MPI_Offset> mstride;
 	h5replay_copy_handler_arg copy_arg;
-	std::vector<req_block> reqs;
+	std::vector<std::vector<meta_block>> reqs;
+	MPI_File fin  = MPI_FILE_NULL;
+	MPI_File fout = MPI_FILE_NULL;
 
 	// Open the input and output file
 	faplid = H5Pcreate (H5P_FILE_ACCESS);
@@ -87,8 +91,13 @@ herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int n
 	CHECK_ID (faplid)
 	foutid = H5Fcreate (outpath.c_str (), H5F_ACC_TRUNC, H5P_DEFAULT, faplid);
 	CHECK_ID (foutid)
+	mpierr = MPI_File_open (MPI_COMM_WORLD, inpath.c_str (), MPI_MODE_RDONLY, MPI_INFO_NULL, &fin);
+	CHECK_MPIERR
+	mpierr =
+		MPI_File_open (MPI_COMM_WORLD, outpath.c_str (), MPI_MODE_WRONLY, MPI_INFO_NULL, &fout);
+	CHECK_MPIERR
 
-	// Rread file metadata
+	// Read file metadata
 	aid = H5Aopen (finid, "_int_att", H5P_DEFAULT);
 	CHECK_ID (aid)
 
@@ -104,8 +113,7 @@ herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int n
 	config = att_buf[3];
 
 	// Copy data objects
-	copy_arg.dids.resize (ndset);
-	copy_arg.dims.resize (ndset);
+	copy_arg.dsets.resize (ndset);
 	copy_arg.fid = foutid;
 	err = H5Ovisit3 (finid, H5_INDEX_CRT_ORDER, H5_ITER_INC, h5replay_copy_handler, &copy_arg,
 					 H5O_INFO_ALL);
@@ -116,39 +124,28 @@ herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int n
 	CHECK_ID (lgid)
 
 	// Read the metadata
-	err = h5replay_parse_meta (rank, np, lgid, nmdset, copy_arg.dims, reqs);
+	reqs.resize (ndset);
+	err = h5replay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs);
 	CHECK_ERR
-	mdids = (hid_t *)malloc (sizeof (hid_t) * nmdset);
-	CHECK_PTR (mdids)
-	for (i = 0; i < nmdset; i++) {
-		char mdname[16];
-		MPI_Offset npage;
-		hid_t sid;
-		hsize_t start, one, count;
 
-		sprintf (mdname, "_md_%d", i);
-		mdids[i] = H5Dopen2 (lgid, mdname, H5P_DEFAULT);
-		CHECK_ID (mdids[i])
+	// Read the data
+	err = h5replay_read_data (fin, copy_arg.dsets, reqs);
+	CHECK_ERR
 
-		// H5Dget_offset(mdids[i]);
-
-		sid = H5Dget_space (mdids[i]);
-		CHECK_ID (sid)
-
-		start = 0;
-		count = sizeof (MPI_Offset);
-		err	  = H5Sselect_hyperslab (sid, H5S_SELECT_SET, &start, NULL, &one, &count);
-		CHECK_ERR
-		err = H5Dread (mdids[i], H5T_NATIVE_B8, sid, sid, H5P_DEFAULT, &npage);
-	}
+	// Write the data
+	err = h5replay_write_data (foutid, copy_arg.dsets, reqs);
+	CHECK_ERR
 
 err_out:;
 	if (dids) { free (dids); }
 	if (faplid >= 0) { H5Pclose (faplid); }
 	if (dxplid >= 0) { H5Pclose (dxplid); }
-	if (aid >= 0) { H5Fclose (aid); }
-	if (lgid >= 0) { H5Fclose (lgid); }
+	if (aid >= 0) { H5Aclose (aid); }
+	if (lgid >= 0) { H5Gclose (lgid); }
 	if (finid >= 0) { H5Fclose (finid); }
+	for (auto &dset : copy_arg.dsets) { H5Dclose (dset.id); }
 	if (foutid >= 0) { H5Fclose (foutid); }
+	if (fin != MPI_FILE_NULL) { MPI_File_close (&fin); }
+	if (fout != MPI_FILE_NULL) { MPI_File_close (&fout); }
 	return err;
 }

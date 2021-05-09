@@ -10,7 +10,7 @@
 #include <vector>
 #include <mpi.h>
 
-static bool intersect(int ndim, MPI_Offset *sa, MPI_Offset *ca, MPI_Offset *sb, MPI_Offset *cb, MPI_Offset *so, MPI_Offset *co){
+static bool intersect(int ndim, hsize_t *sa, hsize_t *ca, hsize_t *sb, hsize_t *cb, hsize_t *so, hsize_t *co){
     int i;
 
     for(i = 0; i < ndim; i++){
@@ -26,7 +26,7 @@ herr_t H5VL_logi_idx_search(void *file, H5VL_log_rreq_t &req, std::vector<H5VL_l
     herr_t err = 0;
     int j, k;
     size_t soff;
-    MPI_Offset os[H5S_MAX_RANK], oc[H5S_MAX_RANK];
+    hsize_t os[H5S_MAX_RANK], oc[H5S_MAX_RANK];
     H5VL_log_search_ret_t cur;
     H5VL_log_file_t *fp=(H5VL_log_file_t *)file;
 
