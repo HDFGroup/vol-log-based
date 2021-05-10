@@ -1,18 +1,125 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
+//
+#include <cstring>
+//
 #include <sys/types.h>
 #include <unistd.h>
-
-#include <cstring>
-
+//
+#include "H5VL_log_dataset.hpp"
 #include "H5VL_log_dataseti.hpp"
 #include "H5VL_log_filei.hpp"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_idx.hpp"
+#include "H5VL_logi_meta.hpp"
 #include "H5VL_logi_nb.hpp"
 #include "H5VL_logi_wrapper.hpp"
+
+#define H5VL_LOGI_MERGED_REQ_SEL_RESERVE 32
+
+H5VL_log_merged_wreq_t::~H5VL_log_merged_wreq_t () {
+	for (auto &dbuf : this->dbufs) {
+		if (dbuf.first != dbuf.second) { free (dbuf.first); }
+	}
+}
+
+herr_t H5VL_log_merged_wreq_t::init (H5VL_log_dset_t *dp, int nsel) {
+	herr_t err = 0;
+
+	if (nsel < H5VL_LOGI_MERGED_REQ_SEL_RESERVE) { nsel = H5VL_LOGI_MERGED_REQ_SEL_RESERVE; }
+
+	this->hdr.meta_size = sizeof (H5VL_logi_meta_hdr) + sizeof (int) + sizeof (MPI_Offset);
+
+	this->hdr.did = dp->id;
+
+	this->hdr.flag = H5VL_LOGI_META_FLAG_MUL_SEL;
+	if ((dp->ndim > 1) && (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
+		this->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
+		this->hdr.meta_size += sizeof (MPI_Offset) * 2 * nsel;
+	} else {
+		this->hdr.meta_size += sizeof (MPI_Offset) * dp->ndim * 2 * nsel;
+	}
+
+	if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
+		this->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
+	}
+
+	this->mbuf = (char *)malloc (this->hdr.meta_size);
+	CHECK_PTR (this->mbuf);
+	this->mbufe = this->mbuf + this->hdr.meta_size;
+	this->mbufp = this->mbuf + sizeof (H5VL_logi_meta_hdr) + sizeof (int) + sizeof (MPI_Offset) * 2;
+
+	// Pack dsteps
+	if (this->hdr.flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+		memcpy (this->mbufp, dp->dsteps, sizeof (MPI_Offset) * (dp->ndim - 1));
+		this->mbufp += sizeof (MPI_Offset) * (dp->ndim - 1);
+	}
+
+err_out:;
+	return err;
+}
+
+herr_t H5VL_log_merged_wreq_t::reserve (size_t size) {
+	herr_t err = 0;
+	size_t target_size;
+
+	if (this->mbufp + size > this->mbufe) {
+		target_size = this->mbufp - this->mbuf + size;
+		while (this->hdr.meta_size < target_size) { this->hdr.meta_size <<= 3; }
+		target_size = this->mbufp - this->mbuf;	 // reuse target size for used buffer
+
+		this->mbuf = (char *)realloc (this->mbuf, this->hdr.meta_size);
+		CHECK_PTR (this->mbuf);
+		this->mbufp = this->mbuf + target_size;
+		this->mbufe = this->mbuf + this->hdr.meta_size;
+	}
+err_out:;
+	return err;
+}
+
+herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
+									   int nsel,
+									   hsize_t **starts,
+									   hsize_t **counts) {
+	herr_t err = 0;
+	size_t msize;
+
+	if (this->hdr.flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+		msize = nsel * 2 * sizeof (MPI_Offset);
+	} else {
+		msize = nsel * 2 * sizeof (hsize_t) * dp->ndim;
+	}
+
+	this->reserve (msize);
+
+	err = H5VL_logi_metaentry_encode (*dp, this->hdr, nsel, starts, counts, this->mbufp);
+
+	this->mbufp += msize;
+
+err_out:;
+	return err;
+}
+
+herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp, std::vector<H5VL_log_selection> sels) {
+	herr_t err = 0;
+	size_t msize;
+
+	if (this->hdr.flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+		msize = nsel * 2 * sizeof (MPI_Offset);
+	} else {
+		msize = nsel * 2 * sizeof (hsize_t) * dp->ndim;
+	}
+
+	this->reserve (msize);
+
+	err = H5VL_logi_metaentry_encode (*dp, this->hdr, sels, this->mbufp);
+
+	this->mbufp += msize;
+
+err_out:;
+	return err;
+}
 
 herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> reqs, hid_t dxplid) {
 	herr_t err = 0;
@@ -121,7 +228,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	H5VL_loc_params_t loc;
 	char dname[16];
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
-	
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -146,7 +253,8 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 		mtype = MPI_DATATYPE_NULL;
 	}
 #ifdef LOGVOL_PROFILING
-	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_SIZE, (double)(fsize_local) / 1048576);
+	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_SIZE,
+							   (double)(fsize_local) / 1048576);
 #endif
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_INIT);
@@ -173,9 +281,9 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 		loc.obj_type = H5I_GROUP;
 		loc.type	 = H5VL_OBJECT_BY_SELF;
 		H5VL_LOGI_PROFILING_TIMER_START;
-		ldp			 = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
-								   H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
-								   H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
+		ldp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
+								  H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
+								  H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
 		CHECK_PTR (ldp);
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 

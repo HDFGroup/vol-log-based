@@ -34,6 +34,38 @@ typedef struct H5VL_log_wreq_t {
 				   // int buf_alloc;  // Whether the buffer is allocated or
 } H5VL_log_wreq_t;
 
+struct H5VL_log_dset_t;
+class H5VL_log_merged_wreq_t : H5VL_log_wreq_t {
+   public:
+	H5VL_logi_meta_hdr hdr;
+
+	int ndim;
+	int nsel = 0;
+
+	char *mbuf	= NULL;
+	char *mbufp = NULL;
+	char *mbufe = NULL;
+
+	int ldid		 = -1;	// Log dataset ID
+	MPI_Offset ldoff = -1;	// Offset in log dataset
+
+	size_t rsize = 0;  // Size of data in xbuf (bytes)
+
+	std::vector<std::pair<char *, char *>> dbufs;
+
+	~H5VL_log_merged_wreq_t ();
+
+	herr_t append (H5VL_log_dset_t *dp,
+										   int nsel,
+										   hsize_t **starts,
+										   hsize_t **counts);
+	herr_t append (H5VL_log_dset_t *dp, std::vector<H5VL_log_selection> sels);
+
+   private:
+   	herr_t init (H5VL_log_dset_t *dp, int nsel);
+	herr_t reserve (size_t size);
+};
+
 typedef struct H5VL_log_rreq_t {
 	H5VL_logi_meta_hdr hdr;
 	//int did;							   // Source dataset ID

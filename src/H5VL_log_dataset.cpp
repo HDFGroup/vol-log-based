@@ -409,7 +409,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 							   void **req) {
 	herr_t err			= 0;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
-	int i, j, k, l;
+	int i;
 	size_t esize, ssize;
 	H5VL_log_wreq_t r;
 	htri_t eqtype;
@@ -424,6 +424,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	H5VL_LOGI_PROFILING_TIMER_START;
+	
 	// Varn ?
 	err = H5Pget_multisel (plist_id, &arg);
 	CHECK_ERR
@@ -455,15 +456,20 @@ herr_t H5VL_log_dataset_write (void *dset,
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_INIT);
 
 	H5VL_LOGI_PROFILING_TIMER_START;
+
 	// Setting metadata;
 	r.hdr.did = dp->id;
-	// r.ndim	= dp->ndim;
 	r.ubuf	= (char *)buf;
 	r.rsize = 0;  // Nomber of data elements in the record
 	if (arg.n) {
 		r.nsel = arg.n;
 	} else if (stype == H5S_SEL_ALL) {
 		r.nsel = 1;
+		sels.resize (1);
+		for (i = 0; i < dp->ndim; i++) {
+			sels[0].start[i] = 0;
+			sels[0].count[i] = dp->dims[i];
+		}
 	} else {
 		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VL_logi_get_dataspace_selection (file_space_id, sels);
@@ -471,6 +477,11 @@ herr_t H5VL_log_dataset_write (void *dset,
 		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
 		r.nsel = sels.size ();
 	}
+
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_START_COUNT);
+
+	// Encode and pack selections
+	H5VL_LOGI_PROFILING_TIMER_START
 
 	// Flags
 	r.hdr.flag = 0;
@@ -496,150 +507,29 @@ herr_t H5VL_log_dataset_write (void *dset,
 	} else {
 		r.hdr.meta_size += sizeof (MPI_Offset) * (dp->ndim * r.nsel * 2) + sizeof (MPI_Offset) * 2;
 	}
-	// r.meta_buf = (char *)H5VL_log_filei_contig_buffer_alloc (&(dp->fp->meta_buf),
-	// r.hdr.meta_size);
 	r.meta_buf = (char *)malloc (r.hdr.meta_size);
 
-#ifdef ENABLE_ZLIB
-	if (dp->fp->config & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
-		zbuf = (char *)malloc (r.hdr.meta_size);
-	}
-#endif
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_START_COUNT);
-
-	// Encode and pack selections
-	H5VL_LOGI_PROFILING_TIMER_START
-	// Jump to logical selection
-	mbuf = r.meta_buf + sizeof (H5VL_logi_meta_hdr) +
-		   sizeof (MPI_Offset) * 2;	 // Header, file offset, size
-	if (r.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-		MPI_Offset soff, eoff;
-
-		// Dsteps
-		memcpy (mbuf, dp->dsteps, sizeof (MPI_Offset) * (dp->ndim - 1));
-		mbuf += sizeof (MPI_Offset) * (dp->ndim - 1);
-
-		// Encoded format must be multiple sel, add n block field
-		*((int *)mbuf) = r.nsel;
-		mbuf += sizeof (int);
-
-		if (arg.n) {
-			r.nsel	= arg.n;
-			r.rsize = 0;
-			for (i = 0; i < arg.n; i++) {
-				ssize = 1;
-				soff  = 0;
-				for (j = 0; j < dp->ndim; j++) {
-					ssize *= arg.counts[i][j];	// Size of the selection
-					soff +=
-						(MPI_Offset)arg.starts[i][j] * dp->dsteps[j];  // Starting offset of the bounding box
-				}
-				*((MPI_Offset *)mbuf) = soff;
-				mbuf += sizeof (MPI_Offset);
-				// Record overall size of the write req
-				r.rsize += ssize;
+	r.rsize = 0;
+	if (arg.n) {
+		err = H5VL_logi_metaentry_encode (*dp, r.hdr, arg.n, arg.starts, arg.counts, r.meta_buf);
+		for (i = 0; i < arg.n; i++) {
+			ssize = 1;
+			for (auto count = arg.counts[i]; count < arg.counts[i] + dp->ndim; count++) {
+				ssize *= *count;
 			}
-			for (i = 0; i < arg.n; i++) {
-				eoff = 0;
-				for (j = 0; j < dp->ndim; j++) {
-					eoff += (MPI_Offset)arg.counts[i][j] * dp->dsteps[j];  // Ending offset of the bounding box
-				}
-				*((MPI_Offset *)mbuf) = eoff;
-				mbuf += sizeof (MPI_Offset);
-			}
-		} else {  // We won't encode single H5S_ALL, so it must be multi-block case
-			r.nsel	= sels.size ();
-			r.rsize = 0;
-			for (i = 0; i < sels.size (); i++) {
-				ssize = 1;
-				soff  = 0;
-				for (j = 0; j < dp->ndim; j++) {
-					ssize *= sels[i].count[j];	// Size of the selection
-					soff +=
-						sels[i].start[j] * dp->dsteps[j];  // Starting offset of the bounding box
-				}
-				*((MPI_Offset *)mbuf) = soff;
-				mbuf += sizeof (MPI_Offset);
-				// Record overall size of the write req
-				r.rsize += ssize;
-			}
-
-			for (i = 0; i < sels.size (); i++) {
-				eoff = 0;
-				for (j = 0; j < dp->ndim; j++) {
-					eoff +=
-						(sels[i].count[j]) * dp->dsteps[j];	 // Ending offset of the bounding box
-				}
-				*((MPI_Offset *)mbuf) = eoff;
-				mbuf += sizeof (MPI_Offset);
-			}
+			r.rsize += ssize;
 		}
 	} else {
-		// Add nreq field if more than 1 blocks
-		if (r.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
-			*((int *)mbuf) = r.nsel;
-			mbuf += sizeof (int);
-		}
-
-		if (arg.n) {
-			r.nsel = arg.n;
-			for (i = 0; i < arg.n; i++) {
-				ssize = 1;
-				/*memcpy(mbuf,arg.starts[i],sizeof(MPI_Offset)*dp->ndim);
-				mbuf += sizeof (MPI_Offset)*dp->ndim;
-				memcpy(mbuf,arg.starts[i],sizeof(MPI_Offset)*dp->ndim);
-				mbuf += sizeof (MPI_Offset)*dp->ndim;*/
-				for (j = 0; j < dp->ndim; j++) {
-					ssize *= arg.counts[i][j];	// Size of the selection
-					assert (mbuf - r.meta_buf < r.hdr.meta_size);
-					*((MPI_Offset *)mbuf) = (MPI_Offset)arg.starts[i][j];
-					mbuf += sizeof (MPI_Offset);
-				}
-				// Record overall size of the write req
-				r.rsize += ssize;
+		err = H5VL_logi_metaentry_encode (*dp, r.hdr, sels, r.meta_buf);
+		for (auto &sel : sels) {
+			ssize = 1;
+			for (auto count = sel.count; count < sel.count + dp->ndim; count++) {
+				ssize *= *count;
 			}
-			for (i = 0; i < arg.n; i++) {
-				/*memcpy(mbuf,arg.starts[i],sizeof(MPI_Offset)*dp->ndim);
-				mbuf += sizeof (MPI_Offset)*dp->ndim;
-				memcpy(mbuf,arg.starts[i],sizeof(MPI_Offset)*dp->ndim);
-				mbuf += sizeof (MPI_Offset)*dp->ndim;*/
-				for (j = 0; j < dp->ndim; j++) {
-					*((MPI_Offset *)mbuf) = (MPI_Offset)arg.counts[i][j];
-					mbuf += sizeof (MPI_Offset);
-				}
-			}
-		} else {
-			if (stype == H5S_SEL_ALL) {
-				r.rsize = 1;
-				for (j = 0; j < dp->ndim; j++) {
-					*((MPI_Offset *)mbuf) = 0;
-					mbuf += sizeof (MPI_Offset);
-					r.rsize *= dp->dims[j];	 // Size of the selection
-				}
-				for (j = 0; j < dp->ndim; j++) {
-					*((MPI_Offset *)mbuf) = dp->dims[j];
-					mbuf += sizeof (MPI_Offset);
-				}
-			} else {
-				for (i = 0; i < sels.size (); i++) {
-					ssize = 1;
-					for (j = 0; j < dp->ndim; j++) {
-						ssize *= sels[i].count[j];
-						*((MPI_Offset *)mbuf) = sels[i].start[j];
-						mbuf += sizeof (MPI_Offset);
-					}
-					r.rsize += ssize;
-				}
-				for (i = 0; i < sels.size (); i++) {
-					for (j = 0; j < dp->ndim; j++) {
-						*((MPI_Offset *)mbuf) = sels[i].count[j];
-						mbuf += sizeof (MPI_Offset);
-					}
-				}
-			}
+			r.rsize += ssize;
 		}
 	}
+
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_ENCODE);
 
 	// Non-blocking?

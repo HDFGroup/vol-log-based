@@ -24,7 +24,7 @@ herr_t H5VL_logi_metaentry_encode (H5VL_log_dset_info_t &dset,
 	char *mbuf;
 
 	// Jump to blocks
-	mbuf = (char*)meta + sizeof (H5VL_logi_meta_hdr);	// Header
+	mbuf = (char *)meta + sizeof (H5VL_logi_meta_hdr);	// Header
 
 	// Add nreq field if more than 1 blocks
 	if (hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
@@ -55,6 +55,8 @@ herr_t H5VL_logi_metaentry_encode (H5VL_log_dset_info_t &dset,
 		for (i = 0; i < nsel; i++) {
 			memcpy (mbuf, starts[i], sizeof (hsize_t) * dset.ndim);
 			mbuf += sizeof (hsize_t) * dset.ndim;
+		}
+		for (i = 0; i < nsel; i++) {
 			memcpy (mbuf, counts[i], sizeof (hsize_t) * dset.ndim);
 			mbuf += sizeof (hsize_t) * dset.ndim;
 		}
@@ -73,16 +75,16 @@ herr_t H5VL_logi_metaentry_encode (H5VL_log_dset_info_t &dset,
 	char *mbuf;
 
 	// Jump to blocks
-	mbuf = (char*)meta + sizeof (H5VL_logi_meta_hdr);	// Header
+	mbuf = (char *)meta + sizeof (H5VL_logi_meta_hdr);	// Header
 
 	// Add nreq field if more than 1 blocks
 	if (hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
-		*((int *)mbuf) = sels.size();
+		*((int *)mbuf) = sels.size ();
 		mbuf += sizeof (int);
 	}
 #ifdef LOGVOL_DEBUG
 	else {
-		if (sels.size() > 1) { RET_ERR ("Meta flag mismatch") }
+		if (sels.size () > 1) { RET_ERR ("Meta flag mismatch") }
 	}
 #endif
 	mbuf += sizeof (MPI_Offset) * 2;  // Skip through file location, we don't know yet
@@ -92,19 +94,21 @@ herr_t H5VL_logi_metaentry_encode (H5VL_log_dset_info_t &dset,
 		memcpy (mbuf, dset.dsteps, sizeof (MPI_Offset) * (dset.ndim - 1));
 		mbuf += sizeof (MPI_Offset) * (dset.ndim - 1);
 
-		for (i = 0; i < sels.size(); i++) {
-			H5VL_logi_sel_encode (dset.ndim, dset.dsteps, sels[i].start, (MPI_Offset *)mbuf);
+		for (auto &sel:sels) {
+			H5VL_logi_sel_encode (dset.ndim, dset.dsteps, sel.start, (MPI_Offset *)mbuf);
 			mbuf += sizeof (MPI_Offset);
 		}
-		for (i = 0; i < sels.size(); i++) {
-			H5VL_logi_sel_encode (dset.ndim, dset.dsteps, sels[i].count, (MPI_Offset *)mbuf);
+		for (auto &sel:sels) {
+			H5VL_logi_sel_encode (dset.ndim, dset.dsteps, sel.count, (MPI_Offset *)mbuf);
 			mbuf += sizeof (MPI_Offset);
 		}
 	} else {
-		for (i = 0; i < sels.size(); i++) {
-			memcpy (mbuf, sels[i].start, sizeof (hsize_t) * dset.ndim);
+		for (auto &sel:sels) {
+			memcpy (mbuf, sel.start, sizeof (hsize_t) * dset.ndim);
 			mbuf += sizeof (hsize_t) * dset.ndim;
-			memcpy (mbuf, sels[i].count, sizeof (hsize_t) * dset.ndim);
+		}
+		for (auto &sel:sels) {
+			memcpy (mbuf, sel.count, sizeof (hsize_t) * dset.ndim);
 			mbuf += sizeof (hsize_t) * dset.ndim;
 		}
 	}
