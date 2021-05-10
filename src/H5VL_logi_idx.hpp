@@ -3,6 +3,12 @@
 #include "H5VL_logi_nb.hpp"
 #include <hdf5.h>
 
+class H5VL_logi_idx_t{
+	public:
+	virtual herr_t insert(H5VL_logi_metablock_t &meta)=0;
+	virtual herr_t find(H5VL_log_rreq_t &req)=0;
+};
+
 typedef struct H5VL_log_search_ret_t {
 	int ndim;
 	int fsize[H5S_MAX_RANK];

@@ -73,7 +73,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	H5VL_log_contig_buffer_t meta_buf;
 
 	// std::vector<int> lut;
-	std::vector<std::vector<H5VL_log_metaentry_t>> idx;
+	std::vector<std::vector<H5VL_logi_metablock_t>> idx;
 	bool idxvalid;
 	bool metadirty;
 
@@ -104,16 +104,6 @@ typedef struct H5VL_log_buffer_pool_t {
 	H5VL_log_buffer_block_t *head;
 	H5VL_log_buffer_block_t *free_blocks;
 } H5VL_log_buffer_pool_t;
-
-typedef struct H5VL_log_dset_meta_t {
-	// H5VL_log_file_t *fp;
-	// int id;
-	hsize_t ndim;
-	// hsize_t dims[H5S_MAX_RANK];
-	// hsize_t mdims[H5S_MAX_RANK];
-	hid_t dtype;
-	// hsize_t esize;
-} H5VL_log_dset_meta_t;
 
 void *H5VL_log_file_create (
 	const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req);
