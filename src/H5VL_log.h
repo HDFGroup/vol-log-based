@@ -90,6 +90,9 @@ herr_t H5Pget_multisel(hid_t plist, H5VL_log_multisel_arg_t *arg);
 herr_t H5Pset_nb_buffer_size (hid_t plist, size_t size);
 herr_t H5Pget_nb_buffer_size (hid_t plist, ssize_t *size);
 
+herr_t H5Pset_idx_buffer_size (hid_t plist, size_t size);
+herr_t H5Pget_idx_buffer_size (hid_t plist, ssize_t *size);
+
 herr_t H5Pset_meta_merge (hid_t plist, hbool_t merge);
 herr_t H5Pget_meta_merge (hid_t plist, hbool_t *merge);
 

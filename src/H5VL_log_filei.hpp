@@ -13,6 +13,7 @@
 extern herr_t H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid);
 extern herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp);
+extern herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec);
 extern herr_t H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf);
 extern herr_t H5VL_log_filei_bfree (H5VL_log_file_t *fp, void *buf);
 

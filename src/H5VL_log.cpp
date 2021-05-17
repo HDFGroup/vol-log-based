@@ -245,6 +245,60 @@ err_out:;
 	return err;
 }
 
+
+#define IDXSIZE_PROPERTY_NAME "H5VL_log_idx_buffer_size"
+herr_t H5Pset_idx_buffer_size (hid_t plist, size_t size) {
+	herr_t err = 0;
+	htri_t isfapl;
+	htri_t isdxpl, pexist;
+
+	// TODO: Fix pclass problem
+	return 0;
+
+	isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
+	CHECK_ID (isfapl)
+	if (isfapl == 0) ERR_OUT ("Not faplid")
+
+	pexist = H5Pexist (plist, IDXSIZE_PROPERTY_NAME);
+	CHECK_ID (pexist)
+	if (!pexist) {
+		ssize_t infty = LOG_VOL_BSIZE_UNLIMITED;
+		err = H5Pinsert2 (plist, IDXSIZE_PROPERTY_NAME, sizeof (size_t), &infty, NULL, NULL, NULL,
+						  NULL, NULL, NULL);
+		CHECK_ERR
+	}
+
+	err = H5Pset (plist, IDXSIZE_PROPERTY_NAME, &size);
+	CHECK_ERR
+
+err_out:;
+	return err;
+}
+
+herr_t H5Pget_idx_buffer_size (hid_t plist, ssize_t *size) {
+	herr_t err = 0;
+	htri_t isdxpl, pexist;
+
+	isdxpl = H5Pisa_class (plist, H5P_FILE_ACCESS);
+	CHECK_ID (isdxpl)
+	if (isdxpl == 0)
+		*size = LOG_VOL_BSIZE_UNLIMITED;  // Default property will not pass class check
+	else {
+		pexist = H5Pexist (plist, IDXSIZE_PROPERTY_NAME);
+		CHECK_ID (pexist)
+		if (pexist) {
+			err = H5Pget (plist, IDXSIZE_PROPERTY_NAME, size);
+			CHECK_ERR
+
+		} else {
+			*size = LOG_VOL_BSIZE_UNLIMITED;
+		}
+	}
+
+err_out:;
+	return err;
+}
+
 #define MERGE_META_NAME_PROPERTY_NAME "H5VL_log_metadata_merge"
 herr_t H5Pset_meta_merge (hid_t plist, hbool_t merge) {
 	herr_t err = 0;

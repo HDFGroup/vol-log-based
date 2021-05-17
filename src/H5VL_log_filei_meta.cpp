@@ -411,14 +411,19 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	H5VL_loc_params_t loc;
 	htri_t mdexist;
 	void *mdp = NULL, *ldp = NULL;
-	hid_t mdsid = -1, ldsid = -1;
+	hid_t mdsid = -1, mmsid = -1;
 	hsize_t mdsize, ldsize;
+	hsize_t start, count, one = 1;
 	char *buf = NULL, *bufp;
 	int ndim;
+	MPI_Offset nsec;
 	H5VL_log_metaentry_t entry;
 	char mdname[16];
 
 	H5VL_LOGI_PROFILING_TIMER_START;
+
+	start = count = INT64_MAX - 1;
+	mmsid		  = H5Screate_simple (1, &start, &count);
 
 	if (fp->metadirty) { H5VL_log_filei_metaflush (fp); }
 
@@ -439,14 +444,30 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_GET);
 		ndim = H5Sget_simple_extent_dims (mdsid, &mdsize, NULL);
 		LOG_VOL_ASSERT (ndim == 1);
-		err = H5Sselect_all (mdsid);
+
+		// N sections
+		start = 0;
+		count = sizeof (MPI_Offset);
+		err	  = H5Sselect_hyperslab (mmsid, H5S_SELECT_SET, &start, NULL, &one, &count);
+		CHECK_ERR
+		err = H5Sselect_hyperslab (mdsid, H5S_SELECT_SET, &start, NULL, &one, &count);
+		CHECK_ERR
+		err =
+			H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, &nsec, NULL);
 		CHECK_ERR
 
 		// Allocate buffer
-		buf = (char *)malloc (sizeof (char) * mdsize);
+		start = sizeof (MPI_Offset) * (nsec + 1);
+		count = mdsize - start;
+		buf	  = (char *)malloc (sizeof (char) * count);
 
 		// Read metadata
-		err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mdsid, mdsid, fp->dxplid, buf, NULL);
+		err = H5Sselect_hyperslab (mdsid, H5S_SELECT_SET, &start, NULL, &one, &count);
+		CHECK_ERR
+		start = 0;
+		err	  = H5Sselect_hyperslab (mmsid, H5S_SELECT_SET, &start, NULL, &one, &count);
+		CHECK_ERR
+		err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, buf, NULL);
 		CHECK_ERR
 		// err = H5VLdataset_read(ldp, fp->uvlid, H5T_STD_I64LE, ldsid, ldsid, fp->dxplid,
 		// fp->lut.data(), NULL);    CHECK_ERR
@@ -460,8 +481,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		while (bufp < buf + mdsize) {
 			H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
 
-			err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp,
-																	fp->idx[hdr->did]);
+			err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, fp->idx[hdr->did]);
 			CHECK_ERR
 			bufp += hdr->meta_size;
 		}
@@ -474,7 +494,131 @@ err_out:;
 
 	// Cleanup
 	if (mdsid >= 0) H5Sclose (mdsid);
-	if (ldsid >= 0) H5Sclose (ldsid);
+	if (mmsid >= 0) H5Sclose (mmsid);
+	H5VL_log_free (buf);
+
+	return err;
+}
+
+herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
+	herr_t err = 0;
+	int i;
+	int ub, lb;
+	H5VL_loc_params_t loc;
+	htri_t mdexist;
+	void *mdp = NULL, *ldp = NULL;
+	hid_t mdsid = -1, mmsid = -1;
+	hsize_t mdsize, ldsize;
+	hsize_t start, count, one = 1;
+	char *buf = NULL, *bufp;
+	int ndim;
+	MPI_Offset nsec;
+	MPI_Offset *offs;
+	H5VL_log_metaentry_t entry;
+	char mdname[16];
+
+	H5VL_LOGI_PROFILING_TIMER_START;
+
+	start = count = INT64_MAX - 1;
+	mmsid		  = H5Screate_simple (1, &start, &count);
+
+	if (fp->metadirty) { H5VL_log_filei_metaflush (fp); }
+
+	for (i = 0; i < fp->ndset; i++) { fp->idx[i].clear (); }
+
+	sprintf (mdname, "_md_%d", md);
+
+	mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT,
+							fp->dxplid, NULL);
+	CHECK_PTR (mdp)
+
+	// Get data space and size
+	H5VL_LOGI_PROFILING_TIMER_START;
+	err = H5VL_logi_dataset_get_wrapper (mdp, fp->uvlid, H5VL_DATASET_GET_SPACE, fp->dxplid, NULL,
+										 &mdsid);
+	CHECK_ERR
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_GET);
+	ndim = H5Sget_simple_extent_dims (mdsid, &mdsize, NULL);
+	LOG_VOL_ASSERT (ndim == 1);
+
+	// N sections
+	start = 0;
+	count = sizeof (MPI_Offset);
+	err	  = H5Sselect_hyperslab (mmsid, H5S_SELECT_SET, &start, NULL, &one, &count);
+	CHECK_ERR
+	err = H5Sselect_hyperslab (mdsid, H5S_SELECT_SET, &start, NULL, &one, &count);
+	CHECK_ERR
+	err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, &nsec, NULL);
+	CHECK_ERR
+
+	// Sections
+	count = sizeof (MPI_Offset) * nsec;
+	offs  = (MPI_Offset *)malloc (count);
+	err	  = H5Sselect_hyperslab (mmsid, H5S_SELECT_SET, &start, NULL, &one, &count);
+	CHECK_ERR
+	start = sizeof (MPI_Offset);
+	err	  = H5Sselect_hyperslab (mdsid, H5S_SELECT_SET, &start, NULL, &one, &count);
+	CHECK_ERR
+	err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, offs, NULL);
+	CHECK_ERR
+
+	// Determine #sec to fit
+	if (sec >= nsec) { RET_ERR ("Invalid section") }
+	if (sec == 0) {
+		start = sizeof (MPI_Offset) * (nsec + 1);
+	} else {
+		start = offs[sec - 1];
+	}
+	for (i = sec + 1; i < nsec; i++) {
+		if (offs[i] - lb > fp->mbuf_size) { break; }
+	}
+	if (i <= sec) { RET_ERR ("OOM") }
+	count = offs[i - 1] - start;
+
+	// Return next sec
+	sec = i;
+	if (sec >= nsec) {
+		sec = 0;
+		md++;
+	}
+	if (md > fp->nmdset) { md = -1; }
+
+	// Allocate buffer
+	buf = (char *)malloc (sizeof (char) * count);
+
+	// Read metadata
+	err = H5Sselect_hyperslab (mdsid, H5S_SELECT_SET, &start, NULL, &one, &count);
+	CHECK_ERR
+	start = 0;
+	err	  = H5Sselect_hyperslab (mmsid, H5S_SELECT_SET, &start, NULL, &one, &count);
+	CHECK_ERR
+	err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, buf, NULL);
+	CHECK_ERR
+	// err = H5VLdataset_read(ldp, fp->uvlid, H5T_STD_I64LE, ldsid, ldsid, fp->dxplid,
+	// fp->lut.data(), NULL);    CHECK_ERR
+
+	// Close the dataset
+	err = H5VLdataset_close (mdp, fp->uvlid, fp->dxplid, NULL);
+	CHECK_ERR
+
+	// Parse metadata
+	bufp = buf;
+	while (bufp < buf + mdsize) {
+		H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
+
+		err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, fp->idx[hdr->did]);
+		CHECK_ERR
+		bufp += hdr->meta_size;
+	}
+
+	fp->idxvalid = true;
+
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAUPDATE);
+err_out:;
+
+	// Cleanup
+	if (mdsid >= 0) H5Sclose (mdsid);
+	if (mmsid >= 0) H5Sclose (mmsid);
 	H5VL_log_free (buf);
 
 	return err;

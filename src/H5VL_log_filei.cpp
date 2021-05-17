@@ -72,7 +72,9 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 	if (ret) { fp->config |= H5VL_FILEI_CONFIG_SEL_DEFLATE; }
 	err = H5Pget_sel_encoding (faplid, &encoding);
 	CHECK_ERR
-	if (ret) { fp->config |= H5VL_FILEI_CONFIG_SEL_ENCODE; }
+	if (encoding == H5VL_LOG_ENCODING_OFFSET) { fp->config |= H5VL_FILEI_CONFIG_SEL_ENCODE; }
+	err = H5Pget_idx_buffer_size (faplid, &(fp->mbuf_size));
+	CHECK_ERR
 
 	env = getenv ("H5VL_LOG_METADATA_MERGE");
 	if (env) {
@@ -98,6 +100,8 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 			fp->config |= H5VL_FILEI_CONFIG_SEL_ENCODE;
 		}
 	}
+	env = getenv ("H5VL_LOG_IDX_BSIZE");
+	if (env) { fp->mbuf_size = (MPI_Offset) (atoll (env)); }
 
 err_out:;
 	return err;
@@ -413,7 +417,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CLOSE);
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CLOSE);
-	
+
 #ifdef LOGVOL_PROFILING
 	{
 		char *_env_str = getenv ("H5VL_LOG_SHOW_PROFILING_INFO");

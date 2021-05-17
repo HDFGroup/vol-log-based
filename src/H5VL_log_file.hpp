@@ -6,9 +6,10 @@
 
 #include <array>
 #include <string>
+
+#include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_obj.hpp"
-#include "H5VL_log.h"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_nb.hpp"
@@ -61,11 +62,13 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	std::vector<H5VL_log_rreq_t> rreqs;
 
 	// Should we do metadata caching?
-		std::vector<H5VL_log_dset_info_t> dsets;
+	std::vector<H5VL_log_dset_info_t> dsets;
 	// std::vector<H5VL_log_dset_meta_t> mdc;
 
 	ssize_t bsize;
 	size_t bused;
+
+	ssize_t mbuf_size;
 
 	std::string name;
 
@@ -81,7 +84,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	int config;
 
 #ifdef LOGVOL_PROFILING
-//#pragma message ( "C Preprocessor got here!" )
+	//#pragma message ( "C Preprocessor got here!" )
 	double tlocal[H5VL_LOG_NTIMER];
 	double clocal[H5VL_LOG_NTIMER];
 #endif

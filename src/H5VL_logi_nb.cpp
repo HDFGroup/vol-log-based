@@ -124,6 +124,42 @@ err_out:;
 	return err;
 }
 
+inline herr_t H5VL_log_read_idx_search (H5VL_log_file_t *fp,
+										std::vector<H5VL_log_rreq_t> &reqs,
+										std::vector<H5VL_log_search_ret_t> &intersections) {
+	herr_t err = 0;
+	int md, sec;
+
+	if (fp->mbuf_size == LOG_VOL_BSIZE_UNLIMITED) {
+		// Load metadata
+		if (!(fp->idxvalid)) {
+			err = H5VL_log_filei_metaupdate (fp);
+			CHECK_ERR
+		}
+
+		// Search index
+		for (auto &r : reqs) {
+			err = fp->idx[r.hdr.did].search (r, intersections);
+			CHECK_ERR
+		}
+	} else {
+		md = sec = 0;
+		while (md != -1) {
+			// Load partial metadata
+			err = H5VL_log_filei_metaupdate_part (fp, md, sec);
+			CHECK_ERR
+			// Search index
+			for (auto &r : reqs) {
+				err = fp->idx[r.hdr.did].search (r, intersections);
+				CHECK_ERR
+			}
+		}
+	}
+
+err_out:;
+	return err;
+}
+
 herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> reqs, hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;
@@ -139,27 +175,21 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-	if (!(fp->idxvalid)) {
-		err = H5VL_log_filei_metaupdate (fp);
-		CHECK_ERR
-	}
-
 	// Search index
-	for (auto &r : reqs) {
-		i	= intersections.size ();
-		err = fp->idx[r.hdr.did].search (r, intersections);
-		CHECK_ERR
-		if (fp->dsets[r.hdr.did].filters.size () > 0) {
-			// Adjust for comrpessed dataset
-			for (; i < intersections.size (); i++) {
-				if (bufs.find (intersections[i].foff) == bufs.end ()) {
-					intersections[i].zbuf		= (char *)malloc (intersections[i].zbsize);
-					bufs[intersections[i].foff] = intersections[i].zbuf;
-					if (tbsize < intersections[i].zbsize) { tbsize = intersections[i].zbsize; }
-				} else {
-					intersections[i].zbuf  = bufs[intersections[i].foff];
-					intersections[i].fsize = 0;	 // Don't need to read
-				}
+	err = H5VL_log_read_idx_search (fp, reqs, intersections);
+	CHECK_ERR
+
+	// Allocate zbuf for filtered data
+	for (auto &block : intersections) {
+		if (fp->dsets[block.did].filters.size () > 0) {
+			if (bufs.find (intersections[i].foff) == bufs.end ()) {
+				intersections[i].zbuf = (char *)malloc (intersections[i].zbsize);
+				CHECK_PTR (intersections[i].zbuf)
+				bufs[intersections[i].foff] = intersections[i].zbuf;
+				if (tbsize < intersections[i].zbsize) { tbsize = intersections[i].zbsize; }
+			} else {
+				intersections[i].zbuf  = bufs[intersections[i].foff];
+				intersections[i].fsize = 0;	 // Don't need to read
 			}
 		}
 	}
