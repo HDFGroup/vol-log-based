@@ -73,7 +73,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	H5VL_log_contig_buffer_t meta_buf;
 
 	// std::vector<int> lut;
-	std::vector<std::vector<H5VL_logi_metablock_t>> idx;
+	std::vector<H5VL_logi_array_idx_t> idx;
 	bool idxvalid;
 	bool metadirty;
 

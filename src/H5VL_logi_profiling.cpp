@@ -50,6 +50,7 @@ const char * const tname[H5VL_LOG_NTIMER]={
 "H5VL_log_dataset_create",
 "H5VL_log_dataset_open",
 "H5VL_log_dataset_read",
+"H5VL_log_dataset_read_init",
 "H5VL_log_dataset_write",
 "H5VL_log_dataset_write_init",
 "H5VL_log_dataset_write_start_count",

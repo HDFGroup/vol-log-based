@@ -21,6 +21,7 @@ define(`H5VL_LOG_TIMERS', `( `H5VL_log_file_create', dnl
                             `H5VL_log_dataset_create', dnl
                             `H5VL_log_dataset_open', dnl
                             `H5VL_log_dataset_read', dnl
+                            `H5VL_log_dataset_read_init', dnl
                             `H5VL_log_dataset_write', dnl
                             `H5VL_log_dataset_write_init', dnl
                             `H5VL_log_dataset_write_start_count', dnl

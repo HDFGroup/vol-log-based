@@ -29,7 +29,7 @@ typedef struct hidx {
 
 herr_t h5replay_read_data (MPI_File fin,
 						   std::vector<dset_info> &dsets,
-						   std::vector<std::vector<meta_block>> &reqs) {
+						   std::vector<h5replay_idx_t> &reqs) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j, k, l;
@@ -48,7 +48,7 @@ herr_t h5replay_read_data (MPI_File fin,
 	// Allocate buffer
 	zbsize = 0;
 	for (auto &reqp : reqs) {
-		for (auto &req : reqp) {
+		for (auto &req : reqp.entries) {
 			req.bufs.resize (req.sels.size ());
 			bsize = 0;
 			for (j = 0; j < req.sels.size (); j++) {
@@ -96,7 +96,7 @@ herr_t h5replay_read_data (MPI_File fin,
 
 	// Unfilter the data
 	for (auto &reqp : reqs) {
-		for (auto &req : reqp) {
+		for (auto &req : reqp.entries) {
 			if (dsets[req.hdr.did].filters.size () > 0) {
 				char *buf = NULL;
 				int csize = 0;
@@ -118,7 +118,7 @@ err_out:;
 
 herr_t h5replay_write_data (hid_t foutid,
 							std::vector<dset_info> &dsets,
-							std::vector<std::vector<meta_block>> &reqs) {
+							std::vector<h5replay_idx_t> &reqs) {
 	herr_t err = 0;
 	hid_t dsid = -1;
 	hid_t msid = -1;
@@ -134,7 +134,7 @@ herr_t h5replay_write_data (hid_t foutid,
 
 	for (i = 0; i < dsets.size (); i++) {
 		dsid = H5Dget_space (dsets[i].id);
-		for (auto &req : reqs[i]) {
+		for (auto &req : reqs[i].entries) {
 			for (k = 0; k < req.sels.size (); k++) {
 				msize = 1;
 				for (j = 0; j < dsets[req.hdr.did].ndim; j++) { msize *= req.sels[k].count[j]; }
@@ -143,7 +143,7 @@ herr_t h5replay_write_data (hid_t foutid,
 				err = H5Sselect_hyperslab (dsid, H5S_SELECT_SET, req.sels[k].start, NULL, one,
 										   req.sels[k].count);
 				CHECK_ERR
-				err = H5Dwrite (dsets[i].id, dsets[i].type, msid, dsid, H5P_DEFAULT, req.bufs[k]);
+				err = H5Dwrite (dsets[i].id, dsets[i].dtype, msid, dsid, H5P_DEFAULT, req.bufs[k]);
 				CHECK_ERR
 			}
 		}

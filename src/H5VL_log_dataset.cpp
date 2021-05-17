@@ -276,33 +276,44 @@ herr_t H5VL_log_dataset_read (void *dset,
 	H5VL_log_rreq_t r;
 	H5S_sel_type stype, mstype;
 	H5VL_log_req_type_t rtype;
+	H5VL_log_multisel_arg_t arg;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-	// Check mem space selection
-	if (file_space_id == H5S_ALL)
-		stype = H5S_SEL_ALL;
-	else
-		stype = H5Sget_select_type (file_space_id);
+	H5VL_LOGI_PROFILING_TIMER_START;
 
+	// Sanity check
 	if (stype == H5S_SEL_NONE) goto err_out;
+	if (!buf) ERR_OUT ("user buffer can't be NULL");
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_READ_INIT);
 
-	// Update the index if it is out of date
-	if (!(dp->fp->idxvalid)) {
-		err = H5VL_log_filei_metaupdate (dp->fp);
-		CHECK_ERR
-	}
+	// Varn ?
+	err = H5Pget_multisel (plist_id, &arg);
+	CHECK_ERR
 
-	// H5S_All means using file space
-	if (mem_space_id == H5S_ALL) mem_space_id = file_space_id;
-
-	// Check mem space selection
-	if (mem_space_id == H5S_ALL)
+	if (arg.n) {
+		stype  = H5S_SEL_ALL;
 		mstype = H5S_SEL_ALL;
-	else
-		mstype = H5Sget_select_type (mem_space_id);
+	} else {
+		// Check file space selection
+		if (file_space_id == H5S_ALL)
+			stype = H5S_SEL_ALL;
+		else
+			stype = H5Sget_select_type (file_space_id);
+
+		// H5S_All means using file space
+		if (mem_space_id == H5S_ALL) mem_space_id = file_space_id;
+
+		// Check mem space selection
+		if (mem_space_id == H5S_ALL)
+			mstype = H5S_SEL_ALL;
+		else if (mem_space_id == H5S_CONTIG)
+			mstype = H5S_SEL_ALL;
+		else
+			mstype = H5Sget_select_type (mem_space_id);
+	}
 
 	// Setting metadata;
 	r.hdr.did = dp->id;
@@ -316,14 +327,25 @@ herr_t H5VL_log_dataset_read (void *dset,
 
 	// Gather starts and counts
 	if (stype == H5S_SEL_ALL) {
-		r.sels.resize (1);
-		r.rsize = 1;
-		for (j = 0; j < dp->ndim; j++) {
-			r.sels[0].start[j] = 0;
-			r.sels[0].count[j] = dp->dims[j];
-			r.rsize *= r.sels[0].count[j];
+		if (arg.n) {
+			r.sels.resize (arg.n);
+			for (i = 0; i < arg.n; i++) {
+				r.sels[i].size = dp->esize;
+				for (j = 0; j < dp->ndim; j++) {
+					r.sels[0].start[j] = arg.starts[i][j];
+					r.sels[0].count[j] = arg.counts[i][j];
+					r.sels[i].size *= r.sels[i].count[j];
+				}
+			}
+		} else {
+			r.sels.resize (1);
+			r.rsize = dp->esize;
+			for (j = 0; j < dp->ndim; j++) {
+				r.sels[0].start[j] = 0;
+				r.sels[0].count[j] = dp->dims[j];
+				r.rsize *= r.sels[0].count[j];
+			}
 		}
-		r.sels[0].size *= dp->esize;
 	} else {
 		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VL_logi_get_dataspace_selection (file_space_id, r.sels);
@@ -424,7 +446,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	H5VL_LOGI_PROFILING_TIMER_START;
-	
+
 	// Varn ?
 	err = H5Pget_multisel (plist_id, &arg);
 	CHECK_ERR
@@ -459,8 +481,8 @@ herr_t H5VL_log_dataset_write (void *dset,
 
 	// Setting metadata;
 	r.hdr.did = dp->id;
-	r.ubuf	= (char *)buf;
-	r.rsize = 0;  // Nomber of data elements in the record
+	r.ubuf	  = (char *)buf;
+	r.rsize	  = 0;	// Nomber of data elements in the record
 	if (arg.n) {
 		r.nsel = arg.n;
 	} else if (stype == H5S_SEL_ALL) {
@@ -523,9 +545,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 		err = H5VL_logi_metaentry_encode (*dp, r.hdr, sels, r.meta_buf);
 		for (auto &sel : sels) {
 			ssize = 1;
-			for (auto count = sel.count; count < sel.count + dp->ndim; count++) {
-				ssize *= *count;
-			}
+			for (auto count = sel.count; count < sel.count + dp->ndim; count++) { ssize *= *count; }
 			r.rsize += ssize;
 		}
 	}

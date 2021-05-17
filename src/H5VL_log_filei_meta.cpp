@@ -460,7 +460,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		while (bufp < buf + mdsize) {
 			H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
 
-			err = H5VL_logi_metaentry_decode<H5VL_logi_metablock_t> (fp->dsets[hdr->did].ndim, bufp,
+			err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp,
 																	fp->idx[hdr->did]);
 			CHECK_ERR
 			bufp += hdr->meta_size;

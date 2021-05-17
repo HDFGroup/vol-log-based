@@ -111,7 +111,7 @@ herr_t h5replay_copy_handler (hid_t o_id,
 		// CHECK_ERR
 
 		dset.id	   = dst_did;
-		dset.type  = tid;
+		dset.dtype  = tid;
 		dset.esize = H5Tget_size (tid);
 		dset.ndim  = ndim;
 

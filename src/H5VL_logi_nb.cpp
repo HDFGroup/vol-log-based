@@ -3,6 +3,8 @@
 #endif
 //
 #include <cstring>
+#include <map>
+#include <vector>
 //
 #include <sys/types.h>
 #include <unistd.h>
@@ -14,6 +16,7 @@
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_meta.hpp"
 #include "H5VL_logi_nb.hpp"
+#include "H5VL_logi_util.hpp"
 #include "H5VL_logi_wrapper.hpp"
 
 #define H5VL_LOGI_MERGED_REQ_SEL_RESERVE 32
@@ -129,6 +132,9 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 	MPI_Datatype ftype, mtype;
 	std::vector<H5VL_log_search_ret_t> intersections;
 	std::vector<H5VL_log_copy_ctx> overlaps;
+	std::map<MPI_Offset, char *> bufs;
+	char *tbuf	  = NULL;
+	size_t tbsize = 0;
 	MPI_Status stat;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -138,11 +144,27 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 		CHECK_ERR
 	}
 
+	// Search index
 	for (auto &r : reqs) {
-		err = H5VL_logi_idx_search (fp, r, intersections);
+		i	= intersections.size ();
+		err = fp->idx[r.hdr.did].search (r, intersections);
 		CHECK_ERR
+		if (fp->dsets[r.hdr.did].filters.size () > 0) {
+			// Adjust for comrpessed dataset
+			for (; i < intersections.size (); i++) {
+				if (bufs.find (intersections[i].foff) == bufs.end ()) {
+					intersections[i].zbuf		= (char *)malloc (intersections[i].zbsize);
+					bufs[intersections[i].foff] = intersections[i].zbuf;
+					if (tbsize < intersections[i].zbsize) { tbsize = intersections[i].zbsize; }
+				} else {
+					intersections[i].zbuf  = bufs[intersections[i].foff];
+					intersections[i].fsize = 0;	 // Don't need to read
+				}
+			}
+		}
 	}
 
+	// Read data
 	if (intersections.size () > 0) {
 		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VL_log_dataset_readi_gen_rtypes (intersections, &ftype, &mtype, overlaps);
@@ -167,7 +189,65 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 		CHECK_MPIERR
 	}
 
+	// In case there is overlapping read, copy the overlapping part
 	for (auto &o : overlaps) { memcpy (o.dst, o.src, o.size); }
+
+	// Unfilter all data
+	if (tbsize > 0) { tbuf = (char *)malloc (tbsize); }
+	for (auto &block : intersections) {
+		if (block.zbuf) {
+			MPI_Datatype ftype, mtype, etype;
+			if (block.fsize > 0) {
+				char *buf = NULL;
+				int csize = 0;
+
+				err = H5VL_logi_unfilter (fp->dsets[block.did].filters, block.zbuf, block.fsize,
+										  (void **)&buf, &csize);
+				CHECK_ERR
+
+				memcpy (block.zbuf, buf, csize);
+				free (buf);
+			}
+
+			// Pack from zbuf to xbuf
+			etype = H5VL_logi_get_mpi_type_by_size (block.esize);
+			if (etype == MPI_DATATYPE_NULL) {
+				mpierr = MPI_Type_contiguous (block.esize, MPI_BYTE, &etype);
+				CHECK_MPIERR
+				mpierr = MPI_Type_commit (&etype);
+				CHECK_MPIERR
+				i = 1;
+			} else {
+				i = 0;
+			}
+
+			mpierr = H5VL_log_debug_MPI_Type_create_subarray (
+				block.ndim, block.dsize, block.count, block.dstart, MPI_ORDER_C, etype, &ftype);
+			CHECK_MPIERR
+			mpierr = H5VL_log_debug_MPI_Type_create_subarray (
+				block.ndim, block.msize, block.count, block.mstart, MPI_ORDER_C, etype, &mtype);
+
+			CHECK_MPIERR
+			mpierr = MPI_Type_commit (&ftype);
+			CHECK_MPIERR
+			mpierr = MPI_Type_commit (&mtype);
+			CHECK_MPIERR
+
+			if (i) {
+				mpierr = MPI_Type_free (&etype);
+				CHECK_MPIERR
+			}
+
+			i = 0;
+			MPI_Pack (block.zbuf + block.boff, 1, ftype, tbuf, 1, &i, fp->comm);
+
+			i = 0;
+			MPI_Unpack (tbuf, 1, &i, (char *)(block.moff), 1, mtype, fp->comm);
+
+			MPI_Type_free (&ftype);
+			MPI_Type_free (&mtype);
+		}
+	}
 
 	// Post processing
 	for (auto &r : reqs) {
@@ -189,7 +269,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 			esize = r.esize;
 		}
 
-		// Packing
+		// Packing if memory space is not contiguous
 		if (r.xbuf != r.ubuf) {
 			if (r.ptype != MPI_DATATYPE_NULL) {
 				i = 0;
@@ -207,6 +287,9 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS);
 err_out:;
+
+	free (tbuf);
+	for (auto const &[foff, zbuf] : bufs) { free (zbuf); }
 
 	return err;
 }

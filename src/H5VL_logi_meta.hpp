@@ -4,6 +4,7 @@
 #include <vector>
 //
 #include "H5VL_logi_dataspace.hpp"
+//#include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_err.hpp"
 #include "H5VL_logi_zip.hpp"
 
@@ -21,6 +22,7 @@ typedef struct H5VL_logi_meta_hdr {
 typedef struct H5VL_logi_metasel_t {
 	hsize_t start[H5S_MAX_RANK];
 	hsize_t count[H5S_MAX_RANK];
+	MPI_Offset boff;
 } H5VL_logi_metasel_t;
 
 typedef struct H5VL_logi_metablock_t {
@@ -28,6 +30,7 @@ typedef struct H5VL_logi_metablock_t {
 	std::vector<H5VL_logi_metasel_t> sels;
 	MPI_Offset foff;
 	size_t fsize;
+	size_t dsize;
 } H5VL_logi_metablock_t;
 
 inline void H5VL_logi_sel_decode (int ndim, MPI_Offset *dsteps, MPI_Offset off, hsize_t *cord) {
@@ -46,141 +49,10 @@ inline void H5VL_logi_sel_encode (int ndim, MPI_Offset *dsteps, hsize_t *cord, M
 	}
 }
 
+struct H5VL_logi_idx_t;
+struct H5VL_log_dset_info_t;
+herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_logi_idx_t &idx);
 
-template <class T>
-herr_t H5VL_logi_metaentry_decode (int ndim, void *ent, std::vector<T> &blocks) {
-	herr_t err = 0;
-	int i, j;
-	int nsel;
-	MPI_Offset *bp;
-	MPI_Offset dsteps[H5S_MAX_RANK];
-	char *zbuf	   = NULL;
-	bool zbufalloc = false;
-	T block;
-	char *bufp = (char *)ent;
-
-	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
-	bufp += sizeof (H5VL_logi_meta_hdr);
-
-	// Extract the metadata
-	if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
-		nsel = *((int *)bufp);
-		bufp += sizeof (int);
-
-		if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
-#ifdef ENABLE_ZLIB
-			int inlen, clen;
-			MPI_Offset bsize;  // Size of all zbuf
-			MPI_Offset esize;  // Size of a block
-							   // Calculate buffer size;
-			esize = 0;
-			bsize = 0;
-			if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {	// Logical location
-				esize += nsel * sizeof (MPI_Offset) * 2;
-				bsize += sizeof (MPI_Offset) * (ndim - 1);
-			} else {
-				esize += nsel * sizeof (MPI_Offset) * 2 * ndim;
-			}
-			if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SELX) {  // Physical location
-				esize += sizeof (MPI_Offset) * 2;
-			} else {
-				bsize += sizeof (MPI_Offset) * 2;
-			}
-			bsize += esize * nsel;
-
-			zbuf	  = (char *)malloc (bsize);
-			zbufalloc = true;
-
-			inlen = block.hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (int);
-			clen  = bsize;
-			err	  = H5VL_log_zip_compress (bufp, inlen, zbuf, &clen);
-			CHECK_ERR
-#else
-			RET_ERR ("Comrpessed Metadata Support Not Enabled")
-#endif
-		} else {
-			zbuf	  = bufp;
-			zbufalloc = false;
-		}
-	} else {
-		nsel	  = 1;
-		zbuf	  = bufp;
-		zbufalloc = false;
-	}
-
-	// Convert to req
-	bp = (MPI_Offset *)zbuf;
-	if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-		memcpy (dsteps, bp, sizeof (MPI_Offset) * (ndim - 1));
-		dsteps[ndim - 1] = 1;
-		bp += ndim - 1;
-	}
-
-	if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SELX) {
-		for (i = 0; i < nsel; i++) {
-			block.foff = *((MPI_Offset *)bp);
-			bp++;
-			block.fsize = *((MPI_Offset *)bp);
-			bp++;
-
-			block.sels.resize (1);
-
-			if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-				MPI_Offset off;
-
-				// Decode start
-				H5VL_logi_sel_decode (ndim, dsteps, *((MPI_Offset *)bp), block.sels[0].start);
-				bp++;
-
-				// Decode count
-				H5VL_logi_sel_decode (ndim, dsteps, *((MPI_Offset *)bp), block.sels[0].count);
-				bp++;
-			} else {
-				memcpy (block.sels[0].start, bp, sizeof (MPI_Offset) * ndim);
-				bp += ndim;
-				memcpy (block.sels[0].count, bp, sizeof (MPI_Offset) * ndim);
-				bp += ndim;
-			}
-			blocks.push_back (block);
-		}
-	} else {
-		block.foff = *((MPI_Offset *)bp);
-		bp++;
-		block.fsize = *((MPI_Offset *)bp);
-		bp++;
-
-		block.sels.resize (nsel);
-
-		// Decode start
-		for (i = 0; i < nsel; i++) {
-			if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-				H5VL_logi_sel_decode (ndim, dsteps, *((MPI_Offset *)bp), block.sels[i].start);
-				bp++;
-			} else {
-				memcpy (block.sels[i].start, bp, sizeof (MPI_Offset) * ndim);
-				bp += ndim;
-			}
-		}
-		// Decode count
-		for (i = 0; i < nsel; i++) {
-			if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-				H5VL_logi_sel_decode (ndim, dsteps, *((MPI_Offset *)bp), block.sels[i].count);
-				bp++;
-			} else {
-				memcpy (block.sels[i].count, bp, sizeof (MPI_Offset) * ndim);
-				bp += ndim;
-			}
-		}
-
-		blocks.push_back (block);
-	}
-err_out:;
-	if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) { free (zbuf); }
-
-	return err;
-}
-
-template <class T>
 inline MPI_Offset H5VL_logi_get_metaentry_size (int ndim, H5VL_logi_meta_hdr &hdr, int nsel) {
 	MPI_Offset size;
 

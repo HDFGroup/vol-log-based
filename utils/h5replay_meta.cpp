@@ -13,6 +13,7 @@
 //
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_file.hpp"
+#include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_meta.hpp"
 #include "H5VL_logi_zip.hpp"
 #include "h5replay.hpp"
@@ -23,7 +24,7 @@ herr_t h5replay_parse_meta (int rank,
 							hid_t lgid,
 							int nmdset,
 							std::vector<dset_info> &dsets,
-							std::vector<std::vector<meta_block>> &reqs) {
+							std::vector<h5replay_idx_t> &reqs) {
 	herr_t err = 0;
 	int i, j, k, l;
 	hid_t did = -1;
@@ -125,7 +126,7 @@ herr_t h5replay_parse_meta (int rank,
 		for (j = 0; ep < sec.buf + count; j++) {
 			H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)ep;
 			if ((j - sec.off) % sec.stride == 0) {
-				H5VL_logi_metaentry_decode<meta_block> (dsets[hdr->did].ndim, ep, reqs[hdr->did]);
+				H5VL_logi_metaentry_decode (dsets[hdr->did], ep, reqs[hdr->did]);
 				ep += hdr->meta_size;
 			}
 		}
@@ -137,4 +138,28 @@ err_out:;
 	if (msid >= 0) { H5Sclose (msid); }
 	if (dsid >= 0) { H5Sclose (dsid); }
 	return err;
+}
+
+herr_t h5replay_idx_t::clear () {
+	this->entries.clear ();
+
+	return 0;
+}
+
+herr_t h5replay_idx_t::insert (H5VL_logi_metablock_t &meta) {
+	meta_block block;
+
+	block.dsize = meta.dsize;
+	block.foff	= meta.foff;
+	block.fsize = meta.fsize;
+	block.hdr	= meta.hdr;
+	block.sels	= meta.sels;
+	this->entries.push_back (block);
+
+	return 0;
+}
+
+herr_t h5replay_idx_t::search (H5VL_log_rreq_t &req,
+									  std::vector<H5VL_log_search_ret_t> &ret) {
+	return 0;
 }

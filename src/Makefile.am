@@ -19,6 +19,8 @@ lib_LTLIBRARIES = libH5VL_log.la
 
 M4_SRCS = 
 
+M4H_SRCS = 
+
 H_SRCS =    H5VL_log.h \
             H5VL_log_internal.h
 
@@ -48,7 +50,7 @@ CXX_SRCS =  H5VL_log_att.cpp \
             H5VL_logi_dataspace.cpp \
             H5VL_logi_filter.cpp \
             H5VL_logi_filter_deflate.cpp \
-            H5VL_logi_idx.cpp \
+            H5VL_logi_idx_list.cpp \
             H5VL_logi_mem.cpp \
             H5VL_logi_meta.cpp \
             H5VL_logi_nb.cpp \
@@ -66,8 +68,12 @@ endif
 include_HEADERS = H5VL_log.h
 
 $(M4_SRCS:.m4=.cpp): Makefile
+$(M4H_SRCS:.m4h=.hpp): Makefile
 
 .m4.cpp:
+	$(M4) $(AM_M4FLAGS) $(M4FLAGS) $< >$@
+
+.m4h.hpp:
 	$(M4) $(AM_M4FLAGS) $(M4FLAGS) $< >$@
 
 libH5VL_log_la_SOURCES = $(C_SRCS) $(CXX_SRCS) $(H_SRCS)

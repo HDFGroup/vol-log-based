@@ -105,8 +105,11 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blo
 	std::sort (blocks.begin (), blocks.end ());
 
 	for (i = 0; i < nblock - 1; i++) {
-		if ((blocks[i].foff == blocks[i + 1].foff) &&
-			interleve (blocks[i].ndim, blocks[i].fstart, blocks[i].count, blocks[i + 1].fstart)) {
+		if (blocks[i].zbuf) {
+			newgroup[i] = true;
+		} else if ((blocks[i].foff == blocks[i + 1].foff) &&
+				   interleve (blocks[i].ndim, blocks[i].dstart, blocks[i].count,
+							  blocks[i + 1].dstart)) {
 			newgroup[i] = false;
 		} else {
 			newgroup[i] = true;
@@ -142,47 +145,62 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blo
 	for (i = j = 0; i < nblock; i++) {
 		if (newgroup[i]) {
 			if (i == j) {  // only 1
-				etype = H5VL_logi_get_mpi_type_by_size (blocks[i].esize);
-				if (etype == MPI_DATATYPE_NULL) {
-					mpierr = MPI_Type_contiguous (blocks[i].esize, MPI_BYTE, &etype);
-					CHECK_MPIERR
-					mpierr = MPI_Type_commit (&etype);
-					CHECK_MPIERR
-					k = 1;
+				if (blocks[j].zbuf) {
+					// Read raw data for filtered datasets
+					if (blocks[j].fsize >
+						0) {  // Don't need to read if read by other intersections already
+						foffs[nt]  = blocks[j].foff;
+						moffs[nt]  = (MPI_Aint) (blocks[j].zbuf);
+						lens[nt]   = blocks[j].fsize;
+						ftypes[nt] = MPI_BYTE;
+						mtypes[nt] = MPI_BYTE;
+						nt++;
+					}
 				} else {
-					k = 0;
-				}
+					etype = H5VL_logi_get_mpi_type_by_size (blocks[i].esize);
+					if (etype == MPI_DATATYPE_NULL) {
+						mpierr = MPI_Type_contiguous (blocks[i].esize, MPI_BYTE, &etype);
+						CHECK_MPIERR
+						mpierr = MPI_Type_commit (&etype);
+						CHECK_MPIERR
+						k = 1;
+					} else {
+						k = 0;
+					}
 
-				mpierr = H5VL_log_debug_MPI_Type_create_subarray (blocks[i].ndim, blocks[j].fsize,
-																  blocks[j].count, blocks[j].fstart,
-																  MPI_ORDER_C, etype, ftypes + nt);
-				CHECK_MPIERR
-				mpierr = H5VL_log_debug_MPI_Type_create_subarray (blocks[i].ndim, blocks[j].msize,
-																  blocks[j].count, blocks[j].mstart,
-																  MPI_ORDER_C, etype, mtypes + nt);
-				CHECK_MPIERR
-				mpierr = MPI_Type_commit (ftypes + nt);
-				CHECK_MPIERR
-				mpierr = MPI_Type_commit (mtypes + nt);
-				CHECK_MPIERR
-
-				if (k) {
-					mpierr = MPI_Type_free (&etype);
+					mpierr = H5VL_log_debug_MPI_Type_create_subarray (
+						blocks[i].ndim, blocks[j].dsize, blocks[j].count, blocks[j].dstart,
+						MPI_ORDER_C, etype, ftypes + nt);
 					CHECK_MPIERR
+					mpierr = H5VL_log_debug_MPI_Type_create_subarray (
+						blocks[i].ndim, blocks[j].msize, blocks[j].count, blocks[j].mstart,
+						MPI_ORDER_C, etype, mtypes + nt);
+
+					CHECK_MPIERR
+					mpierr = MPI_Type_commit (ftypes + nt);
+					CHECK_MPIERR
+					mpierr = MPI_Type_commit (mtypes + nt);
+					CHECK_MPIERR
+
+					if (k) {
+						mpierr = MPI_Type_free (&etype);
+						CHECK_MPIERR
+					}
+
+					foffs[nt] = blocks[j].foff;
+					moffs[nt] = blocks[j].moff;
+					lens[nt]  = 1;
+					nt++;
 				}
 
-				foffs[nt] = blocks[j].foff;
-				moffs[nt] = blocks[j].moff;
-				lens[nt]  = 1;
 				j++;
-				nt++;
 			} else {
 				old_nt = nt;
-				for (; j <= i; j++) {  // Breakdown each intersecting blocks
+				for (; j <= i; j++) {  // Breakdown each interleaving blocks
 					fssize[blocks[i].ndim - 1] = 1;
 					mssize[blocks[i].ndim - 1] = 1;
 					for (k = blocks[i].ndim - 2; k > -1; k--) {
-						fssize[k] = fssize[k + 1] * blocks[j].fsize[k + 1];
+						fssize[k] = fssize[k + 1] * blocks[j].dsize[k + 1];
 						mssize[k] = mssize[k + 1] * blocks[j].msize[k + 1];
 					}
 
@@ -192,7 +210,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blo
 						foffs[nt] = blocks[j].foff;
 						moffs[nt] = blocks[j].moff;
 						for (k = 0; k < blocks[i].ndim; k++) {	// Calculate offset
-							foffs[nt] += fssize[k] * (blocks[j].fstart[k] + ctr[k]);
+							foffs[nt] += fssize[k] * (blocks[j].dstart[k] + ctr[k]);
 							moffs[nt] += mssize[k] * (blocks[j].mstart[k] + ctr[k]);
 						}
 						ftypes[nt] = MPI_BYTE;

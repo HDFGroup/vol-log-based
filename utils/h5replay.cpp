@@ -77,7 +77,7 @@ herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int n
 	std::vector<MPI_Offset> mend;
 	std::vector<MPI_Offset> mstride;
 	h5replay_copy_handler_arg copy_arg;
-	std::vector<std::vector<meta_block>> reqs;
+	std::vector<h5replay_idx_t> reqs;
 	MPI_File fin  = MPI_FILE_NULL;
 	MPI_File fout = MPI_FILE_NULL;
 
