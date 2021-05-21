@@ -405,33 +405,42 @@ err_out:
 	return err;
 }
 
+/*
+ * Remove all existing index entry in fp
+ * Load all metadata in the metadata index of fp
+ */
 herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int i;
 	H5VL_loc_params_t loc;
-	htri_t mdexist;
-	void *mdp = NULL, *ldp = NULL;
-	hid_t mdsid = -1, mmsid = -1;
-	hsize_t mdsize, ldsize;
+	void *mdp	= NULL;	 // Metadata dataset
+	hid_t mdsid = -1;	 // Metadata dataset space
+	hid_t mmsid = -1;	 // metadata buffer memory space
+	hsize_t mdsize;		 // Size of metadata dataset
 	hsize_t start, count, one = 1;
-	char *buf = NULL, *bufp;
-	int ndim;
-	MPI_Offset nsec;
+	char *buf = NULL;  // Buffer for raw metadata
+	char *bufp;		   // Buffer for raw metadata
+	int ndim;		   // metadata dataset dimensions (should be 1)
+	MPI_Offset nsec;   // Number of sections in current metadata dataset
 	H5VL_log_metaentry_t entry;
 	char mdname[16];
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
+	// Dataspace for memory buffer
 	start = count = INT64_MAX - 1;
 	mmsid		  = H5Screate_simple (1, &start, &count);
 
+	// Flush all write requests
 	if (fp->metadirty) { H5VL_log_filei_metaflush (fp); }
 
+	// Remove all index entries
 	for (i = 0; i < fp->ndset; i++) { fp->idx[i].clear (); }
 
+	// iterate through all metadata datasets
 	for (i = 0; i < fp->nmdset; i++) {
+			// Open the metadata dataset
 		sprintf (mdname, "_md_%d", i);
-
 		mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT,
 								fp->dxplid, NULL);
 		CHECK_PTR (mdp)
@@ -456,7 +465,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 			H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, &nsec, NULL);
 		CHECK_ERR
 
-		// Allocate buffer
+	// Allocate buffer for raw metadata
 		start = sizeof (MPI_Offset) * (nsec + 1);
 		count = mdsize - start;
 		buf	  = (char *)malloc (sizeof (char) * count);
@@ -469,10 +478,8 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		CHECK_ERR
 		err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, buf, NULL);
 		CHECK_ERR
-		// err = H5VLdataset_read(ldp, fp->uvlid, H5T_STD_I64LE, ldsid, ldsid, fp->dxplid,
-		// fp->lut.data(), NULL);    CHECK_ERR
 
-		// Close the dataset
+		// Close the metadata dataset
 		err = H5VLdataset_close (mdp, fp->uvlid, fp->dxplid, NULL);
 		CHECK_ERR
 
@@ -487,6 +494,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		}
 	}
 
+	// Mark index as up to date
 	fp->idxvalid = true;
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAUPDATE);
@@ -500,34 +508,42 @@ err_out:;
 	return err;
 }
 
+/*
+ * Remove all existing index entry in fp
+ * Load the metadata starting from sec in md in the metadata index of fp until the metadata buffer
+ * size is reached Advance sec to the next unprocessed section. If all section is processed, advance
+ * md and set sec to 0 If all metadata datasset is processed, set md to -1
+ */
 herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	herr_t err = 0;
 	int i;
-	int ub, lb;
 	H5VL_loc_params_t loc;
-	htri_t mdexist;
-	void *mdp = NULL, *ldp = NULL;
-	hid_t mdsid = -1, mmsid = -1;
-	hsize_t mdsize, ldsize;
+	void *mdp	= NULL;	 // Metadata dataset
+	hid_t mdsid = -1;	 // Metadata dataset space
+	hid_t mmsid = -1;	 // metadata buffer memory space
+	hsize_t mdsize;		 // Size of metadata dataset
 	hsize_t start, count, one = 1;
-	char *buf = NULL, *bufp;
-	int ndim;
-	MPI_Offset nsec;
-	MPI_Offset *offs;
-	H5VL_log_metaentry_t entry;
+	char *buf = NULL;  // Buffer for raw metadata
+	char *bufp;		   // Buffer for raw metadata
+	int ndim;		   // metadata dataset dimensions (should be 1)
+	MPI_Offset nsec;   // Number of sections in current metadata dataset
+	MPI_Offset *offs;  // Section end offset array
 	char mdname[16];
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
+	// Dataspace for memory buffer
 	start = count = INT64_MAX - 1;
 	mmsid		  = H5Screate_simple (1, &start, &count);
 
+	// Flush all write requests
 	if (fp->metadirty) { H5VL_log_filei_metaflush (fp); }
 
+	// Remove all index entries
 	for (i = 0; i < fp->ndset; i++) { fp->idx[i].clear (); }
 
+	// Open the metadata dataset
 	sprintf (mdname, "_md_%d", md);
-
 	mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT,
 							fp->dxplid, NULL);
 	CHECK_PTR (mdp)
@@ -541,7 +557,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	ndim = H5Sget_simple_extent_dims (mdsid, &mdsize, NULL);
 	LOG_VOL_ASSERT (ndim == 1);
 
-	// N sections
+	// Get number of sections (first 8 bytes)
 	start = 0;
 	count = sizeof (MPI_Offset);
 	err	  = H5Sselect_hyperslab (mmsid, H5S_SELECT_SET, &start, NULL, &one, &count);
@@ -551,7 +567,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, &nsec, NULL);
 	CHECK_ERR
 
-	// Sections
+	// Get the ending offset of each section (next 8 * nsec bytes)
 	count = sizeof (MPI_Offset) * nsec;
 	offs  = (MPI_Offset *)malloc (count);
 	err	  = H5Sselect_hyperslab (mmsid, H5S_SELECT_SET, &start, NULL, &one, &count);
@@ -564,18 +580,18 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 
 	// Determine #sec to fit
 	if (sec >= nsec) { RET_ERR ("Invalid section") }
-	if (sec == 0) {
+	if (sec == 0) {	 // First section always starts after the sections offset array
 		start = sizeof (MPI_Offset) * (nsec + 1);
 	} else {
 		start = offs[sec - 1];
 	}
 	for (i = sec + 1; i < nsec; i++) {
-		if (offs[i] - lb > fp->mbuf_size) { break; }
+		if (offs[i] - start > fp->mbuf_size) { break; }
 	}
-	if (i <= sec) { RET_ERR ("OOM") }
+	if (i <= sec) { RET_ERR ("OOM") }  // At least 1 section should fit into buffer limit
 	count = offs[i - 1] - start;
 
-	// Return next sec
+	// Advance sec and md
 	sec = i;
 	if (sec >= nsec) {
 		sec = 0;
@@ -583,7 +599,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	}
 	if (md > fp->nmdset) { md = -1; }
 
-	// Allocate buffer
+	// Allocate buffer for raw metadata
 	buf = (char *)malloc (sizeof (char) * count);
 
 	// Read metadata
@@ -594,10 +610,8 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	CHECK_ERR
 	err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, buf, NULL);
 	CHECK_ERR
-	// err = H5VLdataset_read(ldp, fp->uvlid, H5T_STD_I64LE, ldsid, ldsid, fp->dxplid,
-	// fp->lut.data(), NULL);    CHECK_ERR
 
-	// Close the dataset
+	// Close the metadata dataset
 	err = H5VLdataset_close (mdp, fp->uvlid, fp->dxplid, NULL);
 	CHECK_ERR
 
@@ -610,8 +624,6 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 		CHECK_ERR
 		bufp += hdr->meta_size;
 	}
-
-	fp->idxvalid = true;
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAUPDATE);
 err_out:;

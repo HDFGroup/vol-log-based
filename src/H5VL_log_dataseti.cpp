@@ -80,7 +80,7 @@ void sortoffsets (int len, MPI_Aint *oa, MPI_Aint *ob, int *l) {
 }
 
 // Assume no overlaping read
-herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blocks,
+herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> blocks,
 										  MPI_Datatype *ftype,
 										  MPI_Datatype *mtype,
 										  std::vector<H5VL_log_copy_ctx> &overlaps) {
@@ -108,7 +108,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blo
 		if (blocks[i].zbuf) {
 			newgroup[i] = true;
 		} else if ((blocks[i].foff == blocks[i + 1].foff) &&
-				   interleve (blocks[i].ndim, blocks[i].dstart, blocks[i].count,
+				   interleve (blocks[i].info->ndim,  blocks[i].dstart, blocks[i].count,
 							  blocks[i + 1].dstart)) {
 			newgroup[i] = false;
 		} else {
@@ -127,7 +127,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blo
 			} else {
 				for (; j <= i; j++) {  // Breakdown
 					nrow = 1;
-					for (k = 0; k < blocks[i].ndim - 1; k++) { nrow *= blocks[j].count[k]; }
+					for (k = 0; k < blocks[i].info->ndim - 1; k++) { nrow *= blocks[j].count[k]; }
 					nt += nrow;
 				}
 			}
@@ -157,9 +157,9 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blo
 						nt++;
 					}
 				} else {
-					etype = H5VL_logi_get_mpi_type_by_size (blocks[i].esize);
+					etype = H5VL_logi_get_mpi_type_by_size (blocks[i].info->esize);
 					if (etype == MPI_DATATYPE_NULL) {
-						mpierr = MPI_Type_contiguous (blocks[i].esize, MPI_BYTE, &etype);
+						mpierr = MPI_Type_contiguous (blocks[i].info->esize, MPI_BYTE, &etype);
 						CHECK_MPIERR
 						mpierr = MPI_Type_commit (&etype);
 						CHECK_MPIERR
@@ -169,11 +169,11 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blo
 					}
 
 					mpierr = H5VL_log_debug_MPI_Type_create_subarray (
-						blocks[i].ndim, blocks[j].dsize, blocks[j].count, blocks[j].dstart,
+						blocks[i].info->ndim, blocks[j].dsize, blocks[j].count, blocks[j].dstart,
 						MPI_ORDER_C, etype, ftypes + nt);
 					CHECK_MPIERR
 					mpierr = H5VL_log_debug_MPI_Type_create_subarray (
-						blocks[i].ndim, blocks[j].msize, blocks[j].count, blocks[j].mstart,
+						blocks[i].info->ndim, blocks[j].msize, blocks[j].count, blocks[j].mstart,
 						MPI_ORDER_C, etype, mtypes + nt);
 
 					CHECK_MPIERR
@@ -188,7 +188,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blo
 					}
 
 					foffs[nt] = blocks[j].foff;
-					moffs[nt] = blocks[j].moff;
+					moffs[nt] = (MPI_Offset)(blocks[j].xbuf);
 					lens[nt]  = 1;
 					nt++;
 				}
@@ -197,19 +197,19 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blo
 			} else {
 				old_nt = nt;
 				for (; j <= i; j++) {  // Breakdown each interleaving blocks
-					fssize[blocks[i].ndim - 1] = 1;
-					mssize[blocks[i].ndim - 1] = 1;
-					for (k = blocks[i].ndim - 2; k > -1; k--) {
+					fssize[blocks[i].info->ndim - 1] = 1;
+					mssize[blocks[i].info->ndim - 1] = 1;
+					for (k = blocks[i].info->ndim - 2; k > -1; k--) {
 						fssize[k] = fssize[k + 1] * blocks[j].dsize[k + 1];
 						mssize[k] = mssize[k + 1] * blocks[j].msize[k + 1];
 					}
 
-					memset (ctr, 0, sizeof (MPI_Offset) * blocks[i].ndim);
+					memset (ctr, 0, sizeof (MPI_Offset) * blocks[i].info->ndim);
 					while (ctr[0] < blocks[j].count[0]) {  // Foreach row
-						lens[nt]  = blocks[j].count[blocks[i].ndim - 1] * blocks[j].esize;
+						lens[nt]  = blocks[j].count[blocks[i].info->ndim - 1] * blocks[j].info->esize;
 						foffs[nt] = blocks[j].foff;
-						moffs[nt] = blocks[j].moff;
-						for (k = 0; k < blocks[i].ndim; k++) {	// Calculate offset
+						moffs[nt] = (MPI_Offset)(blocks[j].xbuf);
+						for (k = 0; k < blocks[i].info->ndim; k++) {	// Calculate offset
 							foffs[nt] += fssize[k] * (blocks[j].dstart[k] + ctr[k]);
 							moffs[nt] += mssize[k] * (blocks[j].mstart[k] + ctr[k]);
 						}
@@ -217,8 +217,8 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blo
 						mtypes[nt] = MPI_BYTE;
 						nt++;
 
-						ctr[blocks[i].ndim - 2]++;	// Move to next position
-						for (k = blocks[i].ndim - 2; k > 0; k--) {
+						ctr[blocks[i].info->ndim - 2]++;	// Move to next position
+						for (k = blocks[i].info->ndim - 2; k > 0; k--) {
 							if (ctr[k] >= blocks[j].count[k]) {
 								ctr[k] = 0;
 								ctr[k - 1]++;
@@ -413,7 +413,7 @@ herr_t H5VL_log_dataseti_writen (hid_t did,
 	H5VL_LOGI_PROFILING_TIMER_START;
 	// Setting metadata;
 	r.hdr.did = dp->id;
-	// r.ndim	= dp->ndim;
+	// r.info->ndim	= dp->ndim;
 	r.ldid	= -1;
 	r.ldoff = 0;
 	r.ubuf	= (char *)buf;

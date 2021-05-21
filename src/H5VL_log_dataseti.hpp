@@ -19,7 +19,7 @@ void *H5VL_log_dataseti_open_with_uo (void *obj,
 									 const H5VL_loc_params_t *loc_params,
 									 hid_t dxpl_id);
 void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_obj_t *cp);
-herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_search_ret_t> blocks,
+herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> blocks,
 												 MPI_Datatype *ftype,
 												 MPI_Datatype *mtype,
 												 std::vector<H5VL_log_copy_ctx> &overlaps);

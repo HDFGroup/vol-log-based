@@ -126,10 +126,11 @@ err_out:;
 
 inline herr_t H5VL_log_read_idx_search (H5VL_log_file_t *fp,
 										std::vector<H5VL_log_rreq_t> &reqs,
-										std::vector<H5VL_log_search_ret_t> &intersections) {
+										std::vector<H5VL_log_idx_search_ret_t> &intersecs) {
 	herr_t err = 0;
-	int md, sec;
+	int md, sec;	// Current metadata dataset and vurrent section
 
+	// If there is no metadata size limit, we load all the metadata at once
 	if (fp->mbuf_size == LOG_VOL_BSIZE_UNLIMITED) {
 		// Load metadata
 		if (!(fp->idxvalid)) {
@@ -139,18 +140,18 @@ inline herr_t H5VL_log_read_idx_search (H5VL_log_file_t *fp,
 
 		// Search index
 		for (auto &r : reqs) {
-			err = fp->idx[r.hdr.did].search (r, intersections);
+			err = fp->idx[r.hdr.did].search (r, intersecs);
 			CHECK_ERR
 		}
 	} else {
 		md = sec = 0;
-		while (md != -1) {
+		while (md != -1) {	// Until we iterated all metadata datasets
 			// Load partial metadata
 			err = H5VL_log_filei_metaupdate_part (fp, md, sec);
 			CHECK_ERR
 			// Search index
 			for (auto &r : reqs) {
-				err = fp->idx[r.hdr.did].search (r, intersections);
+				err = fp->idx[r.hdr.did].search (r, intersecs);
 				CHECK_ERR
 			}
 		}
@@ -164,40 +165,40 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
-	size_t esize;
-	MPI_Datatype ftype, mtype;
-	std::vector<H5VL_log_search_ret_t> intersections;
-	std::vector<H5VL_log_copy_ctx> overlaps;
-	std::map<MPI_Offset, char *> bufs;
-	char *tbuf	  = NULL;
-	size_t tbsize = 0;
+	size_t esize;	// Element size of the user buffer type
+	MPI_Datatype ftype, mtype;	// File and memory type for reading the raw data blocks
+	std::vector<H5VL_log_idx_search_ret_t> intersecs;	// Any intersection between selections in reqeusts and the metadata entries
+	std::vector<H5VL_log_copy_ctx> overlaps;	// Any overlapping read regions
+	std::map<MPI_Offset, char *> bufs;	// Temporary buffers for unfiltering filtered data blocks
+	char *tbuf	  = NULL;	// Temporary buffers for packing data from unfiltered data block into request buffer
+	size_t tbsize = 0;	// size of tbuf
 	MPI_Status stat;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Search index
-	err = H5VL_log_read_idx_search (fp, reqs, intersections);
+	err = H5VL_log_read_idx_search (fp, reqs, intersecs);
 	CHECK_ERR
 
 	// Allocate zbuf for filtered data
-	for (auto &block : intersections) {
-		if (fp->dsets[block.did].filters.size () > 0) {
-			if (bufs.find (intersections[i].foff) == bufs.end ()) {
-				intersections[i].zbuf = (char *)malloc (intersections[i].zbsize);
-				CHECK_PTR (intersections[i].zbuf)
-				bufs[intersections[i].foff] = intersections[i].zbuf;
-				if (tbsize < intersections[i].zbsize) { tbsize = intersections[i].zbsize; }
+	for (auto &block : intersecs) {
+		if (block.info->filters.size () > 0) {
+			if (bufs.find (block.foff) == bufs.end ()) {
+				block.zbuf = (char *)malloc (std::max(block.xsize, block.fsize));
+				CHECK_PTR (block.zbuf)
+				bufs[block.foff] = block.zbuf;
+				if (tbsize < block.xsize) { tbsize = block.xsize; }
 			} else {
-				intersections[i].zbuf  = bufs[intersections[i].foff];
-				intersections[i].fsize = 0;	 // Don't need to read
+				block.zbuf  = bufs[block.foff];
+				block.fsize = 0;	 // Don't need to read
 			}
 		}
 	}
 
 	// Read data
-	if (intersections.size () > 0) {
+	if (intersecs.size () > 0) {
 		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VL_log_dataset_readi_gen_rtypes (intersections, &ftype, &mtype, overlaps);
+		err = H5VL_log_dataset_readi_gen_rtypes (intersecs, &ftype, &mtype, overlaps);
 		CHECK_ERR
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_DATASETI_READI_GEN_RTYPES);
 		mpierr = MPI_Type_commit (&mtype);
@@ -224,14 +225,14 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 
 	// Unfilter all data
 	if (tbsize > 0) { tbuf = (char *)malloc (tbsize); }
-	for (auto &block : intersections) {
+	for (auto &block : intersecs) {
 		if (block.zbuf) {
 			MPI_Datatype ftype, mtype, etype;
 			if (block.fsize > 0) {
 				char *buf = NULL;
 				int csize = 0;
 
-				err = H5VL_logi_unfilter (fp->dsets[block.did].filters, block.zbuf, block.fsize,
+				err = H5VL_logi_unfilter (block.info->filters, block.zbuf, block.fsize,
 										  (void **)&buf, &csize);
 				CHECK_ERR
 
@@ -240,9 +241,9 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 			}
 
 			// Pack from zbuf to xbuf
-			etype = H5VL_logi_get_mpi_type_by_size (block.esize);
+			etype = H5VL_logi_get_mpi_type_by_size (block.info->esize);
 			if (etype == MPI_DATATYPE_NULL) {
-				mpierr = MPI_Type_contiguous (block.esize, MPI_BYTE, &etype);
+				mpierr = MPI_Type_contiguous (block.info->esize, MPI_BYTE, &etype);
 				CHECK_MPIERR
 				mpierr = MPI_Type_commit (&etype);
 				CHECK_MPIERR
@@ -252,10 +253,10 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 			}
 
 			mpierr = H5VL_log_debug_MPI_Type_create_subarray (
-				block.ndim, block.dsize, block.count, block.dstart, MPI_ORDER_C, etype, &ftype);
+				block.info->ndim, block.dsize, block.count, block.dstart, MPI_ORDER_C, etype, &ftype);
 			CHECK_MPIERR
 			mpierr = H5VL_log_debug_MPI_Type_create_subarray (
-				block.ndim, block.msize, block.count, block.mstart, MPI_ORDER_C, etype, &mtype);
+				block.info->ndim, block.msize, block.count, block.mstart, MPI_ORDER_C, etype, &mtype);
 
 			CHECK_MPIERR
 			mpierr = MPI_Type_commit (&ftype);
@@ -269,10 +270,10 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 			}
 
 			i = 0;
-			MPI_Pack (block.zbuf + block.boff, 1, ftype, tbuf, 1, &i, fp->comm);
+			MPI_Pack (block.zbuf + block.doff, 1, ftype, tbuf, 1, &i, fp->comm);
 
 			i = 0;
-			MPI_Unpack (tbuf, 1, &i, (char *)(block.moff), 1, mtype, fp->comm);
+			MPI_Unpack (tbuf, 1, &i, block.xbuf, 1, mtype, fp->comm);
 
 			MPI_Type_free (&ftype);
 			MPI_Type_free (&mtype);

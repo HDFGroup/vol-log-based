@@ -68,6 +68,7 @@ class H5VL_log_merged_wreq_t : H5VL_log_wreq_t {
 
 typedef struct H5VL_log_rreq_t {
 	H5VL_logi_meta_hdr hdr;
+	H5VL_log_dset_info_t *info;
 	//int did;							   // Source dataset ID
 	int ndim;							   // Dim of the source dataset
 	std::vector<H5VL_log_selection> sels;  // Selections within the dataset

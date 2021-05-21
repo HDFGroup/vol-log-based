@@ -22,7 +22,7 @@ typedef struct H5VL_logi_meta_hdr {
 typedef struct H5VL_logi_metasel_t {
 	hsize_t start[H5S_MAX_RANK];
 	hsize_t count[H5S_MAX_RANK];
-	MPI_Offset boff;
+	MPI_Offset doff;
 } H5VL_logi_metasel_t;
 
 typedef struct H5VL_logi_metablock_t {

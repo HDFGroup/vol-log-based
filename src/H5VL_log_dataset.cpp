@@ -316,6 +316,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 	}
 
 	// Setting metadata;
+	r.info = &(dp->fp->dsets[dp->id]);
 	r.hdr.did = dp->id;
 	r.ndim	  = dp->ndim;
 	r.ubuf	  = (char *)buf;

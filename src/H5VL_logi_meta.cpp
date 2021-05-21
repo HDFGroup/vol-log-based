@@ -17,34 +17,42 @@
 herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_logi_idx_t &idx) {
 	herr_t err = 0;
 	int i, j;
-	int nsel;
-	MPI_Offset *bp;
-	MPI_Offset dsteps[H5S_MAX_RANK];
-	char *zbuf	   = NULL;
-	bool zbufalloc = false;
+	int nsel;	// Nunmber of selections in ent
+	MPI_Offset *bp; // Next 8 byte selection to process
+	MPI_Offset dsteps[H5S_MAX_RANK];	// corrdinate to offset encoding info in ent
+	char *zbuf	   = NULL;	// Buffer for decompressing metadata
+	bool zbufalloc = false;	// Should we free zbuf
 	H5VL_logi_metablock_t block;
-	char *bufp = (char *)ent;
+	char *bufp = (char *)ent;	// Next byte to process in ent
 
+	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
 	bufp += sizeof (H5VL_logi_meta_hdr);
 
-	// Extract the metadata
+	// If there is more than 1 selection
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
+		// Get number of selection (right after the header)
 		nsel = *((int *)bufp);
 		bufp += sizeof (int);
 
+		// If the rest of the entry is comrpessed, decomrpess it
 		if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
 #ifdef ENABLE_ZLIB
-			int inlen, clen;
-			MPI_Offset bsize;  // Size of all zbuf
-			MPI_Offset esize;  // Size of a block
-							   // Calculate buffer size;
+			int inlen;	// Size of comrpessed metadata
+			int clen; // Size of decompressed metadata
+			MPI_Offset bsize;  // Size of zbuf
+			MPI_Offset esize;  // Size of a selection block
+			
+			// Calculate buffer size;
 			esize = 0;
 			bsize = 0;
-			if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {	// Logical location
+			// Count selections
+			if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
+				// Encoded start and count
 				esize += nsel * sizeof (MPI_Offset) * 2;
 				bsize += sizeof (MPI_Offset) * (dset.ndim - 1);
 			} else {
+				// Start and count as coordinate
 				esize += nsel * sizeof (MPI_Offset) * 2 * dset.ndim;
 			}
 			if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SELX) {  // Physical location
@@ -54,9 +62,11 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 			}
 			bsize += esize * nsel;
 
+			// Allocate decompression buffer
 			zbuf	  = (char *)malloc (bsize);
 			zbufalloc = true;
 
+			// Decompress the metadata
 			inlen = block.hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (int);
 			clen  = bsize;
 			err	  = H5VL_log_zip_compress (bufp, inlen, zbuf, &clen);
@@ -69,13 +79,14 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 			zbufalloc = false;
 		}
 	} else {
+		// Entries with single selection will never be comrpessed
 		nsel	  = 1;
 		zbuf	  = bufp;
 		zbufalloc = false;
 	}
 
-	// Convert to req
 	bp = (MPI_Offset *)zbuf;
+	// Retrieve the selection encoding info
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
 		memcpy (dsteps, bp, sizeof (MPI_Offset) * (dset.ndim - 1));
 		dsteps[dset.ndim - 1] = 1;
@@ -107,12 +118,13 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 				memcpy (block.sels[0].count, bp, sizeof (MPI_Offset) * dset.ndim);
 				bp += dset.ndim;
 			}
-			block.sels[0].boff = 0;
+			block.sels[0].doff = 0;
 			block.dsize		   = dset.esize;
 			for (j = 0; j < dset.ndim; j++) { block.dsize *= block.sels[0].count[j]; }
 			idx.insert (block);
 		}
 	} else {
+		// Data location and size in the file
 		block.foff = *((MPI_Offset *)bp);
 		bp++;
 		block.fsize = *((MPI_Offset *)bp);
@@ -120,7 +132,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 
 		block.sels.resize (nsel);
 
-		// Decode start
+		// Retrieve starts of selections
 		for (i = 0; i < nsel; i++) {
 			if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
 				H5VL_logi_sel_decode (dset.ndim, dsteps, *((MPI_Offset *)bp), block.sels[i].start);
@@ -130,7 +142,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 				bp += dset.ndim;
 			}
 		}
-		// Decode count
+		// Retrieve counts of selections
 		for (i = 0; i < nsel; i++) {
 			if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
 				H5VL_logi_sel_decode (dset.ndim, dsteps, *((MPI_Offset *)bp), block.sels[i].count);
@@ -139,20 +151,24 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 				memcpy (block.sels[i].count, bp, sizeof (MPI_Offset) * dset.ndim);
 				bp += dset.ndim;
 			}
+			// Calculate the offset of data of the selection within the unfiltered data block
 			if (i > 0) {
-				block.sels[i].boff = dset.esize;
+				block.sels[i].doff = dset.esize;
 				for (j = 0; j < dset.ndim; j++) {
-					block.sels[i].boff *= block.sels[i - 1].count[j];
+					block.sels[i].doff *= block.sels[i - 1].count[j];
 				}
-				block.sels[i].boff += block.sels[i - 1].boff;
+				block.sels[i].doff += block.sels[i - 1].doff;
 			} else {
-				block.sels[i].boff = 0;
+				block.sels[i].doff = 0;
 			}
 		}
-
+		
+		// Calculate the unfiltered size of the data block
 		block.dsize = dset.esize;
 		for (j = 0; j < dset.ndim; j++) { block.dsize *= block.sels[i - 1].count[j]; }
-		block.dsize += block.sels[i - 1].boff;
+		block.dsize += block.sels[i - 1].doff;
+
+		// Insert to the index
 		idx.insert (block);
 	}
 err_out:;
