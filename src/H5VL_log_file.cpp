@@ -108,7 +108,7 @@ void *H5VL_log_file_create (
 	fp->nldset = 0;
 	fp->nmdset = 0;
 	fp->ndset  = 0;
-	fp->config  = 0;
+	fp->config = 0;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR
 	mpierr = MPI_Comm_rank (comm, &(fp->rank));
@@ -157,8 +157,8 @@ void *H5VL_log_file_create (
 		// fp->ssize=8388608;
 		if ((fp->scount <= 0) || (fp->ssize <= 0)) {
 			fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
-			if(fp->rank==0){
-				printf("Warning: Cannot retrive stripping info, disable aligned data layout\n");
+			if (fp->rank == 0) {
+				printf ("Warning: Cannot retrive stripping info, disable aligned data layout\n");
 			}
 		} else {
 			err = H5VL_log_filei_calc_node_rank (fp);
@@ -177,7 +177,8 @@ void *H5VL_log_file_create (
 	attbuf[1] = fp->nldset;
 	attbuf[2] = fp->nmdset;
 	attbuf[3] = fp->config;
-	err = H5VL_logi_add_att (fp, "_int_att", H5T_STD_I32LE, H5T_NATIVE_INT32, 4, attbuf, dxpl_id,NULL);
+	err = H5VL_logi_add_att (fp, "_int_att", H5T_STD_I32LE, H5T_NATIVE_INT32, 4, attbuf, dxpl_id,
+							 NULL);
 	CHECK_ERR
 
 	// create the contig SID
@@ -267,9 +268,9 @@ void *H5VL_log_file_open (
 	}
 
 	// Init file obj
-	fp		 = new H5VL_log_file_t (uvlid);
-	fp->flag = flags;
-	fp->config  = 0;
+	fp		   = new H5VL_log_file_t (uvlid);
+	fp->flag   = flags;
+	fp->config = 0;
 	MPI_Comm_dup (comm, &(fp->comm));
 	MPI_Comm_rank (comm, &(fp->rank));
 	fp->dxplid = H5Pcopy (dxpl_id);
@@ -390,7 +391,8 @@ err_out:;
  */
 herr_t H5VL_log_file_specific (
 	void *file, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
-	herr_t err			= 0;
+	herr_t err = 0;
+	int i;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -454,6 +456,13 @@ herr_t H5VL_log_file_specific (
 			va_end (saved_args);
 		} break;
 		case H5VL_FILE_FLUSH: {
+			// Flush all merged requests
+			for (i = 0; i < fp->mreqs.size (); i++) {
+				if (fp->mreqs[i] && (fp->mreqs[i]->nsel > 0)) {
+					fp->wreqs.push_back (fp->mreqs[i]);
+					fp->mreqs[i] = new H5VL_log_merged_wreq_t (fp, i, 1);
+				}
+			}
 			if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
 				err = H5VL_log_nb_flush_write_reqs_align (fp, dxpl_id);
 			} else {

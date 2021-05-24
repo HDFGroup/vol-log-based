@@ -26,26 +26,27 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	MPI_Offset *moffs = NULL;  // metadata offset in memory of merged entry per dataset
 	MPI_Offset doff;		   // Local metadata offset within the metadata dataset
 	MPI_Offset mdsize_all;	   // Global metadata size
-	MPI_Offset mdsize = 0;	   // Local metadata size
-	MPI_Aint *offs	  = NULL;  // Offset in MPI_Type_hindexed
-	int *lens		  = NULL;  // Lens in MPI_Type_hindexed
-	int nentry		  = 0;	   // Number of metadata entries
-	size_t bsize	  = 0;	   // Size of metadata buffer = size of metadata before compression
-	size_t esize;			   // Size of the current processing metadata entry
+	MPI_Offset mdsize  = 0;	   // Local metadata size
+	MPI_Offset *mdoffs = NULL;
+	MPI_Aint *offs	   = NULL;	// Offset in MPI_Type_hindexed
+	int *lens		   = NULL;	// Lens in MPI_Type_hindexed
+	int nentry		   = 0;		// Number of metadata entries
+	size_t bsize	   = 0;		// Size of metadata buffer = size of metadata before compression
+	size_t esize;				// Size of the current processing metadata entry
 #ifdef ENABLE_ZLIB
 	MPI_Offset zbsize = 0;	// Size of zbuf
 	char *zbuf;				// Buffer to temporarily sotre compressed data
 #endif
-	char *buf	= NULL;				// Buffer to store merged entries
-	char **bufp = NULL;				// Point to merged entry per dataset in buf
-	char mdname[32];				// Name of metadata dataset
-	int clen, inlen;				// Compressed size; Size of data to be compressed
-	void *mdp;						// under VOL object of the metadata dataset
-	hid_t mdsid = -1;				// metadata dataset data space ID
-	hsize_t dsize;					// Size of the metadata dataset = mdsize_all
-	MPI_Offset seloff, soff, eoff;	// Temp variable for encoding start and end
-	haddr_t mdoff;					// File offset of the metadata dataset
-	MPI_Datatype mmtype = MPI_DATATYPE_NULL;
+	char *buf	= NULL;						  // Buffer to store merged entries
+	char **bufp = NULL;						  // Point to merged entry per dataset in buf
+	char mdname[32];						  // Name of metadata dataset
+	int clen, inlen;						  // Compressed size; Size of data to be compressed
+	void *mdp;								  // under VOL object of the metadata dataset
+	hid_t mdsid = -1;						  // metadata dataset data space ID
+	hsize_t dsize;							  // Size of the metadata dataset = mdsize_all
+	MPI_Offset seloff, soff, eoff;			  // Temp variable for encoding start and end
+	haddr_t mdoff;							  // File offset of the metadata dataset
+	MPI_Datatype mmtype = MPI_DATATYPE_NULL;  // Memory datatype for writing the metadata
 	MPI_Status stat;
 	std::vector<std::array<MPI_Offset, H5S_MAX_RANK>> dsteps (fp->ndset);
 
@@ -53,78 +54,23 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-	mlens = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->ndset * 2 + 1));
-	memset (mlens, 0, sizeof (MPI_Offset) * fp->ndset);
-	moffs = mlens + fp->ndset;
-	cnt	  = (int *)malloc (sizeof (int) * fp->ndset * 2);
-	memset (cnt, 0, sizeof (int) * fp->ndset);
-	flag = cnt + fp->ndset;
-
-	// Merge entries with 1 selection of a dataset into a single entry with multiple selection
-	if (fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
-		// Calculate the information to encode and decode selection
-		if (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-			for (i = 0; i < fp->ndset; i++) {
-				dsteps[i][fp->dsets[i].ndim - 1] = 1;
-				for (j = fp->dsets[i].ndim - 2; j > -1; j--) {
-					dsteps[i][j] = dsteps[i][j + 1] * fp->dsets[i].dims[j + 1];
-				}
-			}
-		}
-		// Calculate size and offset of the metadata per dataset
-		merge_threshould = 2;  // merge entries < 2 selection
-	} else {
-		merge_threshould = -1;	// don't merge any
-	}
-
+	// Count the number of metadata blocks
 	for (auto &rp : fp->wreqs) {
-		if (rp.nsel < merge_threshould) {  // Don't merge varn entries
-			cnt[rp.hdr.did]++;
-		} else {
-			char *ptr;
+		char *ptr;
 #ifdef ENABLE_ZLIB
-			if (zbsize < rp.hdr.meta_size) { zbsize = rp.hdr.meta_size; }
+		// metadata compression buffer size
+		if (zbsize < rp->hdr.meta_size) { zbsize = rp->hdr.meta_size; }
 #endif
-			mdsize += rp.hdr.meta_size;
-			nentry++;
+		// Calculate total metadata size
+		mdsize += rp->hdr.meta_size;
+		nentry++;
 
-			ptr					 = rp.meta_buf + sizeof (H5VL_logi_meta_hdr);
-			*((MPI_Offset *)ptr) = rp.ldoff;
-			ptr += sizeof (MPI_Offset);
-			*((MPI_Offset *)ptr) = rp.rsize;
-			ptr += sizeof (MPI_Offset);
-		}
-	}
-
-	// Count the size of merged entries
-	if (fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
-		for (i = 0; i < fp->ndset; i++) {
-			if (cnt[i] > 0) {							  // Have merged entry
-				mlens[i] += sizeof (H5VL_logi_meta_hdr);  // Size, ID and flag
-				// Size of selection list
-				// nsel field only present when there are more than 1 hyperslab
-				if (cnt[i] > 1) { mlens[i] += sizeof (int); }
-				// Selection list
-				if (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-					mlens[i] += fp->dsets[i].ndim * sizeof (MPI_Offset);  // dstep
-					mlens[i] += (sizeof (MPI_Offset) * 3 + sizeof (size_t)) * (size_t)cnt[i];
-				} else {
-					mlens[i] += (sizeof (MPI_Offset) * fp->dsets[i].ndim * 2 + sizeof (MPI_Offset) +
-								 sizeof (size_t)) *
-								(size_t)cnt[i];
-				}
-			}
-			mdsize += mlens[i];
-		}
-	}
-
-	// Buf offset for each merged entry
-	moffs[0] = 0;
-	for (i = 0; i < fp->ndset; i++) {
-		moffs[i + 1] = moffs[i] + mlens[i];
-#ifdef ENABLE_ZLIB
-		if (zbsize < mlens[i]) { zbsize = mlens[i]; }
-#endif
+		// Update file offset and size of the data block unknown when the request was posted
+		ptr					 = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
+		*((MPI_Offset *)ptr) = rp->ldoff;
+		ptr += sizeof (MPI_Offset);
+		*((MPI_Offset *)ptr) = rp->rsize;
+		ptr += sizeof (MPI_Offset);
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_INIT);
@@ -133,137 +79,26 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE, (double)(mdsize) / 1048576);
 #endif
 
-	// Pack data
-	H5VL_LOGI_PROFILING_TIMER_START;
-#ifdef ENABLE_ZLIB
-	buf	 = (char *)malloc (moffs[fp->ndset] + zbsize);
-	zbuf = buf + moffs[fp->ndset];
-#else
-	buf = (char *)malloc (moffs[fp->ndset]);
-#endif
-	bufp = (char **)malloc (sizeof (char *) * fp->ndset * 2);
-
-	// Pack data for the merged requests
-	if (fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
-		nentry += fp->ndset;
-		// Header for merged entries
-		for (i = 0; i < fp->ndset; i++) {
-			bufp[i] = buf + moffs[i] + sizeof (H5VL_logi_meta_hdr);	 // Skip the header for now
-			flag[i] = 0;
-			// Fill the header
-			// Don't generate merged entry if there is none
-			if (cnt[i] > 0) {
-				if ((fp->dsets[i].ndim > 1) && (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
-					flag[i] |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
-				}
-				if (cnt[i] > 1) {
-					flag[i] |= H5VL_LOGI_META_FLAG_MUL_SELX;
-
-					if (fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
-						flag[i] |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
-					}
-
-					// Number of entries
-					*((int *)bufp[i]) = cnt[i];
-					bufp[i] += sizeof (int);
-				}
-			}
-			bufp[i + fp->ndset] = bufp[i] + sizeof (MPI_Offset) * cnt[i] * 2;
-		}
-
-		// Pack selection
-		for (auto &rp : fp->wreqs) {
-			if (rp.nsel < merge_threshould) {  // Part of merged entries
-				char *ptr;
-
-				ptr = bufp[rp.hdr.did];
-				bufp[rp.hdr.did] += sizeof (MPI_Offset);
-
-				// File offset and size
-				*((MPI_Offset *)ptr) = rp.ldoff;
-				ptr += sizeof (MPI_Offset) * cnt[rp.hdr.did];
-				*((size_t *)ptr) = rp.rsize;
-				ptr += sizeof (size_t) * cnt[rp.hdr.did];
-
-				// Start and count
-				if (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-					MPI_Offset *start;
-					MPI_Offset *count;
-
-					start = (MPI_Offset *)(rp.meta_buf + sizeof (H5VL_logi_meta_hdr) +
-										   sizeof (MPI_Offset) * 2);
-					count = start + fp->dsets[rp.hdr.did].ndim;
-					soff = eoff = 0;
-					for (i = 0; i < fp->dsets[rp.hdr.did].ndim; i++) {
-						soff += start[i] *
-								dsteps[rp.hdr.did][i];	// Starting offset of the bounding box
-						eoff += (count[i]) *
-								dsteps[rp.hdr.did][i];	// Ending offset of the bounding box
-					}
-					ptr = bufp[rp.hdr.did + fp->ndset];
-					bufp[rp.hdr.did + fp->ndset] += sizeof (MPI_Offset);
-					*((MPI_Offset *)ptr) = soff;
-					ptr += sizeof (MPI_Offset) * cnt[rp.hdr.did];
-					*((MPI_Offset *)ptr) = eoff;
-					ptr += sizeof (MPI_Offset) * cnt[rp.hdr.did];
-				} else {
-					ptr = bufp[rp.hdr.did + fp->ndset];
-					bufp[rp.hdr.did + fp->ndset] += sizeof (MPI_Offset) * cnt[rp.hdr.did];
-					memcpy (ptr,
-							rp.meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2,
-							sizeof (MPI_Offset) * fp->dsets[rp.hdr.did].ndim);
-					ptr += sizeof (MPI_Offset) * fp->dsets[rp.hdr.did].ndim * cnt[rp.hdr.did];
-					memcpy (ptr,
-							rp.meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2,
-							sizeof (MPI_Offset) * fp->dsets[rp.hdr.did].ndim);
-				}
-			}
-		}
-	}
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_PACK);
-
 #ifdef ENABLE_ZLIB
 	H5VL_LOGI_PROFILING_TIMER_START;
 	// Recount mdsize after compression
 	mdsize = 0;
-	// Compress merged entries
-	if (fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
-		for (i = 0; i < fp->ndset; i++) {
-			if (flag[i] & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
-				inlen = mlens[i] - sizeof (H5VL_logi_meta_hdr);
-				clen  = zbsize;
-				err	  = H5VL_log_zip_compress (buf + moffs[i] + sizeof (H5VL_logi_meta_hdr), inlen,
-											   zbuf, &clen);
-				if ((err == 0) && (clen < inlen)) {
-					memcpy (buf + moffs[i] + sizeof (H5VL_logi_meta_hdr), zbuf, clen);
-					mlens[i] = sizeof (H5VL_logi_meta_hdr) + clen;
-				} else {
-					// Compressed size larger, abort compression
-					flag[i] &= ~(H5VL_FILEI_CONFIG_SEL_DEFLATE);
-				}
-			}
-			// Recalculate metadata size after comrpession
-			mdsize += mlens[i];
-		}
-	}
-
 	// Compress standalone varn entries
 	for (auto &rp : fp->wreqs) {
-		if (rp.nsel >= merge_threshould) {
-			if (rp.hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
-				inlen = rp.hdr.meta_size - sizeof (H5VL_logi_meta_hdr);
+		if (rp->nsel >= merge_threshould) {
+			if (rp->hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
+				inlen = rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr);
 				clen  = zbsize;
-				err = H5VL_log_zip_compress (rp.meta_buf + sizeof (H5VL_logi_meta_hdr), inlen, zbuf,
-											 &clen);
+				err	  = H5VL_log_zip_compress (rp->meta_buf + sizeof (H5VL_logi_meta_hdr), inlen,
+											   zbuf, &clen);
 				if ((err == 0) && (clen < inlen)) {
-					memcpy (rp.meta_buf + sizeof (H5VL_logi_meta_hdr), zbuf, clen);
-					rp.hdr.meta_size = sizeof (H5VL_logi_meta_hdr) + clen;
+					memcpy (rp->meta_buf + sizeof (H5VL_logi_meta_hdr), zbuf, clen);
+					rp->hdr.meta_size = sizeof (H5VL_logi_meta_hdr) + clen;
 				} else {
 					// Compressed size larger, abort compression
-					rp.hdr.flag &= ~(H5VL_FILEI_CONFIG_SEL_DEFLATE);
+					rp->hdr.flag &= ~(H5VL_FILEI_CONFIG_SEL_DEFLATE);
 				}
-				mdsize += rp.hdr.meta_size;
+				mdsize += rp->hdr.meta_size;
 			}
 		}
 	}
@@ -274,48 +109,43 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 #endif
 #endif
 
-	// Write entry header later after compression
+	// Rewrite entry header later after compression
 	H5VL_LOGI_PROFILING_TIMER_START;
-	// Header for the merged requests
-	if (fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
-		// Header for merged entries
-		for (i = 0; i < fp->ndset; i++) {
-			// Don't generate merged entry if there is none
-			if (cnt[i] > 0) {
-				*((H5VL_logi_meta_hdr *)(buf + moffs[i])) = {(int)mlens[i], i, flag[i]};
-			}
-		}
-	}
 	// Header for standalone varn requests
-	for (auto &rp : fp->wreqs) {
-		if (rp.nsel >= merge_threshould) {	// Part of merged entries
-			*((H5VL_logi_meta_hdr *)rp.meta_buf) = rp.hdr;
-		}
-	}
+	for (auto &rp : fp->wreqs) { *((H5VL_logi_meta_hdr *)rp->meta_buf) = rp->hdr; }
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_PACK);
 
 	// Write metadata to file
 	H5VL_LOGI_PROFILING_TIMER_START;
+
 	// Create memory datatype
+	if (fp->rank == 0) { nentry++; }
 	offs = (MPI_Aint *)malloc (sizeof (MPI_Aint) * nentry);
 	lens = (int *)malloc (sizeof (int) * nentry);
-	if (fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
-		// moffs will be reused as file offset, create memory type first
-		for (i = 0; i < fp->ndset; i++) {
-			offs[i] = (MPI_Aint) (moffs[i] + (size_t)buf);
-			lens[i] = (int)mlens[i];
-		}
-		nentry = fp->ndset;
+	if (fp->rank == 0) {
+		mdoffs = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->np + 1));
+		CHECK_PTR (mdoffs)
+
+		offs[0] = (MPI_Aint) (mdoffs);
+		lens[0] = (int)(sizeof (MPI_Offset) * (fp->np + 1));
+
+		nentry = 1;
+		mdsize += lens[0];
 	} else {
 		nentry = 0;
 	}
-	// Standalone varn requests
-	for (auto &rp : fp->wreqs) {
-		if (rp.nsel >= merge_threshould) {	// Part of merged entries
-			offs[nentry]   = (MPI_Aint)rp.meta_buf;
-			lens[nentry++] = (int)rp.hdr.meta_size;
+	if (fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
+		// moffs will be reused as file offset, create memory type first
+		for (i = 0; i < fp->ndset; i++) {
+			offs[nentry]   = (MPI_Aint) (moffs[i] + (size_t)buf);
+			lens[nentry++] = (int)mlens[i];
 		}
+	}
+	// Gather offset and lens
+	for (auto &rp : fp->wreqs) {
+		offs[nentry]   = (MPI_Aint)rp->meta_buf;
+		lens[nentry++] = (int)rp->hdr.meta_size;
 	}
 
 	mpierr = MPI_Type_hindexed (nentry, lens, offs, MPI_BYTE, &mmtype);
@@ -326,13 +156,26 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 	// Sync metadata size
 	H5VL_LOGI_PROFILING_TIMER_START;
-	mpierr = MPI_Allreduce (&mdsize, &mdsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
+	// mpierr = MPI_Allreduce (&mdsize, &mdsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
+	// CHECK_MPIERR
+	mpierr = MPI_Gather (&mdsize, 1, MPI_LONG_LONG, mdoffs + 1, 1, MPI_LONG_LONG, 0, fp->comm);
 	CHECK_MPIERR
+	if (fp->rank == 0) {  // Rank 0 calculate
+		mdoffs[0] = 0;
+		for (i = 0; i < fp->np; i++) { mdoffs[i + 1] += mdoffs[i]; }
+	}
+	mpierr = MPI_Scatter (mdoffs, 1, MPI_LONG_LONG, &doff, 1, MPI_LONG_LONG, 0, fp->comm);
+	CHECK_MPIERR
+	mdsize_all = mdoffs[fp->np];
+	mpierr	   = MPI_Bcast (&mdsize_all, 1, MPI_LONG_LONG, 0, fp->comm);
+	CHECK_MPIERR
+
+	if (fp->rank == 0) { mdoffs[0] = lens[0]; }
 	// NOTE: Some MPI implementation do not produce output for rank 0, moffs must ne initialized
 	// to 0
-	doff   = 0;
-	mpierr = MPI_Exscan (&mdsize, &doff, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
-	CHECK_MPIERR
+	// doff = 0;
+	// mpierr = MPI_Exscan (&mdsize, &doff, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
+	// CHECK_MPIERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SYNC);
 
 	dsize = (hsize_t)mdsize_all;
@@ -388,7 +231,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	}
 
 	for (auto &rp : fp->wreqs) {
-		if (rp.meta_buf) { free (rp.meta_buf); }
+		if (rp->meta_buf) { free (rp->meta_buf); }
+		delete rp;
 	}
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
 err_out:
@@ -404,6 +248,7 @@ err_out:
 	if (mmtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mmtype); }
 	return err;
 }
+
 
 /*
  * Remove all existing index entry in fp
@@ -439,7 +284,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 
 	// iterate through all metadata datasets
 	for (i = 0; i < fp->nmdset; i++) {
-			// Open the metadata dataset
+		// Open the metadata dataset
 		sprintf (mdname, "_md_%d", i);
 		mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT,
 								fp->dxplid, NULL);
@@ -465,7 +310,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 			H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, &nsec, NULL);
 		CHECK_ERR
 
-	// Allocate buffer for raw metadata
+		// Allocate buffer for raw metadata
 		start = sizeof (MPI_Offset) * (nsec + 1);
 		count = mdsize - start;
 		buf	  = (char *)malloc (sizeof (char) * count);

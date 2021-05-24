@@ -57,13 +57,12 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	MPI_File fh;
 	int fd;
 
-	std::vector<H5VL_log_wreq_t> wreqs;
+	std::vector<H5VL_log_wreq_t*> wreqs;
 	int nflushed;
 	std::vector<H5VL_log_rreq_t> rreqs;
 
-	// Should we do metadata caching?
+	std::vector<H5VL_log_merged_wreq_t*> mreqs;
 	std::vector<H5VL_log_dset_info_t> dsets;
-	// std::vector<H5VL_log_dset_meta_t> mdc;
 
 	ssize_t bsize;
 	size_t bused;
