@@ -2,22 +2,24 @@
 #include <config.h>
 #endif
 
-#include "H5VL_log_info.hpp"
-#include "H5VL_logi.hpp"
-#include <cstdlib>
-#include <cassert>
 #include <hdf5.h>
+
+#include <cassert>
+#include <cstdlib>
 #include <cstring>
 
+#include "H5VL_log_info.hpp"
+#include "H5VL_logi.hpp"
+
 const H5VL_info_class_t H5VL_log_info_g {
- 
-									 sizeof (H5VL_log_info_t), /* info size    */
-									 H5VL_log_info_copy,	   /* info copy    */
-									 H5VL_log_info_cmp,		   /* info compare */
-									 H5VL_log_info_free,	   /* info free    */
-									 H5VL_log_info_to_str,	   /* info to str  */
-									 H5VL_log_str_to_info,	   /* str to info  */
-								 };
+
+	sizeof (H5VL_log_info_t), /* info size    */
+	H5VL_log_info_copy,		  /* info copy    */
+	H5VL_log_info_cmp,		  /* info compare */
+	H5VL_log_info_free,		  /* info free    */
+	H5VL_log_info_to_str,	  /* info to str  */
+	H5VL_log_str_to_info,	  /* str to info  */
+};
 
 /*---------------------------------------------------------------------------
  * Function:    H5VL_log_info_copy
@@ -176,7 +178,8 @@ herr_t H5VL_log_str_to_info (const char *str, void **_info) {
 
 	/* Retrieve the underlying VOL connector value and info */
 	sscanf (str, "under_vol=%u;", &under_vol_value);
-	uvlid = H5VLregister_connector_by_value ((H5VL_class_value_t)under_vol_value, H5P_VOL_INITIALIZE_DEFAULT);
+	uvlid				 = H5VLregister_connector_by_value ((H5VL_class_value_t)under_vol_value,
+												H5P_VOL_INITIALIZE_DEFAULT);
 	under_vol_info_start = strchr (str, '{');
 	under_vol_info_end	 = strrchr (str, '}');
 	assert (under_vol_info_end > under_vol_info_start);

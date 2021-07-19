@@ -456,8 +456,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 
 		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VL_logi_dataset_optional_wrapper (ldp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET,
-												  dxplid, NULL, &doff);
+		err = H5VL_logi_dataset_get_foff (ldp, fp->uvlid, dxplid, &doff);
 		CHECK_ERR  // Get dataset file offset
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
 
@@ -675,8 +674,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 		CHECK_PTR (ldp);
 
 		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VL_logi_dataset_optional_wrapper (ldp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET,
-												  dxplid, NULL, &doff);
+		err = H5VL_logi_dataset_get_foff (ldp, fp->uvlid, dxplid, &doff);
 		CHECK_ERR	   // Get dataset file offset
 		if (remain) {  // Align to the next stripe
 			doff += fp->ssize - remain;

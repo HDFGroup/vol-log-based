@@ -4,9 +4,10 @@
 #include <config.h>
 #endif
 
+#include <H5VLconnector.h>
 #include <mpi.h>
+
 #include <cstdio>
-#include <H5VLpublic.h>
 
 #ifdef LOGVOL_DEBUG
 extern int H5VL_log_debug_MPI_Type_create_subarray (int ndims,

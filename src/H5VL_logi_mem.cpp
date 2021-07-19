@@ -3,9 +3,10 @@
 #endif
 
 #include <cstdlib>
-#include "H5VL_logi_mem.hpp"
+
 #include "H5VL_log_obj.hpp"
 #include "H5VL_logi.hpp"
+#include "H5VL_logi_mem.hpp"
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL__H5VL_log_new_obj
@@ -20,19 +21,16 @@
  *
  *-------------------------------------------------------------------------
  */
-H5VL_log_obj_t *H5VL_log_new_obj(void *under_obj, hid_t uvlid) {
-    H5VL_log_obj_t *new_obj;
+H5VL_log_obj_t *H5VL_log_new_obj (void *under_obj, hid_t uvlid) {
+	H5VL_log_obj_t *new_obj;
 
-    new_obj = (H5VL_log_obj_t *)calloc(1, sizeof(H5VL_log_obj_t));
-    new_obj->uo = under_obj;
-    new_obj->uvlid = uvlid;
-    H5VL_logi_inc_ref(new_obj->uvlid);
+	new_obj		   = (H5VL_log_obj_t *)calloc (1, sizeof (H5VL_log_obj_t));
+	new_obj->uo	   = under_obj;
+	new_obj->uvlid = uvlid;
+	H5VL_logi_inc_ref (new_obj->uvlid);
 
-    return new_obj;
+	return new_obj;
 } /* end H5VL__H5VL_log_new_obj() */
-
-
-
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL__H5VL_log_free_obj
@@ -50,16 +48,16 @@ H5VL_log_obj_t *H5VL_log_new_obj(void *under_obj, hid_t uvlid) {
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_free_obj(H5VL_log_obj_t *obj) {
-    //hid_t err_id;
+herr_t H5VL_log_free_obj (H5VL_log_obj_t *obj) {
+	// hid_t err_id;
 
-    //err_id = H5Eget_current_stack();
+	// err_id = H5Eget_current_stack();
 
-    H5VL_logi_dec_ref(obj->uvlid);
+	H5VL_logi_dec_ref (obj->uvlid);
 
-    //H5Eset_current_stack(err_id);
+	// H5Eset_current_stack(err_id);
 
-    free(obj);
+	free (obj);
 
-    return 0;
+	return 0;
 } /* end H5VL__H5VL_log_free_obj() */

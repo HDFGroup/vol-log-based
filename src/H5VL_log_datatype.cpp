@@ -122,8 +122,10 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-static herr_t H5VL_log_datatype_get (
-	void *dt, H5VL_datatype_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_log_datatype_get (void *dt,
+									 H5VL_datatype_get_args_t *args,
+									 hid_t dxpl_id,
+									 void **req) {
 	herr_t err		   = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)dt;
 	H5VL_log_req_t *rp;
@@ -136,7 +138,7 @@ static herr_t H5VL_log_datatype_get (
 		ureqp = NULL;
 	}
 
-	err = H5VLdatatype_get (op->uo, op->uvlid, get_type, dxpl_id, ureqp, arguments);
+	err = H5VLdatatype_get (op->uo, op->uvlid, args, dxpl_id, ureqp);
 	CHECK_ERR
 
 	if (req) {
@@ -159,10 +161,9 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 static herr_t H5VL_log_datatype_specific (void *obj,
-										  H5VL_datatype_specific_t specific_type,
+										  H5VL_datatype_specific_args_t *args,
 										  hid_t dxpl_id,
-										  void **req,
-										  va_list arguments) {
+										  void **req) {
 	herr_t err		   = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	H5VL_log_req_t *rp;
@@ -175,7 +176,7 @@ static herr_t H5VL_log_datatype_specific (void *obj,
 		ureqp = NULL;
 	}
 
-	err = H5VLdatatype_specific (op->uo, op->uvlid, specific_type, dxpl_id, ureqp, arguments);
+	err = H5VLdatatype_specific (op->uo, op->uvlid, args, dxpl_id, ureqp);
 	CHECK_ERR
 
 	if (req) {
@@ -197,8 +198,10 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-static herr_t H5VL_log_datatype_optional (
-	void *obj, H5VL_datatype_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
+static herr_t H5VL_log_datatype_optional (void *obj,
+										  H5VL_optional_args_t *args,
+										  hid_t dxpl_id,
+										  void **req) {
 	herr_t err		   = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	H5VL_log_req_t *rp;
@@ -211,7 +214,7 @@ static herr_t H5VL_log_datatype_optional (
 		ureqp = NULL;
 	}
 
-	err = H5VLdatatype_optional (op->uo, op->uvlid, opt_type, dxpl_id, ureqp, arguments);
+	err = H5VLdatatype_optional (op->uo, op->uvlid, args, dxpl_id, ureqp);
 	CHECK_ERR
 
 	if (req) {

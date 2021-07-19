@@ -59,7 +59,7 @@
 		}                                                             \
 	}
 
-#define CHECK_PTR(A)                                                 \
+#define CHECK_PTR(A)                                                  \
 	{                                                                 \
 		if (A == NULL) {                                              \
 			printf ("Error at line %d in %s:\n", __LINE__, __FILE__); \

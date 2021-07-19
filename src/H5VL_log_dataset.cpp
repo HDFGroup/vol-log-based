@@ -191,11 +191,8 @@ void *H5VL_log_dataset_open (void *obj,
 	CHECK_PTR (dp->uo);
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_OPEN);
 
-	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, ureqp,
-										 &(dp->dtype));
-	CHECK_ERR
-	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_GET);
+	dp->dtype = H5VL_logi_dataset_get_type (dp->uo, dp->uvlid, dxpl_id);
+	CHECK_ID (dp->dtype)
 	if (req) { rp->append (ureq); }
 
 	dp->esize = H5Tget_size (dp->dtype);
@@ -228,9 +225,8 @@ void *H5VL_log_dataset_open (void *obj,
 	dp->fp->dsets[dp->id] = *dp;
 
 	// Filters
-	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_DCPL, dxpl_id, NULL,
-										 &(dcpl_id));
-	CHECK_ERR
+	dcpl_id = H5VL_logi_dataset_get_dcpl (dp->uo, dp->uvlid, dxpl_id);
+	CHECK_ID (dcpl_id)
 	nfilter = H5Pget_nfilters (dcpl_id);
 	CHECK_ID (nfilter);
 	dp->filters.resize (nfilter);
@@ -679,61 +675,55 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_dataset_get (
-	void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+herr_t H5VL_log_dataset_get (void *dset, H5VL_dataset_get_args_t *args, hid_t dxpl_id, void **req) {
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	herr_t err			= 0;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-	switch (get_type) {
+	switch (args->op_type) {
 		/* H5Dget_space */
 		case H5VL_DATASET_GET_SPACE: {
-			hid_t *ret_id = va_arg (arguments, hid_t *);
-
-			*ret_id = H5Screate_simple (dp->ndim, dp->dims, dp->mdims);
-
+			args->args.get_space.space_id = H5Screate_simple (dp->ndim, dp->dims, dp->mdims);
 			break;
 		}
 
 		/* H5Dget_space_status */
 		case H5VL_DATASET_GET_SPACE_STATUS: {
+			err = -1;
+			ERR_OUT ("H5VL_DATASET_GET_SPACE_STATUS not supported")
 			break;
 		}
 
-		/* H5Dget_type */
+		/* H5Dargs->get_type */
 		case H5VL_DATASET_GET_TYPE: {
-			hid_t *ret_id = va_arg (arguments, hid_t *);
-
-			*ret_id = H5Tcopy (dp->dtype);
-
+			args->args.get_type.type_id = H5Tcopy (dp->dtype);
 			break;
 		}
 
 		/* H5Dget_create_plist */
 		case H5VL_DATASET_GET_DCPL: {
 			err = -1;
-			ERR_OUT ("get_type not supported")
+			ERR_OUT ("H5VL_DATASET_GET_DCPL not supported")
 			break;
 		}
 
 		/* H5Dget_access_plist */
 		case H5VL_DATASET_GET_DAPL: {
 			err = -1;
-			ERR_OUT ("get_type not supported")
+			ERR_OUT ("H5VL_DATASET_GET_DAPL not supported")
 			break;
 		}
 
 		/* H5Dget_storage_size */
 		case H5VL_DATASET_GET_STORAGE_SIZE: {
-			hsize_t *ret = va_arg (arguments, hsize_t *);
-			err			 = -1;
-			ERR_OUT ("get_type not supported")
+			err = -1;
+			ERR_OUT ("H5VL_DATASET_GET_STORAGE_SIZE not supported")
 			break;
 		}
 		default:
-			ERR_OUT ("get_type not supported")
+			ERR_OUT ("Unrecognized op type")
 	} /* end switch */
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_GET);
@@ -752,20 +742,19 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_dataset_specific (void *obj,
-								  H5VL_dataset_specific_t specific_type,
+								  H5VL_dataset_specific_args_t *args,
 								  hid_t dxpl_id,
-								  void **req,
-								  va_list arguments) {
+								  void **req) {
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)obj;
 	herr_t err			= 0;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-	switch (specific_type) {
+	switch (args->op_type) {
 		case H5VL_DATASET_SET_EXTENT: { /* H5Dset_extent */
 			int i;
-			const hsize_t *new_sizes = va_arg (arguments, const hsize_t *);
+			const hsize_t *new_sizes = args->args.set_extent.size;
 
 			// Adjust dim
 			for (i = 0; i < dp->ndim; i++) {
@@ -798,7 +787,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
 		}
 		default:
 			H5VL_LOGI_PROFILING_TIMER_START;
-			err = H5VLdataset_specific (dp->uo, dp->uvlid, specific_type, dxpl_id, req, arguments);
+			err = H5VLdataset_specific (dp->uo, dp->uvlid, args, dxpl_id, req);
 			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_SPECIFIC);
 	}
 
@@ -818,10 +807,9 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_dataset_optional (void *obj,
-								  H5VL_dataset_optional_t optional_type,
+								  H5VL_optional_args_t *args,
 								  hid_t dxpl_id,
-								  void **req,
-								  va_list arguments) {
+								  void **req) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	herr_t err		   = 0;
 	H5VL_log_req_t *rp;
@@ -836,7 +824,7 @@ herr_t H5VL_log_dataset_optional (void *obj,
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VLdataset_optional (op->uo, op->uvlid, optional_type, dxpl_id, req, arguments);
+	err = H5VLdataset_optional (op->uo, op->uvlid, args, dxpl_id, req);
 	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLDATASET_OPTIONAL);
 
 	if (req) {

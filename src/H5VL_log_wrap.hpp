@@ -1,6 +1,7 @@
 #pragma once
 
-#include <H5VLpublic.h>
+#include <H5VLconnector.h>
+
 #include "H5VL_log_file.hpp"
 
 /* The log VOL wrapper context */
@@ -17,5 +18,3 @@ extern herr_t H5VL_log_get_wrap_ctx (const void *obj, void **wrap_ctx);
 extern void *H5VL_log_wrap_object (void *obj, H5I_type_t obj_type, void *_wrap_ctx);
 extern void *H5VL_log_unwrap_object (void *obj);
 extern herr_t H5VL_log_free_wrap_ctx (void *_wrap_ctx);
-
-

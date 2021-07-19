@@ -1,6 +1,6 @@
 #pragma once
 
-#include <H5VLpublic.h>
+#include <H5VLconnector.h>
 #include <mpi.h>
 
 #include <vector>

@@ -198,11 +198,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 
 		// Get metadata dataset file offset
-		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VL_logi_dataset_optional_wrapper (mdp, fp->uvlid, H5VL_NATIVE_DATASET_GET_OFFSET,
-												  fp->dxplid, NULL, &mdoff);
+		err = H5VL_logi_dataset_get_foff (mdp, fp->uvlid, fp->dxplid, &mdoff);
 		CHECK_ERR
-		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_CREATE);
 
 		// Close the metadata dataset
@@ -249,7 +246,6 @@ err_out:
 	return err;
 }
 
-
 /*
  * Remove all existing index entry in fp
  * Load all metadata in the metadata index of fp
@@ -291,11 +287,8 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		CHECK_PTR (mdp)
 
 		// Get data space and size
-		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VL_logi_dataset_get_wrapper (mdp, fp->uvlid, H5VL_DATASET_GET_SPACE, fp->dxplid,
-											 NULL, &mdsid);
-		CHECK_ERR
-		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_GET);
+		mdsid = H5VL_logi_dataset_get_space (mdp, fp->uvlid, fp->dxplid);
+		CHECK_ID (mdsid)
 		ndim = H5Sget_simple_extent_dims (mdsid, &mdsize, NULL);
 		LOG_VOL_ASSERT (ndim == 1);
 
@@ -394,11 +387,8 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	CHECK_PTR (mdp)
 
 	// Get data space and size
-	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VL_logi_dataset_get_wrapper (mdp, fp->uvlid, H5VL_DATASET_GET_SPACE, fp->dxplid, NULL,
-										 &mdsid);
-	CHECK_ERR
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_GET);
+	mdsid = H5VL_logi_dataset_get_space (mdp, fp->uvlid, fp->dxplid);
+	CHECK_ID (mdsid)
 	ndim = H5Sget_simple_extent_dims (mdsid, &mdsize, NULL);
 	LOG_VOL_ASSERT (ndim == 1);
 

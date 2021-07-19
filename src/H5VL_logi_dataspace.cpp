@@ -2,17 +2,19 @@
 #include <config.h>
 #endif
 
-#include "H5VL_logi_dataspace.hpp"
-#include "H5VL_logi_util.hpp"
-#include "H5VL_logi_err.hpp"
-#include "H5VL_logi_debug.hpp"
-#include "H5VL_logi.hpp"
-#include <vector>
+#include <hdf5.h>
+#include <mpi.h>
+
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
-#include <algorithm>
-#include <mpi.h>
-#include <hdf5.h>
+#include <vector>
+
+#include "H5VL_logi.hpp"
+#include "H5VL_logi_dataspace.hpp"
+#include "H5VL_logi_debug.hpp"
+#include "H5VL_logi_err.hpp"
+#include "H5VL_logi_util.hpp"
 
 herr_t H5VL_logi_get_dataspace_sel_type (hid_t sid, size_t esize, MPI_Datatype *type) {
 	herr_t err = 0;
@@ -196,15 +198,15 @@ herr_t H5VL_logi_get_dataspace_selection (hid_t sid, std::vector<H5VL_log_select
 			CHECK_ID (nblock)
 
 			if (nblock == 1) {
-                hsize_t cord[H5S_MAX_RANK * 2];
+				hsize_t cord[H5S_MAX_RANK * 2];
 
-                err = H5Sget_select_hyper_blocklist (sid, 0, 1, cord);
+				err = H5Sget_select_hyper_blocklist (sid, 0, 1, cord);
 
-                sels.resize(1);
-                for(i=0;i<ndim;i++){
-					sels[0].start[i]=(MPI_Offset)cord[i];
-					sels[0].count[i]=(MPI_Offset)cord[i+ndim] - sels[0].start[i]+1;
-                }
+				sels.resize (1);
+				for (i = 0; i < ndim; i++) {
+					sels[0].start[i] = (MPI_Offset)cord[i];
+					sels[0].count[i] = (MPI_Offset)cord[i + ndim] - sels[0].start[i] + 1;
+				}
 			} else {
 				hstarts = (hsize_t **)malloc (sizeof (hsize_t *) * nblock * 2);
 				hends	= hstarts + nblock;

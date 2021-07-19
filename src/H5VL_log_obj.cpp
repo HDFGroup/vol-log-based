@@ -2,9 +2,9 @@
 #include <config.h>
 #endif
 
-#include "H5VL_log_obj.hpp"
-#include "H5VL_log_filei.hpp"
 #include "H5VL_log_dataseti.hpp"
+#include "H5VL_log_filei.hpp"
+#include "H5VL_log_obj.hpp"
 #include "H5VL_logi.hpp"
 
 /********************* */
@@ -138,17 +138,16 @@ err_out:;
  */
 herr_t H5VL_log_object_get (void *obj,
 							const H5VL_loc_params_t *loc_params,
-							H5VL_object_get_t get_type,
+							H5VL_object_get_args_t *args,
 							hid_t dxpl_id,
-							void **req,
-							va_list arguments) {
+							void **req) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
 		char vname[2][128];
 		ssize_t nsize;
 
-		nsize = H5Iget_name (get_type, vname[0], 128);
+		nsize = H5Iget_name (args->get_type, vname[0], 128);
 		if (nsize == 0) {
 			sprintf (vname[0], "Unnamed_Object");
 		} else if (nsize < 0) {
@@ -165,7 +164,7 @@ herr_t H5VL_log_object_get (void *obj,
 				vname[1], req);
 	}
 #endif
-	return H5VLobject_get (op->uo, loc_params, op->uvlid, get_type, dxpl_id, req, arguments);
+	return H5VLobject_get (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
 } /* end H5VL_log_object_get() */
 
 /*-------------------------------------------------------------------------
@@ -180,10 +179,9 @@ herr_t H5VL_log_object_get (void *obj,
  */
 herr_t H5VL_log_object_specific (void *obj,
 								 const H5VL_loc_params_t *loc_params,
-								 H5VL_object_specific_t specific_type,
+								 H5VL_object_specific_args_t *args,
 								 hid_t dxpl_id,
-								 void **req,
-								 va_list arguments) {
+								 void **req) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -207,8 +205,7 @@ herr_t H5VL_log_object_specific (void *obj,
 				vname[1], req);
 	}
 #endif
-	return H5VLobject_specific (op->uo, loc_params, op->uvlid, specific_type, dxpl_id, req,
-								arguments);
+	return H5VLobject_specific (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
 } /* end H5VL_log_object_specific() */
 
 /*-------------------------------------------------------------------------
@@ -221,8 +218,11 @@ herr_t H5VL_log_object_specific (void *obj,
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_object_optional (
-	void *obj, H5VL_object_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
+herr_t H5VL_log_object_optional (void *obj,
+								 const H5VL_loc_params_t *loc_params,
+								 H5VL_optional_args_t *args,
+								 hid_t dxpl_id,
+								 void **req) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 #ifdef LOGVOL_VERBOSE_DEBUG
 	{
@@ -245,5 +245,5 @@ herr_t H5VL_log_object_optional (
 		printf ("H5VL_log_object_optional(%p, %s, %s,%p, ...)\n", obj, vname[0], vname[1], req);
 	}
 #endif
-	return H5VLobject_optional (op->uo, op->uvlid, opt_type, dxpl_id, req, arguments);
+	return H5VLobject_optional (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
 } /* end H5VL_log_object_optional() */

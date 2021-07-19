@@ -4,6 +4,7 @@
 
 #include <cassert>
 
+#include "H5VL_log.h"
 #include "H5VL_log_link.hpp"
 #include "H5VL_log_obj.hpp"
 #include "H5VL_log_req.hpp"
@@ -33,7 +34,7 @@ const H5VL_link_class_t H5VL_log_link_g {
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_link_create_reissue (H5VL_link_create_type_t create_type,
+herr_t H5VL_log_link_create_reissue (H5VL_link_create_args_t *args,
 									 void *obj,
 									 const H5VL_loc_params_t *loc_params,
 									 hid_t connector_id,
@@ -46,8 +47,7 @@ herr_t H5VL_log_link_create_reissue (H5VL_link_create_type_t create_type,
 	herr_t err = 0;
 
 	va_start (arguments, req);
-	err = H5VLlink_create (create_type, obj, loc_params, connector_id, lcpl_id, lapl_id, dxpl_id,
-						   req, arguments);
+	err = H5VLlink_create (args, obj, loc_params, connector_id, lcpl_id, lapl_id, dxpl_id, req);
 	va_end (arguments);
 
 	return err;
@@ -63,14 +63,13 @@ herr_t H5VL_log_link_create_reissue (H5VL_link_create_type_t create_type,
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_link_create (H5VL_link_create_type_t create_type,
+herr_t H5VL_log_link_create (H5VL_link_create_args_t *args,
 							 void *obj,
 							 const H5VL_loc_params_t *loc_params,
 							 hid_t lcpl_id,
 							 hid_t lapl_id,
 							 hid_t dxpl_id,
-							 void **req,
-							 va_list arguments) {
+							 void **req) {
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	hid_t uvlid		  = -1;
 	herr_t err		  = 0;
@@ -83,13 +82,13 @@ herr_t H5VL_log_link_create (H5VL_link_create_type_t create_type,
 	if (o) uvlid = o->uvlid;
 
 	/* Fix up the link target object for hard link creation */
-	if (H5VL_LINK_CREATE_HARD == create_type) {
+	if (H5VL_LINK_CREATE_HARD == args->op_type) {
 		void *cur_obj;
 		H5VL_loc_params_t cur_params;
 
 		/* Retrieve the object & loc params for the link target */
-		cur_obj	   = va_arg (arguments, void *);
-		cur_params = va_arg (arguments, H5VL_loc_params_t);
+		cur_obj	   = args->args.hard.curr_obj;
+		cur_params = args->args.hard.curr_loc_params;
 
 		/* If it's a non-NULL pointer, find the 'under object' and re-set the property */
 		if (cur_obj) {
@@ -101,12 +100,12 @@ herr_t H5VL_log_link_create (H5VL_link_create_type_t create_type,
 		} /* end if */
 
 		/* Re-issue 'link create' call, using the unwrapped pieces */
-		err = H5VL_log_link_create_reissue (create_type, (o ? o->uo : NULL), loc_params, uvlid,
-											lcpl_id, lapl_id, dxpl_id, req, cur_obj, cur_params);
+		err = H5VL_log_link_create_reissue (args, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id,
+											lapl_id, dxpl_id, req, cur_obj, cur_params);
 	} /* end if */
 	else
-		err = H5VLlink_create (create_type, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id, lapl_id,
-							   dxpl_id, req, arguments);
+		err = H5VLlink_create (args, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id, lapl_id,
+							   dxpl_id, req);
 
 	return err;
 } /* end H5VL_log_link_create() */
@@ -245,10 +244,9 @@ err_out:;
  */
 herr_t H5VL_log_link_get (void *obj,
 						  const H5VL_loc_params_t *loc_params,
-						  H5VL_link_get_t get_type,
+						  H5VL_link_get_args_t *args,
 						  hid_t dxpl_id,
-						  void **req,
-						  va_list arguments) {
+						  void **req) {
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	herr_t err		  = 0;
 	H5VL_log_req_t *rp;
@@ -265,7 +263,7 @@ herr_t H5VL_log_link_get (void *obj,
 		ureqp = NULL;
 	}
 
-	err = H5VLlink_get (o->uo, loc_params, o->uvlid, get_type, dxpl_id, ureqp, arguments);
+	err = H5VLlink_get (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
 	CHECK_ERR
 
 	if (req) {
@@ -288,10 +286,9 @@ err_out:;
  */
 herr_t H5VL_log_link_specific (void *obj,
 							   const H5VL_loc_params_t *loc_params,
-							   H5VL_link_specific_t specific_type,
+							   H5VL_link_specific_args_t *args,
 							   hid_t dxpl_id,
-							   void **req,
-							   va_list arguments) {
+							   void **req) {
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	herr_t err		  = 0;
 	H5VL_log_req_t *rp;
@@ -308,7 +305,7 @@ herr_t H5VL_log_link_specific (void *obj,
 		ureqp = NULL;
 	}
 
-	err = H5VLlink_specific (o->uo, loc_params, o->uvlid, specific_type, dxpl_id, ureqp, arguments);
+	err = H5VLlink_specific (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
 	CHECK_ERR
 
 	if (req) {
@@ -329,8 +326,11 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_link_optional (
-	void *obj, H5VL_link_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
+herr_t H5VL_log_link_optional (void *obj,
+							   const H5VL_loc_params_t *loc_params,
+							   H5VL_optional_args_t *args,
+							   hid_t dxpl_id,
+							   void **req) {
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	herr_t err		  = 0;
 	H5VL_log_req_t *rp;
@@ -347,7 +347,7 @@ herr_t H5VL_log_link_optional (
 		ureqp = NULL;
 	}
 
-	err = H5VLlink_optional (o->uo, o->uvlid, opt_type, dxpl_id, ureqp, arguments);
+	err = H5VLlink_optional (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
 	CHECK_ERR
 
 	if (req) {

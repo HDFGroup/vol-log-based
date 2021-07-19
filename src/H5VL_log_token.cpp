@@ -2,10 +2,14 @@
 #include <config.h>
 #endif
 
-#include "H5VL_logi.hpp"
-#include "H5VL_log_token.hpp"
-#include "H5VL_log_obj.hpp"
+#include <H5VLconnector.h>
+#include <H5VLconnector_passthru.h>
+
 #include <cassert>
+
+#include "H5VL_log_obj.hpp"
+#include "H5VL_log_token.hpp"
+#include "H5VL_logi.hpp"
 
 const H5VL_token_class_t H5VL_log_token_g {
 	H5VL_log_token_cmp,					   /* cmp */
@@ -25,9 +29,9 @@ const H5VL_token_class_t H5VL_log_token_g {
  *---------------------------------------------------------------------------
  */
 herr_t H5VL_log_token_cmp (void *obj,
-									  const H5O_token_t *token1,
-									  const H5O_token_t *token2,
-									  int *cmp_value) {
+						   const H5O_token_t *token1,
+						   const H5O_token_t *token2,
+						   int *cmp_value) {
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	herr_t ret_value;
 
@@ -57,9 +61,9 @@ herr_t H5VL_log_token_cmp (void *obj,
  *---------------------------------------------------------------------------
  */
 herr_t H5VL_log_token_to_str (void *obj,
-										 H5I_type_t obj_type,
-										 const H5O_token_t *token,
-										 char **token_str) {
+							  H5I_type_t obj_type,
+							  const H5O_token_t *token,
+							  char **token_str) {
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	herr_t ret_value;
 
@@ -100,9 +104,9 @@ herr_t H5VL_log_token_to_str (void *obj,
  *---------------------------------------------------------------------------
  */
 herr_t H5VL_log_token_from_str (void *obj,
-										   H5I_type_t obj_type,
-										   const char *token_str,
-										   H5O_token_t *token) {
+								H5I_type_t obj_type,
+								const char *token_str,
+								H5O_token_t *token) {
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	herr_t ret_value;
 

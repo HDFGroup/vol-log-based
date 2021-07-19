@@ -2,10 +2,9 @@
 #include <config.h>
 #endif
 
-#include "H5VL_log_obji.hpp"
-
 #include "H5VL_log_filei.hpp"
 #include "H5VL_log_obj.hpp"
+#include "H5VL_log_obji.hpp"
 #include "H5VL_log_wrap.hpp"
 #include "H5VL_logi.hpp"
 

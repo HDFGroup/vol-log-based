@@ -2,9 +2,10 @@
 #include <config.h>
 #endif
 
-#include "H5VL_logi.hpp"
+#include "H5VL_log.h"
 #include "H5VL_log_blob.hpp"
 #include "H5VL_log_obj.hpp"
+#include "H5VL_logi.hpp"
 
 const H5VL_blob_class_t H5VL_log_blob_g {
 	H5VL_log_blob_put,		/* put       */
@@ -56,10 +57,7 @@ herr_t H5VL_log_blob_get (void *obj, const void *blob_id, void *buf, size_t size
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_blob_specific (void *obj,
-							   void *blob_id,
-							   H5VL_blob_specific_t specific_type,
-							   va_list arguments) {
+herr_t H5VL_log_blob_specific (void *obj, void *blob_id, H5VL_blob_specific_args_t *args) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 #ifdef LOGVOL_VERBOSE_DEBUG
 	char sname[32];
@@ -79,7 +77,7 @@ herr_t H5VL_log_blob_specific (void *obj,
 	}
 	printf ("H5VL_log_blob_specific(%p, %p, %s, ...)\n", obj, blob_id, sname);
 #endif
-	return H5VLblob_specific (op->uo, op->uvlid, blob_id, specific_type, arguments);
+	return H5VLblob_specific (op->uo, op->uvlid, blob_id, args);
 } /* end H5VL_log_blob_specific() */
 
 /*-------------------------------------------------------------------------
@@ -91,13 +89,10 @@ herr_t H5VL_log_blob_specific (void *obj,
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_blob_optional (void *obj,
-							   void *blob_id,
-							   H5VL_blob_optional_t opt_type,
-							   va_list arguments) {
+herr_t H5VL_log_blob_optional (void *obj, void *blob_id, H5VL_optional_args_t *args) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 #ifdef LOGVOL_VERBOSE_DEBUG
 	printf ("H5VL_log_blob_optional(%p, %p, %d, ...)\n", obj, blob_id, opt_type);
 #endif
-	return H5VLblob_optional (op->uo, op->uvlid, blob_id, opt_type, arguments);
+	return H5VLblob_optional (op->uo, op->uvlid, blob_id, args);
 } /* end H5VL_log_blob_optional() */

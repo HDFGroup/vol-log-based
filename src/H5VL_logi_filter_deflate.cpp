@@ -3,13 +3,15 @@
 #endif
 
 #include <zlib.h>
+
 #include <cstdlib>
 
 #include "H5VL_logi_err.hpp"
 #include "H5VL_logi_filter.hpp"
 #include "H5VL_logi_filter_deflate.hpp"
 
-herr_t H5VL_logi_filter_deflate (H5VL_log_filter_t &fp, void *in, int in_len, void *out, int *out_len) {
+herr_t H5VL_logi_filter_deflate (
+	H5VL_log_filter_t &fp, void *in, int in_len, void *out, int *out_len) {
 	herr_t err = 0;
 	int zerr;
 
@@ -47,7 +49,8 @@ err_out:;
  * compressed data size The caller is responsible to free the buffer If out_len is not NULL, it will
  * be set to buffer size allocated
  */
-herr_t H5VL_logi_filter_deflate_alloc (H5VL_log_filter_t &fp, void *in, int in_len, void **out, int *out_len) {
+herr_t H5VL_logi_filter_deflate_alloc (
+	H5VL_log_filter_t &fp, void *in, int in_len, void **out, int *out_len) {
 	herr_t err = 0;
 	int zerr;
 	unsigned long bsize;  // Start by 1/8 of the in_len
@@ -97,7 +100,8 @@ err_out:;
 /* If out_len is large enough, decompress the data at in and save it to out. out_len is set to
  * actual decompressed size If out_len is NULL, we assume out is large enough for decompressed data
  */
-herr_t H5VL_logi_filter_inflate (H5VL_log_filter_t &fp, void *in, int in_len, void *out, int *out_len) {
+herr_t H5VL_logi_filter_inflate (
+	H5VL_log_filter_t &fp, void *in, int in_len, void *out, int *out_len) {
 	herr_t err = 0;
 	int zerr;
 
@@ -133,7 +137,8 @@ err_out:;
  * actual decompressed data size The caller is responsible to free the buffer If out_len is not
  * NULL, it will be set to buffer size allocated
  */
-herr_t H5VL_logi_filter_inflate_alloc (H5VL_log_filter_t &fp, void *in, int in_len, void **out, int *out_len) {
+herr_t H5VL_logi_filter_inflate_alloc (
+	H5VL_log_filter_t &fp, void *in, int in_len, void **out, int *out_len) {
 	herr_t err = 0;
 	int zerr;
 	int bsize;

@@ -1,5 +1,5 @@
 #pragma once
-#include <H5VLpublic.h>
+#include <H5VLconnector.h>
 
 herr_t H5VL_log_token_cmp (void *obj,
 							   const H5O_token_t *token1,

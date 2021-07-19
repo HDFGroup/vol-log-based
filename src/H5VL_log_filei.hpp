@@ -1,13 +1,13 @@
 #pragma once
 
-#include "H5VL_logi.hpp"
 #include "H5VL_log_file.hpp"
+#include "H5VL_logi.hpp"
 
-#define H5VL_FILEI_CONFIG_METADATA_MERGE	0x01
-#define H5VL_FILEI_CONFIG_SEL_ENCODE 0x02
-#define H5VL_FILEI_CONFIG_SEL_DEFLATE	0x04
+#define H5VL_FILEI_CONFIG_METADATA_MERGE 0x01
+#define H5VL_FILEI_CONFIG_SEL_ENCODE	 0x02
+#define H5VL_FILEI_CONFIG_SEL_DEFLATE	 0x04
 
-#define H5VL_FILEI_CONFIG_DATA_ALIGN	0x100
+#define H5VL_FILEI_CONFIG_DATA_ALIGN 0x100
 
 // File internals
 extern herr_t H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid);
@@ -37,4 +37,3 @@ extern void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_dec_ref (H5VL_log_file_t *fp);
 
 extern void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp);
-

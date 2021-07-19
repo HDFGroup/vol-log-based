@@ -1,10 +1,10 @@
 #pragma once
 
-#include <H5VLpublic.h>
+#include <H5VLconnector.h>
 
 typedef struct H5VL_log_info_t {
-    hid_t uvlid;         /* VOL ID for under VOL */
-    void *under_vol_info;       /* VOL info for under VOL */
+	hid_t uvlid;		  /* VOL ID for under VOL */
+	void *under_vol_info; /* VOL info for under VOL */
 } H5VL_log_info_t;
 
 extern void *H5VL_log_info_copy (const void *_info);

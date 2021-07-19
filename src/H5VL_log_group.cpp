@@ -144,8 +144,7 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_group_get (
-	void *obj, H5VL_group_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+herr_t H5VL_log_group_get (void *obj, H5VL_group_get_args_t *args, hid_t dxpl_id, void **req) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	herr_t err		   = 0;
 	H5VL_log_req_t *rp;
@@ -160,7 +159,7 @@ herr_t H5VL_log_group_get (
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VLgroup_get (op->uo, op->uvlid, get_type, dxpl_id, ureqp, arguments);
+	err = H5VLgroup_get (op->uo, op->uvlid, args, dxpl_id, ureqp);
 	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_GET);
 
 	if (req) {
@@ -182,8 +181,10 @@ herr_t H5VL_log_group_get (
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_group_specific (
-	void *obj, H5VL_group_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
+herr_t H5VL_log_group_specific (void *obj,
+								H5VL_group_specific_args_t *args,
+								hid_t dxpl_id,
+								void **req) {
 	herr_t err		   = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	H5VL_log_req_t *rp;
@@ -198,7 +199,7 @@ herr_t H5VL_log_group_specific (
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VLgroup_specific (op->uo, op->uvlid, specific_type, dxpl_id, ureqp, arguments);
+	err = H5VLgroup_specific (op->uo, op->uvlid, args, dxpl_id, ureqp);
 	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_SPECIFIC);
 
 	if (req) {
@@ -220,8 +221,7 @@ herr_t H5VL_log_group_specific (
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_group_optional (
-	void *obj, H5VL_group_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
+herr_t H5VL_log_group_optional (void *obj, H5VL_optional_args_t *args, hid_t dxpl_id, void **req) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	herr_t err		   = 0;
 	H5VL_log_req_t *rp;
@@ -236,7 +236,7 @@ herr_t H5VL_log_group_optional (
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VLgroup_optional (op->uo, op->uvlid, opt_type, dxpl_id, ureqp, arguments);
+	err = H5VLgroup_optional (op->uo, op->uvlid, args, dxpl_id, ureqp);
 	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_OPTIONAL);
 
 	if (req) {

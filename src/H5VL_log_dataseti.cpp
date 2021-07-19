@@ -108,7 +108,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 		if (blocks[i].zbuf) {
 			newgroup[i] = true;
 		} else if ((blocks[i].foff == blocks[i + 1].foff) &&
-				   interleve (blocks[i].info->ndim,  blocks[i].dstart, blocks[i].count,
+				   interleve (blocks[i].info->ndim, blocks[i].dstart, blocks[i].count,
 							  blocks[i + 1].dstart)) {
 			newgroup[i] = false;
 		} else {
@@ -188,7 +188,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 					}
 
 					foffs[nt] = blocks[j].foff;
-					moffs[nt] = (MPI_Offset)(blocks[j].xbuf);
+					moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
 					lens[nt]  = 1;
 					nt++;
 				}
@@ -206,10 +206,11 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 
 					memset (ctr, 0, sizeof (MPI_Offset) * blocks[i].info->ndim);
 					while (ctr[0] < blocks[j].count[0]) {  // Foreach row
-						lens[nt]  = blocks[j].count[blocks[i].info->ndim - 1] * blocks[j].info->esize;
+						lens[nt] =
+							blocks[j].count[blocks[i].info->ndim - 1] * blocks[j].info->esize;
 						foffs[nt] = blocks[j].foff;
-						moffs[nt] = (MPI_Offset)(blocks[j].xbuf);
-						for (k = 0; k < blocks[i].info->ndim; k++) {	// Calculate offset
+						moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
+						for (k = 0; k < blocks[i].info->ndim; k++) {  // Calculate offset
 							foffs[nt] += fssize[k] * (blocks[j].dstart[k] + ctr[k]);
 							moffs[nt] += mssize[k] * (blocks[j].mstart[k] + ctr[k]);
 						}
@@ -217,7 +218,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 						mtypes[nt] = MPI_BYTE;
 						nt++;
 
-						ctr[blocks[i].info->ndim - 2]++;	// Move to next position
+						ctr[blocks[i].info->ndim - 2]++;  // Move to next position
 						for (k = blocks[i].info->ndim - 2; k > 0; k--) {
 							if (ctr[k] >= blocks[j].count[k]) {
 								ctr[k] = 0;
@@ -305,11 +306,8 @@ void *H5VL_log_dataseti_open_with_uo (void *obj,
 	dp = new H5VL_log_dset_t (op, H5I_DATASET, uo);
 	CHECK_PTR (dp)
 
-	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE, dxpl_id, NULL,
-										 &(dp->dtype));
-	CHECK_ERR
-	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_GET);
+	dp->dtype = H5VL_logi_dataset_get_type (dp->uo, dp->uvlid, dxpl_id);
+	CHECK_ID (dp->dtype)
 
 	dp->esize = H5Tget_size (dp->dtype);
 	CHECK_ID (dp->esize)
@@ -354,11 +352,8 @@ void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_obj_t *cp) {
 	dp = new H5VL_log_dset_t (cp, H5I_DATASET, uo);
 	CHECK_PTR (dp)
 
-	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VL_logi_dataset_get_wrapper (dp->uo, dp->uvlid, H5VL_DATASET_GET_TYPE,
-										 H5P_DATASET_XFER_DEFAULT, NULL, &(dp->dtype));
-	CHECK_ERR
-	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_GET);
+	dp->dtype = H5VL_logi_dataset_get_type (dp->uo, dp->uvlid, H5P_DATASET_XFER_DEFAULT);
+	CHECK_ID (dp->dtype)
 	dp->esize = H5Tget_size (dp->dtype);
 	CHECK_ID (dp->esize)
 

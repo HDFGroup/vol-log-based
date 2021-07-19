@@ -2,12 +2,13 @@
 #include <config.h>
 #endif
 
-#include "H5VL_logi.hpp"
-#include "H5VL_log.h"
-#include "H5VL_log_main.hpp"
-#include "H5VL_log_info.hpp"
-#include "H5VL_logi.hpp"
 #include <hdf5.h>
+
+#include "H5VL_log.h"
+#include "H5VL_log_info.hpp"
+#include "H5VL_log_main.hpp"
+#include "H5VL_logi.hpp"
+
 
 /*******************/
 /* Local variables */
@@ -17,9 +18,10 @@
 const H5VL_class_t H5VL_log_g = {H5VL_log_VERSION,					 /* version      */
 								 (H5VL_class_value_t)H5VL_log_VALUE, /* value        */
 								 H5VL_log_NAME,						 /* name         */
-								 0,									 /* capability flags */
-								 H5VL_log_init,						 /* initialize   */
-								 H5VL_log_obj_term,					 /* terminate    */
+								 0,					/* Version # of connector                   */
+								 0,					/* capability flags */
+								 H5VL_log_init,		/* initialize   */
+								 H5VL_log_obj_term, /* terminate    */
 								 H5VL_log_info_g,
 								 H5VL_log_wrap_g,
 								 H5VL_log_attr_g,
@@ -142,7 +144,7 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_optional (void *obj, int op_type, hid_t dxpl_id, void **req, va_list arguments) {
+herr_t H5VL_log_optional (void *obj, H5VL_optional_args_t *args, hid_t dxpl_id, void **req) {
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	herr_t ret_value;
 
@@ -161,7 +163,7 @@ herr_t H5VL_log_optional (void *obj, int op_type, hid_t dxpl_id, void **req, va_
 	}
 #endif
 
-	ret_value = H5VLoptional (o->uo, o->uvlid, op_type, dxpl_id, req, arguments);
+	ret_value = H5VLoptional (o->uo, o->uvlid, args, dxpl_id, req);
 
 	return ret_value;
 } /* end H5VL_log_optional() */

@@ -340,8 +340,7 @@ fn_exit:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_file_get (
-	void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments) {
+herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id, void **req) {
 	herr_t err			= 0;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -351,7 +350,7 @@ herr_t H5VL_log_file_get (
 		char vname[2][128];
 		ssize_t nsize;
 
-		nsize = H5Iget_name (get_type, vname[0], 128);
+		nsize = H5Iget_name (args->get_type, vname[0], 128);
 		if (nsize == 0) {
 			sprintf (vname[0], "Unnamed_Object");
 		} else if (nsize < 0) {
@@ -369,7 +368,7 @@ herr_t H5VL_log_file_get (
 #endif
 
 	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VLfile_get (fp->uo, fp->uvlid, get_type, dxpl_id, req, arguments);
+	err = H5VLfile_get (fp->uo, fp->uvlid, args, dxpl_id, req);
 	CHECK_ERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_GET);
 
@@ -389,8 +388,10 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_file_specific (
-	void *file, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments) {
+herr_t H5VL_log_file_specific (void *file,
+							   H5VL_file_specific_args_t *args,
+							   hid_t dxpl_id,
+							   void **req) {
 	herr_t err = 0;
 	int i;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
@@ -418,18 +419,15 @@ herr_t H5VL_log_file_specific (
 	}
 #endif
 
-	switch (specific_type) {
+	switch (args->op_type) {
 		case H5VL_FILE_IS_ACCESSIBLE:
 		case H5VL_FILE_DELETE: {
 			hid_t uvlid, under_fapl_id, fapl_id;
 			void *under_vol_info;
 			H5VL_log_info_t *info = NULL;
-			va_list saved_args;
-
-			va_copy (saved_args, arguments);
 
 			// Try get info about under VOL
-			fapl_id = va_arg (arguments, hid_t);
+			fapl_id = args->args.del.fapl_id;
 			H5Pget_vol_info (fapl_id, (void **)&info);
 			if (info) {
 				uvlid		   = info->uvlid;
@@ -448,12 +446,10 @@ herr_t H5VL_log_file_specific (
 			under_fapl_id = H5Pcopy (fapl_id);
 			H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
 			H5VL_LOGI_PROFILING_TIMER_START;
-			err = H5VLfile_specific (NULL, uvlid, specific_type, dxpl_id, req, saved_args);
+			err = H5VLfile_specific (NULL, uvlid, args, dxpl_id, req);
 			CHECK_ERR
 			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_SPECIFIC);
 			H5Pclose (under_fapl_id);
-
-			va_end (saved_args);
 		} break;
 		case H5VL_FILE_FLUSH: {
 			// Flush all merged requests
@@ -489,8 +485,7 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_file_optional (
-	void *file, H5VL_file_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments) {
+herr_t H5VL_log_file_optional (void *file, H5VL_optional_args_t *args, hid_t dxpl_id, void **req) {
 	herr_t err			= 0;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -517,7 +512,7 @@ herr_t H5VL_log_file_optional (
 	}
 #endif
 	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VLfile_optional (fp->uo, fp->uvlid, opt_type, dxpl_id, req, arguments);
+	err = H5VLfile_optional (fp->uo, fp->uvlid, args, dxpl_id, req);
 	CHECK_ERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_OPTIONAL);
 

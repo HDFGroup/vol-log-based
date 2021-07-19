@@ -57,11 +57,11 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	MPI_File fh;
 	int fd;
 
-	std::vector<H5VL_log_wreq_t*> wreqs;
+	std::vector<H5VL_log_wreq_t *> wreqs;
 	int nflushed;
 	std::vector<H5VL_log_rreq_t> rreqs;
 
-	std::vector<H5VL_log_merged_wreq_t*> mreqs;
+	std::vector<H5VL_log_merged_wreq_t *> mreqs;
 	std::vector<H5VL_log_dset_info_t> dsets;
 
 	ssize_t bsize;
@@ -111,10 +111,10 @@ void *H5VL_log_file_create (
 	const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t dxpl_id, void **req);
 void *H5VL_log_file_open (
 	const char *name, unsigned flags, hid_t fapl_id, hid_t dxpl_id, void **req);
-herr_t H5VL_log_file_get (
-	void *file, H5VL_file_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_file_specific (
-	void *file, H5VL_file_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_file_optional (
-	void *file, H5VL_file_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id, void **req);
+herr_t H5VL_log_file_specific (void *file,
+							   H5VL_file_specific_args_t *args,
+							   hid_t dxpl_id,
+							   void **req);
+herr_t H5VL_log_file_optional (void *file, H5VL_optional_args_t *args, hid_t dxpl_id, void **req);
 herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req);

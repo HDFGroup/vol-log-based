@@ -4,7 +4,7 @@
 #include <config.h>
 #endif
 
-#include <H5VLpublic.h>
+#include <H5VLconnector.h>
 
 struct H5VL_log_file_t;
 typedef struct H5VL_log_obj_t {
@@ -44,18 +44,19 @@ herr_t H5VL_log_object_copy (void *src_obj,
 							 void **req);
 herr_t H5VL_log_object_get (void *obj,
 							const H5VL_loc_params_t *loc_params,
-							H5VL_object_get_t get_type,
+							H5VL_object_get_args_t *args,
 							hid_t dxpl_id,
-							void **req,
-							va_list arguments);
+							void **req);
 herr_t H5VL_log_object_specific (void *obj,
 								 const H5VL_loc_params_t *loc_params,
-								 H5VL_object_specific_t specific_type,
+								 H5VL_object_specific_args_t *args,
 								 hid_t dxpl_id,
-								 void **req,
-								 va_list arguments);
-herr_t H5VL_log_object_optional (
-	void *obj, H5VL_object_optional_t opt_type, hid_t dxpl_id, void **req, va_list arguments);
+								 void **req);
+herr_t H5VL_log_object_optional (void *obj,
+								 const H5VL_loc_params_t *loc_params,
+								 H5VL_optional_args_t *args,
+								 hid_t dxpl_id,
+								 void **req);
 
 // Internal
 extern void *H5VL_log_obj_open_with_uo (void *obj,

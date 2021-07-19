@@ -1,6 +1,6 @@
 #pragma once
 
-#include <H5VLpublic.h>
+#include <H5VLconnector.h>
 #include <mpi.h>
 
 #include "H5VL_log_obj.hpp"
@@ -27,7 +27,6 @@ typedef struct H5VL_log_dset_t : H5VL_log_obj_t, H5VL_log_dset_info_t {
 	int id;
 	using H5VL_log_obj_t::H5VL_log_obj_t;
 } H5VL_log_dset_t;
-
 
 void *H5VL_log_dataset_create (void *obj,
 							   const H5VL_loc_params_t *loc_params,
@@ -59,10 +58,10 @@ herr_t H5VL_log_dataset_write (void *dset,
 							   hid_t plist_id,
 							   const void *buf,
 							   void **req);
-herr_t H5VL_log_dataset_get (
-	void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_dataset_specific (
-	void *obj, H5VL_dataset_specific_t specific_type, hid_t dxpl_id, void **req, va_list arguments);
-herr_t H5VL_log_dataset_optional (
-	void *obj, H5VL_dataset_optional_t optional_type, hid_t dxpl_id, void **req, va_list arguments);
+herr_t H5VL_log_dataset_get (void *dset, H5VL_dataset_get_args_t *args, hid_t dxpl_id, void **req);
+herr_t H5VL_log_dataset_specific (void *obj,
+								  H5VL_dataset_specific_args_t *args,
+								  hid_t dxpl_id,
+								  void **req);
+herr_t H5VL_log_dataset_optional (void *obj, H5VL_optional_args_t *args, hid_t dxpl_id, void **req);
 herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req);

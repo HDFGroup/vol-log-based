@@ -1,6 +1,7 @@
 #pragma once
 
-#include <H5VLpublic.h>
+#include <H5VLconnector.h>
+
 #include "H5VL_log_obj.hpp"
 
 #define H5VL_log_delete_arr(A) \

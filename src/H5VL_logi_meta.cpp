@@ -13,17 +13,16 @@
 #include "H5VL_logi_meta.hpp"
 #include "H5VL_logi_zip.hpp"
 
-
 herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_logi_idx_t &idx) {
 	herr_t err = 0;
 	int i, j;
-	int nsel;	// Nunmber of selections in ent
-	MPI_Offset *bp; // Next 8 byte selection to process
-	MPI_Offset dsteps[H5S_MAX_RANK];	// corrdinate to offset encoding info in ent
-	char *zbuf	   = NULL;	// Buffer for decompressing metadata
-	bool zbufalloc = false;	// Should we free zbuf
+	int nsel;						  // Nunmber of selections in ent
+	MPI_Offset *bp;					  // Next 8 byte selection to process
+	MPI_Offset dsteps[H5S_MAX_RANK];  // corrdinate to offset encoding info in ent
+	char *zbuf	   = NULL;			  // Buffer for decompressing metadata
+	bool zbufalloc = false;			  // Should we free zbuf
 	H5VL_logi_metablock_t block;
-	char *bufp = (char *)ent;	// Next byte to process in ent
+	char *bufp = (char *)ent;  // Next byte to process in ent
 
 	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
@@ -38,11 +37,11 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 		// If the rest of the entry is comrpessed, decomrpess it
 		if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
 #ifdef ENABLE_ZLIB
-			int inlen;	// Size of comrpessed metadata
-			int clen; // Size of decompressed metadata
+			int inlen;		   // Size of comrpessed metadata
+			int clen;		   // Size of decompressed metadata
 			MPI_Offset bsize;  // Size of zbuf
 			MPI_Offset esize;  // Size of a selection block
-			
+
 			// Calculate buffer size;
 			esize = 0;
 			bsize = 0;
@@ -162,7 +161,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 				block.sels[i].doff = 0;
 			}
 		}
-		
+
 		// Calculate the unfiltered size of the data block
 		block.dsize = dset.esize;
 		for (j = 0; j < dset.ndim; j++) { block.dsize *= block.sels[i - 1].count[j]; }
