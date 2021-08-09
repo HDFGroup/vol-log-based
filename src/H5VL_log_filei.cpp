@@ -67,15 +67,6 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 	err = H5Pget_meta_merge (faplid, &ret);
 	CHECK_ERR
 	if (ret) { fp->config |= H5VL_FILEI_CONFIG_METADATA_MERGE; }
-	err = H5Pget_meta_zip (faplid, &ret);
-	CHECK_ERR
-	if (ret) { fp->config |= H5VL_FILEI_CONFIG_SEL_DEFLATE; }
-	err = H5Pget_sel_encoding (faplid, &encoding);
-	CHECK_ERR
-	if (encoding == H5VL_LOG_ENCODING_OFFSET) { fp->config |= H5VL_FILEI_CONFIG_SEL_ENCODE; }
-	err = H5Pget_idx_buffer_size (faplid, &(fp->mbuf_size));
-	CHECK_ERR
-
 	env = getenv ("H5VL_LOG_METADATA_MERGE");
 	if (env) {
 		if (strcmp (env, "1") == 0) {
@@ -84,6 +75,22 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 			fp->config &= ~H5VL_FILEI_CONFIG_METADATA_MERGE;
 		}
 	}
+
+	err = H5Pget_meta_share (faplid, &ret);
+	CHECK_ERR
+	if (ret) { fp->config |= H5VL_FILEI_CONFIG_METADATA_SHARE; }
+	env = getenv ("H5VL_LOG_METADATA_SHARE");
+	if (env) {
+		if (strcmp (env, "1") == 0) {
+			fp->config |= H5VL_FILEI_CONFIG_METADATA_SHARE;
+		} else {
+			fp->config &= ~H5VL_FILEI_CONFIG_METADATA_SHARE;
+		}
+	}
+
+	err = H5Pget_meta_zip (faplid, &ret);
+	CHECK_ERR
+	if (ret) { fp->config |= H5VL_FILEI_CONFIG_SEL_DEFLATE; }
 	env = getenv ("H5VL_LOG_METADATA_ZIP");
 	if (env) {
 		if (strcmp (env, "1") == 0) {
@@ -92,6 +99,10 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 			fp->config &= ~H5VL_FILEI_CONFIG_SEL_DEFLATE;
 		}
 	}
+
+	err = H5Pget_sel_encoding (faplid, &encoding);
+	CHECK_ERR
+	if (encoding == H5VL_LOG_ENCODING_OFFSET) { fp->config |= H5VL_FILEI_CONFIG_SEL_ENCODE; }
 	env = getenv ("H5VL_LOG_SEL_ENCODING");
 	if (env) {
 		if (strcmp (env, "canonical") == 0) {
@@ -100,6 +111,9 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 			fp->config |= H5VL_FILEI_CONFIG_SEL_ENCODE;
 		}
 	}
+
+	err = H5Pget_idx_buffer_size (faplid, &(fp->mbuf_size));
+	CHECK_ERR
 	env = getenv ("H5VL_LOG_IDX_BSIZE");
 	if (env) { fp->mbuf_size = (MPI_Offset) (atoll (env)); }
 

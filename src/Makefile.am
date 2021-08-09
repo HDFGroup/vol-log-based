@@ -52,7 +52,7 @@ CXX_SRCS =  H5VL_log_att.cpp \
             H5VL_logi_filter_deflate.cpp \
             H5VL_logi_idx.cpp \
 	    H5VL_logi_idx_list.cpp \
-            H5VL_logi_mem.cpp \
+	    H5VL_logi_mem.cpp \
             H5VL_logi_meta.cpp \
             H5VL_logi_nb.cpp \
             H5VL_logi_util.cpp \

@@ -351,6 +351,58 @@ err_out:;
 	return err;
 }
 
+#define SHARE_META_NAME_PROPERTY_NAME "H5VL_log_metadata_share"
+herr_t H5Pset_meta_share (hid_t plist, hbool_t share) {
+	herr_t err = 0;
+	htri_t isfapl;
+	htri_t isdxpl, pexist;
+
+	// TODO: Fix pclass problem
+	return 0;
+
+	isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
+	CHECK_ID (isfapl)
+	if (isfapl == 0) ERR_OUT ("Not faplid")
+
+	pexist = H5Pexist (plist, SHARE_META_NAME_PROPERTY_NAME);
+	CHECK_ID (pexist)
+	if (!pexist) {
+		hbool_t f = false;
+		err = H5Pinsert2 (plist, SHARE_META_NAME_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL,
+						  NULL, NULL, NULL, NULL);
+		CHECK_ERR
+	}
+
+	err = H5Pset (plist, SHARE_META_NAME_PROPERTY_NAME, &share);
+	CHECK_ERR
+
+err_out:;
+	return err;
+}
+herr_t H5Pget_meta_share (hid_t plist, hbool_t *share) {
+	herr_t err = 0;
+	htri_t isdxpl, pexist;
+
+	isdxpl = H5Pisa_class (plist, H5P_FILE_ACCESS);
+	CHECK_ID (isdxpl)
+	if (isdxpl == 0)
+		*share = false;	 // Default property will not pass class check
+	else {
+		pexist = H5Pexist (plist, SHARE_META_NAME_PROPERTY_NAME);
+		CHECK_ID (pexist)
+		if (pexist) {
+			err = H5Pget (plist, SHARE_META_NAME_PROPERTY_NAME, share);
+			CHECK_ERR
+
+		} else {
+			*share = false;
+		}
+	}
+
+err_out:;
+	return err;
+}
+
 #define ZIP_META_NAME_PROPERTY_NAME "H5VL_log_metadata_zip"
 herr_t H5Pset_meta_zip (hid_t plist, hbool_t zip) {
 	herr_t err = 0;

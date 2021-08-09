@@ -104,6 +104,9 @@ herr_t H5Pget_idx_buffer_size (hid_t plist, ssize_t *size);
 herr_t H5Pset_meta_merge (hid_t plist, hbool_t merge);
 herr_t H5Pget_meta_merge (hid_t plist, hbool_t *merge);
 
+herr_t H5Pset_meta_share (hid_t plist, hbool_t share);
+herr_t H5Pget_meta_share (hid_t plist, hbool_t *share);
+
 herr_t H5Pset_meta_zip (hid_t plist, hbool_t zip);
 herr_t H5Pget_meta_zip (hid_t plist, hbool_t *zip);
 
