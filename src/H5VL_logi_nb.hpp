@@ -12,6 +12,7 @@
 #define H5VL_LOGI_META_FLAG_MUL_SELX	0x02
 #define H5VL_LOGI_META_FLAG_SEL_ENCODE	0x04
 #define H5VL_LOGI_META_FLAG_SEL_DEFLATE 0x08
+#define H5VL_LOGI_META_FLAG_SEL_REF		0x10
 
 typedef struct H5VL_log_req_data_block_t {
 	char *ubuf;	  // User buffer
@@ -37,6 +38,8 @@ class H5VL_log_wreq_t {
 	MPI_Offset ldoff;  // Offset in log dataset
 
 	size_t rsize;  // Size of data in xbuf (bytes)
+
+	MPI_Offset meta_off;	// Offset of the metadata related to the starting metadata block of the process
 
 	std::vector<H5VL_log_req_data_block_t> dbufs;  // Data buffers <xbuf, ubuf, size>
 };
@@ -69,11 +72,11 @@ class H5VL_log_merged_wreq_t : public H5VL_log_wreq_t {
 	herr_t reserve (size_t size);
 };
 class H5VL_log_rreq_t {
-	public:
+   public:
 	H5VL_logi_meta_hdr hdr;
 	H5VL_log_dset_info_t *info;
 	// int did;							   // Source dataset ID
-	int ndim;							   // Dim of the source dataset
+	int ndim;						   // Dim of the source dataset
 	H5VL_log_selections *sels = NULL;  // Selections within the dataset
 	// MPI_Offset start[H5S_MAX_RANK];
 	// MPI_Offset count[H5S_MAX_RANK];
@@ -89,8 +92,8 @@ class H5VL_log_rreq_t {
 
 	MPI_Datatype ptype;	 // Datatype that represetn memory space selection
 
-	H5VL_log_rreq_t();
-	~H5VL_log_rreq_t();
+	H5VL_log_rreq_t ();
+	~H5VL_log_rreq_t ();
 };
 
 herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> reqs, hid_t dxplid);

@@ -79,17 +79,18 @@ static void sortblocks (int ndim, int len, hsize_t **starts, hsize_t **counts) {
 	}
 }
 
+H5VL_log_selections::H5VL_log_selections () : ndim (0), nsel (0), sels_arr(NULL) {}
 H5VL_log_selections::H5VL_log_selections (int ndim, int nsel) : ndim (ndim), nsel (nsel) {
 	this->reserve (nsel);
 }
 H5VL_log_selections::H5VL_log_selections (int ndim, int nsel, hsize_t **starts, hsize_t **counts)
-	: ndim (ndim), nsel (nsel), starts (starts), counts (counts), isdeep (false) {}
+	: ndim (ndim), nsel (nsel), starts (starts), counts (counts) {}
 
 H5VL_log_selections::H5VL_log_selections (H5VL_log_selections &rhs)
 	: ndim (rhs.ndim), nsel (rhs.nsel) {
 	int i;
-	
-	if (rhs.isdeep) {
+
+	if (rhs.sels_arr) {
 		this->reserve (rhs.nsel);
 
 		// Copy the data
@@ -103,7 +104,7 @@ H5VL_log_selections::H5VL_log_selections (H5VL_log_selections &rhs)
 	} else {
 		this->starts	 = rhs.starts;
 		this->counts	 = rhs.counts;
-		this->starts_arr = NULL;
+		this->sels_arr = NULL;
 	}
 }
 
@@ -319,10 +320,58 @@ err_out:;
 }
 
 H5VL_log_selections::~H5VL_log_selections () {
-	if (isdeep) {
-		free (starts_arr);
+	if (sels_arr) {
+		free (sels_arr);
 		free (starts);
 	}
+}
+
+H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
+	int i;
+
+	// Deallocate existing start and count array
+	if (sels_arr) {
+		free (sels_arr);
+		free (starts);
+	}
+
+	this->nsel = rhs.nsel;
+	this->ndim = rhs.ndim;
+
+	if (rhs.sels_arr) {
+		this->reserve (nsel);
+
+		// Copy the data
+		memcpy (starts, rhs.starts, sizeof (hsize_t *) * nsel);
+		memcpy (counts, rhs.counts, sizeof (hsize_t *) * nsel);
+
+		for (i = 0; i < nsel; i++) {
+			memcpy (starts[i], rhs.starts[i], sizeof (hsize_t) * ndim);
+			memcpy (counts[i], rhs.counts[i], sizeof (hsize_t) * ndim);
+		}
+	} else {
+		this->starts	 = rhs.starts;
+		this->counts	 = rhs.counts;
+		this->sels_arr = NULL;
+	}
+
+	return *this;
+}
+
+// Assume blocks sorted according to start
+bool H5VL_log_selections::operator== (H5VL_log_selections &rhs) {
+	int i, j;
+
+	if (ndim != rhs.ndim) { return false; }
+	if (nsel != rhs.nsel) { return false; }
+	for (i = 0; i < nsel; i++) {
+		for (j = 0; j < ndim; j++) {
+			if (starts[i][j] != rhs.starts[i][j]) { return false; }
+			if (counts[i][j] != rhs.counts[i][j]) { return false; }
+		}
+	}
+
+	return true;
 }
 
 // Should only be called once
@@ -334,18 +383,17 @@ void H5VL_log_selections::reserve (int nsel) {
 		this->starts = (hsize_t **)malloc (sizeof (hsize_t *) * nsel * 2);
 		CHECK_PTR (starts)
 		this->counts	= this->starts + nsel;
-		this->starts[0] = starts_arr = (hsize_t *)malloc (sizeof (hsize_t) * nsel * ndim * 2);
+		this->starts[0] = sels_arr = (hsize_t *)malloc (sizeof (hsize_t) * nsel * ndim * 2);
 		CHECK_PTR (starts[0])
 		this->counts[0] = this->starts[0] + nsel * ndim;
 		for (i = 1; i < nsel; i++) {
 			starts[i] = starts[i - 1] + ndim;
 			counts[i] = counts[i - 1] + ndim;
 		}
-		this->isdeep = true;
 	} else {
 		this->starts = NULL;
 		this->counts = NULL;
-		this->isdeep = false;
+		this->sels_arr = NULL;
 	}
 
 err_out:;
@@ -357,7 +405,7 @@ void H5VL_log_selections::convert_to_deep () {
 	hsize_t **starts_tmp;
 	hsize_t **counts_tmp;
 
-	if (!isdeep) {
+	if (!sels_arr) {
 		starts_tmp = starts;
 		counts_tmp = counts;
 

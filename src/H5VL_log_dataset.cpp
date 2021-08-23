@@ -463,13 +463,26 @@ herr_t H5VL_log_dataset_write (void *dset,
 		// Flags
 		r->hdr.flag = 0;
 		if (r->nsel > 1) {
-			if ((dp->ndim > 1) && (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
-				r->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
+			/*
+			if (dp->fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
+				if (dp->fp->meta_table.find (*dsel) == dp->fp->meta_table.end ()) {
+					r->meta_ref_idx = dp->fp->meta_table[*dsel] = dp->fp->meta_ref.size ();
+					dp->fp->meta_ref.push_back (-1);
+				} else {
+					r->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_REF;
+					r->meta_ref_idx = dp->fp->meta_table[*dsel];
+				}
 			}
-			r->hdr.flag |= H5VL_LOGI_META_FLAG_MUL_SEL;
+			*/
+			if (r->hdr.flag ^ H5VL_LOGI_META_FLAG_SEL_REF) {
+				if ((dp->ndim > 1) && (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
+					r->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
+				}
+				r->hdr.flag |= H5VL_LOGI_META_FLAG_MUL_SEL;
 
-			if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
-				r->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
+				if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
+					r->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
+				}
 			}
 		}
 

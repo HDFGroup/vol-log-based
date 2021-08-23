@@ -76,6 +76,10 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	H5VL_log_contig_buffer_t meta_buf;
 	// H5VL_log_meta_cache_t meta_cache;
 
+	// Record shared metadata
+	//std::unordered_map<H5VL_log_selections, int> meta_table;
+	//std::vector<int> meta_ref;
+
 	// std::vector<int> lut;
 	std::vector<H5VL_logi_array_idx_t> idx;
 	bool idxvalid;
