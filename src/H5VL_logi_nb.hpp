@@ -68,13 +68,13 @@ class H5VL_log_merged_wreq_t : public H5VL_log_wreq_t {
 	herr_t init (H5VL_log_file_t *fp, int id, int nsel);
 	herr_t reserve (size_t size);
 };
-
-typedef struct H5VL_log_rreq_t {
+class H5VL_log_rreq_t {
+	public:
 	H5VL_logi_meta_hdr hdr;
 	H5VL_log_dset_info_t *info;
 	// int did;							   // Source dataset ID
 	int ndim;							   // Dim of the source dataset
-	std::vector<H5VL_log_selection> sels;  // Selections within the dataset
+	H5VL_log_selections *sels = NULL;  // Selections within the dataset
 	// MPI_Offset start[H5S_MAX_RANK];
 	// MPI_Offset count[H5S_MAX_RANK];
 
@@ -88,7 +88,10 @@ typedef struct H5VL_log_rreq_t {
 	char *xbuf;	 // User buffer
 
 	MPI_Datatype ptype;	 // Datatype that represetn memory space selection
-} H5VL_log_rreq_t;
+
+	H5VL_log_rreq_t();
+	~H5VL_log_rreq_t();
+};
 
 herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> reqs, hid_t dxplid);
 herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid);

@@ -742,3 +742,11 @@ err_out:
 
 	return err;
 }
+
+H5VL_log_rreq_t::H5VL_log_rreq_t () {}
+H5VL_log_rreq_t::~H5VL_log_rreq_t () {
+	if (sels) {
+		delete sels;
+		sels = NULL;
+	}
+}

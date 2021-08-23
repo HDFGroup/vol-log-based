@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <unordered_map>
 
 #include "H5VL_log_file.hpp"
 #include "H5VL_log_filei.hpp"

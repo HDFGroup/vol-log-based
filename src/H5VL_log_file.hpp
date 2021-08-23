@@ -6,6 +6,7 @@
 
 #include <array>
 #include <string>
+#include <unordered_map>
 
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
@@ -73,6 +74,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
 	// H5VL_log_buffer_pool_t data_buf;
 	H5VL_log_contig_buffer_t meta_buf;
+	// H5VL_log_meta_cache_t meta_cache;
 
 	// std::vector<int> lut;
 	std::vector<H5VL_logi_array_idx_t> idx;
