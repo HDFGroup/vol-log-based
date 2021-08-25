@@ -308,6 +308,7 @@ void *H5VL_log_file_open (
 	fp->nmdset = attbuf[2];
 	fp->config = attbuf[3];
 	fp->idx.resize (fp->ndset);
+	fp->mreqs.resize (fp->ndset);
 
 	// Fapl property can overwrite config in file, parse after loading config
 	err = H5VL_log_filei_parse_fapl (fp, fapl_id);

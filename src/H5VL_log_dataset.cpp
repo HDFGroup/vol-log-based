@@ -96,10 +96,10 @@ void *H5VL_log_dataset_create (void *obj,
 
 	// Record metadata in fp
 	dp->fp->idx.resize (dp->fp->ndset);
-	dp->fp->mreqs.resize (dp->fp->ndset);
-	dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
 	dp->fp->dsets.resize (dp->fp->ndset);
 	dp->fp->dsets[dp->id] = *dp;
+	dp->fp->mreqs.resize (dp->fp->ndset);
+	dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
 	// Dstep for encoding selection
 	if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
 		dp->dsteps[dp->ndim - 1] = 1;
@@ -221,8 +221,8 @@ void *H5VL_log_dataset_open (void *obj,
 	// Record metadata in fp
 	dp->fp->idx.resize (dp->fp->ndset);
 	dp->fp->dsets.resize (dp->fp->ndset);
-	dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
 	dp->fp->dsets[dp->id] = *dp;
+	dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
 
 	// Filters
 	dcpl_id = H5VL_logi_dataset_get_dcpl (dp->uo, dp->uvlid, dxpl_id);
