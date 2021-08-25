@@ -25,16 +25,19 @@
 H5VL_log_merged_wreq_t::H5VL_log_merged_wreq_t () {
 	this->meta_buf = NULL;
 	this->rsize	   = 0;
+	this->nsel = 0;
 }
 
 H5VL_log_merged_wreq_t::H5VL_log_merged_wreq_t (H5VL_log_dset_t *dp, int nsel) {
 	herr_t err;
+
 	err = this->init (dp, nsel);
 	if (err != 0) { throw "Init fail"; }
 }
 
 H5VL_log_merged_wreq_t::H5VL_log_merged_wreq_t (H5VL_log_file_t *fp, int id, int nsel) {
 	herr_t err;
+
 	err = this->init (fp, id, nsel);
 	if (err != 0) { throw "Init fail"; }
 }
@@ -44,7 +47,9 @@ H5VL_log_merged_wreq_t::~H5VL_log_merged_wreq_t () {}
 herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
 	herr_t err = 0;
 
-	if (nsel < H5VL_LOGI_MERGED_REQ_SEL_RESERVE) { nsel = H5VL_LOGI_MERGED_REQ_SEL_RESERVE; }
+	if (nsel < H5VL_LOGI_MERGED_REQ_SEL_RESERVE) {
+		nsel = H5VL_LOGI_MERGED_REQ_SEL_RESERVE;
+	}
 
 	this->hdr.meta_size = sizeof (H5VL_logi_meta_hdr) + sizeof (int) + sizeof (MPI_Offset);
 
@@ -62,11 +67,19 @@ herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
 		this->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
 	}
 
+	// There is no aggreagated blocks yet.
+	// The input nsel means the number reserved, not the current number
+	this->nsel = 0;
+
 	this->meta_buf = (char *)malloc (this->hdr.meta_size);
 	CHECK_PTR (this->meta_buf);
 	this->mbufe = this->meta_buf + this->hdr.meta_size;
 	this->mbufp =
 		this->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (int) + sizeof (MPI_Offset) * 2;
+	this->nselp	  = (int *)(this->meta_buf + sizeof (H5VL_logi_meta_hdr));
+
+	// Pack num selections
+	*(this->nselp) = 0;
 
 	// Pack dsteps
 	if (this->hdr.flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
@@ -110,21 +123,25 @@ herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
 
 	// Init the meta buffer if not yet inited
 	if (this->meta_buf == NULL) {
-		err = this->init (dp, nsel);
+		err = this->init (dp, sels->nsel);
 		CHECK_ERR
 	}
 
 	// Reserve space in the metadata buffer
 	if (this->hdr.flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-		msize = nsel * 2 * sizeof (MPI_Offset);
+		msize = sels->nsel * 2 * sizeof (MPI_Offset);
 	} else {
-		msize = nsel * 2 * sizeof (hsize_t) * dp->ndim;
+		msize = sels->nsel * 2 * sizeof (hsize_t) * dp->ndim;
 	}
 	this->reserve (msize);
 
 	// Pack metadata
-	sels->encode(*dp, this->hdr, this->mbufp);
+	sels->encode (*dp, this->hdr, this->mbufp);
 	this->mbufp += msize;
+
+	// Record nsel
+	nsel += sels->nsel;
+	*(this->nselp) = nsel;
 
 	// Append data
 	this->dbufs.push_back ({db.xbuf, db.ubuf, db.size});
