@@ -104,40 +104,7 @@ err_out:;
 
 herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
 									   H5VL_log_req_data_block_t &db,
-									   int nsel,
-									   hsize_t **starts,
-									   hsize_t **counts) {
-	herr_t err = 0;
-	size_t msize;  // Size of metadata
-
-	// Init the meta buffer if not yet inited
-	if (this->meta_buf == NULL) {
-		err = this->init (dp, nsel);
-		CHECK_ERR
-	}
-
-	// Reserve space in the metadata buffer
-	if (this->hdr.flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-		msize = nsel * 2 * sizeof (MPI_Offset);
-	} else {
-		msize = nsel * 2 * sizeof (hsize_t) * dp->ndim;
-	}
-	this->reserve (msize);
-
-	// Pack metadata
-	err = H5VL_logi_metaentry_encode (*dp, this->hdr, nsel, starts, counts, this->mbufp);
-	this->mbufp += msize;
-
-	// Append data
-	this->dbufs.push_back ({db.xbuf, db.ubuf, db.size});
-	this->rsize += db.size;
-err_out:;
-	return err;
-}
-
-herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
-									   H5VL_log_req_data_block_t &db,
-									   std::vector<H5VL_log_selection> sels) {
+									   H5VL_log_selections *sels) {
 	herr_t err = 0;
 	size_t msize;
 
@@ -156,7 +123,7 @@ herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
 	this->reserve (msize);
 
 	// Pack metadata
-	err = H5VL_logi_metaentry_encode (*dp, this->hdr, sels, this->mbufp);
+	sels->encode(*dp, this->hdr, this->mbufp);
 	this->mbufp += msize;
 
 	// Append data

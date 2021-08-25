@@ -45,6 +45,7 @@ class H5VL_log_wreq_t {
 };
 
 struct H5VL_log_dset_t;
+class H5VL_log_selections;
 class H5VL_log_merged_wreq_t : public H5VL_log_wreq_t {
    public:
 	int nsel	= 0;	 // # selections in the merged request
@@ -58,12 +59,7 @@ class H5VL_log_merged_wreq_t : public H5VL_log_wreq_t {
 
 	herr_t append (H5VL_log_dset_t *dp,
 				   H5VL_log_req_data_block_t &db,
-				   int nsel,
-				   hsize_t **starts,
-				   hsize_t **counts);
-	herr_t append (H5VL_log_dset_t *dp,
-				   H5VL_log_req_data_block_t &db,
-				   std::vector<H5VL_log_selection> sels);
+				   H5VL_log_selections *sels);
 	herr_t reset (H5VL_log_dset_info_t &dset);
 
    private:

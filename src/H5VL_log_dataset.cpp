@@ -500,8 +500,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 		}
 		r->meta_buf = (char *)malloc (r->hdr.meta_size);
 
-		err = H5VL_logi_metaentry_encode (*dp, r->hdr, dsel->nsel, dsel->starts, dsel->counts,
-										  r->meta_buf);
+		err = H5VL_logi_metaentry_encode (*dp, r->hdr, dsel, r->meta_buf);
 		CHECK_ERR
 
 		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_ENCODE);
@@ -587,7 +586,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 
 	// Put request in queue
 	if (dp->fp->flag ^ H5VL_FILEI_CONFIG_METADATA_MERGE) {
-		err = dp->fp->mreqs[dp->id]->append (dp, db, dsel->nsel, dsel->starts, dsel->counts);
+		err = dp->fp->mreqs[dp->id]->append (dp, db, dsel);
 		CHECK_ERR
 	} else {
 		r->rsize = db.size;
