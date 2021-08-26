@@ -108,6 +108,7 @@ herr_t H5VL_log_merged_wreq_t::reserve (size_t size) {
 
 		this->meta_buf = (char *)realloc (this->meta_buf, this->hdr.meta_size);
 		CHECK_PTR (this->meta_buf);
+		this->nselp	  = (int *)(this->meta_buf + sizeof (H5VL_logi_meta_hdr));
 		this->mbufp = this->meta_buf + target_size;
 		this->mbufe = this->meta_buf + this->hdr.meta_size;
 	}

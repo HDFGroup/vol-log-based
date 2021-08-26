@@ -600,7 +600,9 @@ err_out:;
 	if (err) {
 		// if (r->xbuf != r->ubuf) H5VL_log_filei_bfree (dp->fp, r->xbuf);
 	}
-	if (dsel) { delete dsel; }
+	if (dsel) { 
+		delete dsel; 
+	}
 	H5VL_log_type_free (ptype);
 
 	return err;

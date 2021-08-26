@@ -515,6 +515,7 @@ hsize_t H5VL_log_selections::get_sel_size () {
 	hsize_t bsize;
 	hsize_t *ptr;
 
+	assert(counts);
 	for (i = 0; i < nsel; i++) {
 		bsize = 1;
 		assert(counts[i]);
