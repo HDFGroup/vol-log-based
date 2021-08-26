@@ -101,8 +101,12 @@ inline herr_t H5VL_logi_dataset_get_foff (void *obj,
 	herr_t err			= 0;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)obj;
 	H5VL_optional_args_t args;
+	H5VL_native_dataset_optional_args_t optarg;
+
+	optarg.get_offset.offset = off;
 
 	args.op_type = H5VL_NATIVE_DATASET_GET_OFFSET;
+	args.args = &optarg;
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VLdataset_optional (dp, connector_id, &args, dxpl_id, NULL);
