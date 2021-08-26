@@ -23,7 +23,7 @@ struct hash_pair {
 		int i;
 		size_t ret = 0;
 		size_t *val;
-		size_t *end = (size_t *)((char *)(p.first) + p.second);
+		size_t *end = (size_t *)((char *)(p.first) + p.second - p.second % sizeof (size_t));
 
 		for (val = (size_t *)(p.first); val < end; val++) { ret ^= *val; }
 
@@ -151,6 +151,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 #endif
 #endif
 
+	H5VL_LOGI_PROFILING_TIMER_START;
 	// Fill up all metadata reference once the offset of refered entries is known
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
 		for (auto &rp : fp->wreqs) {
@@ -165,7 +166,6 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	}
 
 	// Rewrite entry header later after compression
-	H5VL_LOGI_PROFILING_TIMER_START;
 	// Header for standalone varn requests
 	for (auto &rp : fp->wreqs) { *((H5VL_logi_meta_hdr *)rp->meta_buf) = rp->hdr; }
 

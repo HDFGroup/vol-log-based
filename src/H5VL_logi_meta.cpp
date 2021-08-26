@@ -186,7 +186,7 @@ herr_t H5VL_logi_metaentry_encode (H5VL_log_dset_info_t &dset,
 	char *mbuf;
 
 	// Jump to blocks
-	mbuf = (char *)meta + sizeof (H5VL_logi_meta_hdr);	// Header
+	mbuf = (char *)meta + sizeof (H5VL_logi_meta_hdr);	// Header will be filled right before flushing
 
 	// Add nreq field if more than 1 blocks
 	if (hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
