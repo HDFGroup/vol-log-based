@@ -517,6 +517,7 @@ hsize_t H5VL_log_selections::get_sel_size () {
 
 	for (i = 0; i < nsel; i++) {
 		bsize = 1;
+		assert(counts[i]);
 		for (ptr = counts[i]; ptr < counts[i] + ndim; ptr++) { 
 			bsize *= *ptr; 
 			}
@@ -532,10 +533,6 @@ void H5VL_log_selections::encode (H5VL_log_dset_info_t &dset,
 	int i;
 
 	if (hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-		// Dsteps
-		memcpy (mbuf, dset.dsteps, sizeof (MPI_Offset) * (dset.ndim - 1));
-		mbuf += sizeof (MPI_Offset) * (dset.ndim - 1);
-
 		for (i = 0; i < nsel; i++) {
 			H5VL_logi_sel_encode (dset.ndim, dset.dsteps, starts[i], (MPI_Offset *)mbuf);
 			mbuf += sizeof (MPI_Offset);
