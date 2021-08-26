@@ -58,8 +58,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	MPI_Offset zbsize = 0;	// Size of zbuf
 	char *zbuf;				// Buffer to temporarily sotre compressed data
 #endif
-	char *buf	= NULL;						  // Buffer to store merged entries
-	char **bufp = NULL;						  // Point to merged entry per dataset in buf
+	char *buf	= NULL;	 // Buffer to store merged entries
+	char **bufp = NULL;	 // Point to merged entry per dataset in buf
 	char *ptr;
 	char mdname[32];						  // Name of metadata dataset
 	int clen, inlen;						  // Compressed size; Size of data to be compressed
@@ -157,7 +157,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			if (rp->hdr.flag & H5VL_LOGI_META_FLAG_SEL_REF) {
 				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2;
 				H5VL_log_wreq_t *t = *((H5VL_log_wreq_t **)ptr);
-				// Replace with the file offset of the reference metadata entry related to this entry, the result should be negative (looking in previous records)
+				// Replace with the file offset of the reference metadata entry related to this
+				// entry, the result should be negative (looking in previous records)
 				*((MPI_Offset *)ptr) = t->meta_off - rp->meta_off;
 			}
 		}
@@ -253,7 +254,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 
 		// Get metadata dataset file offset
-		err = H5VL_logi_dataset_get_foff (mdp, fp->uvlid, fp->dxplid, &mdoff);
+		err = H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, fp->dxplid, &mdoff);
 		CHECK_ERR
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_CREATE);
 
@@ -342,7 +343,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		CHECK_PTR (mdp)
 
 		// Get data space and size
-		mdsid = H5VL_logi_dataset_get_space (mdp, fp->uvlid, fp->dxplid);
+		mdsid = H5VL_logi_dataset_get_space (fp, mdp, fp->uvlid, fp->dxplid);
 		CHECK_ID (mdsid)
 		ndim = H5Sget_simple_extent_dims (mdsid, &mdsize, NULL);
 		LOG_VOL_ASSERT (ndim == 1);
@@ -442,7 +443,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	CHECK_PTR (mdp)
 
 	// Get data space and size
-	mdsid = H5VL_logi_dataset_get_space (mdp, fp->uvlid, fp->dxplid);
+	mdsid = H5VL_logi_dataset_get_space (fp, mdp, fp->uvlid, fp->dxplid);
 	CHECK_ID (mdsid)
 	ndim = H5Sget_simple_extent_dims (mdsid, &mdsize, NULL);
 	LOG_VOL_ASSERT (ndim == 1);

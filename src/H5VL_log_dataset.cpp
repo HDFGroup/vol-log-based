@@ -191,7 +191,7 @@ void *H5VL_log_dataset_open (void *obj,
 	CHECK_PTR (dp->uo);
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_OPEN);
 
-	dp->dtype = H5VL_logi_dataset_get_type (dp->uo, dp->uvlid, dxpl_id);
+	dp->dtype = H5VL_logi_dataset_get_type (dp->fp, dp->uo, dp->uvlid, dxpl_id);
 	CHECK_ID (dp->dtype)
 	if (req) { rp->append (ureq); }
 
@@ -225,7 +225,7 @@ void *H5VL_log_dataset_open (void *obj,
 	dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
 
 	// Filters
-	dcpl_id = H5VL_logi_dataset_get_dcpl (dp->uo, dp->uvlid, dxpl_id);
+	dcpl_id = H5VL_logi_dataset_get_dcpl (dp->fp, dp->uo, dp->uvlid, dxpl_id);
 	CHECK_ID (dcpl_id)
 	nfilter = H5Pget_nfilters (dcpl_id);
 	CHECK_ID (nfilter);
@@ -600,9 +600,7 @@ err_out:;
 	if (err) {
 		// if (r->xbuf != r->ubuf) H5VL_log_filei_bfree (dp->fp, r->xbuf);
 	}
-	if (dsel) { 
-		delete dsel; 
-	}
+	if (dsel) { delete dsel; }
 	H5VL_log_type_free (ptype);
 
 	return err;

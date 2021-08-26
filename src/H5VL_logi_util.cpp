@@ -96,7 +96,7 @@ herr_t H5VL_logi_get_att_ex (
 
 	ap = H5VLattr_open (op->uo, &loc, op->uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL);
 	CHECK_PTR (ap);
-	asid = H5VL_logi_attr_get_space (ap, op->uvlid, dxpl_id);
+	asid = H5VL_logi_attr_get_space (op->fp, ap, op->uvlid, dxpl_id);
 	CHECK_ID (asid);
 	ndim = H5Sget_simple_extent_dims (asid, len, NULL);
 	CHECK_ID (ndim)

@@ -25,7 +25,7 @@
 H5VL_log_merged_wreq_t::H5VL_log_merged_wreq_t () {
 	this->meta_buf = NULL;
 	this->rsize	   = 0;
-	this->nsel = 0;
+	this->nsel	   = 0;
 }
 
 H5VL_log_merged_wreq_t::H5VL_log_merged_wreq_t (H5VL_log_dset_t *dp, int nsel) {
@@ -47,9 +47,7 @@ H5VL_log_merged_wreq_t::~H5VL_log_merged_wreq_t () {}
 herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
 	herr_t err = 0;
 
-	if (nsel < H5VL_LOGI_MERGED_REQ_SEL_RESERVE) {
-		nsel = H5VL_LOGI_MERGED_REQ_SEL_RESERVE;
-	}
+	if (nsel < H5VL_LOGI_MERGED_REQ_SEL_RESERVE) { nsel = H5VL_LOGI_MERGED_REQ_SEL_RESERVE; }
 
 	this->hdr.meta_size = sizeof (H5VL_logi_meta_hdr) + sizeof (int) + sizeof (MPI_Offset);
 
@@ -72,14 +70,14 @@ herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
 	this->nsel = 0;
 
 	// No aggregated requests, data size set to 0
-	this->rsize	   = 0;
+	this->rsize = 0;
 
 	this->meta_buf = (char *)malloc (this->hdr.meta_size);
 	CHECK_PTR (this->meta_buf);
 	this->mbufe = this->meta_buf + this->hdr.meta_size;
 	this->mbufp =
 		this->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (int) + sizeof (MPI_Offset) * 2;
-	this->nselp	  = (int *)(this->meta_buf + sizeof (H5VL_logi_meta_hdr));
+	this->nselp = (int *)(this->meta_buf + sizeof (H5VL_logi_meta_hdr));
 
 	// Pack num selections
 	*(this->nselp) = 0;
@@ -111,7 +109,7 @@ herr_t H5VL_log_merged_wreq_t::reserve (size_t size) {
 
 		this->meta_buf = (char *)realloc (this->meta_buf, this->hdr.meta_size);
 		CHECK_PTR (this->meta_buf);
-		this->nselp	  = (int *)(this->meta_buf + sizeof (H5VL_logi_meta_hdr));
+		this->nselp = (int *)(this->meta_buf + sizeof (H5VL_logi_meta_hdr));
 		this->mbufp = this->meta_buf + target_size;
 		this->mbufe = this->meta_buf + this->hdr.meta_size;
 	}
@@ -444,7 +442,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 
 		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VL_logi_dataset_get_foff (ldp, fp->uvlid, dxplid, &doff);
+		err = H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
 		CHECK_ERR  // Get dataset file offset
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
 
@@ -662,7 +660,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 		CHECK_PTR (ldp);
 
 		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VL_logi_dataset_get_foff (ldp, fp->uvlid, dxplid, &doff);
+		err = H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
 		CHECK_ERR	   // Get dataset file offset
 		if (remain) {  // Align to the next stripe
 			doff += fp->ssize - remain;

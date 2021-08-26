@@ -306,7 +306,7 @@ void *H5VL_log_dataseti_open_with_uo (void *obj,
 	dp = new H5VL_log_dset_t (op, H5I_DATASET, uo);
 	CHECK_PTR (dp)
 
-	dp->dtype = H5VL_logi_dataset_get_type (dp->uo, dp->uvlid, dxpl_id);
+	dp->dtype = H5VL_logi_dataset_get_type (dp->fp, dp->uo, dp->uvlid, dxpl_id);
 	CHECK_ID (dp->dtype)
 
 	dp->esize = H5Tget_size (dp->dtype);
@@ -352,7 +352,7 @@ void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_obj_t *cp) {
 	dp = new H5VL_log_dset_t (cp, H5I_DATASET, uo);
 	CHECK_PTR (dp)
 
-	dp->dtype = H5VL_logi_dataset_get_type (dp->uo, dp->uvlid, H5P_DATASET_XFER_DEFAULT);
+	dp->dtype = H5VL_logi_dataset_get_type (dp->fp, dp->uo, dp->uvlid, H5P_DATASET_XFER_DEFAULT);
 	CHECK_ID (dp->dtype)
 	dp->esize = H5Tget_size (dp->dtype);
 	CHECK_ID (dp->esize)
