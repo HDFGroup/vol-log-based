@@ -71,6 +71,9 @@ herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
 	// The input nsel means the number reserved, not the current number
 	this->nsel = 0;
 
+	// No aggregated requests, data size set to 0
+	this->rsize	   = 0;
+
 	this->meta_buf = (char *)malloc (this->hdr.meta_size);
 	CHECK_PTR (this->meta_buf);
 	this->mbufe = this->meta_buf + this->hdr.meta_size;
