@@ -494,10 +494,10 @@ herr_t H5VL_log_dataset_write (void *dset,
 		}
 		if (r->hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
 			r->hdr.meta_size +=
-				sizeof (MPI_Offset) * (dp->ndim - 1 + r->nsel * 2) + sizeof (MPI_Offset) * 2;
+				sizeof (MPI_Offset) * (dp->ndim - 1 + r->nsel * 2);
 		} else {
 			r->hdr.meta_size +=
-				sizeof (MPI_Offset) * (dp->ndim * r->nsel * 2) + sizeof (MPI_Offset) * 2;
+				sizeof (MPI_Offset) * (dp->ndim * r->nsel * 2);
 		}
 		r->meta_buf = (char *)malloc (r->hdr.meta_size);
 
