@@ -42,9 +42,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
-	MPI_Offset doff;		   // Local metadata offset within the metadata dataset
-	MPI_Offset mdsize_all;	   // Global metadata size
-	MPI_Offset mdsize  = 0;	   // Local metadata size
+	MPI_Offset doff;		 // Local metadata offset within the metadata dataset
+	MPI_Offset mdsize_all;	 // Global metadata size
+	MPI_Offset mdsize  = 0;	 // Local metadata size
 	MPI_Offset *mdoffs = NULL;
 	MPI_Aint *offs	   = NULL;	// Offset in MPI_Type_hindexed
 	int *lens		   = NULL;	// Lens in MPI_Type_hindexed
@@ -52,8 +52,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	size_t bsize	   = 0;		// Size of metadata buffer = size of metadata before compression
 	size_t esize;				// Size of the current processing metadata entry
 #ifdef ENABLE_ZLIB
-	MPI_Offset zbsize = 0;	// Size of zbuf
-	char *zbuf=NULL;				// Buffer to temporarily sotre compressed data
+	MPI_Offset zbsize = 0;	   // Size of zbuf
+	char *zbuf		  = NULL;  // Buffer to temporarily sotre compressed data
 #endif
 	char *ptr;
 	char mdname[32];						  // Name of metadata dataset
@@ -127,8 +127,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Recount mdsize after compression
 	mdsize = 0;
 	// Compress metadata
-	zbuf = (char*)malloc(zbsize);
-	CHECK_PTR(zbuf)
+	zbuf = (char *)malloc (zbsize);
+	CHECK_PTR (zbuf)
 	for (auto &rp : fp->wreqs) {
 		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
 			inlen = rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2 -
@@ -220,11 +220,11 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	if (fp->rank == 0) {  // Rank 0 calculate
 		mdoffs[0] = 0;
 		for (i = 0; i < fp->np; i++) { mdoffs[i + 1] += mdoffs[i]; }
+		mdsize_all = mdoffs[fp->np];
 	}
 	mpierr = MPI_Scatter (mdoffs, 1, MPI_LONG_LONG, &doff, 1, MPI_LONG_LONG, 0, fp->comm);
 	CHECK_MPIERR
-	mdsize_all = mdoffs[fp->np];
-	mpierr	   = MPI_Bcast (&mdsize_all, 1, MPI_LONG_LONG, 0, fp->comm);
+	mpierr = MPI_Bcast (&mdsize_all, 1, MPI_LONG_LONG, 0, fp->comm);
 	CHECK_MPIERR
 
 	if (fp->rank == 0) { mdoffs[0] = lens[0]; }
@@ -284,14 +284,13 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		fp->metadirty = false;
 	}
 
-	for (auto &rp : fp->wreqs) {
-		delete rp;
-	}
+	for (auto &rp : fp->wreqs) { delete rp; }
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
 err_out:
 	// Cleanup
 	H5VL_log_free (offs);
-	H5VL_log_free (lens);	H5VL_log_free (mdoffs);
+	H5VL_log_free (lens);
+	H5VL_log_free (mdoffs);
 #ifdef ENABLE_ZLIB
 	H5VL_log_free (zbuf);
 #endif
