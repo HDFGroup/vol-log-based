@@ -144,7 +144,9 @@ void *H5VL_log_unwrap_object (void *obj) {
 		hid_t err_id;
 
 		err_id = H5Eget_current_stack ();
-		delete op;
+		if (op->fp != op) {	 // Files are shadow copy
+			delete op;
+		}
 		H5Eset_current_stack (err_id);
 	}
 

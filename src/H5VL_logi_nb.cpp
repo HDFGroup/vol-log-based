@@ -466,7 +466,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 			fp->wreqs[i]->ldid = fp->nldset;
 			fp->wreqs[i]->ldoff += foff;
 			for (auto &d : fp->wreqs[i]->dbufs) {
-				if (d.ubuf != d.ubuf) { H5VL_log_filei_bfree (fp, (void *)(d.xbuf)); }
+				if (d.ubuf != d.xbuf) { H5VL_log_filei_bfree (fp, (void *)(d.xbuf)); }
 			}
 		}
 		fp->nflushed = fp->wreqs.size ();
