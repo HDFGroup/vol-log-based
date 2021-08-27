@@ -49,21 +49,36 @@ herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
 
 	if (nsel < H5VL_LOGI_MERGED_REQ_SEL_RESERVE) { nsel = H5VL_LOGI_MERGED_REQ_SEL_RESERVE; }
 
-	this->hdr.meta_size = sizeof (H5VL_logi_meta_hdr) + sizeof (int) + sizeof (MPI_Offset);
+	this->meta_size_alloc = sizeof (H5VL_logi_meta_hdr) + sizeof (int) + sizeof (MPI_Offset) * 2;
 
 	this->hdr.did = id;
 
 	this->hdr.flag = H5VL_LOGI_META_FLAG_MUL_SEL;
 	if ((fp->dsets[id].ndim > 1) && (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
 		this->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
-		this->hdr.meta_size += sizeof (MPI_Offset) * (2 * nsel + fp->dsets[id].ndim);
+		this->meta_size_alloc += sizeof (MPI_Offset) * (2 * nsel + fp->dsets[id].ndim);
 	} else {
-		this->hdr.meta_size += sizeof (MPI_Offset) * fp->dsets[id].ndim * 2 * nsel;
+		this->meta_size_alloc += sizeof (MPI_Offset) * fp->dsets[id].ndim * 2 * nsel;
 	}
 
 	if (fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
 		this->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
 	}
+
+	this->meta_buf = (char *)malloc (this->meta_size_alloc);
+	CHECK_PTR (this->meta_buf);
+	this->mbufe = this->meta_buf + this->meta_size_alloc;
+	this->mbufp =
+		this->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2 + sizeof (int);
+
+	// Pack dsteps
+	if (this->hdr.flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+		memcpy (this->mbufp, fp->dsets[id].dsteps, sizeof (MPI_Offset) * (fp->dsets[id].ndim - 1));
+		this->mbufp += sizeof (MPI_Offset) * (fp->dsets[id].ndim - 1);
+	}
+
+	// Update metadata size
+	this->hdr.meta_size = this->mbufp - this->meta_buf;
 
 	// There is no aggreagated blocks yet.
 	// The input nsel means the number reserved, not the current number
@@ -71,19 +86,6 @@ herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
 
 	// No aggregated requests, data size set to 0
 	this->rsize = 0;
-
-	this->meta_buf = (char *)malloc (this->hdr.meta_size);
-	CHECK_PTR (this->meta_buf);
-	this->mbufe = this->meta_buf + this->hdr.meta_size;
-	this->mbufp =
-		this->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (int) + sizeof (MPI_Offset) * 2;
-	this->nselp = (int *)(this->meta_buf + sizeof (H5VL_logi_meta_hdr));
-
-	// Pack dsteps
-	if (this->hdr.flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-		memcpy (this->mbufp, fp->dsets[id].dsteps, sizeof (MPI_Offset) * (fp->dsets[id].ndim - 1));
-		this->mbufp += sizeof (MPI_Offset) * (fp->dsets[id].ndim - 1);
-	}
 
 err_out:;
 	return err;
@@ -95,20 +97,16 @@ herr_t H5VL_log_merged_wreq_t::init (H5VL_log_dset_t *dp, int nsel) {
 
 herr_t H5VL_log_merged_wreq_t::reserve (size_t size) {
 	herr_t err = 0;
-	size_t target_size;
 
 	if (this->mbufp + size > this->mbufe) {
-		target_size = this->mbufp - this->meta_buf + size;
-		while (this->hdr.meta_size < target_size) {
-			this->hdr.meta_size <<= H5VL_LOGI_MERGED_REQ_SEL_MUL;
+		while (this->meta_size_alloc < this->hdr.meta_size + size) {
+			this->meta_size_alloc <<= H5VL_LOGI_MERGED_REQ_SEL_MUL;
 		}
-		target_size = this->mbufp - this->meta_buf;	 // reuse target size for used buffer
 
-		this->meta_buf = (char *)realloc (this->meta_buf, this->hdr.meta_size);
+		this->meta_buf = (char *)realloc (this->meta_buf, this->meta_size_alloc);
 		CHECK_PTR (this->meta_buf);
-		this->nselp = (int *)(this->meta_buf + sizeof (H5VL_logi_meta_hdr));
-		this->mbufp = this->meta_buf + target_size;
-		this->mbufe = this->meta_buf + this->hdr.meta_size;
+		this->mbufp = this->meta_buf + this->hdr.meta_size;
+		this->mbufe = this->meta_buf + this->meta_size_alloc;
 	}
 err_out:;
 	return err;
@@ -144,6 +142,10 @@ herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
 	// Append data
 	this->dbufs.push_back ({db.xbuf, db.ubuf, db.size});
 	this->rsize += db.size;
+
+	// Update metadata size
+	// Header will be updated before flushing
+	this->hdr.meta_size = this->mbufp - this->meta_buf;
 err_out:;
 	return err;
 }
