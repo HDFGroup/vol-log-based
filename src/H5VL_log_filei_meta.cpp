@@ -97,7 +97,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		ptr += sizeof (MPI_Offset);
 		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {  // # selections
 			*((int *)ptr) = rp->nsel;
-			ptr += sizeof (int);
+			// nsel can be overwritten if transformed into referenced entry, do not avdance the pointer
+			// ptr += sizeof (int);
 		}
 		
 		if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
