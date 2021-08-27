@@ -79,9 +79,6 @@ herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
 		this->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (int) + sizeof (MPI_Offset) * 2;
 	this->nselp = (int *)(this->meta_buf + sizeof (H5VL_logi_meta_hdr));
 
-	// Pack num selections
-	*(this->nselp) = 0;
-
 	// Pack dsteps
 	if (this->hdr.flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
 		memcpy (this->mbufp, fp->dsets[id].dsteps, sizeof (MPI_Offset) * (fp->dsets[id].ndim - 1));
@@ -143,7 +140,6 @@ herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
 
 	// Record nsel
 	nsel += sels->nsel;
-	*(this->nselp) = nsel;
 
 	// Append data
 	this->dbufs.push_back ({db.xbuf, db.ubuf, db.size});

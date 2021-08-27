@@ -90,10 +90,14 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		nentry++;
 
 		// Update file offset and size of the data block unknown when the request was posted
-		ptr					 = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
-		*((MPI_Offset *)ptr) = rp->ldoff;
+		ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
+		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {  // # selections
+			*((int *)ptr) = rp->nsel;
+			ptr += sizeof (int);
+		}
+		*((MPI_Offset *)ptr) = rp->ldoff;  // file offset
 		ptr += sizeof (MPI_Offset);
-		*((MPI_Offset *)ptr) = rp->rsize;
+		*((MPI_Offset *)ptr) = rp->rsize;  // file size
 		ptr += sizeof (MPI_Offset);
 
 		if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
