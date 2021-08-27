@@ -76,7 +76,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 			// Decompress the metadata
 			inlen = block.hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (int) - sizeof (MPI_Offset) * 2;
 			clen  = bsize;
-			err	  = H5VL_log_zip_compress (bufp, inlen, zbuf, &clen);
+			err	  = H5VL_log_zip_decompress (bufp, inlen, zbuf, &clen);
 			CHECK_ERR
 #else
 			RET_ERR ("Comrpessed Metadata Support Not Enabled")
