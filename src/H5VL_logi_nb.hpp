@@ -31,7 +31,6 @@ class H5VL_log_wreq_t {
 
 	// H5VL_logi_meta_hdr *meta_hdr;
 	char *meta_buf = NULL;
-	size_t meta_size_alloc;  // Size of allocated meta_buf
 	int nsel;
 	// size_t meta_size;
 
@@ -51,7 +50,8 @@ class H5VL_log_merged_wreq_t : public H5VL_log_wreq_t {
    public:
 	char *mbufp = NULL;	 // Next empty byte in the metadata buffer
 	char *mbufe = NULL;	 // End of metadata buffer
-
+	size_t meta_size_alloc;  // Size of allocated meta_buf
+	
 	H5VL_log_merged_wreq_t ();
 	H5VL_log_merged_wreq_t (H5VL_log_file_t *fp, int id, int nsel);
 	H5VL_log_merged_wreq_t (H5VL_log_dset_t *dp, int nsel);

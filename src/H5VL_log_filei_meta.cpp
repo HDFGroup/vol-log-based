@@ -90,17 +90,17 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		nentry++;
 
 		// Update file offset and size of the data block unknown when the request was posted
-		ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
+		ptr					 = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
 		*((MPI_Offset *)ptr) = rp->ldoff;  // file offset
 		ptr += sizeof (MPI_Offset);
 		*((MPI_Offset *)ptr) = rp->rsize;  // file size
 		ptr += sizeof (MPI_Offset);
 		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {  // # selections
 			*((int *)ptr) = rp->nsel;
-			// nsel can be overwritten if transformed into referenced entry, do not avdance the pointer
-			// ptr += sizeof (int);
+			// nsel can be overwritten if transformed into referenced entry, do not avdance the
+			// pointer ptr += sizeof (int);
 		}
-		
+
 		if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
 			auto t = std::pair<void *, size_t> (
 				(void *)ptr,
@@ -134,13 +134,18 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Compress metadata
 	for (auto &rp : fp->wreqs) {
 		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
-			inlen = rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr) -  sizeof(MPI_Offset) * 2 - sizeof(int);
-			clen  = zbsize;
-			err	  = H5VL_log_zip_compress (rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof(MPI_Offset) * 2 + sizeof(int), inlen, zbuf,
-										   &clen);
+			inlen = rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2 -
+					sizeof (int);
+			clen = zbsize;
+			err	 = H5VL_log_zip_compress (
+				 rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2 + sizeof (int),
+				 inlen, zbuf, &clen);
 			if ((err == 0) && (clen < inlen)) {
-				memcpy (rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof(MPI_Offset) * 2 + sizeof(int), zbuf, clen);
-				rp->hdr.meta_size = sizeof (H5VL_logi_meta_hdr) + sizeof(MPI_Offset) * 2 + sizeof(int) + clen;
+				memcpy (rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2 +
+							sizeof (int),
+						zbuf, clen);
+				rp->hdr.meta_size =
+					sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2 + sizeof (int) + clen;
 			} else {
 				// Compressed size larger, abort compression
 				rp->hdr.flag &= ~(H5VL_FILEI_CONFIG_SEL_DEFLATE);
