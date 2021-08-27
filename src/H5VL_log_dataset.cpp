@@ -444,7 +444,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	if (!buf) ERR_OUT ("user buffer can't be NULL");
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_INIT);
 
-	if (dp->fp->flag ^ H5VL_FILEI_CONFIG_METADATA_MERGE) {
+	if (dp->fp->config ^ H5VL_FILEI_CONFIG_METADATA_MERGE) {
 		H5VL_LOGI_PROFILING_TIMER_START;
 
 		r = new H5VL_log_wreq_t ();
@@ -586,7 +586,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Put request in queue
-	if (dp->fp->flag ^ H5VL_FILEI_CONFIG_METADATA_MERGE) {
+	if (dp->fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
 		err = dp->fp->mreqs[dp->id]->append (dp, db, dsel);
 		CHECK_ERR
 	} else {
