@@ -420,6 +420,9 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	// Free the metadata buffer
 	H5VL_log_filei_contig_buffer_free (&(fp->meta_buf));
 
+	// Free merged reqeusts
+	for (auto &req : fp->mreqs) { delete req; }
+
 	// Close contig dataspacce ID
 	H5VL_log_dataspace_contig_ref--;
 	if (H5VL_log_dataspace_contig_ref == 0) { H5Sclose (H5VL_log_dataspace_contig); }
@@ -588,7 +591,7 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 	*/
 
 	fp = cp->fp;
-	//fp->refcnt++;
+	// fp->refcnt++;
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
 

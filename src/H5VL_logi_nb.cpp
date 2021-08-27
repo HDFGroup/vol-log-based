@@ -22,6 +22,10 @@
 #define H5VL_LOGI_MERGED_REQ_SEL_RESERVE 32
 #define H5VL_LOGI_MERGED_REQ_SEL_MUL	 3
 
+H5VL_log_wreq_t::~H5VL_log_wreq_t () {
+	if (meta_buf) { free (meta_buf); }
+}
+
 H5VL_log_merged_wreq_t::H5VL_log_merged_wreq_t () {
 	this->meta_buf = NULL;
 	this->rsize	   = 0;

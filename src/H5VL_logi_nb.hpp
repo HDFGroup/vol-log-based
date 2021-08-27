@@ -39,27 +39,28 @@ class H5VL_log_wreq_t {
 
 	size_t rsize;  // Size of data in xbuf (bytes)
 
-	MPI_Offset meta_off;	// Offset of the metadata related to the starting metadata block of the process
+	MPI_Offset
+		meta_off;  // Offset of the metadata related to the starting metadata block of the process
 
 	std::vector<H5VL_log_req_data_block_t> dbufs;  // Data buffers <xbuf, ubuf, size>
+
+	~H5VL_log_wreq_t ();
 };
 
 struct H5VL_log_dset_t;
 class H5VL_log_selections;
 class H5VL_log_merged_wreq_t : public H5VL_log_wreq_t {
    public:
-	char *mbufp = NULL;	 // Next empty byte in the metadata buffer
-	char *mbufe = NULL;	 // End of metadata buffer
-	size_t meta_size_alloc;  // Size of allocated meta_buf
-	
+	char *mbufp = NULL;		 // Next empty byte in the metadata buffer
+	char *mbufe = NULL;		 // End of metadata buffer
+	size_t meta_size_alloc;	 // Size of allocated meta_buf
+
 	H5VL_log_merged_wreq_t ();
 	H5VL_log_merged_wreq_t (H5VL_log_file_t *fp, int id, int nsel);
 	H5VL_log_merged_wreq_t (H5VL_log_dset_t *dp, int nsel);
 	~H5VL_log_merged_wreq_t ();
 
-	herr_t append (H5VL_log_dset_t *dp,
-				   H5VL_log_req_data_block_t &db,
-				   H5VL_log_selections *sels);
+	herr_t append (H5VL_log_dset_t *dp, H5VL_log_req_data_block_t &db, H5VL_log_selections *sels);
 	herr_t reset (H5VL_log_dset_info_t &dset);
 
    private:

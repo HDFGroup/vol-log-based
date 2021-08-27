@@ -285,7 +285,6 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	}
 
 	for (auto &rp : fp->wreqs) {
-		if (rp->meta_buf) { free (rp->meta_buf); }
 		delete rp;
 	}
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
