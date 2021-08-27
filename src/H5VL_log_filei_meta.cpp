@@ -42,9 +42,6 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
-	int *cnt, *flag;  // Number of entry to merge per dataset; flag of merged entry per dataset
-	MPI_Offset *mlens = NULL;  // metadata size of merged entry per dataset
-	MPI_Offset *moffs = NULL;  // metadata offset in memory of merged entry per dataset
 	MPI_Offset doff;		   // Local metadata offset within the metadata dataset
 	MPI_Offset mdsize_all;	   // Global metadata size
 	MPI_Offset mdsize  = 0;	   // Local metadata size
@@ -58,8 +55,6 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	MPI_Offset zbsize = 0;	// Size of zbuf
 	char *zbuf=NULL;				// Buffer to temporarily sotre compressed data
 #endif
-	char *buf	= NULL;	 // Buffer to store merged entries
-	char **bufp = NULL;	 // Point to merged entry per dataset in buf
 	char *ptr;
 	char mdname[32];						  // Name of metadata dataset
 	int clen, inlen;						  // Compressed size; Size of data to be compressed
@@ -202,13 +197,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	} else {
 		nentry = 0;
 	}
-	if (fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
-		// moffs will be reused as file offset, create memory type first
-		for (i = 0; i < fp->ndset; i++) {
-			offs[nentry]   = (MPI_Aint) (moffs[i] + (size_t)buf);
-			lens[nentry++] = (int)mlens[i];
-		}
-	}
+
 	// Gather offset and lens
 	for (auto &rp : fp->wreqs) {
 		offs[nentry]   = (MPI_Aint)rp->meta_buf;
@@ -303,12 +292,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 err_out:
 	// Cleanup
 	H5VL_log_free (offs);
-	H5VL_log_free (lens);
-	H5VL_log_free (mlens);
-	H5VL_log_free (cnt);
-	H5VL_log_free (buf);
-	H5VL_log_free (bufp);
-	H5VL_log_free (mlens);
+	H5VL_log_free (lens);	H5VL_log_free (mdoffs);
 #ifdef ENABLE_ZLIB
 	H5VL_log_free (zbuf);
 #endif
