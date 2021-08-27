@@ -10,13 +10,13 @@
 #include <cstring>
 #include <vector>
 
+#include "H5VL_log_dataset.hpp"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_dataspace.hpp"
 #include "H5VL_logi_debug.hpp"
 #include "H5VL_logi_err.hpp"
-#include "H5VL_logi_util.hpp"
-#include "H5VL_log_dataset.hpp"
 #include "H5VL_logi_meta.hpp"
+#include "H5VL_logi_util.hpp"
 
 template <class T>
 static bool lessthan (int ndim, T *a, T *b) {
@@ -81,7 +81,7 @@ static void sortblocks (int ndim, int len, hsize_t **starts, hsize_t **counts) {
 	}
 }
 
-H5VL_log_selections::H5VL_log_selections () : ndim (0), nsel (0), sels_arr(NULL) {}
+H5VL_log_selections::H5VL_log_selections () : ndim (0), nsel (0), sels_arr (NULL) {}
 H5VL_log_selections::H5VL_log_selections (int ndim, int nsel) : ndim (ndim), nsel (nsel) {
 	this->reserve (nsel);
 }
@@ -104,8 +104,8 @@ H5VL_log_selections::H5VL_log_selections (H5VL_log_selections &rhs)
 			memcpy (counts[i], rhs.counts[i], sizeof (hsize_t) * ndim);
 		}
 	} else {
-		this->starts	 = rhs.starts;
-		this->counts	 = rhs.counts;
+		this->starts   = rhs.starts;
+		this->counts   = rhs.counts;
 		this->sels_arr = NULL;
 	}
 }
@@ -352,8 +352,8 @@ H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
 			memcpy (counts[i], rhs.counts[i], sizeof (hsize_t) * ndim);
 		}
 	} else {
-		this->starts	 = rhs.starts;
-		this->counts	 = rhs.counts;
+		this->starts   = rhs.starts;
+		this->counts   = rhs.counts;
 		this->sels_arr = NULL;
 	}
 
@@ -393,8 +393,8 @@ void H5VL_log_selections::reserve (int nsel) {
 			counts[i] = counts[i - 1] + ndim;
 		}
 	} else {
-		this->starts = NULL;
-		this->counts = NULL;
+		this->starts   = NULL;
+		this->counts   = NULL;
 		this->sels_arr = NULL;
 	}
 
@@ -504,8 +504,13 @@ hsize_t H5VL_log_selections::get_sel_size (int idx) {
 	hsize_t ret = 1;
 	hsize_t *ptr;
 
-	for (ptr = counts[idx]; ptr < counts[idx] + ndim; ptr++) { ret *= *ptr; }
-
+	if (idx < nsel) {
+		if (counts) {
+			for (ptr = counts[idx]; ptr < counts[idx] + ndim; ptr++) { ret *= *ptr; }
+		}
+	} else {
+		ret = 0;
+	}
 	return ret;
 }
 
@@ -515,41 +520,39 @@ hsize_t H5VL_log_selections::get_sel_size () {
 	hsize_t bsize;
 	hsize_t *ptr;
 
-	assert(counts);
+	if ((!counts) && nsel) return 1;
+
 	for (i = 0; i < nsel; i++) {
 		bsize = 1;
-		assert(counts[i]);
-		for (ptr = counts[i]; ptr < counts[i] + ndim; ptr++) { 
-			bsize *= *ptr; 
-			}
+		for (ptr = counts[i]; ptr < counts[i] + ndim; ptr++) { bsize *= *ptr; }
 		ret += bsize;
 	}
 
 	return ret;
 }
 
-void H5VL_log_selections::encode (H5VL_log_dset_info_t &dset,
-								   H5VL_logi_meta_hdr &hdr,
-								   char *mbuf) {
+void H5VL_log_selections::encode (H5VL_log_dset_info_t &dset, H5VL_logi_meta_hdr &hdr, char *mbuf) {
 	int i;
 
-	if (hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-		for (i = 0; i < nsel; i++) {
-			H5VL_logi_sel_encode (dset.ndim, dset.dsteps, starts[i], (MPI_Offset *)mbuf);
-			mbuf += sizeof (MPI_Offset);
-		}
-		for (i = 0; i < nsel; i++) {
-			H5VL_logi_sel_encode (dset.ndim, dset.dsteps, counts[i], (MPI_Offset *)mbuf);
-			mbuf += sizeof (MPI_Offset);
-		}
-	} else {
-		for (i = 0; i < nsel; i++) {
-			memcpy (mbuf, starts[i], sizeof (hsize_t) * dset.ndim);
-			mbuf += sizeof (hsize_t) * dset.ndim;
-		}
-		for (i = 0; i < nsel; i++) {
-			memcpy (mbuf, counts[i], sizeof (hsize_t) * dset.ndim);
-			mbuf += sizeof (hsize_t) * dset.ndim;
+	if(starts){
+		if (hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
+			for (i = 0; i < nsel; i++) {
+				H5VL_logi_sel_encode (dset.ndim, dset.dsteps, starts[i], (MPI_Offset *)mbuf);
+				mbuf += sizeof (MPI_Offset);
+			}
+			for (i = 0; i < nsel; i++) {
+				H5VL_logi_sel_encode (dset.ndim, dset.dsteps, counts[i], (MPI_Offset *)mbuf);
+				mbuf += sizeof (MPI_Offset);
+			}
+		} else {
+			for (i = 0; i < nsel; i++) {
+				memcpy (mbuf, starts[i], sizeof (hsize_t) * dset.ndim);
+				mbuf += sizeof (hsize_t) * dset.ndim;
+			}
+			for (i = 0; i < nsel; i++) {
+				memcpy (mbuf, counts[i], sizeof (hsize_t) * dset.ndim);
+				mbuf += sizeof (hsize_t) * dset.ndim;
+			}
 		}
 	}
 }

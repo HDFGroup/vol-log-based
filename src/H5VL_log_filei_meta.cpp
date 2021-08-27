@@ -102,23 +102,25 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
 		for (auto &rp : fp->wreqs) {
-			ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2;
+			if (rp->hdr.meta_size > sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2){
+				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2;
 
-			auto t = std::pair<void *, size_t> (
-				(void *)ptr,
-				rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2);
+				auto t = std::pair<void *, size_t> (
+					(void *)ptr,
+					rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2);
 
-			if (meta_ref.find (t) == meta_ref.end ()) {
-				meta_ref[t] = rp;
-			} else {
-				rp->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_REF;
-				rp->hdr.flag &= ~(H5VL_LOGI_META_FLAG_SEL_DEFLATE);	 // Remove compression flag
-				rp->hdr.meta_size = sizeof (H5VL_logi_meta_hdr) +
-									sizeof (MPI_Offset) * 3;  // Recalculate metadata size
-				// We write the address of reference targe temporarily into the reference offset
-				// It will be replaced once the offset of the reference target is known
-				// NOTE: This trick only works when sizeof(H5VL_log_wreq_t*) <= sizeof(MPI_Offset)
-				*((H5VL_log_wreq_t **)ptr) = meta_ref[t];
+				if (meta_ref.find (t) == meta_ref.end ()) {
+					meta_ref[t] = rp;
+				} else {
+					rp->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_REF;
+					rp->hdr.flag &= ~(H5VL_LOGI_META_FLAG_SEL_DEFLATE);	 // Remove compression flag
+					rp->hdr.meta_size = sizeof (H5VL_logi_meta_hdr) +
+										sizeof (MPI_Offset) * 3;  // Recalculate metadata size
+					// We write the address of reference targe temporarily into the reference offset
+					// It will be replaced once the offset of the reference target is known
+					// NOTE: This trick only works when sizeof(H5VL_log_wreq_t*) <= sizeof(MPI_Offset)
+					*((H5VL_log_wreq_t **)ptr) = meta_ref[t];
+				}
 			}
 		}
 	}
