@@ -28,6 +28,11 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
 	bufp += sizeof (H5VL_logi_meta_hdr);
+	// Data location and size in the file
+	block.foff = *((MPI_Offset *)bp);
+	bp++;
+	block.fsize = *((MPI_Offset *)bp);
+	bp++;
 
 	// If there is more than 1 selection
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
@@ -124,12 +129,6 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 			idx.insert (block);
 		}
 	} else {
-		// Data location and size in the file
-		block.foff = *((MPI_Offset *)bp);
-		bp++;
-		block.fsize = *((MPI_Offset *)bp);
-		bp++;
-
 		block.sels.resize (nsel);
 
 		// Retrieve starts of selections
@@ -186,7 +185,10 @@ herr_t H5VL_logi_metaentry_encode (H5VL_log_dset_info_t &dset,
 	char *mbuf;
 
 	// Jump to blocks
-	mbuf = (char *)meta + sizeof (H5VL_logi_meta_hdr);	// Header will be filled right before flushing
+	mbuf =
+		(char *)meta + sizeof (H5VL_logi_meta_hdr);	 // Header will be filled right before flushing
+
+	mbuf += sizeof (MPI_Offset) * 2;  // Skip through file location, we don't know yet
 
 	// Add nreq field if more than 1 blocks
 	if (hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
@@ -198,7 +200,6 @@ herr_t H5VL_logi_metaentry_encode (H5VL_log_dset_info_t &dset,
 		if (sels->nsel > 1) { RET_ERR ("Meta flag mismatch") }
 	}
 #endif
-	mbuf += sizeof (MPI_Offset) * 2;  // Skip through file location, we don't know yet
 
 	// Dsteps
 	if (hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {

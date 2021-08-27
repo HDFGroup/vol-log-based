@@ -91,15 +91,15 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 		// Update file offset and size of the data block unknown when the request was posted
 		ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
-		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {  // # selections
-			*((int *)ptr) = rp->nsel;
-			ptr += sizeof (int);
-		}
 		*((MPI_Offset *)ptr) = rp->ldoff;  // file offset
 		ptr += sizeof (MPI_Offset);
 		*((MPI_Offset *)ptr) = rp->rsize;  // file size
 		ptr += sizeof (MPI_Offset);
-
+		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {  // # selections
+			*((int *)ptr) = rp->nsel;
+			ptr += sizeof (int);
+		}
+		
 		if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
 			auto t = std::pair<void *, size_t> (
 				(void *)ptr,
@@ -130,7 +130,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 	// Recount mdsize after compression
 	mdsize = 0;
-	// Compress standalone varn entries
+	// Compress metadata
 	for (auto &rp : fp->wreqs) {
 		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
 			inlen = rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr);

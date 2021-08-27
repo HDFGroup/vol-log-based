@@ -488,10 +488,10 @@ herr_t H5VL_log_dataset_write (void *dset,
 
 		// Selection buffer
 		r->hdr.meta_size = sizeof (H5VL_logi_meta_hdr);	 // Header
+		r->hdr.meta_size += sizeof (MPI_Offset) * 2;	 // File offset and size
 		if (r->hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
 			r->hdr.meta_size += sizeof (int);  // N
 		}
-		r->hdr.meta_size += sizeof (MPI_Offset) * 2;	 // File offset and size
 		if (r->hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
 			r->hdr.meta_size +=
 				sizeof (MPI_Offset) * (dp->ndim - 1 + r->nsel * 2) + sizeof (MPI_Offset) * 2;
