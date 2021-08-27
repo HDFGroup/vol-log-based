@@ -113,6 +113,8 @@ void *H5VL_log_file_create (
 	CHECK_MPIERR
 	mpierr = MPI_Comm_rank (comm, &(fp->rank));
 	CHECK_MPIERR
+	mpierr = MPI_Comm_size (comm, &(fp->np));
+	CHECK_MPIERR
 	fp->dxplid = H5Pcopy (dxpl_id);
 	fp->name   = std::string (name);
 	err		   = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
@@ -271,8 +273,12 @@ void *H5VL_log_file_open (
 	fp		   = new H5VL_log_file_t (uvlid);
 	fp->flag   = flags;
 	fp->config = 0;
-	MPI_Comm_dup (comm, &(fp->comm));
-	MPI_Comm_rank (comm, &(fp->rank));
+	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
+	CHECK_MPIERR
+	mpierr = MPI_Comm_rank (comm, &(fp->rank));
+	CHECK_MPIERR
+	mpierr = MPI_Comm_size (comm, &(fp->np));
+	CHECK_MPIERR
 	fp->dxplid = H5Pcopy (dxpl_id);
 	fp->name   = std::string (name);
 	err		   = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
