@@ -56,7 +56,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	size_t esize;				// Size of the current processing metadata entry
 #ifdef ENABLE_ZLIB
 	MPI_Offset zbsize = 0;	// Size of zbuf
-	char *zbuf;				// Buffer to temporarily sotre compressed data
+	char *zbuf=NULL;				// Buffer to temporarily sotre compressed data
 #endif
 	char *buf	= NULL;	 // Buffer to store merged entries
 	char **bufp = NULL;	 // Point to merged entry per dataset in buf
@@ -132,6 +132,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Recount mdsize after compression
 	mdsize = 0;
 	// Compress metadata
+	zbuf = (char*)malloc(zbsize);
+	CHECK_PTR(zbuf)
 	for (auto &rp : fp->wreqs) {
 		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
 			inlen = rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2 -
@@ -307,6 +309,9 @@ err_out:
 	H5VL_log_free (buf);
 	H5VL_log_free (bufp);
 	H5VL_log_free (mlens);
+#ifdef ENABLE_ZLIB
+	H5VL_log_free (zbuf);
+#endif
 	H5VL_log_Sclose (mdsid);
 	if (mmtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mmtype); }
 	return err;
