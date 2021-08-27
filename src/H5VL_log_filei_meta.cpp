@@ -133,13 +133,13 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Compress metadata
 	for (auto &rp : fp->wreqs) {
 		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
-			inlen = rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr);
+			inlen = rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr) -  sizeof(MPI_Offset) * 2 - sizeof(int);
 			clen  = zbsize;
-			err	  = H5VL_log_zip_compress (rp->meta_buf + sizeof (H5VL_logi_meta_hdr), inlen, zbuf,
+			err	  = H5VL_log_zip_compress (rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof(MPI_Offset) * 2 + sizeof(int), inlen, zbuf,
 										   &clen);
 			if ((err == 0) && (clen < inlen)) {
-				memcpy (rp->meta_buf + sizeof (H5VL_logi_meta_hdr), zbuf, clen);
-				rp->hdr.meta_size = sizeof (H5VL_logi_meta_hdr) + clen;
+				memcpy (rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof(MPI_Offset) * 2 + sizeof(int), zbuf, clen);
+				rp->hdr.meta_size = sizeof (H5VL_logi_meta_hdr) + sizeof(MPI_Offset) * 2 + sizeof(int) + clen;
 			} else {
 				// Compressed size larger, abort compression
 				rp->hdr.flag &= ~(H5VL_FILEI_CONFIG_SEL_DEFLATE);

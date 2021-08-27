@@ -60,11 +60,13 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 				// Start and count as coordinate
 				esize += nsel * sizeof (MPI_Offset) * 2 * dset.ndim;
 			}
+			/*
 			if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SELX) {  // Physical location
 				esize += sizeof (MPI_Offset) * 2;
 			} else {
 				bsize += sizeof (MPI_Offset) * 2;
 			}
+			*/
 			bsize += esize * nsel;
 
 			// Allocate decompression buffer
@@ -72,7 +74,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 			zbufalloc = true;
 
 			// Decompress the metadata
-			inlen = block.hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (int);
+			inlen = block.hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (int) - sizeof (MPI_Offset) * 2;
 			clen  = bsize;
 			err	  = H5VL_log_zip_compress (bufp, inlen, zbuf, &clen);
 			CHECK_ERR
