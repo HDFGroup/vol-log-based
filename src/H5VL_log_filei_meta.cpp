@@ -95,8 +95,15 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			// nsel can be overwritten if transformed into referenced entry, do not avdance the
 			// pointer ptr += sizeof (int);
 		}
+	}
 
-		if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_INIT);
+
+	H5VL_LOGI_PROFILING_TIMER_START;
+	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
+		for (auto &rp : fp->wreqs) {
+			ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2;
+
 			auto t = std::pair<void *, size_t> (
 				(void *)ptr,
 				rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2);
@@ -115,8 +122,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			}
 		}
 	}
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_INIT);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_HASH);
 
 #ifdef LOGVOL_PROFILING
 	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE, (double)(mdsize) / 1048576);

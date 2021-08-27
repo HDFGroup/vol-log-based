@@ -66,6 +66,7 @@ define(`H5VL_LOG_TIMERS', `( `H5VL_log_file_create', dnl
                             `H5VL_log_filei_flush', dnl
                             `H5VL_log_filei_metaflush', dnl
                             `H5VL_log_filei_metaflush_init', dnl
+                            `H5VL_log_filei_metaflush_hash', dnl
                             `H5VL_log_filei_metaflush_pack', dnl
                             `H5VL_log_filei_metaflush_zip', dnl
                             `H5VL_log_filei_metaflush_sync', dnl
