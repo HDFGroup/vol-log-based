@@ -354,7 +354,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 err_out:;
 
 	free (tbuf);
-	for (auto const &[foff, zbuf] : bufs) { free (zbuf); }
+	for (auto const &buf : bufs) { free (buf.second); }
 
 	return err;
 }
