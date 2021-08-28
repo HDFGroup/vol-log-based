@@ -700,10 +700,6 @@ herr_t H5VL_log_dataset_specific (void *obj,
 
 			// Adjust dim
 			for (i = 0; i < dp->ndim; i++) {
-				if (new_sizes[i] < 0) {
-					err = -1;
-					ERR_OUT ("size cannot be negative")
-				}
 				if (dp->mdims[i] != H5S_UNLIMITED && new_sizes[i] > dp->mdims[i]) {
 					err = -1;
 					ERR_OUT ("size cannot exceed max size")
