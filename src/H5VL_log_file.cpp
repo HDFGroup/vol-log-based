@@ -47,7 +47,8 @@ void *H5VL_log_file_create (
 	H5VL_loc_params_t loc;
 	hid_t uvlid, under_fapl_id;
 	void *under_vol_info;
-	MPI_Comm comm = MPI_COMM_WORLD;
+	MPI_Comm comm	 = MPI_COMM_WORLD;
+	MPI_Info mpiinfo = MPI_INFO_NULL;
 	hbool_t po_supported;
 	int attbuf[4];
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -97,9 +98,10 @@ void *H5VL_log_file_create (
 	}
 
 	// Make sure we have mpi enabled
-	err = H5Pget_fapl_mpio (fapl_id, &comm, NULL);
+	err = H5Pget_fapl_mpio (fapl_id, &comm, &mpiinfo);
 	if (err != 0) {	 // No MPI, use MPI_COMM_WORLD
-		comm = MPI_COMM_WORLD;
+		comm	= MPI_COMM_WORLD;
+		mpiinfo = MPI_INFO_NULL;
 	}
 
 	// Init file obj
@@ -147,7 +149,7 @@ void *H5VL_log_file_create (
 	CHECK_PTR (fp->lgp)
 
 	// Open the file with MPI
-	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, MPI_INFO_NULL, &(fp->fh));
+	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, mpiinfo, &(fp->fh));
 	CHECK_MPIERR
 
 	// Figure out lustre configuration
@@ -195,7 +197,7 @@ err_out:;
 	fp = NULL;
 fn_exit:;
 	if (comm != MPI_COMM_WORLD) { MPI_Comm_free (&comm); }
-
+	if (mpiinfo != MPI_INFO_NULL) { MPI_Info_free (&mpiinfo); }
 	if (info) { free (info); }
 
 	return (void *)fp;
@@ -221,6 +223,7 @@ void *H5VL_log_file_open (
 	hid_t uvlid, under_fapl_id;
 	void *under_vol_info;
 	MPI_Comm comm;
+	MPI_Info mpiinfo = MPI_INFO_NULL;
 	int attbuf[4];
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -264,9 +267,10 @@ void *H5VL_log_file_open (
 	}
 
 	// Make sure we have mpi enabled
-	err = H5Pget_fapl_mpio (fapl_id, &comm, NULL);
+	err = H5Pget_fapl_mpio (fapl_id, &comm, &mpiinfo);
 	if (err != 0) {	 // No MPI, use MPI_COMM_WORLD
-		comm = MPI_COMM_WORLD;
+		comm	= MPI_COMM_WORLD;
+		mpiinfo = MPI_INFO_NULL;
 	}
 
 	// Init file obj
@@ -321,7 +325,7 @@ void *H5VL_log_file_open (
 	CHECK_ERR
 
 	// Open the file with MPI
-	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, MPI_INFO_NULL, &(fp->fh));
+	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, mpiinfo, &(fp->fh));
 	CHECK_MPIERR
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
@@ -332,6 +336,7 @@ err_out:;
 	fp = NULL;
 fn_exit:;
 	if (comm != MPI_COMM_WORLD) { MPI_Comm_free (&comm); }
+	if (mpiinfo != MPI_INFO_NULL) { MPI_Info_free (&mpiinfo); }
 	if (info) { free (info); }
 
 	return (void *)fp;
