@@ -68,6 +68,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	std::vector<std::array<MPI_Offset, H5S_MAX_RANK>> dsteps (fp->ndset);
 	std::unordered_map<std::pair<void *, size_t>, H5VL_log_wreq_t *, hash_pair, equal_pair>
 		meta_ref;
+#ifdef LOGVOL_PROFILING
+	int repeats = 0;
+#endif
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -102,7 +105,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
 		for (auto &rp : fp->wreqs) {
-			if (rp->hdr.meta_size > sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2){
+			if (rp->hdr.meta_size > sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2) {
 				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2;
 
 				auto t = std::pair<void *, size_t> (
@@ -118,8 +121,12 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 										sizeof (MPI_Offset) * 3;  // Recalculate metadata size
 					// We write the address of reference targe temporarily into the reference offset
 					// It will be replaced once the offset of the reference target is known
-					// NOTE: This trick only works when sizeof(H5VL_log_wreq_t*) <= sizeof(MPI_Offset)
+					// NOTE: This trick only works when sizeof(H5VL_log_wreq_t*) <=
+					// sizeof(MPI_Offset)
 					*((H5VL_log_wreq_t **)ptr) = meta_ref[t];
+#ifdef LOGVOL_PROFILING
+					repeats++;
+#endif
 				}
 			}
 		}
@@ -128,6 +135,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 #ifdef LOGVOL_PROFILING
 	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE, (double)(mdsize) / 1048576);
+#endif
+#ifdef LOGVOL_PROFILING
+	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_REPEAT_COUNT,
+							   (double)(repeats));
 #endif
 
 #ifdef ENABLE_ZLIB
