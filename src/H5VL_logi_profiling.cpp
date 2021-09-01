@@ -105,6 +105,7 @@ const char * const tname[H5VL_LOG_NTIMER]={
 "H5VL_log_filei_metaflush_barrier",
 "H5VL_log_filei_metaflush_finalize",
 "H5VL_log_filei_metaflush_size",
+"H5VL_log_filei_metaflush_size_dedup",
 "H5VL_log_filei_metaflush_size_zip",
 "H5VL_log_filei_metaflush_repeat_count",
 "H5VL_log_filei_metaupdate",

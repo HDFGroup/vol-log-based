@@ -76,6 +76,7 @@ define(`H5VL_LOG_TIMERS', `( `H5VL_log_file_create', dnl
                             `H5VL_log_filei_metaflush_barrier', dnl
                             `H5VL_log_filei_metaflush_finalize', dnl
                             `H5VL_log_filei_metaflush_size', dnl
+                            `H5VL_log_filei_metaflush_size_dedup', dnl
                             `H5VL_log_filei_metaflush_size_zip', dnl
                             `H5VL_log_filei_metaflush_repeat_count', dnl
                             `H5VL_log_filei_metaupdate', dnl

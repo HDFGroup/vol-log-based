@@ -102,8 +102,13 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_INIT);
 
+#ifdef LOGVOL_PROFILING
+	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE, (double)(mdsize) / 1048576);
+#endif
+			
 	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
+		mdsize=0;
 		for (auto &rp : fp->wreqs) {
 			if (rp->hdr.meta_size > sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2) {
 				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2;
@@ -128,15 +133,15 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 					repeats++;
 #endif
 				}
+
+				mdsize += rp->hdr.meta_size;
 			}
 		}
 	}
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_HASH);
 
 #ifdef LOGVOL_PROFILING
-	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE, (double)(mdsize) / 1048576);
-#endif
-#ifdef LOGVOL_PROFILING
+	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE_DEDUP, (double)(mdsize) / 1048576);
 	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_REPEAT_COUNT,
 							   (double)(repeats));
 #endif
