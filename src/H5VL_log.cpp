@@ -77,7 +77,11 @@ herr_t H5Dwrite_n (hid_t did,
 	arg.starts = starts;
 	arg.counts = counts;
 
-	dxplid_clone = H5Pcopy (dxplid);
+	if (dxplid == H5P_DEFAULT) {
+		dxplid_clone = H5Pcreate (H5P_DATASET_XFER);
+	} else {
+		dxplid_clone = H5Pcopy (dxplid);
+	}
 	CHECK_ID (dxplid_clone)
 
 	err = H5Pset_multisel (dxplid_clone, arg);
@@ -175,7 +179,7 @@ herr_t H5Pget_multisel (hid_t plist, H5VL_log_multisel_arg_t *arg) {
 	isdxpl = H5Pisa_class (plist, H5P_DATASET_XFER);
 	CHECK_ID (isdxpl)
 	if (isdxpl == 0)
-		arg->n = 0;	 // Default to no selection
+		arg->n = -1;	 // Default to no selection
 	else {
 		pexist = H5Pexist (plist, MULTISEL_PROPERTY_NAME);
 		CHECK_ID (pexist)
@@ -184,7 +188,7 @@ herr_t H5Pget_multisel (hid_t plist, H5VL_log_multisel_arg_t *arg) {
 			CHECK_ERR
 
 		} else {
-			arg->n = 0;
+			arg->n = -1;
 		}
 	}
 

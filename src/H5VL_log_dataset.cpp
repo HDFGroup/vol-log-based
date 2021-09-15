@@ -293,7 +293,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 	CHECK_ERR
 
 	// Gather starts and counts
-	if (arg.n) {
+	if (arg.n >= 0) {
 		r.sels = new H5VL_log_selections (dp->ndim, arg.n, arg.starts, arg.counts);
 
 		mstype = H5S_SEL_ALL;
@@ -418,7 +418,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 	CHECK_ERR
 
 	// Get selections
-	if (arg.n) {
+	if (arg.n >= 0) {
 		dsel = new H5VL_log_selections (dp->ndim, arg.n, arg.starts, arg.counts);
 
 		mstype = H5S_SEL_ALL;

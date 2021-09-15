@@ -307,6 +307,10 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 			}
 
 		} break;
+		case H5S_SEL_NONE: {
+			this->nsel = 0;
+			this->reserve(0);
+		} break;
 		default:
 			ERR_OUT ("Unsupported selection type");
 	}
