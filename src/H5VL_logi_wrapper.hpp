@@ -143,3 +143,24 @@ err_out:;
 	}
 	return args.args.get_space.space_id;
 }
+
+inline herr_t H5VL_logi_file_flush (H5VL_log_file_t *fp,
+								   void *obj,
+								   hid_t connector_id,
+								   hid_t dxpl_id) {
+	herr_t err = 0;
+	H5VL_file_specific_args_t args;
+
+	args.op_type			 = H5VL_FILE_FLUSH;
+	args.args.flush.scope	 = H5F_SCOPE_GLOBAL;
+	args.args.flush.obj_type = H5I_FILE;
+
+	H5VL_LOGI_PROFILING_TIMER_START;
+	err = H5VLfile_specific (obj, connector_id, &args, dxpl_id, NULL);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_SPECIFIC);
+	CHECK_ERR
+
+err_out:;
+
+	return err;
+}
