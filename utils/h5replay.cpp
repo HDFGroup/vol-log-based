@@ -125,7 +125,7 @@ herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int n
 
 	// Read the metadata
 	reqs.resize (ndset);
-	err = h5replay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs);
+	err = h5replay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs, config);
 	CHECK_ERR
 
 	// Read the data

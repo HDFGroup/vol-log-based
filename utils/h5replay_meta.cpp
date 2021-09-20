@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 //
@@ -13,6 +14,7 @@
 //
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_file.hpp"
+#include "H5VL_log_filei.hpp"
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_meta.hpp"
 #include "H5VL_logi_zip.hpp"
@@ -24,7 +26,8 @@ herr_t h5replay_parse_meta (int rank,
 							hid_t lgid,
 							int nmdset,
 							std::vector<dset_info> &dsets,
-							std::vector<h5replay_idx_t> &reqs) {
+							std::vector<h5replay_idx_t> &reqs,
+							int config) {
 	herr_t err = 0;
 	int i, j, k, l;
 	hid_t did = -1;
@@ -35,7 +38,8 @@ herr_t h5replay_parse_meta (int rank,
 	bool zbufalloc = false;
 	char *ep;
 	char *zbuf = NULL;
-	H5VL_logi_metablock_t block;	// Buffer of decoded metadata entry
+	H5VL_logi_metablock_t block;								 // Buffer of decoded metadata entry
+	std::map<char *, std::vector<H5VL_logi_metasel_t> > bcache;	 // Cache for linked metadata entry
 
 	// Memory space set to contiguous
 	start = count = INT64_MAX - 1;
@@ -124,14 +128,43 @@ herr_t h5replay_parse_meta (int rank,
 
 		// Parse the metadata
 		ep = sec.buf;
-		for (j = 0; ep < sec.buf + count; j++) {
-			H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)ep;
-			if ((j - sec.off) % sec.stride == 0) {
-				H5VL_logi_metaentry_decode (dsets[hdr->did], ep, block);
+		if (config & H5VL_FILEI_CONFIG_METADATA_SHARE) {  // Need to maintina cache if file contains
+														  // referenced metadata entries
+			for (j = 0; ep < sec.buf + count; j++) {
+				H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)ep;
+
+				// Have to parse all entries for reference purpose
+				if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
+					MPI_Offset roff = *((MPI_Offset *)hdr + 1);
+
+					H5VL_logi_metaentry_ref_decode (dsets[hdr->did], ep, block, bcache[ep + roff]);
+				} else {
+					H5VL_logi_metaentry_decode (dsets[hdr->did], ep, block);
+
+					// Insert to cache
+					bcache[ep] = block.sels;
+				}
 				ep += hdr->meta_size;
 
-				// Insert to the index
-				reqs[hdr->did].insert(block);
+				// Only insert to index if we are responsible to the entry
+				if ((j - sec.off) % sec.stride == 0) {
+					// Insert to the index
+					reqs[hdr->did].insert (block);
+				}
+			}
+
+			// Clean up the cache, referenced are local to each section
+			bcache.clear();
+		} else {
+			for (j = 0; ep < sec.buf + count; j++) {
+				H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)ep;
+				if ((j - sec.off) % sec.stride == 0) {
+					H5VL_logi_metaentry_decode (dsets[hdr->did], ep, block);
+					ep += hdr->meta_size;
+
+					// Insert to the index
+					reqs[hdr->did].insert (block);
+				}
 			}
 		}
 	}

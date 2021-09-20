@@ -14,7 +14,44 @@
 #include "H5VL_logi_meta.hpp"
 #include "H5VL_logi_zip.hpp"
 
-herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_logi_metablock_t &block) {
+herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
+									   void *ent,
+									   H5VL_logi_metablock_t &block,
+									   std::vector<H5VL_logi_metasel_t> &sels) {
+	herr_t err = 0;
+	int i;
+	MPI_Offset *bp;			   // Next 8 byte selection to process
+	char *bufp = (char *)ent;  // Next byte to process in ent
+	size_t bsize;			   // Size of a selection block
+
+	// Get the header
+	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
+	bp		  = (MPI_Offset *)(bufp + sizeof (H5VL_logi_meta_hdr));
+
+	// Data location and size in the file
+	block.foff = *bp;
+	bp++;
+	block.fsize = *bp;
+	bp++;
+
+	// Get referenced selections
+	block.sels = sels;
+
+	// Calculate the unfiltered size of the data block
+	block.dsize = 0;
+	for (auto &s : block.sels) {
+		bsize = dset.esize;
+		for (i = 0; i < dset.ndim; i++) { block.dsize *= s.count[i]; }
+		block.dsize += bsize;
+	}
+
+err_out:;
+	return err;
+}
+
+herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
+								   void *ent,
+								   H5VL_logi_metablock_t &block) {
 	herr_t err = 0;
 	int i, j;
 	int nsel;						  // Nunmber of selections in ent
@@ -22,7 +59,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 	MPI_Offset dsteps[H5S_MAX_RANK];  // corrdinate to offset encoding info in ent
 	char *zbuf	   = NULL;			  // Buffer for decompressing metadata
 	bool zbufalloc = false;			  // Should we free zbuf
-	char *bufp = (char *)ent;  // Next byte to process in ent
+	char *bufp	   = (char *)ent;	  // Next byte to process in ent
 
 	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
@@ -73,9 +110,10 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 			zbufalloc = true;
 
 			// Decompress the metadata
-			inlen = block.hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (int) - sizeof (MPI_Offset) * 2;
-			clen  = bsize;
-			err	  = H5VL_log_zip_decompress (bufp, inlen, zbuf, &clen);
+			inlen = block.hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (int) -
+					sizeof (MPI_Offset) * 2;
+			clen = bsize;
+			err	 = H5VL_log_zip_decompress (bufp, inlen, zbuf, &clen);
 			CHECK_ERR
 #else
 			RET_ERR ("Comrpessed Metadata Support Not Enabled")
@@ -100,7 +138,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 	}
 
 	/* Old code for merged metadata
-	 * H5VL_LOGI_META_FLAG_MUL_SELX is not used anymore 
+	 * H5VL_LOGI_META_FLAG_MUL_SELX is not used anymore
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SELX) {
 		for (i = 0; i < nsel; i++) {
 			block.foff = *((MPI_Offset *)bp);
@@ -131,7 +169,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 			for (j = 0; j < dset.ndim; j++) { block.dsize *= block.sels[0].count[j]; }
 			idx.insert (block);
 		}
-	} else 
+	} else
 	*/
 	block.sels.resize (nsel);
 
@@ -157,9 +195,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 		// Calculate the offset of data of the selection within the unfiltered data block
 		if (i > 0) {
 			block.sels[i].doff = dset.esize;
-			for (j = 0; j < dset.ndim; j++) {
-				block.sels[i].doff *= block.sels[i - 1].count[j];
-			}
+			for (j = 0; j < dset.ndim; j++) { block.sels[i].doff *= block.sels[i - 1].count[j]; }
 			block.sels[i].doff += block.sels[i - 1].doff;
 		} else {
 			block.sels[i].doff = 0;
@@ -170,7 +206,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_l
 	block.dsize = dset.esize;
 	for (j = 0; j < dset.ndim; j++) { block.dsize *= block.sels[i - 1].count[j]; }
 	block.dsize += block.sels[i - 1].doff;
-	
+
 err_out:;
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) { free (zbuf); }
 

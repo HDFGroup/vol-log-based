@@ -51,7 +51,9 @@ inline void H5VL_logi_sel_encode (int ndim, MPI_Offset *dsteps, hsize_t *cord, M
 
 struct H5VL_logi_idx_t;
 struct H5VL_log_dset_info_t;
-herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset, void *ent, H5VL_logi_metablock_t &block);
+herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
+								   void *ent,
+								   H5VL_logi_metablock_t &block);
 
 inline MPI_Offset H5VL_logi_get_metaentry_size (int ndim, H5VL_logi_meta_hdr &hdr, int nsel) {
 	MPI_Offset size;
@@ -69,6 +71,7 @@ inline MPI_Offset H5VL_logi_get_metaentry_size (int ndim, H5VL_logi_meta_hdr &hd
 
 	return size;
 }
+
 struct H5VL_log_dset_info_t;
 struct H5VL_logi_meta_hdr;
 struct H5VL_log_selections;
@@ -76,3 +79,7 @@ herr_t H5VL_logi_metaentry_encode (H5VL_log_dset_info_t &dset,
 								   H5VL_logi_meta_hdr &hdr,
 								   H5VL_log_selections *sels,
 								   void *meta);
+herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
+									   void *ent,
+									   H5VL_logi_metablock_t &block,
+									   std::vector<H5VL_logi_metasel_t> &sels);
