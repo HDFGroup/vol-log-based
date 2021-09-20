@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdlib>
 #include <cstring>
+#include <map>
 #include <unordered_map>
 #include <vector>
 
@@ -105,10 +106,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 #ifdef LOGVOL_PROFILING
 	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE, (double)(mdsize) / 1048576);
 #endif
-			
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
-		mdsize=0;
+		mdsize = 0;
 		for (auto &rp : fp->wreqs) {
 			if (rp->hdr.meta_size > sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2) {
 				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2;
@@ -141,9 +142,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_HASH);
 
 #ifdef LOGVOL_PROFILING
-	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE_DEDUP, (double)(mdsize) / 1048576);
-	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_REPEAT_COUNT,
-							   (double)(repeats));
+	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE_DEDUP,
+							   (double)(mdsize) / 1048576);
+	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_REPEAT_COUNT, (double)(repeats));
 #endif
 
 #ifdef ENABLE_ZLIB
@@ -336,11 +337,12 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	hid_t mmsid = -1;	 // metadata buffer memory space
 	hsize_t mdsize;		 // Size of metadata dataset
 	hsize_t start, count, one = 1;
-	char *buf = NULL;  // Buffer for raw metadata
-	char *bufp;		   // Buffer for raw metadata
-	int ndim;		   // metadata dataset dimensions (should be 1)
-	MPI_Offset nsec;   // Number of sections in current metadata dataset
-	H5VL_logi_metablock_t block;	// Buffer of decoded metadata entry
+	char *buf = NULL;			  // Buffer for raw metadata
+	char *bufp;					  // Buffer for raw metadata
+	int ndim;					  // metadata dataset dimensions (should be 1)
+	MPI_Offset nsec;			  // Number of sections in current metadata dataset
+	H5VL_logi_metablock_t block;  // Buffer of decoded metadata entry
+	std::map<char *, std::vector<H5VL_logi_metasel_t>> bcache;	// Cache for linked metadata entry
 	char mdname[16];
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -400,15 +402,42 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 
 		// Parse metadata
 		bufp = buf;
-		while (bufp < buf + mdsize) {
-			H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
+		if (fp->config &
+			H5VL_FILEI_CONFIG_METADATA_SHARE) {	 // Need to maintina cache if file contains
+												 // referenced metadata entries
+			while (bufp < buf + mdsize) {
+				H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
 
-			err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
-			CHECK_ERR
-			bufp += hdr->meta_size;
+				// Have to parse all entries for reference purpose
+				if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
+					MPI_Offset roff = *((MPI_Offset *)hdr + 1);
 
-			// Insert to the index
-			fp->idx[hdr->did].insert (block);
+					err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr->did], bufp, block,
+														  bcache[bufp + roff]);
+					CHECK_ERR
+				} else {
+					err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
+					CHECK_ERR
+
+					// Insert to cache
+					bcache[bufp] = block.sels;
+				}
+				bufp += hdr->meta_size;
+
+				// Insert to the index
+				fp->idx[hdr->did].insert (block);
+			}
+		} else {
+			while (bufp < buf + mdsize) {
+				H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
+
+				err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
+				CHECK_ERR
+				bufp += hdr->meta_size;
+
+				// Insert to the index
+				fp->idx[hdr->did].insert (block);
+			}
 		}
 	}
 
@@ -441,12 +470,13 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	hid_t mmsid = -1;	 // metadata buffer memory space
 	hsize_t mdsize;		 // Size of metadata dataset
 	hsize_t start, count, one = 1;
-	char *buf = NULL;  // Buffer for raw metadata
-	char *bufp;		   // Buffer for raw metadata
-	int ndim;		   // metadata dataset dimensions (should be 1)
-	MPI_Offset nsec;   // Number of sections in current metadata dataset
-	MPI_Offset *offs;  // Section end offset array
-	H5VL_logi_metablock_t block;	// Buffer of decoded metadata entry
+	char *buf = NULL;			  // Buffer for raw metadata
+	char *bufp;					  // Buffer for raw metadata
+	int ndim;					  // metadata dataset dimensions (should be 1)
+	MPI_Offset nsec;			  // Number of sections in current metadata dataset
+	MPI_Offset *offs;			  // Section end offset array
+	H5VL_logi_metablock_t block;  // Buffer of decoded metadata entry
+	std::map<char *, std::vector<H5VL_logi_metasel_t>> bcache;	// Cache for linked metadata entry
 	char mdname[16];
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -533,15 +563,41 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 
 	// Parse metadata
 	bufp = buf;
-	while (bufp < buf + mdsize) {
-		H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
+	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {  // Need to maintina cache if file contains
+														  // referenced metadata entries
+		while (bufp < buf + mdsize) {
+			H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
 
-		err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
-		CHECK_ERR
-		bufp += hdr->meta_size;
+			// Have to parse all entries for reference purpose
+			if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
+				MPI_Offset roff = *((MPI_Offset *)hdr + 1);
 
-		// Insert to the index
-		fp->idx[hdr->did].insert (block);
+				err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr->did], bufp, block,
+													  bcache[bufp + roff]);
+				CHECK_ERR
+			} else {
+				err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
+				CHECK_ERR
+
+				// Insert to cache
+				bcache[bufp] = block.sels;
+			}
+			bufp += hdr->meta_size;
+
+			// Insert to the index
+			fp->idx[hdr->did].insert (block);
+		}
+	} else {
+		while (bufp < buf + mdsize) {
+			H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
+
+			err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
+			CHECK_ERR
+			bufp += hdr->meta_size;
+
+			// Insert to the index
+			fp->idx[hdr->did].insert (block);
+		}
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAUPDATE);
