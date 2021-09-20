@@ -340,7 +340,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	char *bufp;		   // Buffer for raw metadata
 	int ndim;		   // metadata dataset dimensions (should be 1)
 	MPI_Offset nsec;   // Number of sections in current metadata dataset
-	H5VL_log_metaentry_t entry;
+	H5VL_logi_metablock_t block;	// Buffer of decoded metadata entry
 	char mdname[16];
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -403,9 +403,12 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		while (bufp < buf + mdsize) {
 			H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
 
-			err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, fp->idx[hdr->did]);
+			err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
 			CHECK_ERR
 			bufp += hdr->meta_size;
+
+			// Insert to the index
+			fp->idx[hdr->did].insert (block);
 		}
 	}
 
@@ -443,6 +446,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	int ndim;		   // metadata dataset dimensions (should be 1)
 	MPI_Offset nsec;   // Number of sections in current metadata dataset
 	MPI_Offset *offs;  // Section end offset array
+	H5VL_logi_metablock_t block;	// Buffer of decoded metadata entry
 	char mdname[16];
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -532,9 +536,12 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	while (bufp < buf + mdsize) {
 		H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
 
-		err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, fp->idx[hdr->did]);
+		err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
 		CHECK_ERR
 		bufp += hdr->meta_size;
+
+		// Insert to the index
+		fp->idx[hdr->did].insert (block);
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAUPDATE);

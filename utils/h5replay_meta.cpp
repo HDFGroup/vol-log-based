@@ -35,6 +35,7 @@ herr_t h5replay_parse_meta (int rank,
 	bool zbufalloc = false;
 	char *ep;
 	char *zbuf = NULL;
+	H5VL_logi_metablock_t block;	// Buffer of decoded metadata entry
 
 	// Memory space set to contiguous
 	start = count = INT64_MAX - 1;
@@ -126,8 +127,11 @@ herr_t h5replay_parse_meta (int rank,
 		for (j = 0; ep < sec.buf + count; j++) {
 			H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)ep;
 			if ((j - sec.off) % sec.stride == 0) {
-				H5VL_logi_metaentry_decode (dsets[hdr->did], ep, reqs[hdr->did]);
+				H5VL_logi_metaentry_decode (dsets[hdr->did], ep, block);
 				ep += hdr->meta_size;
+
+				// Insert to the index
+				reqs[hdr->did].insert(block);
 			}
 		}
 	}
@@ -159,7 +163,6 @@ herr_t h5replay_idx_t::insert (H5VL_logi_metablock_t &meta) {
 	return 0;
 }
 
-herr_t h5replay_idx_t::search (H5VL_log_rreq_t &req,
-									  std::vector<H5VL_log_idx_search_ret_t> &ret) {
+herr_t h5replay_idx_t::search (H5VL_log_rreq_t &req, std::vector<H5VL_log_idx_search_ret_t> &ret) {
 	return 0;
 }
