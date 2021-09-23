@@ -9,6 +9,7 @@
 #define H5VL_FILEI_CONFIG_METADATA_SHARE 0x08
 
 #define H5VL_FILEI_CONFIG_DATA_ALIGN 0x100
+#define H5VL_FILEI_CONFIG_SUBFILING 0x200
 
 // File internals
 extern herr_t H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid);

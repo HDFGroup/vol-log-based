@@ -116,6 +116,9 @@ herr_t H5Pget_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t *encoding);
 herr_t H5Pset_data_layout (hid_t plist, H5VL_log_data_layout_t layout);
 herr_t H5Pget_data_layout (hid_t plist, H5VL_log_data_layout_t *layout);
 
+herr_t H5Pset_subfiling (hid_t plist, hbool_t subfiling);
+herr_t H5Pget_subfiling (hid_t plist, hbool_t *subfiling);
+
 #ifdef __cplusplus
 }
 #endif

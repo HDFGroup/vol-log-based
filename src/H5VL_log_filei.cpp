@@ -125,6 +125,7 @@ herr_t H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
 	herr_t err = 0;
 	hbool_t ret;
 	H5VL_log_data_layout_t layout;
+	hbool_t subfiling;
 	char *env;
 
 	err = H5Pget_data_layout (fcplid, &layout);
@@ -133,6 +134,10 @@ herr_t H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
 		fp->config |= H5VL_FILEI_CONFIG_DATA_ALIGN;
 	}
 
+	err = H5Pget_subfiling (fcplid, &subfiling);
+	CHECK_ERR
+	if (subfiling == true) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
+
 	env = getenv ("H5VL_LOG_DATA_LAYOUT");
 	if (env) {
 		if (strcmp (env, "align") == 0) {
@@ -140,6 +145,15 @@ herr_t H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
 
 		} else {
 			fp->config |= H5VL_FILEI_CONFIG_DATA_ALIGN;
+		}
+	}
+
+	env = getenv ("H5VL_LOG_SUBFILING");
+	if (env) {
+		if (strcmp (env, "1") == 0) {
+			fp->config |= H5VL_FILEI_CONFIG_SUBFILING;
+		} else {
+			fp->config &= ~H5VL_FILEI_CONFIG_SUBFILING;
 		}
 	}
 
@@ -359,24 +373,24 @@ err_out:;
 }
 
 static inline void print_info (MPI_Info *info_used) {
-    int i, nkeys;
+	int i, nkeys;
 
-    if (*info_used == MPI_INFO_NULL) {
-        printf ("MPI File Info is NULL\n");
-        return;
-    }
-    MPI_Info_get_nkeys (*info_used, &nkeys);
-    printf ("MPI File Info: nkeys = %d\n", nkeys);
-    for (i = 0; i < nkeys; i++) {
-        char key[MPI_MAX_INFO_KEY], value[MPI_MAX_INFO_VAL];
-        int valuelen, flag;
+	if (*info_used == MPI_INFO_NULL) {
+		printf ("MPI File Info is NULL\n");
+		return;
+	}
+	MPI_Info_get_nkeys (*info_used, &nkeys);
+	printf ("MPI File Info: nkeys = %d\n", nkeys);
+	for (i = 0; i < nkeys; i++) {
+		char key[MPI_MAX_INFO_KEY], value[MPI_MAX_INFO_VAL];
+		int valuelen, flag;
 
-        MPI_Info_get_nthkey (*info_used, i, key);
-        MPI_Info_get_valuelen (*info_used, key, &valuelen, &flag);
-        MPI_Info_get (*info_used, key, valuelen + 1, value, &flag);
-        printf ("MPI File Info: [%2d] key = %25s, value = %s\n", i, key, value);
-    }
-    printf("-----------------------------------------------------------\n");
+		MPI_Info_get_nthkey (*info_used, i, key);
+		MPI_Info_get_valuelen (*info_used, key, &valuelen, &flag);
+		MPI_Info_get (*info_used, key, valuelen + 1, value, &flag);
+		printf ("MPI File Info: [%2d] key = %25s, value = %s\n", i, key, value);
+	}
+	printf ("-----------------------------------------------------------\n");
 }
 
 herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
@@ -437,10 +451,10 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 		MPI_Info info;
 		char *_env_str = getenv ("H5VL_LOG_PRINT_MPI_INFO");
 		if (_env_str != NULL && *_env_str != '0') {
-			if(fp->rank	 == 0){
-				MPI_File_get_info(fp->fh, &info);
-				print_info(&info);
-				MPI_Info_free(&info);
+			if (fp->rank == 0) {
+				MPI_File_get_info (fp->fh, &info);
+				print_info (&info);
+				MPI_Info_free (&info);
 			}
 		}
 	}
@@ -474,9 +488,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 #ifdef LOGVOL_PROFILING
 	{
 		char *_env_str = getenv ("H5VL_LOG_SHOW_PROFILING_INFO");
-		if (_env_str != NULL && *_env_str != '0') {
-			H5VL_log_profile_print (fp); 
-		}
+		if (_env_str != NULL && *_env_str != '0') { H5VL_log_profile_print (fp); }
 	}
 #endif
 

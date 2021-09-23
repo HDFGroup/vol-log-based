@@ -562,3 +562,53 @@ herr_t H5Pget_data_layout (hid_t plist, H5VL_log_data_layout_t *layout) {
 err_out:;
 	return err;
 }
+
+#define SUBFILING_PROPERTY_NAME "H5VL_log_subfiling"
+herr_t H5Pset_subfiling (hid_t plist, hbool_t subfiling) {
+	herr_t err = 0;
+	htri_t isfapl;
+	htri_t isdxpl, pexist;
+
+	isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
+	CHECK_ID (isfapl)
+	if (isfapl == 0) ERR_OUT ("Not fcplid")
+
+	pexist = H5Pexist (plist, SUBFILING_PROPERTY_NAME);
+	CHECK_ID (pexist)
+	if (!pexist) {
+		hbool_t f = false;
+		err = H5Pinsert2 (plist, SUBFILING_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL,
+						  NULL, NULL, NULL, NULL);
+		CHECK_ERR
+	}
+
+	err = H5Pset (plist, SUBFILING_PROPERTY_NAME, &subfiling);
+	CHECK_ERR
+
+err_out:;
+	return err;
+}
+
+herr_t H5Pget_subfiling (hid_t plist, hbool_t *subfiling) {
+	herr_t err = 0;
+	htri_t isfapl, pexist;
+
+	isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
+	CHECK_ID (isfapl)
+	if (isfapl == 0)
+		*subfiling = false;  // Default property will not pass class check
+	else {
+		pexist = H5Pexist (plist, SUBFILING_PROPERTY_NAME);
+		CHECK_ID (pexist)
+		if (pexist) {
+			err = H5Pget (plist, SUBFILING_PROPERTY_NAME, subfiling);
+			CHECK_ERR
+
+		} else {
+			*subfiling = false;
+		}
+	}
+
+err_out:;
+	return err;
+}

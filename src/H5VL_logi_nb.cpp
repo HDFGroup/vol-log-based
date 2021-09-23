@@ -368,13 +368,13 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	MPI_Aint *moffs	   = NULL;				 // Offs of mtype for writing data
 	MPI_Datatype mtype = MPI_DATATYPE_NULL;	 // Mtype for writing data
 	MPI_Status stat;
-	MPI_Offset fsize_local;	 // Total data size on this process
-	MPI_Offset fsize_all;	 // Total data size across all process
-	MPI_Offset foff;		 // File offsset of the data block of current process
-	void *ldp;				 // Handle to the log dataset
-	hid_t ldsid = -1;		 // Space of the log dataset
-	hsize_t dsize;			 // Size of the log dataset (= fsize_all)
-	haddr_t doff;			 // File offset of the log dataset
+	MPI_Offset fsize_local;  // Total data size on this process
+	MPI_Offset fsize_all;				   // Total data size across all process
+	MPI_Offset foff;					   // File offsset of the data block of current process
+	void *ldp;							   // Handle to the log dataset
+	hid_t ldsid = -1;					   // Space of the log dataset
+	hsize_t dsize;						   // Size of the log dataset (= fsize_all)
+	haddr_t doff;						   // File offset of the log dataset
 	H5VL_loc_params_t loc;
 	char dname[16];	 // Name of the log dataset
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
@@ -387,7 +387,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	for (i = fp->nflushed; i < fp->wreqs.size (); i++) { cnt += fp->wreqs[i]->dbufs.size (); }
 
 	// Construct memory type
-	fsize_local = 0;
+	fsize_local	 = 0;
 	if (cnt) {
 		mlens = (int *)malloc (sizeof (int) * cnt);
 		moffs = (MPI_Aint *)malloc (sizeof (MPI_Aint) * cnt);
@@ -401,6 +401,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 			fp->wreqs[i]->ldoff = fsize_local;
 			fsize_local += fp->wreqs[i]->rsize;
 		}
+
 		mpierr = MPI_Type_hindexed (cnt, mlens, moffs, MPI_BYTE, &mtype);
 		CHECK_MPIERR
 		mpierr = MPI_Type_commit (&mtype);
