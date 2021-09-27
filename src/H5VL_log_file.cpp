@@ -132,6 +132,7 @@ void *H5VL_log_file_create (
 
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
+	CHECK_ID (under_fapl_id)
 	H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
 	H5Pset_all_coll_metadata_ops (under_fapl_id, (hbool_t) false);
 	H5Pset_coll_metadata_write (under_fapl_id, (hbool_t) true);
@@ -139,8 +140,7 @@ void *H5VL_log_file_create (
 	fp->uo = H5VLfile_create (name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL);
 	CHECK_PTR (fp->uo)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
-	H5Pclose (under_fapl_id);
-
+	
 	// Create LOG group
 	loc.obj_type = H5I_FILE;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
@@ -152,11 +152,11 @@ void *H5VL_log_file_create (
 	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, mpiinfo, &(fp->fh));
 	CHECK_MPIERR
 
-	// Figure out lustre configuration
+	// Figure out lustre striping configuration
 	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
 		err = H5VL_log_filei_parse_strip_info (fp);
 		CHECK_ERR
-		// For debugging without lustre
+		// Dummy stripe setting for debugging without lustre
 		// fp->scount=2;
 		// fp->ssize=8388608;
 		if ((fp->scount <= 0) || (fp->ssize <= 0)) {
@@ -164,11 +164,25 @@ void *H5VL_log_file_create (
 			if (fp->rank == 0) {
 				printf ("Warning: Cannot retrive stripping info, disable aligned data layout\n");
 			}
-		} else {
-			err = H5VL_log_filei_calc_node_rank (fp);
-			CHECK_ERR
 		}
 	}
+
+	if ((fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) ||
+		(fp->config & H5VL_FILEI_CONFIG_SUBFILING)) {
+		err = H5VL_log_filei_calc_node_rank (fp);
+		CHECK_ERR
+	}
+
+	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
+		// Aligned write not supported in subfiles
+		fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
+
+		err = H5VL_log_filei_create_subfile (fp, flags, under_fapl_id, dxpl_id);
+		CHECK_ERR
+	} else {
+		fp->sfp = NULL;
+	}
+
 	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
 		fp->fd = open (name, O_RDWR);
 		if (fp->fd < 0) { ERR_OUT ("open fail") }
@@ -199,6 +213,7 @@ fn_exit:;
 	if (comm != MPI_COMM_WORLD) { MPI_Comm_free (&comm); }
 	if (mpiinfo != MPI_INFO_NULL) { MPI_Info_free (&mpiinfo); }
 	if (info) { free (info); }
+	H5Pclose (under_fapl_id);
 
 	return (void *)fp;
 } /* end H5VL_log_file_create() */

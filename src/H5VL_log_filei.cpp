@@ -1,11 +1,12 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
-#include <unistd.h>
-
+// Std hdrs
 #include <array>
-
+// Sys hdrs
+#include <sys/stat.h>
+#include <unistd.h>
+// Logvol hdrs
 #include "H5VL_log.h"
 #include "H5VL_log_file.hpp"
 #include "H5VL_log_filei.hpp"
@@ -481,6 +482,10 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VLfile_close (fp->uo, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
 	CHECK_ERR
+	if (fp->sfp) {
+		err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
+		CHECK_ERR
+	}
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CLOSE);
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CLOSE);
@@ -525,6 +530,36 @@ err_out:
 	return err;
 }
 
+herr_t H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
+									  unsigned flags,
+									  hid_t fapl_id,
+									  hid_t dxpl_id) {
+	herr_t err = 0;
+	int stat;
+
+	// Create subfile dir
+	if (fp->rank == 0) {
+		stat = mkdir ((fp->name + ".subfiles").c_str (), S_IRWXU);
+		// Skip creation if already exist
+		if (stat == -1 && errno == EEXIST) stat = 0;
+	}
+	MPI_Bcast (&stat, 1, MPI_INT, 0, fp->comm);
+	if (stat != 0) { RET_ERR ("Cannot create subfile dir") }
+
+	// Create the subfiles with underlying VOL
+	err = H5Pset_fapl_mpio (fapl_id, fp->nodecomm, MPI_INFO_NULL);
+	CHECK_ERR
+	H5VL_LOGI_PROFILING_TIMER_START;
+	fp->sfp =
+		H5VLfile_create ((fp->name + ".subfiles/" + std::to_string (fp->nodeid) + ".h5").c_str (),
+						 flags, H5P_FILE_CREATE_DEFAULT, fapl_id, dxpl_id, NULL);
+	CHECK_PTR (fp->sfp)
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
+
+err_out:;
+	return err;
+}
+
 herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int mpierr;
@@ -540,6 +575,8 @@ herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
 
 	mpierr =
 		MPI_Comm_split_type (fp->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &(fp->nodecomm));
+	// For single node debugging purpose
+	// mpierr = MPI_Comm_dup (MPI_COMM_SELF, &(fp->nodecomm));
 	mpierr = MPI_Comm_rank (fp->nodecomm, &(fp->noderank));
 
 	mpierr = MPI_Allgather (&(fp->noderank), 1, MPI_INT, noderanks, 1, MPI_INT, fp->comm);
@@ -553,29 +590,31 @@ herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
 	mpierr = MPI_Bcast (&(fp->nodeid), 1, MPI_INT, 0, fp->nodecomm);
 	CHECK_MPIERR
 
-	// What ost it should write to
-	fp->target_ost = fp->nodeid % fp->scount;
+	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
+		// What ost it should write to
+		fp->target_ost = fp->nodeid % fp->scount;
 
-	// Find previous node sharing the ost
-	fp->prev_rank = -1;
-	fp->next_rank = -1;
-	j			  = fp->scount;
-	for (i = fp->rank - 1; i > -1; i--) {
-		if (noderanks[i] == 0) {
-			j--;
-			if (j == 0) {
-				fp->prev_rank = i;
-				break;
+		// Find previous and next node sharing the ost
+		fp->prev_rank = -1;
+		fp->next_rank = -1;
+		j			  = fp->scount;
+		for (i = fp->rank - 1; i > -1; i--) {
+			if (noderanks[i] == 0) {
+				j--;
+				if (j == 0) {
+					fp->prev_rank = i;
+					break;
+				}
 			}
 		}
-	}
-	j = fp->scount;
-	for (i = fp->rank + 1; i < np; i++) {
-		if (noderanks[i] == 0) {
-			j--;
-			if (j == 0) {
-				fp->next_rank = i;
-				break;
+		j = fp->scount;
+		for (i = fp->rank + 1; i < np; i++) {
+			if (noderanks[i] == 0) {
+				j--;
+				if (j == 0) {
+					fp->next_rank = i;
+					break;
+				}
 			}
 		}
 	}

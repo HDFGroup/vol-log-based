@@ -57,6 +57,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
 	MPI_File fh;
 	int fd;
+	void *sfp;
 
 	std::vector<H5VL_log_wreq_t *> wreqs;
 	int nflushed;

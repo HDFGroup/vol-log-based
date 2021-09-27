@@ -30,7 +30,7 @@ extern herr_t H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid);
 extern herr_t H5VL_log_filei_contig_buffer_init (H5VL_log_contig_buffer_t *bp, size_t init_size);
 extern void H5VL_log_filei_contig_buffer_free (H5VL_log_contig_buffer_t *bp);
 extern void *H5VL_log_filei_contig_buffer_alloc (H5VL_log_contig_buffer_t *bp, size_t size);
-
+extern herr_t H5VL_log_filei_create_subfile (H5VL_log_file_t *fp, unsigned flags, hid_t fapl_id, hid_t dxpl_id);
 extern herr_t H5VL_log_filei_parse_strip_info (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp);
 
