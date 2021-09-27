@@ -43,10 +43,11 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
-	MPI_Offset doff;		 // Local metadata offset within the metadata dataset
-	MPI_Offset mdsize_all;	 // Global metadata size
+	MPI_Offset
+		rbuf[2];  // [Local metadata offset within the metadata dataset, Global metadata size]
 	MPI_Offset mdsize  = 0;	 // Local metadata size
 	MPI_Offset *mdoffs = NULL;
+	MPI_Offset *mdoffs_snd;
 	MPI_Aint *offs	   = NULL;	// Offset in MPI_Type_hindexed
 	int *lens		   = NULL;	// Lens in MPI_Type_hindexed
 	int nentry		   = 0;		// Number of metadata entries
@@ -211,8 +212,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	offs = (MPI_Aint *)malloc (sizeof (MPI_Aint) * nentry);
 	lens = (int *)malloc (sizeof (int) * nentry);
 	if (fp->rank == 0) {
-		mdoffs = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->np + 1));
+		mdoffs = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->np + 1) * 3);
 		CHECK_PTR (mdoffs)
+		mdoffs_snd = mdoffs + fp->np + 1;
 
 		offs[0] = (MPI_Aint) (mdoffs);
 		lens[0] = (int)(sizeof (MPI_Offset) * (fp->np + 1));
@@ -245,14 +247,21 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	if (fp->rank == 0) {  // Rank 0 calculate
 		mdoffs[0] = 0;
 		for (i = 0; i < fp->np; i++) { mdoffs[i + 1] += mdoffs[i]; }
-		mdsize_all = mdoffs[fp->np];
+		rbuf[1] = mdoffs[fp->np];  // Total size
+		// Copy to send array with space
+		for (i = 0; i < fp->np; i++) { mdoffs_snd[i << 1] = mdoffs[i]; }
+		// Fill total size
+		for (i = 1; i < fp->np * 2; i += 2) { mdoffs_snd[i] = rbuf[1]; }
 	}
-	mpierr = MPI_Scatter (mdoffs, 1, MPI_LONG_LONG, &doff, 1, MPI_LONG_LONG, 0, fp->comm);
+	mpierr = MPI_Scatter (mdoffs_snd, 2, MPI_LONG_LONG, rbuf, 2, MPI_LONG_LONG, 0, fp->comm);
 	CHECK_MPIERR
-	mpierr = MPI_Bcast (&mdsize_all, 1, MPI_LONG_LONG, 0, fp->comm);
-	CHECK_MPIERR
+	// Bcast merged into scatter
+	// mpierr = MPI_Bcast (&mdsize_all, 1, MPI_LONG_LONG, 0, fp->comm);
+	// CHECK_MPIERR
 
+	// The first lens[0] byte is the decomposition map
 	if (fp->rank == 0) { mdoffs[0] = lens[0]; }
+	
 	// NOTE: Some MPI implementation do not produce output for rank 0, moffs must ne initialized
 	// to 0
 	// doff = 0;
@@ -260,7 +269,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// CHECK_MPIERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SYNC);
 
-	dsize = (hsize_t)mdsize_all;
+	dsize = (hsize_t)rbuf[1];
 	if (dsize > 0) {
 		H5VL_loc_params_t loc;
 
@@ -294,7 +303,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 		// Write metadata
 		H5VL_LOGI_PROFILING_TIMER_START;  // TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE
-		err = MPI_File_write_at_all (fp->fh, mdoff + doff, MPI_BOTTOM, 1, mmtype, &stat);
+		err = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 1, mmtype, &stat);
 		CHECK_MPIERR
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
 
