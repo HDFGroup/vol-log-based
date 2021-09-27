@@ -550,9 +550,9 @@ herr_t H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
 	err = H5Pset_fapl_mpio (fapl_id, fp->nodecomm, MPI_INFO_NULL);
 	CHECK_ERR
 	H5VL_LOGI_PROFILING_TIMER_START;
-	fp->sfp =
-		H5VLfile_create ((fp->name + ".subfiles/" + std::to_string (fp->nodeid) + ".h5").c_str (),
-						 flags, H5P_FILE_CREATE_DEFAULT, fapl_id, dxpl_id, NULL);
+	fp->subname = fp->name + ".subfiles/" + std::to_string (fp->nodeid) + ".h5";
+	fp->sfp		= H5VLfile_create (fp->subname.c_str (), flags, H5P_FILE_CREATE_DEFAULT, fapl_id,
+							   dxpl_id, NULL);
 	CHECK_PTR (fp->sfp)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
 
@@ -576,7 +576,14 @@ herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
 	mpierr =
 		MPI_Comm_split_type (fp->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &(fp->nodecomm));
 	// For single node debugging purpose
-	// mpierr = MPI_Comm_dup (MPI_COMM_SELF, &(fp->nodecomm));
+	/*
+	mpierr = MPI_Comm_free(&(fp->nodecomm));
+	CHECK_MPIERR
+	mpierr = MPI_Comm_dup (MPI_COMM_SELF, &(fp->nodecomm));
+	CHECK_MPIERR
+	*/
+	// For single node debugging purpose
+	
 	mpierr = MPI_Comm_rank (fp->nodecomm, &(fp->noderank));
 
 	mpierr = MPI_Allgather (&(fp->noderank), 1, MPI_INT, noderanks, 1, MPI_INT, fp->comm);

@@ -370,13 +370,22 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	MPI_Status stat;
 	MPI_Offset fsize_local;  // Total data size on this process
 	MPI_Offset fsize_all;				   // Total data size across all process
-	MPI_Offset foff;					   // File offsset of the data block of current process
-	void *ldp;							   // Handle to the log dataset
-	hid_t ldsid = -1;					   // Space of the log dataset
-	hsize_t dsize;						   // Size of the log dataset (= fsize_all)
-	haddr_t doff;						   // File offset of the log dataset
+	MPI_Offset fsize_group;		  // Total data size across all process sharing the same file
+	MPI_Offset fsize_group_scan;  // Copy of fsize_group for exscan
+	MPI_Offset foff_all;		  // File offsset of the data block of current process globally
+	MPI_Offset foff_group;		  // File offsset of the data block in the current group
+	void *ldp;					  // Handle to the log dataset
+	void *vldp;					  // Handle to the log dataset
+	hid_t ldsid	  = -1;			  // Space of the log dataset
+	hid_t vldsid  = -1;			  // Space of the virtual log dataset in the main file
+	hid_t vdcplid = -1;			  // Virtual log dataset creation property list
+	hsize_t start, count;		  // Size for dataspace selection
+	const hsize_t one = 1;		  // Constant 1 for dataspace selection
+	haddr_t doff;				  // File offset of the log dataset
 	H5VL_loc_params_t loc;
-	char dname[16];	 // Name of the log dataset
+	char dname[16];	  // Name of the log dataset
+	MPI_Comm ldcomm;  // Communicator to create data dataset
+	void *ldloc;	  // Location to create data dataset (main file | subfile)
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -417,77 +426,148 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_INIT);
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-	// Get file offset and total size
+	// Find out
+	loc.type = H5VL_OBJECT_BY_SELF;
+	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
+		ldloc		 = fp->sfp;
+		loc.obj_type = H5I_FILE;
+	} else {
+		ldloc		 = fp->lgp;
+		loc.obj_type = H5I_GROUP;
+	}
+
+	// Get file offset and total size globally
 	mpierr = MPI_Allreduce (&fsize_local, &fsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	CHECK_MPIERR
-	// NOTE: Some MPI implementation do not produce output for rank 0, foff must ne initialized to 0
-	foff   = 0;
-	mpierr = MPI_Exscan (&fsize_local, &foff, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
+	// NOTE: Some MPI implementation do not produce output for rank 0, foff must be initialized to 0
+	foff_all = 0;
+	mpierr	 = MPI_Exscan (&fsize_local, &foff_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	CHECK_MPIERR
+
+	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
+		// Get file offset and total size in group
+		mpierr =
+			MPI_Allreduce (&fsize_local, &fsize_group, 1, MPI_LONG_LONG, MPI_SUM, fp->nodecomm);
+		CHECK_MPIERR
+		// NOTE: Some MPI implementation do not produce output for rank 0, foff must be initialized
+		// to 0
+		foff_group = 0;
+		mpierr = MPI_Exscan (&fsize_local, &foff_group, 1, MPI_LONG_LONG, MPI_SUM, fp->nodecomm);
+		CHECK_MPIERR
+	} else {
+		fsize_group = fsize_all;
+		foff_group	= foff_all;
+	}
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_SYNC);
 
-	// Create log dataset
-	dsize = (hsize_t)fsize_all;
-	if (dsize) {
-		H5VL_LOGI_PROFILING_TIMER_START;
-
-		ldsid = H5Screate_simple (1, &dsize, &dsize);
-		CHECK_ID (ldsid)
+	// Write out the data
+	if (fsize_all) {
 		sprintf (dname, "_ld_%d", fp->nldset);
-		loc.obj_type = H5I_GROUP;
-		loc.type	 = H5VL_OBJECT_BY_SELF;
-		H5VL_LOGI_PROFILING_TIMER_START;
-		ldp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
-								  H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
-								  H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
-		CHECK_PTR (ldp);
-		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
-		CHECK_ERR  // Get dataset file offset
-		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
+		// Create log dataset
+		if (fsize_group) {
+			H5VL_LOGI_PROFILING_TIMER_START;
 
-		err = H5VLdataset_close (ldp, fp->uvlid, dxplid, NULL);
-		CHECK_ERR  // Close the dataset
+			// Create the group data dataset
+			start = (hsize_t)fsize_group;
+			ldsid = H5Screate_simple (1, &start, &start);
+			CHECK_ID (ldsid)
+			H5VL_LOGI_PROFILING_TIMER_START;
+			ldp = H5VLdataset_create (ldloc, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
+									  H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
+									  H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
+			CHECK_PTR (ldp);
+			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_CREATE);
-		H5VL_LOGI_PROFILING_TIMER_START;
+			H5VL_LOGI_PROFILING_TIMER_START;
+			err = H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
+			CHECK_ERR  // Get dataset file offset
+			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
 
-		// Write the data
-		foff += doff;
-		if (mtype == MPI_DATATYPE_NULL) {
-			mpierr = MPI_File_write_at_all (fp->fh, foff, MPI_BOTTOM, 0, MPI_INT, &stat);
-			CHECK_MPIERR
-		} else {
-			mpierr = MPI_File_write_at_all (fp->fh, foff, MPI_BOTTOM, 1, mtype, &stat);
-			CHECK_MPIERR
-		}
-		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
+			err = H5VLdataset_close (ldp, fp->uvlid, dxplid, NULL);
+			CHECK_ERR  // Close the dataset
 
-		// Update metadata in requests
-		for (i = fp->nflushed; i < fp->wreqs.size (); i++) {
-			fp->wreqs[i]->ldid = fp->nldset;
-			fp->wreqs[i]->ldoff += foff;
-			for (auto &d : fp->wreqs[i]->dbufs) {
-				if (d.ubuf != d.xbuf) { H5VL_log_filei_bfree (fp, (void *)(d.xbuf)); }
+			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_CREATE);
+
+			H5VL_LOGI_PROFILING_TIMER_START;
+			// Write the data
+			if (mtype == MPI_DATATYPE_NULL) {
+				mpierr = MPI_File_write_at_all (fp->fh, foff_group + doff, MPI_BOTTOM, 0, MPI_INT,
+												&stat);
+				CHECK_MPIERR
+			} else {
+				mpierr =
+					MPI_File_write_at_all (fp->fh, foff_group + doff, MPI_BOTTOM, 1, mtype, &stat);
+				CHECK_MPIERR
 			}
+			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
+
+			// Update metadata in requests
+			for (i = fp->nflushed; i < fp->wreqs.size (); i++) {
+				fp->wreqs[i]->ldid = fp->nldset;
+				fp->wreqs[i]->ldoff += foff_group + doff;
+				for (auto &d : fp->wreqs[i]->dbufs) {
+					if (d.ubuf != d.xbuf) { H5VL_log_filei_bfree (fp, (void *)(d.xbuf)); }
+				}
+			}
+			fp->nflushed = fp->wreqs.size ();
 		}
-		fp->nflushed = fp->wreqs.size ();
+
+		// Create virtaul log dataset in the main file
+		// Virtual dataset property must be consistant across all processes
+		// Expensive communication and HDF5 operations
+		/*
+		if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
+			H5VL_LOGI_PROFILING_TIMER_START;
+
+			start  = (hsize_t)fsize_all;
+			vldsid = H5Screate_simple (1, &start, &start);
+			CHECK_ID (ldsid)
+
+			vdcplid = H5Pcreate (H5P_DATASET_CREATE);
+			CHECK_ID (vdcplid)
+			if (fsize_group && (fp->noderank == 0)) {
+				start = foff_all;
+				count = fsize_group;
+				err	  = H5Sselect_hyperslab (vldsid, H5S_SELECT_SET, &start, NULL, &one, &count);
+				CHECK_ERR
+				err = H5Sselect_all (ldsid);
+				CHECK_ERR
+				err = H5Pset_virtual (vdcplid, vldsid, fp->subname.c_str (), dname, ldsid);
+				CHECK_ERR
+				// TODO: handle error and don't hang other processes
+			}
+
+			loc.obj_type = H5I_GROUP;
+			H5VL_LOGI_PROFILING_TIMER_START;
+			vldp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
+									   H5T_STD_B8LE, vldsid, vdcplid, H5P_DATASET_ACCESS_DEFAULT,
+									   dxplid, NULL);
+			CHECK_PTR (vldp);
+			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
+
+			err = H5VLdataset_close (vldp, fp->uvlid, dxplid, NULL);
+			CHECK_ERR  // Close the virtual dataset
+
+			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_CREATE_VIRTUAL);
+		}
+		*/
 
 		// Increase number of log dataset
 		(fp->nldset)++;
 
 		// Mark the metadata flag to dirty (unflushed metadata)
-		if (fsize_all) { fp->metadirty = true; }
+		if (fsize_group) { fp->metadirty = true; }
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS);
+
 err_out:
 	// Cleanup
 	if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
 	H5VL_log_Sclose (ldsid);
+	H5VL_log_Sclose (vldsid);
 
 	H5VL_log_free (mlens);
 	H5VL_log_free (moffs);

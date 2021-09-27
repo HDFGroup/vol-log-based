@@ -148,10 +148,6 @@ void *H5VL_log_file_create (
 								H5P_GROUP_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
 	CHECK_PTR (fp->lgp)
 
-	// Open the file with MPI
-	mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, mpiinfo, &(fp->fh));
-	CHECK_MPIERR
-
 	// Figure out lustre striping configuration
 	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
 		err = H5VL_log_filei_parse_strip_info (fp);
@@ -167,8 +163,7 @@ void *H5VL_log_file_create (
 		}
 	}
 
-	if ((fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) ||
-		(fp->config & H5VL_FILEI_CONFIG_SUBFILING)) {
+	if ((fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) || (fp->config & H5VL_FILEI_CONFIG_SUBFILING)) {
 		err = H5VL_log_filei_calc_node_rank (fp);
 		CHECK_ERR
 	}
@@ -189,6 +184,15 @@ void *H5VL_log_file_create (
 	} else {
 		fp->fd = -1;
 	}
+
+	// Open the file with MPI
+	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
+		mpierr =
+			MPI_File_open (fp->nodecomm, fp->subname.c_str (), MPI_MODE_RDWR, mpiinfo, &(fp->fh));
+	} else {
+		mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, mpiinfo, &(fp->fh));
+	}
+	CHECK_MPIERR
 
 	// Att
 	attbuf[0] = fp->ndset;
@@ -292,6 +296,7 @@ void *H5VL_log_file_open (
 	fp		   = new H5VL_log_file_t (uvlid);
 	fp->flag   = flags;
 	fp->config = 0;
+	fp->fd	   = -1;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR
 	mpierr = MPI_Comm_rank (comm, &(fp->rank));

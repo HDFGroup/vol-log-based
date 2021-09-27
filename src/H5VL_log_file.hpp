@@ -72,6 +72,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	ssize_t mbuf_size;
 
 	std::string name;
+	std::string subname;
 
 	// H5VL_log_buffer_pool_t data_buf;
 	H5VL_log_contig_buffer_t meta_buf;
