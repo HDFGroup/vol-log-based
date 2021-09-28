@@ -167,6 +167,11 @@ void *H5VL_log_file_create (
 		err = H5VL_log_filei_calc_node_rank (fp);
 		CHECK_ERR
 	}
+	else{
+		fp->group_rank=fp->rank;
+		fp->group_comm=fp->comm;
+		fp->group_id=0;
+	}
 
 	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
 		// Aligned write not supported in subfiles
@@ -188,7 +193,7 @@ void *H5VL_log_file_create (
 	// Open the file with MPI
 	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
 		mpierr =
-			MPI_File_open (fp->nodecomm, fp->subname.c_str (), MPI_MODE_RDWR, mpiinfo, &(fp->fh));
+			MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, mpiinfo, &(fp->fh));
 	} else {
 		mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, mpiinfo, &(fp->fh));
 	}
@@ -339,6 +344,9 @@ void *H5VL_log_file_open (
 	fp->config = attbuf[3];
 	fp->idx.resize (fp->ndset);
 	fp->mreqs.resize (fp->ndset);
+	fp->group_rank=fp->rank;
+	fp->group_comm=fp->comm;
+	fp->group_id=0;
 
 	// Fapl property can overwrite config in file, parse after loading config
 	err = H5VL_log_filei_parse_fapl (fp, fapl_id);

@@ -447,12 +447,12 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
 		// Get file offset and total size in group
 		mpierr =
-			MPI_Allreduce (&fsize_local, &fsize_group, 1, MPI_LONG_LONG, MPI_SUM, fp->nodecomm);
+			MPI_Allreduce (&fsize_local, &fsize_group, 1, MPI_LONG_LONG, MPI_SUM, fp->group_comm);
 		CHECK_MPIERR
 		// NOTE: Some MPI implementation do not produce output for rank 0, foff must be initialized
 		// to 0
 		foff_group = 0;
-		mpierr = MPI_Exscan (&fsize_local, &foff_group, 1, MPI_LONG_LONG, MPI_SUM, fp->nodecomm);
+		mpierr = MPI_Exscan (&fsize_local, &foff_group, 1, MPI_LONG_LONG, MPI_SUM, fp->group_comm);
 		CHECK_MPIERR
 	} else {
 		fsize_group = fsize_all;
@@ -527,7 +527,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 
 			vdcplid = H5Pcreate (H5P_DATASET_CREATE);
 			CHECK_ID (vdcplid)
-			if (fsize_group && (fp->noderank == 0)) {
+			if (fsize_group && (fp->group_rank == 0)) {
 				start = foff_all;
 				count = fsize_group;
 				err	  = H5Sselect_hyperslab (vldsid, H5S_SELECT_SET, &start, NULL, &one, &count);
@@ -755,7 +755,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 
 		// Receive offset form prev node
 		fbase = 0;
-		if (fp->noderank == 0) {
+		if (fp->group_rank == 0) {
 			if (fp->prev_rank >= 0) {
 				mpierr = MPI_Recv (&fbase, 1, MPI_LONG_LONG, fp->prev_rank, 0, fp->comm, &stat);
 				CHECK_MPIERR
@@ -766,7 +766,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 		foff = fbase;
 		fsize_local[fp->target_ost] +=
 			fbase;	// Embed node offset in process offset to save a bcast
-		MPI_Exscan (fsize_local + fp->target_ost, &foff, 1, MPI_LONG_LONG, MPI_SUM, fp->nodecomm);
+		MPI_Exscan (fsize_local + fp->target_ost, &foff, 1, MPI_LONG_LONG, MPI_SUM, fp->group_comm);
 		fsize_local[fp->target_ost] -= fbase;
 
 		// Write the data
@@ -775,8 +775,8 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 
 		// Notify next node
 		MPI_Reduce (fsize_local + fp->target_ost, &fbase, 1, MPI_LONG_LONG, MPI_SUM, 0,
-					fp->nodecomm);
-		if (fp->noderank == 0) {
+					fp->group_comm);
+		if (fp->group_rank == 0) {
 			if (fp->next_rank >= 0) {
 				mpierr = MPI_Send (&fbase, 1, MPI_LONG_LONG, fp->next_rank, 0, fp->comm);
 				CHECK_MPIERR

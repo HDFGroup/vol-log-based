@@ -69,7 +69,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	MPI_Status stat;
 	std::vector<std::array<MPI_Offset, H5S_MAX_RANK>> dsteps (fp->ndset);
 	std::unordered_map<std::pair<void *, size_t>, H5VL_log_wreq_t *, hash_pair, equal_pair>
-		meta_ref;
+		meta_ref;	// Hash table 
+	MPI_Comm ldcomm;  // Communicator to create data dataset
+	void *ldloc;	  // Location to create data dataset (main file | subfile)
 #ifdef LOGVOL_PROFILING
 	int repeats = 0;
 #endif
@@ -261,7 +263,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 	// The first lens[0] byte is the decomposition map
 	if (fp->rank == 0) { mdoffs[0] = lens[0]; }
-	
+
 	// NOTE: Some MPI implementation do not produce output for rank 0, moffs must ne initialized
 	// to 0
 	// doff = 0;
