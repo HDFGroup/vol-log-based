@@ -158,6 +158,15 @@ herr_t H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
 		}
 	}
 
+	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
+		env = getenv ("H5VL_LOG_N_SUBFILE");
+		if (env) {
+			fp->ngroup = atoi (env);
+		} else {
+			fp->ngroup = 0;
+		}
+	}
+
 err_out:;
 	return err;
 }
@@ -565,35 +574,32 @@ herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
 	int mpierr;
 	int i, j;
 	MPI_Info info = MPI_INFO_NULL;
-	int np;
 	int *group_ranks;
 
-	mpierr = MPI_Comm_size (fp->comm, &np);
-
-	group_ranks = (int *)malloc (sizeof (int) * np);
+	group_ranks = (int *)malloc (sizeof (int) * fp->np);
 	CHECK_PTR (group_ranks);
 
-	mpierr =
-		MPI_Comm_split_type (fp->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &(fp->group_comm));
-	// For single node debugging purpose
-	/*
-	mpierr = MPI_Comm_free(&(fp->group_comm));
-	CHECK_MPIERR
-	mpierr = MPI_Comm_dup (MPI_COMM_SELF, &(fp->group_comm));
-	CHECK_MPIERR
-	*/
-	// For single node debugging purpose
-	
+	if (fp->ngroup > 0) {
+		mpierr =
+			MPI_Comm_split (fp->comm, fp->rank * fp->ngroup / fp->np, fp->rank, &(fp->group_comm));
+	} else {
+		mpierr = MPI_Comm_split_type (fp->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,
+									  &(fp->group_comm));
+	}
+	CHECK_ERR
+
 	mpierr = MPI_Comm_rank (fp->group_comm, &(fp->group_rank));
+	CHECK_MPIERR
+	mpierr = MPI_Comm_size (fp->group_comm, &(fp->group_np));
+	CHECK_MPIERR
 
 	mpierr = MPI_Allgather (&(fp->group_rank), 1, MPI_INT, group_ranks, 1, MPI_INT, fp->comm);
 	CHECK_MPIERR
-
+	// Assign group ID based ont he global rank of group rank 0
 	fp->group_id = 0;
 	for (i = 0; i < fp->rank; i++) {
 		if (group_ranks[i] == 0) { fp->group_id++; }
 	}
-
 	mpierr = MPI_Bcast (&(fp->group_id), 1, MPI_INT, 0, fp->group_comm);
 	CHECK_MPIERR
 
@@ -615,7 +621,7 @@ herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
 			}
 		}
 		j = fp->scount;
-		for (i = fp->rank + 1; i < np; i++) {
+		for (i = fp->rank + 1; i < fp->np; i++) {
 			if (group_ranks[i] == 0) {
 				j--;
 				if (j == 0) {

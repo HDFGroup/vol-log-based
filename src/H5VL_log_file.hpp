@@ -35,8 +35,10 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
 	/* Aligned data layout */
 	// Group is a set of processes sharing the same subfile or lustre stripe
-	int group_id;		  // Rank in the group
+	int group_id;		  // ID of the group
 	int group_rank;		  // Rank in the group
+	int group_np;		  // Number of processes in the group
+	int ngroup;			  // Number of groups
 	int prev_rank;		  // We only start writing after prev_rank finishes writing
 	int next_rank;		  // We have to notify next_rank to start writing after we finish
 	int target_ost;		  // What OST should we write to in aligned data layout
