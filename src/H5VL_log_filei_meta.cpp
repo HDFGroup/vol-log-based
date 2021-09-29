@@ -72,6 +72,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		meta_ref;	// Hash table 
 	MPI_Comm ldcomm;  // Communicator to create data dataset
 	void *ldloc;	  // Location to create data dataset (main file | subfile)
+	H5VL_loc_params_t loc;
 #ifdef LOGVOL_PROFILING
 	int repeats = 0;
 #endif
@@ -210,10 +211,10 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Create memory datatype
-	if (fp->rank == 0) { nentry++; }
+	if (fp->group_rank == 0) { nentry++; }
 	offs = (MPI_Aint *)malloc (sizeof (MPI_Aint) * nentry);
 	lens = (int *)malloc (sizeof (int) * nentry);
-	if (fp->rank == 0) {
+	if (fp->group_rank == 0) {
 		mdoffs = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->np + 1) * 3);
 		CHECK_PTR (mdoffs)
 		mdoffs_snd = mdoffs + fp->np + 1;
@@ -244,9 +245,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 	// mpierr = MPI_Allreduce (&mdsize, &mdsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	// CHECK_MPIERR
-	mpierr = MPI_Gather (&mdsize, 1, MPI_LONG_LONG, mdoffs + 1, 1, MPI_LONG_LONG, 0, fp->comm);
+	mpierr = MPI_Gather (&mdsize, 1, MPI_LONG_LONG, mdoffs + 1, 1, MPI_LONG_LONG, 0, fp->group_comm);
 	CHECK_MPIERR
-	if (fp->rank == 0) {  // Rank 0 calculate
+	if (fp->group_rank == 0) {  // Rank 0 calculate
 		mdoffs[0] = 0;
 		for (i = 0; i < fp->np; i++) { mdoffs[i + 1] += mdoffs[i]; }
 		rbuf[1] = mdoffs[fp->np];  // Total size
@@ -255,14 +256,14 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		// Fill total size
 		for (i = 1; i < fp->np * 2; i += 2) { mdoffs_snd[i] = rbuf[1]; }
 	}
-	mpierr = MPI_Scatter (mdoffs_snd, 2, MPI_LONG_LONG, rbuf, 2, MPI_LONG_LONG, 0, fp->comm);
+	mpierr = MPI_Scatter (mdoffs_snd, 2, MPI_LONG_LONG, rbuf, 2, MPI_LONG_LONG, 0, fp->group_comm);
 	CHECK_MPIERR
 	// Bcast merged into scatter
 	// mpierr = MPI_Bcast (&mdsize_all, 1, MPI_LONG_LONG, 0, fp->comm);
 	// CHECK_MPIERR
 
 	// The first lens[0] byte is the decomposition map
-	if (fp->rank == 0) { mdoffs[0] = lens[0]; }
+	if (fp->group_rank == 0) { mdoffs[0] = lens[0]; }
 
 	// NOTE: Some MPI implementation do not produce output for rank 0, moffs must ne initialized
 	// to 0
@@ -271,19 +272,25 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// CHECK_MPIERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SYNC);
 
+	// Where to create data dataset, main file or subfile
+	loc.type = H5VL_OBJECT_BY_SELF;
+	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
+		ldloc		 = fp->sfp;
+		loc.obj_type = H5I_FILE;
+	} else {
+		ldloc		 = fp->lgp;
+		loc.obj_type = H5I_GROUP;
+	}
+
 	dsize = (hsize_t)rbuf[1];
 	if (dsize > 0) {
-		H5VL_loc_params_t loc;
-
 		// Create metadata dataset
 		H5VL_LOGI_PROFILING_TIMER_START;
 		mdsid = H5Screate_simple (1, &dsize, &dsize);
 		CHECK_ID (mdsid)
 		sprintf (mdname, "_md_%d", fp->nmdset);
-		loc.obj_type = H5I_GROUP;
-		loc.type	 = H5VL_OBJECT_BY_SELF;
 		H5VL_LOGI_PROFILING_TIMER_START;
-		mdp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, mdname, H5P_LINK_CREATE_DEFAULT,
+		mdp = H5VLdataset_create (ldloc, &loc, fp->uvlid, mdname, H5P_LINK_CREATE_DEFAULT,
 								  H5T_STD_B8LE, mdsid, H5P_DATASET_CREATE_DEFAULT,
 								  H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
 		CHECK_PTR (mdp);
@@ -314,11 +321,11 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		// writing
 		MPI_Barrier (MPI_COMM_WORLD);
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_BARRIER);
-
-		// Update status
-		fp->idxvalid  = false;
-		fp->metadirty = false;
 	}
+
+	// Update status
+	fp->idxvalid  = false;
+	fp->metadirty = false;
 
 	for (auto &rp : fp->wreqs) { delete rp; }
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
