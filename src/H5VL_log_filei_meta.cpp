@@ -48,11 +48,11 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	MPI_Offset mdsize  = 0;	 // Local metadata size
 	MPI_Offset *mdoffs = NULL;
 	MPI_Offset *mdoffs_snd;
-	MPI_Aint *offs	   = NULL;	// Offset in MPI_Type_hindexed
-	int *lens		   = NULL;	// Lens in MPI_Type_hindexed
-	int nentry		   = 0;		// Number of metadata entries
-	size_t bsize	   = 0;		// Size of metadata buffer = size of metadata before compression
-	size_t esize;				// Size of the current processing metadata entry
+	MPI_Aint *offs = NULL;	// Offset in MPI_Type_hindexed
+	int *lens	   = NULL;	// Lens in MPI_Type_hindexed
+	int nentry	   = 0;		// Number of metadata entries
+	size_t bsize   = 0;		// Size of metadata buffer = size of metadata before compression
+	size_t esize;			// Size of the current processing metadata entry
 #ifdef ENABLE_ZLIB
 	MPI_Offset zbsize = 0;	   // Size of zbuf
 	char *zbuf		  = NULL;  // Buffer to temporarily sotre compressed data
@@ -69,7 +69,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	MPI_Status stat;
 	std::vector<std::array<MPI_Offset, H5S_MAX_RANK>> dsteps (fp->ndset);
 	std::unordered_map<std::pair<void *, size_t>, H5VL_log_wreq_t *, hash_pair, equal_pair>
-		meta_ref;	// Hash table 
+		meta_ref;	  // Hash table
 	MPI_Comm ldcomm;  // Communicator to create data dataset
 	void *ldloc;	  // Location to create data dataset (main file | subfile)
 	H5VL_loc_params_t loc;
@@ -85,11 +85,11 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	for (auto &rp : fp->wreqs) {
 #ifdef ENABLE_ZLIB
 		// metadata compression buffer size
-		if (zbsize < rp->hdr.meta_size) { zbsize = rp->hdr.meta_size; }
+		if (zbsize < rp->hdr->meta_size) { zbsize = rp->hdr->meta_size; }
 #endif
 		// Calculate total metadata size
 		rp->meta_off = mdsize;
-		mdsize += rp->hdr.meta_size;
+		mdsize += rp->hdr->meta_size;
 		nentry++;
 
 		// Update file offset and size of the data block unknown when the request was posted
@@ -98,7 +98,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		ptr += sizeof (MPI_Offset);
 		*((MPI_Offset *)ptr) = rp->rsize;  // file size
 		ptr += sizeof (MPI_Offset);
-		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {  // # selections
+		if (rp->hdr->flag & H5VL_LOGI_META_FLAG_MUL_SEL) {	// # selections
 			*((int *)ptr) = rp->nsel;
 			// nsel can be overwritten if transformed into referenced entry, do not avdance the
 			// pointer ptr += sizeof (int);
@@ -115,20 +115,20 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
 		mdsize = 0;
 		for (auto &rp : fp->wreqs) {
-			if (rp->hdr.meta_size > sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2) {
+			if (rp->hdr->meta_size > sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2) {
 				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2;
 
 				auto t = std::pair<void *, size_t> (
 					(void *)ptr,
-					rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2);
+					rp->hdr->meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2);
 
 				if (meta_ref.find (t) == meta_ref.end ()) {
 					meta_ref[t] = rp;
 				} else {
-					rp->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_REF;
-					rp->hdr.flag &= ~(H5VL_LOGI_META_FLAG_SEL_DEFLATE);	 // Remove compression flag
-					rp->hdr.meta_size = sizeof (H5VL_logi_meta_hdr) +
-										sizeof (MPI_Offset) * 3;  // Recalculate metadata size
+					rp->hdr->flag |= H5VL_LOGI_META_FLAG_SEL_REF;
+					rp->hdr->flag &= ~(H5VL_LOGI_META_FLAG_SEL_DEFLATE);  // Remove compression flag
+					rp->hdr->meta_size = sizeof (H5VL_logi_meta_hdr) +
+										 sizeof (MPI_Offset) * 3;  // Recalculate metadata size
 					// We write the address of reference targe temporarily into the reference offset
 					// It will be replaced once the offset of the reference target is known
 					// NOTE: This trick only works when sizeof(H5VL_log_wreq_t*) <=
@@ -139,7 +139,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 #endif
 				}
 
-				mdsize += rp->hdr.meta_size;
+				mdsize += rp->hdr->meta_size;
 			}
 		}
 	}
@@ -159,8 +159,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	zbuf = (char *)malloc (zbsize);
 	CHECK_PTR (zbuf)
 	for (auto &rp : fp->wreqs) {
-		if (rp->hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
-			inlen = rp->hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2 -
+		if (rp->hdr->flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
+			inlen = rp->hdr->meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2 -
 					sizeof (int);
 			clen = zbsize;
 			err	 = H5VL_log_zip_compress (
@@ -170,15 +170,15 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 				memcpy (rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2 +
 							sizeof (int),
 						zbuf, clen);
-				rp->hdr.meta_size =
+				rp->hdr->meta_size =
 					sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2 + sizeof (int) + clen;
 			} else {
 				// Compressed size larger, abort compression
-				rp->hdr.flag &= ~(H5VL_FILEI_CONFIG_SEL_DEFLATE);
+				rp->hdr->flag &= ~(H5VL_FILEI_CONFIG_SEL_DEFLATE);
 			}
 		}
 		rp->meta_off = mdsize;
-		mdsize += rp->hdr.meta_size;
+		mdsize += rp->hdr->meta_size;
 	}
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_ZIP);
 #ifdef LOGVOL_PROFILING
@@ -191,7 +191,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Fill up all metadata reference once the offset of refered entries is known
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
 		for (auto &rp : fp->wreqs) {
-			if (rp->hdr.flag & H5VL_LOGI_META_FLAG_SEL_REF) {
+			if (rp->hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
 				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2;
 				H5VL_log_wreq_t *t = *((H5VL_log_wreq_t **)ptr);
 				// Replace with the file offset of the reference metadata entry related to this
@@ -200,10 +200,6 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			}
 		}
 	}
-
-	// Rewrite entry header later after compression
-	// Header for standalone varn requests
-	for (auto &rp : fp->wreqs) { *((H5VL_logi_meta_hdr *)rp->meta_buf) = rp->hdr; }
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_PACK);
 
@@ -231,7 +227,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Gather offset and lens
 	for (auto &rp : fp->wreqs) {
 		offs[nentry]   = (MPI_Aint)rp->meta_buf;
-		lens[nentry++] = (int)rp->hdr.meta_size;
+		lens[nentry++] = (int)rp->hdr->meta_size;
 	}
 
 	mpierr = MPI_Type_hindexed (nentry, lens, offs, MPI_BYTE, &mmtype);
@@ -245,12 +241,13 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 	// mpierr = MPI_Allreduce (&mdsize, &mdsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
 	// CHECK_MPIERR
-	mpierr = MPI_Gather (&mdsize, 1, MPI_LONG_LONG, mdoffs + 1, 1, MPI_LONG_LONG, 0, fp->group_comm);
+	mpierr =
+		MPI_Gather (&mdsize, 1, MPI_LONG_LONG, mdoffs + 1, 1, MPI_LONG_LONG, 0, fp->group_comm);
 	CHECK_MPIERR
-	if (fp->group_rank == 0) {  // Rank 0 calculate
+	if (fp->group_rank == 0) {	// Rank 0 calculate
 		mdoffs[0] = 0;
 		for (i = 0; i < fp->np; i++) { mdoffs[i + 1] += mdoffs[i]; }
-		rbuf[1] = mdoffs[fp->np];  // Total size
+		rbuf[1] = mdoffs[fp->np];	 // Total size
 		// Copy to send array with space
 		for (i = 0; i < fp->np; i++) { mdoffs_snd[i << 1] = mdoffs[i]; }
 		// Fill total size
@@ -424,37 +421,37 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 			H5VL_FILEI_CONFIG_METADATA_SHARE) {	 // Need to maintina cache if file contains
 												 // referenced metadata entries
 			while (bufp < buf + mdsize) {
-				H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
+				H5VL_logi_meta_hdr *hdr_tmp = (H5VL_logi_meta_hdr *)bufp;
 
 				// Have to parse all entries for reference purpose
-				if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-					MPI_Offset roff = *((MPI_Offset *)hdr + 1);
+				if (hdr_tmp->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
+					MPI_Offset roff = *((MPI_Offset *)hdr_tmp + 1);
 
-					err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr->did], bufp, block,
+					err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr_tmp->did], bufp, block,
 														  bcache[bufp + roff]);
 					CHECK_ERR
 				} else {
-					err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
+					err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);
 					CHECK_ERR
 
 					// Insert to cache
 					bcache[bufp] = block.sels;
 				}
-				bufp += hdr->meta_size;
+				bufp += hdr_tmp->meta_size;
 
 				// Insert to the index
-				fp->idx[hdr->did].insert (block);
+				fp->idx[hdr_tmp->did].insert (block);
 			}
 		} else {
 			while (bufp < buf + mdsize) {
-				H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
+				H5VL_logi_meta_hdr *hdr_tmp = (H5VL_logi_meta_hdr *)bufp;
 
-				err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
+				err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);
 				CHECK_ERR
-				bufp += hdr->meta_size;
+				bufp += hdr_tmp->meta_size;
 
 				// Insert to the index
-				fp->idx[hdr->did].insert (block);
+				fp->idx[hdr_tmp->did].insert (block);
 			}
 		}
 	}
@@ -584,37 +581,37 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {  // Need to maintina cache if file contains
 														  // referenced metadata entries
 		while (bufp < buf + mdsize) {
-			H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
+			H5VL_logi_meta_hdr *hdr_tmp = (H5VL_logi_meta_hdr *)bufp;
 
 			// Have to parse all entries for reference purpose
-			if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-				MPI_Offset roff = *((MPI_Offset *)hdr + 1);
+			if (hdr_tmp->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
+				MPI_Offset roff = *((MPI_Offset *)hdr_tmp + 1);
 
-				err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr->did], bufp, block,
+				err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr_tmp->did], bufp, block,
 													  bcache[bufp + roff]);
 				CHECK_ERR
 			} else {
-				err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
+				err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);
 				CHECK_ERR
 
 				// Insert to cache
 				bcache[bufp] = block.sels;
 			}
-			bufp += hdr->meta_size;
+			bufp += hdr_tmp->meta_size;
 
 			// Insert to the index
-			fp->idx[hdr->did].insert (block);
+			fp->idx[hdr_tmp->did].insert (block);
 		}
 	} else {
 		while (bufp < buf + mdsize) {
-			H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)bufp;
+			H5VL_logi_meta_hdr *hdr_tmp = (H5VL_logi_meta_hdr *)bufp;
 
-			err = H5VL_logi_metaentry_decode (fp->dsets[hdr->did], bufp, block);
+			err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);
 			CHECK_ERR
-			bufp += hdr->meta_size;
+			bufp += hdr_tmp->meta_size;
 
 			// Insert to the index
-			fp->idx[hdr->did].insert (block);
+			fp->idx[hdr_tmp->did].insert (block);
 		}
 	}
 

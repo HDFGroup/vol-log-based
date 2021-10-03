@@ -12,7 +12,7 @@ class H5VL_log_selections {
 	hsize_t **starts;  // Start of selection
 	hsize_t **counts;  // Count of selection
 	int nsel;		   // Size of the selection (bytes)
-	int ndim;
+	int ndim;		   // Dimension of the data space
 
 	H5VL_log_selections ();
 	H5VL_log_selections (int ndim, int nsel);
@@ -27,7 +27,7 @@ class H5VL_log_selections {
 	herr_t get_mpi_type (size_t esize, MPI_Datatype *type);
 	hsize_t get_sel_size ();
 	hsize_t get_sel_size (int i);
-	void encode (H5VL_log_dset_info_t &dset, H5VL_logi_meta_hdr &hdr, char *mbuf);
+	void encode (MPI_Offset *dsteps, char *mbuf);
 
    private:
 	hsize_t *sels_arr = NULL;  // Allocated starts and counts array, if present, need free

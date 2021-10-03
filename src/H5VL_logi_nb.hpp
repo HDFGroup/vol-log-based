@@ -22,7 +22,7 @@ typedef struct H5VL_log_req_data_block_t {
 
 class H5VL_log_wreq_t {
    public:
-	H5VL_logi_meta_hdr hdr;
+	H5VL_logi_meta_hdr *hdr;
 	// int ndim;  // Dim of the target dataset
 	// MPI_Offset start[H5S_MAX_RANK];
 	// MPI_Offset count[H5S_MAX_RANK];
@@ -31,6 +31,7 @@ class H5VL_log_wreq_t {
 
 	// H5VL_logi_meta_hdr *meta_hdr;
 	char *meta_buf = NULL;
+	// char *sel_buf = NULL;
 	int nsel;
 	// size_t meta_size;
 
@@ -44,6 +45,8 @@ class H5VL_log_wreq_t {
 
 	std::vector<H5VL_log_req_data_block_t> dbufs;  // Data buffers <xbuf, ubuf, size>
 
+	H5VL_log_wreq_t ();
+	H5VL_log_wreq_t (void *dp, H5VL_log_selections *sels);
 	~H5VL_log_wreq_t ();
 };
 

@@ -309,7 +309,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 		} break;
 		case H5S_SEL_NONE: {
 			this->nsel = 0;
-			this->reserve(0);
+			this->reserve (0);
 		} break;
 		default:
 			ERR_OUT ("Unsupported selection type");
@@ -535,27 +535,27 @@ hsize_t H5VL_log_selections::get_sel_size () {
 	return ret;
 }
 
-void H5VL_log_selections::encode (H5VL_log_dset_info_t &dset, H5VL_logi_meta_hdr &hdr, char *mbuf) {
+void H5VL_log_selections::encode (MPI_Offset *dsteps, char *mbuf) {
 	int i;
 
-	if(starts){
-		if (hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
+	if (starts) {
+		if (dsteps) {
 			for (i = 0; i < nsel; i++) {
-				H5VL_logi_sel_encode (dset.ndim, dset.dsteps, starts[i], (MPI_Offset *)mbuf);
+				H5VL_logi_sel_encode (ndim, dsteps, starts[i], (MPI_Offset *)mbuf);
 				mbuf += sizeof (MPI_Offset);
 			}
 			for (i = 0; i < nsel; i++) {
-				H5VL_logi_sel_encode (dset.ndim, dset.dsteps, counts[i], (MPI_Offset *)mbuf);
+				H5VL_logi_sel_encode (ndim, dsteps, counts[i], (MPI_Offset *)mbuf);
 				mbuf += sizeof (MPI_Offset);
 			}
 		} else {
 			for (i = 0; i < nsel; i++) {
-				memcpy (mbuf, starts[i], sizeof (hsize_t) * dset.ndim);
-				mbuf += sizeof (hsize_t) * dset.ndim;
+				memcpy (mbuf, starts[i], sizeof (hsize_t) * ndim);
+				mbuf += sizeof (hsize_t) * ndim;
 			}
 			for (i = 0; i < nsel; i++) {
-				memcpy (mbuf, counts[i], sizeof (hsize_t) * dset.ndim);
-				mbuf += sizeof (hsize_t) * dset.ndim;
+				memcpy (mbuf, counts[i], sizeof (hsize_t) * ndim);
+				mbuf += sizeof (hsize_t) * ndim;
 			}
 		}
 	}

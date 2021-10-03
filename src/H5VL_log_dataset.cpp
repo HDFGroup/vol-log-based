@@ -447,62 +447,10 @@ herr_t H5VL_log_dataset_write (void *dset,
 	if (dp->fp->config ^ H5VL_FILEI_CONFIG_METADATA_MERGE) {
 		H5VL_LOGI_PROFILING_TIMER_START;
 
-		r = new H5VL_log_wreq_t ();
+		db.ubuf = (char *)buf;
+		db.size = dsel->get_sel_size ();  // Number of data elements in the record
 
-		// Setting metadata;
-		r->hdr.did = dp->id;
-		db.ubuf	   = (char *)buf;
-		r->nsel	   = dsel->nsel;
-		db.size	   = dsel->get_sel_size ();	 // Number of data elements in the record
-
-		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_START_COUNT);
-
-		// Encode and pack selections
-		H5VL_LOGI_PROFILING_TIMER_START
-
-		// Flags
-		r->hdr.flag = 0;
-		if (r->nsel > 1) {
-			/*
-			if (dp->fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
-				if (dp->fp->meta_table.find (*dsel) == dp->fp->meta_table.end ()) {
-					r->meta_ref_idx = dp->fp->meta_table[*dsel] = dp->fp->meta_ref.size ();
-					dp->fp->meta_ref.push_back (-1);
-				} else {
-					r->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_REF;
-					r->meta_ref_idx = dp->fp->meta_table[*dsel];
-				}
-			}
-			*/
-			if (r->hdr.flag ^ H5VL_LOGI_META_FLAG_SEL_REF) {
-				if ((dp->ndim > 1) && (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
-					r->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
-				}
-				r->hdr.flag |= H5VL_LOGI_META_FLAG_MUL_SEL;
-
-				if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
-					r->hdr.flag |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
-				}
-			}
-		}
-
-		// Selection buffer
-		r->hdr.meta_size = sizeof (H5VL_logi_meta_hdr);	 // Header
-		r->hdr.meta_size += sizeof (MPI_Offset) * 2;	 // File offset and size
-		if (r->hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
-			r->hdr.meta_size += sizeof (int);  // N
-		}
-		if (r->hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-			r->hdr.meta_size +=
-				sizeof (MPI_Offset) * (dp->ndim - 1 + r->nsel * 2);
-		} else {
-			r->hdr.meta_size +=
-				sizeof (MPI_Offset) * (dp->ndim * r->nsel * 2);
-		}
-		r->meta_buf = (char *)malloc (r->hdr.meta_size);
-
-		err = H5VL_logi_metaentry_encode (*dp, r->hdr, dsel, r->meta_buf);
-		CHECK_ERR
+		r = new H5VL_log_wreq_t (dp, dsel);
 
 		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_ENCODE);
 	}
