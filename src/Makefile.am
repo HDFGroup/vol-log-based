@@ -63,22 +63,26 @@ if LOGVOL_DEBUG
    CXX_SRCS += H5VL_logi_debug.cpp
 endif
 if LOGVOL_PROFILING
-   CXX_SRCS += H5VL_logi_profiling.cpp
+   M4_SRCS += H5VL_logi_profiling.m4
 endif
 
 include_HEADERS = H5VL_log.h
 
-$(M4_SRCS:.m4=.cpp): Makefile
-$(M4H_SRCS:.m4h=.hpp): Makefile
+$(M4_SRCS:.m4=.cpp): Makefile H5VL_logi_profiling_timers.m4
+$(M4H_SRCS:.m4h=.hpp): Makefile H5VL_logi_profiling_timers.m4
 
-.m4.cpp:
+.m4.cpp: H5VL_logi_profiling_timers.m4
 	$(M4) $(AM_M4FLAGS) $(M4FLAGS) $< >$@
 
-.m4h.hpp:
+.m4h.hpp: H5VL_logi_profiling_timers.m4
 	$(M4) $(AM_M4FLAGS) $(M4FLAGS) $< >$@
 
 libH5VL_log_la_SOURCES = $(C_SRCS) $(CXX_SRCS) $(H_SRCS)
 nodist_libH5VL_log_la_SOURCES = $(M4_SRCS:.m4=.cpp) $(M4H_SRCS:.m4h=.h)
+
+BUILT_SOURCES = $(M4_SRCS:.m4=.cpp) $(M4H_SRCS:.m4h=.hpp)
+EXTRA_DIST = $(M4H_SRCS) $(M4_SRCS)
+CLEANFILES = $(M4_SRCS:.m4=.cpp) $(M4H_SRCS:.m4h=.hpp)
 
 dist-hook:
 	$(SED_I) -e "s|RELEASE_DATE|@LOGVOL_RELEASE_DATE@|g" $(distdir)/main.cpp
