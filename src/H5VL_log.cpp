@@ -3,6 +3,7 @@
 #endif
 
 #include "H5VL_log.h"
+#include "H5VL_log_dataset.hpp"
 #include "H5VL_log_info.hpp"
 #include "H5VL_logi.hpp"
 
@@ -69,29 +70,22 @@ herr_t H5Dwrite_n (hid_t did,
 				   hsize_t **counts,
 				   hid_t dxplid,
 				   void *buf) {
-	herr_t err		   = 0;
-	hid_t dxplid_clone = -1;
-	H5VL_log_multisel_arg_t arg;
+	herr_t err = 0;
+	H5VL_log_dwrite_n_arg_t varnarg;
+	H5VL_optional_args_t arg;
 
-	arg.n	   = n;
-	arg.starts = starts;
-	arg.counts = counts;
+	varnarg.mem_type_id = mem_type_id;
+	varnarg.n			= n;
+	varnarg.starts		= starts;
+	varnarg.counts		= counts;
+	varnarg.buf			= buf;
 
-	if (dxplid == H5P_DEFAULT) {
-		dxplid_clone = H5Pcreate (H5P_DATASET_XFER);
-	} else {
-		dxplid_clone = H5Pcopy (dxplid);
-	}
-	CHECK_ID (dxplid_clone)
-
-	err = H5Pset_multisel (dxplid_clone, arg);
-	CHECK_ERR
-
-	err = H5Dwrite (did, mem_type_id, H5S_ALL, H5S_ALL, dxplid_clone, buf);
+	arg.op_type = H5Dwrite_n_op_val;
+	arg.args	= &varnarg;
+	err			= H5VLdataset_optional_op (did, &arg, dxplid, H5ES_NONE);
 	CHECK_ERR
 
 err_out:
-	if (dxplid_clone >= 0) { H5Pclose (dxplid_clone); }
 	return err;
 }
 
@@ -137,58 +131,6 @@ herr_t H5Pget_nonblocking (hid_t plist, H5VL_log_req_type_t *nonblocking) {
 
 		} else {
 			*nonblocking = H5VL_LOG_REQ_BLOCKING;
-		}
-	}
-
-err_out:;
-	return err;
-}
-
-#define MULTISEL_PROPERTY_NAME "H5VL_log_multisel"
-herr_t H5Pset_multisel (hid_t plist, H5VL_log_multisel_arg_t arg) {
-	herr_t err = 0;
-	htri_t isdxpl, pexist;
-
-	isdxpl = H5Pisa_class (plist, H5P_DATASET_XFER);
-	CHECK_ID (isdxpl)
-	if (isdxpl == 0) ERR_OUT ("Not dxplid")
-
-	pexist = H5Pexist (plist, MULTISEL_PROPERTY_NAME);
-	CHECK_ID (pexist)
-	if (!pexist) {
-		H5VL_log_multisel_arg_t nosel;
-
-		nosel.n		 = 0;
-		nosel.counts = nosel.starts = NULL;
-		err = H5Pinsert2 (plist, MULTISEL_PROPERTY_NAME, sizeof (H5VL_log_multisel_arg_t), &nosel,
-						  NULL, NULL, NULL, NULL, NULL, NULL);
-		CHECK_ERR
-	}
-
-	err = H5Pset (plist, MULTISEL_PROPERTY_NAME, &arg);
-	CHECK_ERR
-
-err_out:;
-	return err;
-}
-
-herr_t H5Pget_multisel (hid_t plist, H5VL_log_multisel_arg_t *arg) {
-	herr_t err = 0;
-	htri_t isdxpl, pexist;
-
-	isdxpl = H5Pisa_class (plist, H5P_DATASET_XFER);
-	CHECK_ID (isdxpl)
-	if (isdxpl == 0)
-		arg->n = -1;	 // Default to no selection
-	else {
-		pexist = H5Pexist (plist, MULTISEL_PROPERTY_NAME);
-		CHECK_ID (pexist)
-		if (pexist) {
-			err = H5Pget (plist, MULTISEL_PROPERTY_NAME, arg);
-			CHECK_ERR
-
-		} else {
-			arg->n = -1;
 		}
 	}
 
@@ -577,8 +519,8 @@ herr_t H5Pset_subfiling (hid_t plist, hbool_t subfiling) {
 	CHECK_ID (pexist)
 	if (!pexist) {
 		hbool_t f = false;
-		err = H5Pinsert2 (plist, SUBFILING_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL,
-						  NULL, NULL, NULL, NULL);
+		err = H5Pinsert2 (plist, SUBFILING_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL, NULL,
+						  NULL, NULL, NULL);
 		CHECK_ERR
 	}
 
@@ -596,7 +538,7 @@ herr_t H5Pget_subfiling (hid_t plist, hbool_t *subfiling) {
 	isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
 	CHECK_ID (isfapl)
 	if (isfapl == 0)
-		*subfiling = false;  // Default property will not pass class check
+		*subfiling = false;	 // Default property will not pass class check
 	else {
 		pexist = H5Pexist (plist, SUBFILING_PROPERTY_NAME);
 		CHECK_ID (pexist)

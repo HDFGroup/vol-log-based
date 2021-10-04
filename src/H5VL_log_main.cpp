@@ -5,10 +5,10 @@
 #include <hdf5.h>
 
 #include "H5VL_log.h"
+#include "H5VL_log_dataset.hpp"
 #include "H5VL_log_info.hpp"
 #include "H5VL_log_main.hpp"
 #include "H5VL_logi.hpp"
-
 
 /*******************/
 /* Local variables */
@@ -73,6 +73,11 @@ herr_t H5VL_log_init (hid_t vipl_id) {
 	CHECK_MPIERR
 	if (!mpi_inited) { MPI_Init (NULL, NULL); }
 
+	// Register H5Dwrite_n
+	err =
+		H5VLregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dwrite_n", &H5Dwrite_n_op_val);
+	CHECK_ERR
+
 	/* SID no longer recognized at this stage, move to file close
 	if(H5VL_log_dataspace_contig==H5I_INVALID_HID){
 		H5VL_log_dataspace_contig = H5Screate(H5S_SCALAR);
@@ -124,6 +129,10 @@ herr_t H5VL_log_obj_term (void) {
 		H5VL_log_dataspace_contig=H5I_INVALID_HID;
 	}
 	*/
+
+	// Unregister H5Dwrite_n
+	err = H5VLunregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dwrite_n");
+	CHECK_ERR
 
 	if (!mpi_inited) {
 		mpierr = MPI_Initialized (&mpi_inited);

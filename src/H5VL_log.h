@@ -36,7 +36,6 @@
 #include "H5VLpublic.h"
 #include "hdf5.h"
 
-
 /* Identifier for the pass-through VOL connector */
 #define H5VL_log (H5VL_log_register ())
 
@@ -59,11 +58,13 @@ typedef enum H5VL_log_sel_encoding_t {
 	H5VL_LOG_ENCODING_CANONICAL = 1
 } H5VL_log_sel_encoding_t;
 
-typedef struct H5VL_log_multisel_arg_t {
+typedef struct H5VL_log_dwrite_n_arg_t {
+	hid_t mem_type_id;
 	int n;
 	hsize_t **starts;
 	hsize_t **counts;
-} H5VL_log_multisel_arg_t;
+	void *buf;
+} H5VL_log_dwrite_n_arg_t;
 
 typedef enum H5VL_log_data_layout_t {
 	H5VL_LOG_DATA_LAYOUT_CONTIG		   = 0,	 // Default
@@ -91,9 +92,6 @@ herr_t H5Dwrite_n (hid_t did,
 // Helper functions
 herr_t H5Pset_nonblocking (hid_t plist, H5VL_log_req_type_t nonblocking);
 herr_t H5Pget_nonblocking (hid_t plist, H5VL_log_req_type_t *nonblocking);
-
-herr_t H5Pset_multisel (hid_t plist, H5VL_log_multisel_arg_t arg);
-herr_t H5Pget_multisel (hid_t plist, H5VL_log_multisel_arg_t *arg);
 
 herr_t H5Pset_nb_buffer_size (hid_t plist, size_t size);
 herr_t H5Pget_nb_buffer_size (hid_t plist, ssize_t *size);
