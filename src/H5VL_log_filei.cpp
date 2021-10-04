@@ -480,9 +480,6 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	// Free the metadata buffer
 	H5VL_log_filei_contig_buffer_free (&(fp->meta_buf));
 
-	// Free merged reqeusts
-	for (auto &req : fp->mreqs) { delete req; }
-
 	// Close contig dataspacce ID
 	H5VL_log_dataspace_contig_ref--;
 	if (H5VL_log_dataspace_contig_ref == 0) { H5Sclose (H5VL_log_dataspace_contig); }
@@ -507,7 +504,9 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 #endif
 
 	// Clean up
+	if (fp->group_comm != fp->comm) { MPI_Comm_free (&(fp->group_comm)); }
 	MPI_Comm_free (&(fp->comm));
+
 	delete fp;
 
 err_out:
@@ -573,8 +572,8 @@ herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
-	MPI_Info info = MPI_INFO_NULL;
-	int *group_ranks;
+	MPI_Info info	 = MPI_INFO_NULL;
+	int *group_ranks = NULL;
 
 	group_ranks = (int *)malloc (sizeof (int) * fp->np);
 	CHECK_PTR (group_ranks);
@@ -634,6 +633,7 @@ herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
 
 err_out:
 	if (info != MPI_INFO_NULL) MPI_Info_free (&info);
+	H5VL_log_free (group_ranks);
 	return err;
 }
 

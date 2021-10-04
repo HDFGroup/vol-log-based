@@ -169,6 +169,7 @@ void *H5VL_log_file_create (
 	}
 	else{
 		fp->group_rank=fp->rank;
+		fp->group_np=fp->np;
 		fp->group_comm=fp->comm;
 		fp->group_id=0;
 	}

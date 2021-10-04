@@ -747,8 +747,17 @@ herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 	CHECK_ERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_CLOSE);
 
-	H5Tclose (dp->dtype);
+	// Flush and free merged reqeusts
+	if (dp->fp->mreqs[dp->id]->dbufs.size()){
+		dp->fp->wreqs.push_back (dp->fp->mreqs[dp->id]);
+	}
+	else{
+		delete dp->fp->mreqs[dp->id];
+		dp->fp->mreqs[dp->id] = NULL;
+	}
 
+	H5Tclose (dp->dtype);
+	
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CLOSE);
 
 	delete dp;

@@ -75,10 +75,6 @@ inline MPI_Offset H5VL_logi_get_metaentry_size (int ndim, H5VL_logi_meta_hdr &hd
 struct H5VL_log_dset_info_t;
 struct H5VL_logi_meta_hdr;
 struct H5VL_log_selections;
-herr_t H5VL_logi_metaentry_encode (H5VL_log_dset_info_t &dset,
-								   H5VL_logi_meta_hdr &hdr,
-								   H5VL_log_selections *sels,
-								   void *meta);
 herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 									   void *ent,
 									   H5VL_logi_metablock_t &block,

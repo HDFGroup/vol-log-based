@@ -211,12 +211,12 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	offs = (MPI_Aint *)malloc (sizeof (MPI_Aint) * nentry);
 	lens = (int *)malloc (sizeof (int) * nentry);
 	if (fp->group_rank == 0) {
-		mdoffs = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->np + 1) * 3);
+		mdoffs = (MPI_Offset *)malloc (sizeof (MPI_Offset) * (fp->group_np + 1) * 3);
 		CHECK_PTR (mdoffs)
-		mdoffs_snd = mdoffs + fp->np + 1;
+		mdoffs_snd = mdoffs + fp->group_np + 1;
 
 		offs[0] = (MPI_Aint) (mdoffs);
-		lens[0] = (int)(sizeof (MPI_Offset) * (fp->np + 1));
+		lens[0] = (int)(sizeof (MPI_Offset) * (fp->group_np + 1));
 
 		nentry = 1;
 		mdsize += lens[0];
@@ -246,12 +246,12 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	CHECK_MPIERR
 	if (fp->group_rank == 0) {	// Rank 0 calculate
 		mdoffs[0] = 0;
-		for (i = 0; i < fp->np; i++) { mdoffs[i + 1] += mdoffs[i]; }
-		rbuf[1] = mdoffs[fp->np];	 // Total size
+		for (i = 0; i < fp->group_np; i++) { mdoffs[i + 1] += mdoffs[i]; }
+		rbuf[1] = mdoffs[fp->group_np];	 // Total size
 		// Copy to send array with space
-		for (i = 0; i < fp->np; i++) { mdoffs_snd[i << 1] = mdoffs[i]; }
+		for (i = 0; i < fp->group_np; i++) { mdoffs_snd[i << 1] = mdoffs[i]; }
 		// Fill total size
-		for (i = 1; i < fp->np * 2; i += 2) { mdoffs_snd[i] = rbuf[1]; }
+		for (i = 1; i < fp->group_np * 2; i += 2) { mdoffs_snd[i] = rbuf[1]; }
 	}
 	mpierr = MPI_Scatter (mdoffs_snd, 2, MPI_LONG_LONG, rbuf, 2, MPI_LONG_LONG, 0, fp->group_comm);
 	CHECK_MPIERR
