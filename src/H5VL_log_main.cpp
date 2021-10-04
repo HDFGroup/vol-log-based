@@ -77,6 +77,9 @@ herr_t H5VL_log_init (hid_t vipl_id) {
 	err =
 		H5VLregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dwrite_n", &H5Dwrite_n_op_val);
 	CHECK_ERR
+	// Register H5Dread_n
+	err = H5VLregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dread_n", &H5Dread_n_op_val);
+	CHECK_ERR
 
 	/* SID no longer recognized at this stage, move to file close
 	if(H5VL_log_dataspace_contig==H5I_INVALID_HID){
@@ -132,6 +135,9 @@ herr_t H5VL_log_obj_term (void) {
 
 	// Unregister H5Dwrite_n
 	err = H5VLunregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dwrite_n");
+	CHECK_ERR
+	// Unregister H5Dread_n
+	err = H5VLunregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dread_n");
 	CHECK_ERR
 
 	if (!mpi_inited) {

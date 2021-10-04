@@ -71,7 +71,7 @@ herr_t H5Dwrite_n (hid_t did,
 				   hid_t dxplid,
 				   void *buf) {
 	herr_t err = 0;
-	H5VL_log_dwrite_n_arg_t varnarg;
+	H5VL_log_dio_n_arg_t varnarg;
 	H5VL_optional_args_t arg;
 
 	varnarg.mem_type_id = mem_type_id;
@@ -81,6 +81,32 @@ herr_t H5Dwrite_n (hid_t did,
 	varnarg.buf			= buf;
 
 	arg.op_type = H5Dwrite_n_op_val;
+	arg.args	= &varnarg;
+	err			= H5VLdataset_optional_op (did, &arg, dxplid, H5ES_NONE);
+	CHECK_ERR
+
+err_out:
+	return err;
+}
+
+herr_t H5Dread_n (hid_t did,
+				  hid_t mem_type_id,
+				  int n,
+				  hsize_t **starts,
+				  hsize_t **counts,
+				  hid_t dxplid,
+				  void *buf) {
+	herr_t err = 0;
+	H5VL_log_dio_n_arg_t varnarg;
+	H5VL_optional_args_t arg;
+
+	varnarg.mem_type_id = mem_type_id;
+	varnarg.n			= n;
+	varnarg.starts		= starts;
+	varnarg.counts		= counts;
+	varnarg.buf			= buf;
+
+	arg.op_type = H5Dread_n_op_val;
 	arg.args	= &varnarg;
 	err			= H5VLdataset_optional_op (did, &arg, dxplid, H5ES_NONE);
 	CHECK_ERR

@@ -29,6 +29,13 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 								hid_t plist_id,
 								const void *buf,
 								void **req);
+herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
+							   hid_t mem_type_id,
+							   hid_t mem_space_id,
+							   H5VL_log_selections *dsel,
+							   hid_t plist_id,
+							   void *buf,
+							   void **req);
 /*
 herr_t H5VL_log_dataseti_writen (hid_t did,
 				  hid_t mem_type_id,

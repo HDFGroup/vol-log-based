@@ -388,13 +388,13 @@ fn_exit:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
-							   hid_t mem_type_id,
-							   hid_t mem_space_id,
-							   H5VL_log_selections *dsel,
-							   hid_t plist_id,
-							   const void *buf,
-							   void **req) {
-	herr_t err			= 0;
+								hid_t mem_type_id,
+								hid_t mem_space_id,
+								H5VL_log_selections *dsel,
+								hid_t plist_id,
+								const void *buf,
+								void **req) {
+	herr_t err = 0;
 	int i;
 	size_t esize;							 // Element size of the memory type
 	size_t ssize;							 // Size of a selection block
@@ -410,13 +410,13 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-			// Check mem space selection
-		if (mem_space_id == H5S_ALL)
-			mstype = H5S_SEL_ALL;
-		else if (mem_space_id == H5S_CONTIG)
-			mstype = H5S_SEL_ALL;
-		else
-			mstype = H5Sget_select_type (mem_space_id);
+	// Check mem space selection
+	if (mem_space_id == H5S_ALL)
+		mstype = H5S_SEL_ALL;
+	else if (mem_space_id == H5S_CONTIG)
+		mstype = H5S_SEL_ALL;
+	else
+		mstype = H5Sget_select_type (mem_space_id);
 
 	// Sanity check
 	if (dsel->nsel == 0) goto err_out;	// No elements selected
@@ -529,3 +529,111 @@ err_out:;
 
 	return err;
 } /* end H5VL_log_dataseti_write() */
+
+/*-------------------------------------------------------------------------
+ * Function:    H5VL_log_dataseti_read
+ *
+ * Purpose:     Reads data elements from a dataset into a buffer.
+ *
+ * Return:      Success:    0
+ *              Failure:    -1
+ *
+ *-------------------------------------------------------------------------
+ */
+herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
+							   hid_t mem_type_id,
+							   hid_t mem_space_id,
+							   H5VL_log_selections *dsel,
+							   hid_t plist_id,
+							   void *buf,
+							   void **req) {
+	herr_t err = 0;
+	int i, j;
+	int n;
+	size_t esize;
+	htri_t eqtype;
+	char *bufp = (char *)buf;
+	H5VL_log_rreq_t r;
+	H5S_sel_type stype, mstype;
+	H5VL_log_req_type_t rtype;
+	H5VL_log_dio_n_arg_t arg;
+	H5VL_log_req_t *rp;
+	void **ureqp, *ureq;
+	H5VL_LOGI_PROFILING_TIMER_START;
+
+	H5VL_LOGI_PROFILING_TIMER_START;
+	// Sanity check
+	if (stype == H5S_SEL_NONE) goto err_out;
+	if (!buf) ERR_OUT ("user buffer can't be NULL");
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_READ_INIT);
+
+	// Check mem space selection
+	if (mem_space_id == H5S_ALL)
+		mstype = H5S_SEL_ALL;
+	else if (mem_space_id == H5S_CONTIG)
+		mstype = H5S_SEL_ALL;
+	else
+		mstype = H5Sget_select_type (mem_space_id);
+
+	// Setting metadata;
+	r.info	  = &(dp->fp->dsets[dp->id]);
+	r.hdr.did = dp->id;
+	r.ndim	  = dp->ndim;
+	r.ubuf	  = (char *)buf;
+	r.ptype	  = MPI_DATATYPE_NULL;
+	r.dtype	  = -1;
+	r.mtype	  = -1;
+	r.esize	  = dp->esize;
+	r.rsize	  = 0;	// Nomber of elements in record
+	r.sels	  = dsel;
+
+	// Non-blocking?
+	err = H5Pget_nonblocking (plist_id, &rtype);
+	CHECK_ERR
+
+	// Need convert?
+	eqtype = H5Tequal (dp->dtype, mem_type_id);
+	CHECK_ID (eqtype);
+
+	// Can reuse user buffer
+	if (eqtype > 0 && mstype == H5S_SEL_ALL) {
+		r.xbuf = r.ubuf;
+	} else {  // Need internal buffer
+		// Get element size
+		esize = H5Tget_size (mem_type_id);
+		CHECK_ID (esize)
+
+		// HDF5 type conversion is in place, allocate for whatever larger
+		err = H5VL_log_filei_balloc (dp->fp, r.rsize * std::max (esize, (size_t) (dp->esize)),
+									 (void **)(&(r.xbuf)));
+		CHECK_ERR
+
+		// Need packing
+		if (mstype != H5S_SEL_ALL) {
+			H5VL_LOGI_PROFILING_TIMER_START;
+			err = H5VL_log_selections (mem_space_id).get_mpi_type (esize, &(r.ptype));
+			CHECK_ERR
+			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SEL_TYPE);
+		}
+
+		// Need convert
+		if (eqtype == 0) {
+			r.dtype = H5Tcopy (dp->dtype);
+			CHECK_ID (r.dtype)
+			r.mtype = H5Tcopy (mem_type_id);
+			CHECK_ID (r.mtype)
+		}
+	}
+
+	// Flush it immediately if blocking, otherwise place into queue
+	if (rtype != H5VL_LOG_REQ_NONBLOCKING) {
+		err = H5VL_log_nb_flush_read_reqs (dp->fp, std::vector<H5VL_log_rreq_t> (1, r), plist_id);
+		CHECK_ERR
+	} else {
+		dp->fp->rreqs.push_back (r);
+	}
+
+err_out:;
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_READ);
+	return err;
+} /* end H5VL_log_dataseti_read() */

@@ -29,6 +29,7 @@ typedef struct H5VL_log_dset_t : H5VL_log_obj_t, H5VL_log_dset_info_t {
 } H5VL_log_dset_t;
 
 extern int H5Dwrite_n_op_val;
+extern int H5Dread_n_op_val;
 
 void *H5VL_log_dataset_create (void *obj,
 							   const H5VL_loc_params_t *loc_params,

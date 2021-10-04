@@ -58,13 +58,13 @@ typedef enum H5VL_log_sel_encoding_t {
 	H5VL_LOG_ENCODING_CANONICAL = 1
 } H5VL_log_sel_encoding_t;
 
-typedef struct H5VL_log_dwrite_n_arg_t {
+typedef struct H5VL_log_dio_n_arg_t {
 	hid_t mem_type_id;
 	int n;
 	hsize_t **starts;
 	hsize_t **counts;
 	void *buf;
-} H5VL_log_dwrite_n_arg_t;
+} H5VL_log_dio_n_arg_t;
 
 typedef enum H5VL_log_data_layout_t {
 	H5VL_LOG_DATA_LAYOUT_CONTIG		   = 0,	 // Default
@@ -88,6 +88,13 @@ herr_t H5Dwrite_n (hid_t did,
 				   hsize_t **counts,
 				   hid_t dxplid,
 				   void *buf);
+herr_t H5Dread_n (hid_t did,
+				  hid_t mem_type_id,
+				  int n,
+				  hsize_t **starts,
+				  hsize_t **counts,
+				  hid_t dxplid,
+				  void *buf);
 
 // Helper functions
 herr_t H5Pset_nonblocking (hid_t plist, H5VL_log_req_type_t nonblocking);
