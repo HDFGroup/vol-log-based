@@ -132,10 +132,14 @@ void *H5VL_log_file_create (
 
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
-	CHECK_ID (under_fapl_id)
-	H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
-	H5Pset_all_coll_metadata_ops (under_fapl_id, (hbool_t) false);
-	H5Pset_coll_metadata_write (under_fapl_id, (hbool_t) true);
+	err			  = H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
+	CHECK_ERR
+	err = H5Pset_all_coll_metadata_ops (under_fapl_id, (hbool_t) false);
+	CHECK_ERR
+	err = H5Pset_coll_metadata_write (under_fapl_id, (hbool_t) true);
+	CHECK_ERR
+	err = H5Pset_alignment (under_fapl_id, 4096, 4096);
+	CHECK_ERR
 	H5VL_LOGI_PROFILING_TIMER_START;
 	fp->uo = H5VLfile_create (name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL);
 	CHECK_PTR (fp->uo)
@@ -320,7 +324,14 @@ void *H5VL_log_file_open (
 
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);
-	H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
+	err			  = H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
+	CHECK_ERR
+	err = H5Pset_all_coll_metadata_ops (under_fapl_id, (hbool_t) false);
+	CHECK_ERR
+	err = H5Pset_coll_metadata_write (under_fapl_id, (hbool_t) true);
+	CHECK_ERR
+	err = H5Pset_alignment (under_fapl_id, 4096, 4096);
+	CHECK_ERR
 	H5VL_LOGI_PROFILING_TIMER_START;
 	fp->uo = H5VLfile_open (name, flags, under_fapl_id, dxpl_id, NULL);
 	CHECK_PTR (fp->uo)
