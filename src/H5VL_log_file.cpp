@@ -82,6 +82,7 @@ void *H5VL_log_file_create (
 	}
 #endif
 
+	H5VL_LOGI_PROFILING_TIMER_START;
 	// Try get info about under VOL
 	H5Pget_vol_info (fapl_id, (void **)&info);
 
@@ -129,8 +130,10 @@ void *H5VL_log_file_create (
 	CHECK_ERR
 	err = H5VL_log_filei_parse_fcpl (fp, fcpl_id);
 	CHECK_ERR
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_INIT);
 
 	// Create the file with underlying VOL
+	H5VL_LOGI_PROFILING_TIMER_START;
 	under_fapl_id = H5Pcopy (fapl_id);
 	err			  = H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
 	CHECK_ERR
@@ -144,15 +147,20 @@ void *H5VL_log_file_create (
 	fp->uo = H5VLfile_create (name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL);
 	CHECK_PTR (fp->uo)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
-	
+	H5Pclose (under_fapl_id);
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
+
 	// Create LOG group
+	H5VL_LOGI_PROFILING_TIMER_START;
 	loc.obj_type = H5I_FILE;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
 	fp->lgp = H5VLgroup_create (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_LINK_CREATE_DEFAULT,
 								H5P_GROUP_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
 	CHECK_PTR (fp->lgp)
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
 
-	// Figure out lustre striping configuration
+	// Figure out lustre configuration
+	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
 		err = H5VL_log_filei_parse_strip_info (fp);
 		CHECK_ERR
@@ -166,18 +174,21 @@ void *H5VL_log_file_create (
 			}
 		}
 	}
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_STRIPE);
 
+	H5VL_LOGI_PROFILING_TIMER_START;
 	if ((fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) || (fp->config & H5VL_FILEI_CONFIG_SUBFILING)) {
 		err = H5VL_log_filei_calc_node_rank (fp);
 		CHECK_ERR
+	} else {
+		fp->group_rank = fp->rank;
+		fp->group_np   = fp->np;
+		fp->group_comm = fp->comm;
+		fp->group_id   = 0;
 	}
-	else{
-		fp->group_rank=fp->rank;
-		fp->group_np=fp->np;
-		fp->group_comm=fp->comm;
-		fp->group_id=0;
-	}
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP_RANK);
 
+	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
 		// Aligned write not supported in subfiles
 		fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
@@ -187,6 +198,7 @@ void *H5VL_log_file_create (
 	} else {
 		fp->sfp = NULL;
 	}
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_SUBFILE);
 
 	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
 		fp->fd = open (name, O_RDWR);
@@ -196,12 +208,14 @@ void *H5VL_log_file_create (
 	}
 
 	// Open the file with MPI
+	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
 		mpierr =
 			MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, mpiinfo, &(fp->fh));
 	} else {
 		mpierr = MPI_File_open (fp->comm, name, MPI_MODE_RDWR, mpiinfo, &(fp->fh));
 	}
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FH);
 	CHECK_MPIERR
 
 	// Att
@@ -356,9 +370,9 @@ void *H5VL_log_file_open (
 	fp->config = attbuf[3];
 	fp->idx.resize (fp->ndset);
 	fp->mreqs.resize (fp->ndset);
-	fp->group_rank=fp->rank;
-	fp->group_comm=fp->comm;
-	fp->group_id=0;
+	fp->group_rank = fp->rank;
+	fp->group_comm = fp->comm;
+	fp->group_id   = 0;
 
 	// Fapl property can overwrite config in file, parse after loading config
 	err = H5VL_log_filei_parse_fapl (fp, fapl_id);

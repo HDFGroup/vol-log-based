@@ -1,4 +1,11 @@
 define(`H5VL_LOG_TIMERS', `( `H5VL_log_file_create', dnl
+                            `H5VL_log_file_create_init', dnl
+                            `H5VL_log_file_create_file', dnl
+                            `H5VL_log_file_create_group', dnl
+                            `H5VL_log_file_create_fh', dnl
+                            `H5VL_log_file_create_stripe', dnl
+                            `H5VL_log_file_create_group_rank', dnl
+                            `H5VL_log_file_create_subfile', dnl
                             `H5VL_log_file_open', dnl
                             `H5VL_log_file_get', dnl
                             `H5VL_log_file_specific', dnl
