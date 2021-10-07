@@ -45,7 +45,7 @@ void *H5VL_log_file_create (
 	H5VL_log_info_t *info = NULL;
 	H5VL_log_file_t *fp	  = NULL;
 	H5VL_loc_params_t loc;
-	hid_t uvlid, under_fapl_id;
+	hid_t uvlid, under_fapl_id = -1;
 	void *under_vol_info;
 	MPI_Comm comm	 = MPI_COMM_WORLD;
 	MPI_Info mpiinfo = MPI_INFO_NULL;
@@ -147,7 +147,6 @@ void *H5VL_log_file_create (
 	fp->uo = H5VLfile_create (name, flags, fcpl_id, under_fapl_id, dxpl_id, NULL);
 	CHECK_PTR (fp->uo)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
-	H5Pclose (under_fapl_id);
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
 
 	// Create LOG group
@@ -241,7 +240,7 @@ fn_exit:;
 	if (comm != MPI_COMM_WORLD) { MPI_Comm_free (&comm); }
 	if (mpiinfo != MPI_INFO_NULL) { MPI_Info_free (&mpiinfo); }
 	if (info) { free (info); }
-	H5Pclose (under_fapl_id);
+	if (under_fapl_id >= 0) { H5Pclose (under_fapl_id); }
 
 	return (void *)fp;
 } /* end H5VL_log_file_create() */
@@ -263,7 +262,7 @@ void *H5VL_log_file_open (
 	H5VL_log_info_t *info = NULL;
 	H5VL_log_file_t *fp	  = NULL;
 	H5VL_loc_params_t loc;
-	hid_t uvlid, under_fapl_id;
+	hid_t uvlid, under_fapl_id = -1;
 	void *under_vol_info;
 	MPI_Comm comm;
 	MPI_Info mpiinfo = MPI_INFO_NULL;
@@ -350,7 +349,6 @@ void *H5VL_log_file_open (
 	fp->uo = H5VLfile_open (name, flags, under_fapl_id, dxpl_id, NULL);
 	CHECK_PTR (fp->uo)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_OPEN);
-	H5Pclose (under_fapl_id);
 
 	// Create LOG group
 	loc.obj_type = H5I_FILE;
@@ -392,7 +390,7 @@ fn_exit:;
 	if (comm != MPI_COMM_WORLD) { MPI_Comm_free (&comm); }
 	if (mpiinfo != MPI_INFO_NULL) { MPI_Info_free (&mpiinfo); }
 	if (info) { free (info); }
-
+	if (under_fapl_id >= 0) { H5Pclose (under_fapl_id); }
 	return (void *)fp;
 } /* end H5VL_log_file_open() */
 
