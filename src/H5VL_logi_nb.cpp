@@ -53,7 +53,7 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 	} else {
 		mbsize += sizeof (MPI_Offset) * (dp->ndim * nsel * 2);
 	}
-	this->meta_buf = (char *)malloc (mbsize);
+	this->meta_buf = dp->fp->meta_buf->reserve(mbsize);
 	CHECK_PTR (this->meta_buf)
 
 	// Fill up the header
@@ -93,7 +93,7 @@ err_out:;
 }
 
 H5VL_log_wreq_t::~H5VL_log_wreq_t () {
-	if (meta_buf) { free (meta_buf); }
+	//if (meta_buf) { free (meta_buf); }
 }
 
 H5VL_log_merged_wreq_t::H5VL_log_merged_wreq_t () {

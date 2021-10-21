@@ -124,12 +124,12 @@ void *H5VL_log_file_create (
 	CHECK_ERR
 	// err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
 	// CHECK_ERR
-	err = H5VL_log_filei_contig_buffer_init (&(fp->meta_buf), 2097152);	 // 200 MiB
-	CHECK_ERR
 	err = H5VL_log_filei_parse_fapl (fp, fapl_id);
 	CHECK_ERR
 	err = H5VL_log_filei_parse_fcpl (fp, fcpl_id);
 	CHECK_ERR
+	fp->meta_buf = new H5VL_logi_buffer();
+	CHECK_PTR(fp->meta_buf)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_INIT);
 
 	// Create the file with underlying VOL
@@ -330,8 +330,8 @@ void *H5VL_log_file_open (
 	CHECK_ERR
 	// err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
 	// CHECK_ERR
-	err = H5VL_log_filei_contig_buffer_init (&(fp->meta_buf), 2097152);	 // 200 MiB
-	CHECK_ERR
+	fp->meta_buf = new H5VL_logi_buffer();
+	CHECK_PTR(fp->meta_buf)
 
 	// Create the file with underlying VOL
 	under_fapl_id = H5Pcopy (fapl_id);

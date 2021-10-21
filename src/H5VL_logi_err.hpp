@@ -5,6 +5,7 @@
 #endif
 
 #include <H5Epublic.h>
+#include <cassert>
 
 #ifdef LOGVOL_DEBUG
 #include <cstdlib>
