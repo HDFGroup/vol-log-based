@@ -191,8 +191,6 @@ herr_t h5replay_idx_t::insert (H5VL_logi_metablock_t &meta) {
 	meta_block block;
 
 	block.dsize = meta.dsize;
-	block.foff	= meta.foff;
-	block.fsize = meta.fsize;
 	block.hdr	= meta.hdr;
 	block.sels	= meta.sels;
 	this->entries.push_back (block);

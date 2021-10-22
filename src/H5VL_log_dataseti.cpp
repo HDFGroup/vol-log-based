@@ -517,7 +517,7 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 		err = dp->fp->mreqs[dp->id]->append (dp, db, dsel);
 		CHECK_ERR
 	} else {
-		r->rsize = db.size;
+		r->hdr->fsize = db.size;
 		r->dbufs.push_back (db);
 		dp->fp->wreqs.push_back (r);
 	}

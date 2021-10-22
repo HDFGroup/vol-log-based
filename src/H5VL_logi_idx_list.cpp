@@ -57,8 +57,8 @@ herr_t H5VL_logi_array_idx_t::search (H5VL_log_rreq_t *req,
 						cur.count[j]  = oc[j];
 					}
 					cur.info  = req->info;
-					cur.foff  = ent.foff;
-					cur.fsize = ent.fsize;
+					cur.foff  = ent.hdr.foff;
+					cur.fsize = ent.hdr.fsize;
 					cur.doff  = msel.doff;
 					cur.xsize = ent.dsize;
 					cur.xbuf  = req->xbuf + soff;

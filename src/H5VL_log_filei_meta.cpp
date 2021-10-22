@@ -94,10 +94,6 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 		// Update file offset and size of the data block unknown when the request was posted
 		ptr					 = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
-		*((MPI_Offset *)ptr) = rp->ldoff;  // file offset
-		ptr += sizeof (MPI_Offset);
-		*((MPI_Offset *)ptr) = rp->rsize;  // file size
-		ptr += sizeof (MPI_Offset);
 		if (rp->hdr->flag & H5VL_LOGI_META_FLAG_MUL_SEL) {	// # selections
 			*((int *)ptr) = rp->nsel;
 			// nsel can be overwritten if transformed into referenced entry, do not avdance the
@@ -115,12 +111,12 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
 		mdsize = 0;
 		for (auto &rp : fp->wreqs) {
-			if (rp->hdr->meta_size > sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2) {
-				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2;
+			if (rp->hdr->meta_size > sizeof (H5VL_logi_meta_hdr)) {
+				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
 
 				auto t = std::pair<void *, size_t> (
 					(void *)ptr,
-					rp->hdr->meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2);
+					rp->hdr->meta_size - sizeof (H5VL_logi_meta_hdr));
 
 				if (meta_ref.find (t) == meta_ref.end ()) {
 					meta_ref[t] = rp;
@@ -128,7 +124,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 					rp->hdr->flag |= H5VL_LOGI_META_FLAG_SEL_REF;
 					rp->hdr->flag &= ~(H5VL_LOGI_META_FLAG_SEL_DEFLATE);  // Remove compression flag
 					rp->hdr->meta_size = sizeof (H5VL_logi_meta_hdr) +
-										 sizeof (MPI_Offset) * 3;  // Recalculate metadata size
+										 sizeof (MPI_Offset);  // Recalculate metadata size
 					// We write the address of reference targe temporarily into the reference offset
 					// It will be replaced once the offset of the reference target is known
 					// NOTE: This trick only works when sizeof(H5VL_log_wreq_t*) <=
@@ -160,18 +156,18 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	CHECK_PTR (zbuf)
 	for (auto &rp : fp->wreqs) {
 		if (rp->hdr->flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
-			inlen = rp->hdr->meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (MPI_Offset) * 2 -
+			inlen = rp->hdr->meta_size - sizeof (H5VL_logi_meta_hdr) -
 					sizeof (int);
 			clen = zbsize;
 			err	 = H5VL_log_zip_compress (
-				 rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2 + sizeof (int),
+				 rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (int),
 				 inlen, zbuf, &clen);
 			if ((err == 0) && (clen < inlen)) {
-				memcpy (rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2 +
+				memcpy (rp->meta_buf + sizeof (H5VL_logi_meta_hdr) +
 							sizeof (int),
 						zbuf, clen);
 				rp->hdr->meta_size =
-					sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2 + sizeof (int) + clen;
+					sizeof (H5VL_logi_meta_hdr) + sizeof (int) + clen;
 			} else {
 				// Compressed size larger, abort compression
 				rp->hdr->flag &= ~(H5VL_FILEI_CONFIG_SEL_DEFLATE);
@@ -192,7 +188,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
 		for (auto &rp : fp->wreqs) {
 			if (rp->hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (MPI_Offset) * 2;
+				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
 				H5VL_log_wreq_t *t = *((H5VL_log_wreq_t **)ptr);
 				// Replace with the file offset of the reference metadata entry related to this
 				// entry, the result should be negative (looking in previous records)

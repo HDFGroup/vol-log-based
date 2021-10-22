@@ -35,11 +35,6 @@ class H5VL_log_wreq_t {
 	int nsel;
 	// size_t meta_size;
 
-	int ldid;		   // Log dataset ID
-	MPI_Offset ldoff;  // Offset in log dataset
-
-	size_t rsize;  // Size of data in xbuf (bytes)
-
 	MPI_Offset
 		meta_off;  // Offset of the metadata related to the starting metadata block of the process
 

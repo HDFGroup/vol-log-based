@@ -14,9 +14,11 @@
 #define H5VL_LOGI_META_FLAG_SEL_DEFLATE 0x08
 
 typedef struct H5VL_logi_meta_hdr {
-	int meta_size;	// Size of the metadata entry
-	int did;		// Target dataset ID
-	int flag;
+	int meta_size;	   // Size of the metadata entry
+	int did;		   // Target dataset ID
+	int flag;		   // Flag for other metadata, format, vertion ... etc
+	MPI_Offset foff;   // File offset of the data
+	MPI_Offset fsize;  // Size of the data in file
 } H5VL_logi_meta_hdr;
 
 typedef struct H5VL_logi_metasel_t {
@@ -28,8 +30,6 @@ typedef struct H5VL_logi_metasel_t {
 typedef struct H5VL_logi_metablock_t {
 	H5VL_logi_meta_hdr hdr;
 	std::vector<H5VL_logi_metasel_t> sels;
-	MPI_Offset foff;
-	size_t fsize;
 	size_t dsize;
 } H5VL_logi_metablock_t;
 
@@ -63,10 +63,9 @@ inline MPI_Offset H5VL_logi_get_metaentry_size (int ndim, H5VL_logi_meta_hdr &hd
 		size += sizeof (int);  // N
 	}
 	if (hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-		size += sizeof (MPI_Offset) * (ndim - 1 + nsel * 2) + sizeof (MPI_Offset) * 2;
+		size += sizeof (MPI_Offset) * (ndim - 1 + nsel * 2);
 	} else {
-		size += sizeof (MPI_Offset) * ((MPI_Offset)ndim * (MPI_Offset)nsel * 2) +
-				sizeof (MPI_Offset) * 2;
+		size += sizeof (MPI_Offset) * ((MPI_Offset)ndim * (MPI_Offset)nsel * 2);
 	}
 
 	return size;

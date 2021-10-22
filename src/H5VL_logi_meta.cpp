@@ -28,9 +28,9 @@ herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
 	bufp += sizeof (H5VL_logi_meta_hdr);
 	// Data location and size in the file
-	block.foff = *((MPI_Offset *)bufp);
+	block.hdr.foff = *((MPI_Offset *)bufp);
 	bufp += sizeof (MPI_Offset);
-	block.fsize = *((MPI_Offset *)bufp);
+	block.hdr.fsize = *((MPI_Offset *)bufp);
 	bufp += sizeof (MPI_Offset);
 
 	// Get referenced selections
@@ -47,8 +47,8 @@ herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 	// Calculate the unfiltered size of the data block
 	// Data size = data offset of the last block + size of the alst block
 	block.dsize = dset.esize;
-	for (i = 0; i < dset.ndim; i++) { block.dsize *= block.sels[sels.size() - 1].count[i]; }
-	block.dsize += block.sels[sels.size() - 1].doff;
+	for (i = 0; i < dset.ndim; i++) { block.dsize *= block.sels[sels.size () - 1].count[i]; }
+	block.dsize += block.sels[sels.size () - 1].doff;
 
 err_out:;
 	return err;
@@ -70,9 +70,9 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
 	bufp += sizeof (H5VL_logi_meta_hdr);
 	// Data location and size in the file
-	block.foff = *((MPI_Offset *)bufp);
+	block.hdr.foff = *((MPI_Offset *)bufp);
 	bufp += sizeof (MPI_Offset);
-	block.fsize = *((MPI_Offset *)bufp);
+	block.hdr.fsize = *((MPI_Offset *)bufp);
 	bufp += sizeof (MPI_Offset);
 
 	// If there is more than 1 selection
@@ -115,8 +115,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 			zbufalloc = true;
 
 			// Decompress the metadata
-			inlen = block.hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (int) -
-					sizeof (MPI_Offset) * 2;
+			inlen = block.hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (int);
 			clen = bsize;
 			err	 = H5VL_log_zip_decompress (bufp, inlen, zbuf, &clen);
 			CHECK_ERR

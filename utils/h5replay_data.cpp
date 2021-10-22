@@ -59,14 +59,14 @@ herr_t h5replay_read_data (MPI_File fin,
 			}
 			if (zbsize < bsize) { zbsize = bsize; }
 			// Comrpessed size can be larger
-			if (bsize < req.fsize) { bsize = req.fsize; }
+			if (bsize < req.hdr.fsize) { bsize = req.hdr.fsize; }
 			// Allocate buffer
 			buf = (char *)malloc (bsize);
 			assert (buf != NULL);
 			for (j = 0; j < req.sels.size (); j++) { req.bufs[j] = buf + (size_t)req.bufs[j]; }
 
 			// Record off and len for mpi type
-			idxs.push_back ({req.foff, (MPI_Aint)req.bufs[0], (int)req.fsize});
+			idxs.push_back ({req.hdr.foff, (MPI_Aint)req.bufs[0], (int)req.hdr.fsize});
 		}
 	}
 	// zbuf = (char *)malloc (zbsize);
@@ -101,7 +101,7 @@ herr_t h5replay_read_data (MPI_File fin,
 				char *buf = NULL;
 				int csize = 0;
 
-				err = H5VL_logi_unfilter (dsets[req.hdr.did].filters, req.bufs[0], req.fsize,
+				err = H5VL_logi_unfilter (dsets[req.hdr.did].filters, req.bufs[0], req.hdr.fsize,
 										  (void **)&buf, &csize);
 				CHECK_ERR
 
