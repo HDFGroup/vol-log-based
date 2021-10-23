@@ -513,7 +513,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) { close (fp->fd); }
 
 	// Free the metadata buffer
-	delete fp->meta_buf;
+	H5VL_log_filei_contig_buffer_free (&(fp->meta_buf));
 
 	// Close contig dataspacce ID
 	H5VL_log_dataspace_contig_ref--;

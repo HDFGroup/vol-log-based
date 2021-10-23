@@ -287,6 +287,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 								  H5T_STD_B8LE, mdsid, H5P_DATASET_CREATE_DEFAULT,
 								  H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
 		CHECK_PTR (mdp);
+		fp->nmdset++;
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 
 		// Get metadata dataset file offset
@@ -307,14 +308,13 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		err = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 1, mmtype, &stat);
 		CHECK_MPIERR
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
-	}
 
-	H5VL_LOGI_PROFILING_TIMER_START;
-	// This barrier is required to ensure no process read metadata before everyone finishes
-	// writing
-	MPI_Barrier (fp->comm);
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_BARRIER);
-	fp->nmdset++;
+		H5VL_LOGI_PROFILING_TIMER_START;
+		// This barrier is required to ensure no process read metadata before everyone finishes
+		// writing
+		MPI_Barrier (MPI_COMM_WORLD);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_BARRIER);
+	}
 
 	// Update status
 	fp->idxvalid  = false;
@@ -322,7 +322,6 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 	for (auto &rp : fp->wreqs) { delete rp; }
 	fp->wreqs.clear();
-	fp->meta_buf->reset();
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
 err_out:
 	// Cleanup
