@@ -59,150 +59,22 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 #endif
 	char *ptr;
 	char mdname[32];						  // Name of metadata dataset
-	int clen, inlen;						  // Compressed size; Size of data to be compressed
 	void *mdp;								  // under VOL object of the metadata dataset
 	hid_t mdsid = -1;						  // metadata dataset data space ID
 	hsize_t dsize;							  // Size of the metadata dataset = mdsize_all
-	MPI_Offset seloff, soff, eoff;			  // Temp variable for encoding start and end
 	haddr_t mdoff;							  // File offset of the metadata dataset
 	MPI_Datatype mmtype = MPI_DATATYPE_NULL;  // Memory datatype for writing the metadata
-	MPI_Status stat;
-	std::vector<std::array<MPI_Offset, H5S_MAX_RANK>> dsteps (fp->ndset);
-	std::unordered_map<std::pair<void *, size_t>, H5VL_log_wreq_t *, hash_pair, equal_pair>
-		meta_ref;	  // Hash table
-	MPI_Comm ldcomm;  // Communicator to create data dataset
-	void *ldloc;	  // Location to create data dataset (main file | subfile)
+	MPI_Status stat;						  // Status of MPI I/O
+	MPI_Comm ldcomm;						  // Communicator to create data dataset
+	void *ldloc;  // Location to create data dataset (main file | subfile)
 	H5VL_loc_params_t loc;
-#ifdef LOGVOL_PROFILING
-	int repeats = 0;
-#endif
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-	H5VL_LOGI_PROFILING_TIMER_START;
-
-	// Count the number of metadata blocks
-	for (auto &rp : fp->wreqs) {
-#ifdef ENABLE_ZLIB
-		// metadata compression buffer size
-		if (zbsize < rp->hdr->meta_size) { zbsize = rp->hdr->meta_size; }
-#endif
-		// Calculate total metadata size
-		rp->meta_off = mdsize;
-		mdsize += rp->hdr->meta_size;
-		nentry++;
-
-		// Update file offset and size of the data block unknown when the request was posted
-		ptr					 = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
-		if (rp->hdr->flag & H5VL_LOGI_META_FLAG_MUL_SEL) {	// # selections
-			*((int *)ptr) = rp->nsel;
-			// nsel can be overwritten if transformed into referenced entry, do not avdance the
-			// pointer ptr += sizeof (int);
-		}
-	}
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_INIT);
-
-#ifdef LOGVOL_PROFILING
-	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE, (double)(mdsize) / 1048576);
-#endif
-
-	H5VL_LOGI_PROFILING_TIMER_START;
-	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
-		mdsize = 0;
-		for (auto &rp : fp->wreqs) {
-			if (rp->hdr->meta_size > sizeof (H5VL_logi_meta_hdr)) {
-				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
-
-				auto t = std::pair<void *, size_t> (
-					(void *)ptr,
-					rp->hdr->meta_size - sizeof (H5VL_logi_meta_hdr));
-
-				if (meta_ref.find (t) == meta_ref.end ()) {
-					meta_ref[t] = rp;
-				} else {
-					rp->hdr->flag |= H5VL_LOGI_META_FLAG_SEL_REF;
-					rp->hdr->flag &= ~(H5VL_LOGI_META_FLAG_SEL_DEFLATE);  // Remove compression flag
-					rp->hdr->meta_size = sizeof (H5VL_logi_meta_hdr) +
-										 sizeof (MPI_Offset);  // Recalculate metadata size
-					// We write the address of reference targe temporarily into the reference offset
-					// It will be replaced once the offset of the reference target is known
-					// NOTE: This trick only works when sizeof(H5VL_log_wreq_t*) <=
-					// sizeof(MPI_Offset)
-					*((H5VL_log_wreq_t **)ptr) = meta_ref[t];
-#ifdef LOGVOL_PROFILING
-					repeats++;
-#endif
-				}
-
-				mdsize += rp->hdr->meta_size;
-			}
-		}
-	}
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_HASH);
-
-#ifdef LOGVOL_PROFILING
-	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE_DEDUP,
-							   (double)(mdsize) / 1048576);
-	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_REPEAT_COUNT, (double)(repeats));
-#endif
-
-#ifdef ENABLE_ZLIB
-	H5VL_LOGI_PROFILING_TIMER_START;
-	// Recount mdsize after compression
-	mdsize = 0;
-	// Compress metadata
-	zbuf = (char *)malloc (zbsize);
-	CHECK_PTR (zbuf)
-	for (auto &rp : fp->wreqs) {
-		if (rp->hdr->flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
-			inlen = rp->hdr->meta_size - sizeof (H5VL_logi_meta_hdr) -
-					sizeof (int);
-			clen = zbsize;
-			err	 = H5VL_log_zip_compress (
-				 rp->meta_buf + sizeof (H5VL_logi_meta_hdr) + sizeof (int),
-				 inlen, zbuf, &clen);
-			if ((err == 0) && (clen < inlen)) {
-				memcpy (rp->meta_buf + sizeof (H5VL_logi_meta_hdr) +
-							sizeof (int),
-						zbuf, clen);
-				rp->hdr->meta_size =
-					sizeof (H5VL_logi_meta_hdr) + sizeof (int) + clen;
-			} else {
-				// Compressed size larger, abort compression
-				rp->hdr->flag &= ~(H5VL_FILEI_CONFIG_SEL_DEFLATE);
-			}
-		}
-		rp->meta_off = mdsize;
-		mdsize += rp->hdr->meta_size;
-	}
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_ZIP);
-#ifdef LOGVOL_PROFILING
-	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_SIZE_ZIP,
-							   (double)(mdsize) / 1048576);
-#endif
-#endif
-
-	H5VL_LOGI_PROFILING_TIMER_START;
-	// Fill up all metadata reference once the offset of refered entries is known
-	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
-		for (auto &rp : fp->wreqs) {
-			if (rp->hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-				ptr = rp->meta_buf + sizeof (H5VL_logi_meta_hdr);
-				H5VL_log_wreq_t *t = *((H5VL_log_wreq_t **)ptr);
-				// Replace with the file offset of the reference metadata entry related to this
-				// entry, the result should be negative (looking in previous records)
-				*((MPI_Offset *)ptr) = t->meta_off - rp->meta_off;
-			}
-		}
-	}
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_PACK);
-
-	// Write metadata to file
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Create memory datatype
+	nentry = fp->wreqs.size ();
 	if (fp->group_rank == 0) { nentry++; }
 	offs = (MPI_Aint *)malloc (sizeof (MPI_Aint) * nentry);
 	lens = (int *)malloc (sizeof (int) * nentry);
@@ -231,7 +103,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	mpierr = MPI_Type_commit (&mmtype);
 	CHECK_MPIERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp,
-									TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);	// Part of writing
+									TIMER_H5VL_LOG_FILEI_METAFLUSH_PACK);  // Part of writing
 
 	// Sync metadata size
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -320,8 +192,17 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	fp->idxvalid  = false;
 	fp->metadirty = false;
 
+	// Delete requests
 	for (auto &rp : fp->wreqs) { delete rp; }
-	fp->wreqs.clear();
+	fp->wreqs.clear ();
+	// Recore metadata size
+#ifdef LOGVOL_PROFILING
+	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METASIZE, (double)(fp->mdsize) / 1048576);
+#endif
+	fp->mdsize = 0;
+	// Record dedup hash
+	fp->wreq_hash.clear ();
+
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
 err_out:
 	// Cleanup

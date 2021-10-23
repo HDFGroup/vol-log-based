@@ -512,12 +512,12 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	// Close the file with posix
 	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) { close (fp->fd); }
 
-	// Free the metadata buffer
-	H5VL_log_filei_contig_buffer_free (&(fp->meta_buf));
-
 	// Close contig dataspacce ID
 	H5VL_log_dataspace_contig_ref--;
 	if (H5VL_log_dataspace_contig_ref == 0) { H5Sclose (H5VL_log_dataspace_contig); }
+
+	// Free compression buffer
+	free(fp->zbuf);
 
 	// Close the file with under VOL
 	H5VL_LOGI_PROFILING_TIMER_START;

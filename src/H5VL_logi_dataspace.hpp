@@ -27,7 +27,7 @@ class H5VL_log_selections {
 	herr_t get_mpi_type (hsize_t *hsize, size_t esize, MPI_Datatype *type);
 	hsize_t get_sel_size ();
 	hsize_t get_sel_size (int i);
-	void encode (MPI_Offset *dsteps, char *mbuf);
+	void encode (char *mbuf, MPI_Offset *dsteps = NULL, int dimoff = 0);
 
    private:
 	hsize_t *sels_arr = NULL;  // Allocated starts and counts array, if present, need free

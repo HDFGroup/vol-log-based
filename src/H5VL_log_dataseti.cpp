@@ -396,16 +396,18 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 								void **req) {
 	herr_t err = 0;
 	int i;
-	size_t esize;							 // Element size of the memory type
-	size_t ssize;							 // Size of a selection block
-	H5VL_log_wreq_t *r;						 // Request obj
-	H5VL_log_req_data_block_t db;			 // Request data
-	htri_t eqtype;							 // user buffer type equals dataset type?
-	H5S_sel_type stype;						 // Dataset sselection type
-	H5S_sel_type mstype;					 // Memory space selection type
-	H5VL_log_req_type_t rtype;				 // Whether req is nonblocking
+	size_t esize;				   // Element size of the memory type
+	size_t ssize;				   // Size of a selection block
+	size_t selsize;				   // Size of metadata selection after deduplication and compression
+	H5VL_log_wreq_t *r;			   // Request obj
+	H5VL_log_req_data_block_t db;  // Request data
+	htri_t eqtype;				   // user buffer type equals dataset type?
+	H5S_sel_type stype;			   // Dataset sselection type
+	H5S_sel_type mstype;		   // Memory space selection type
+	H5VL_log_req_type_t rtype;	   // Whether req is nonblocking
 	MPI_Datatype ptype = MPI_DATATYPE_NULL;	 // Packing type for non-contiguous memory buffer
 	H5VL_log_req_t *rp;						 // Request obj
+	int clen, inlen;						 // Compressed size; Size of data to be compressed
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -429,9 +431,77 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 		db.ubuf = (char *)buf;
 		db.size = dsel->get_sel_size ();  // Number of data elements in the record
 
-		r = new H5VL_log_wreq_t (dp, dsel);
+		r		= new H5VL_log_wreq_t (dp, dsel);
+		selsize = r->hdr->meta_size - (r->sel_buf - r->meta_buf);
 
 		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_ENCODE);
+
+#ifdef LOGVOL_PROFILING
+		H5VL_log_profile_add_time (dp->fp, TIMER_H5VL_LOG_FILEI_METASIZE_RAW,
+								   (double)(r->hdr->meta_size) / 1048576);
+#endif
+		// Deduplication
+		H5VL_LOGI_PROFILING_TIMER_START;
+		if (selsize > sizeof (MPI_Offset)) {  // If selection larger than reference
+			auto ret = dp->fp->wreq_hash.find (*r);
+			if (ret == dp->fp->wreq_hash.end ()) {
+				dp->fp->wreq_hash[*r] = r;
+			} else {
+				r->hdr->flag |= H5VL_LOGI_META_FLAG_SEL_REF;
+				r->hdr->flag &= ~(H5VL_LOGI_META_FLAG_SEL_DEFLATE);	 // Remove compression flag
+				if (r->hdr->flag & H5VL_LOGI_META_FLAG_REC) {
+					// If same record, we can remove the record field and make it a full reference
+					if (*((MPI_Offset *)(r->hdr + 1)) == *((MPI_Offset *)(ret->second->hdr + 1))) {
+						r->sel_buf -= sizeof (MPI_Offset);
+					}
+				}
+				*((MPI_Offset *)(r->sel_buf)) =
+					ret->second->meta_off - dp->fp->mdsize;	 // Record the relative offset
+				selsize = sizeof (MPI_Offset);				 // New metadata size
+#ifdef LOGVOL_PROFILING
+				// Count size saved by duplication
+				H5VL_log_profile_add_time (dp->fp, TIMER_H5VL_LOG_FILEI_METASIZE_DEDUP,
+										   (double)(r->sel_buf - r->meta_buf + selsize) / 1048576);
+#endif
+			}
+		}
+		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_META_DEDUP);
+
+		// Compress metadata
+#ifdef ENABLE_ZLIB
+		H5VL_LOGI_PROFILING_TIMER_START;
+
+		if (r->hdr->flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
+			// Enlarge zip buffer if needed
+			if (dp->fp->zbsize < selsize) {
+				dp->fp->zbsize = selsize;
+				dp->fp->zbuf   = (char *)realloc (dp->fp->zbuf, dp->fp->zbsize);
+				CHECK_PTR (dp->fp->zbuf)
+			}
+			// Compress selections
+			inlen = selsize;
+			clen  = dp->fp->zbsize;
+			err	  = H5VL_log_zip_compress (r->sel_buf, inlen, dp->fp->zbuf, &clen);
+			if ((err == 0) && (clen < inlen)) {
+				memcpy (r->sel_buf, dp->fp->zbuf, clen);
+				selsize = clen;	 // New metadata size
+#ifdef LOGVOL_PROFILING
+				// Count size saved by compression
+				H5VL_log_profile_add_time (dp->fp, TIMER_H5VL_LOG_FILEI_METASIZE_ZIP,
+										   (double)(r->sel_buf - r->meta_buf + selsize) / 1048576);
+#endif
+			} else {
+				// Compressed size larger, abort compression
+				r->hdr->flag &= ~(H5VL_FILEI_CONFIG_SEL_DEFLATE);
+			}
+		}
+		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_META_ZIP);
+#endif
+
+		// Resize metadata buffer
+		if (r->hdr->meta_size > r->sel_buf - r->meta_buf + selsize) {
+			r->resize (r->sel_buf - r->meta_buf + selsize);
+		}
 	}
 
 	// Non-blocking?
@@ -519,7 +589,10 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 	} else {
 		r->hdr->fsize = db.size;
 		r->dbufs.push_back (db);
+		// Append to request list
 		dp->fp->wreqs.push_back (r);
+		// Update total metadata size in wreqs
+		dp->fp->mdsize += r->hdr->meta_size;
 	}
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_FINALIZE);
 

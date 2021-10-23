@@ -534,27 +534,29 @@ hsize_t H5VL_log_selections::get_sel_size () {
 	return ret;
 }
 
-void H5VL_log_selections::encode (MPI_Offset *dsteps, char *mbuf) {
+void H5VL_log_selections::encode (char *mbuf, MPI_Offset *dsteps, int dimoff) {
 	int i;
 
 	if (starts) {
 		if (dsteps) {
 			for (i = 0; i < nsel; i++) {
-				H5VL_logi_sel_encode (ndim, dsteps, starts[i], (MPI_Offset *)mbuf);
+				H5VL_logi_sel_encode (ndim - dimoff, dsteps + dimoff, starts[i] + dimoff,
+									  (MPI_Offset *)mbuf);
 				mbuf += sizeof (MPI_Offset);
 			}
 			for (i = 0; i < nsel; i++) {
-				H5VL_logi_sel_encode (ndim, dsteps, counts[i], (MPI_Offset *)mbuf);
+				H5VL_logi_sel_encode (ndim - dimoff, dsteps + dimoff, counts[i] + dimoff,
+									  (MPI_Offset *)mbuf);
 				mbuf += sizeof (MPI_Offset);
 			}
 		} else {
 			for (i = 0; i < nsel; i++) {
-				memcpy (mbuf, starts[i], sizeof (hsize_t) * ndim);
-				mbuf += sizeof (hsize_t) * ndim;
+				memcpy (mbuf, starts[i] + dimoff, sizeof (hsize_t) * (ndim - dimoff));
+				mbuf += sizeof (hsize_t) * (ndim - dimoff);
 			}
 			for (i = 0; i < nsel; i++) {
-				memcpy (mbuf, counts[i], sizeof (hsize_t) * ndim);
-				mbuf += sizeof (hsize_t) * ndim;
+				memcpy (mbuf, counts[i] + dimoff, sizeof (hsize_t) * (ndim - dimoff));
+				mbuf += sizeof (hsize_t) * (ndim - dimoff);
 			}
 		}
 	}

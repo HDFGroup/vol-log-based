@@ -218,3 +218,32 @@ err_out:;
 
 	return err;
 }
+
+/*
+H5VL_logi_metacache::H5VL_logi_metacache(){
+
+}
+
+H5VL_logi_metacache::~H5VL_logi_metacache(){
+	clear();
+}
+
+int H5VL_logi_metacache::add(char *buf, size_t size) {
+	char *tmp;
+
+	tmp=malloc(size);
+	CHECK_PTR(tmp);
+	memcpy(tmp,buf,size);
+}
+
+int H5VL_logi_metacache::find(char *buf, size_t size) {
+	
+}
+
+void H5VL_logi_metacache::clear() {
+	for(auto &t:table){
+		free(t.first.first);
+	}
+	table.clear();
+}
+*/

@@ -112,6 +112,9 @@ void *H5VL_log_file_create (
 	fp->nmdset = 0;
 	fp->ndset  = 0;
 	fp->config = 0;
+	fp->mdsize = 0;
+	fp->zbsize = 0;
+	fp->zbuf   = NULL;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR
 	mpierr = MPI_Comm_rank (comm, &(fp->rank));
@@ -121,10 +124,6 @@ void *H5VL_log_file_create (
 	fp->dxplid = H5Pcopy (dxpl_id);
 	fp->name   = std::string (name);
 	err		   = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
-	CHECK_ERR
-	// err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
-	// CHECK_ERR
-	err = H5VL_log_filei_contig_buffer_init (&(fp->meta_buf), 2097152);	 // 200 MiB
 	CHECK_ERR
 	err = H5VL_log_filei_parse_fapl (fp, fapl_id);
 	CHECK_ERR
@@ -318,6 +317,9 @@ void *H5VL_log_file_open (
 	fp->fd	   = -1;
 	fp->sfp	   = NULL;
 	fp->lgp	   = NULL;
+	fp->mdsize = 0;
+	fp->zbsize = 0;
+	fp->zbuf   = NULL;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR
 	mpierr = MPI_Comm_rank (comm, &(fp->rank));
@@ -327,10 +329,6 @@ void *H5VL_log_file_open (
 	fp->dxplid = H5Pcopy (dxpl_id);
 	fp->name   = std::string (name);
 	err		   = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
-	CHECK_ERR
-	// err=H5VL_log_filei_pool_init(&(fp->data_buf),fp->bsize);
-	// CHECK_ERR
-	err = H5VL_log_filei_contig_buffer_init (&(fp->meta_buf), 2097152);	 // 200 MiB
 	CHECK_ERR
 
 	// Create the file with underlying VOL
@@ -496,6 +494,8 @@ herr_t H5VL_log_file_specific (void *file,
 			for (i = 0; i < fp->mreqs.size (); i++) {
 				if (fp->mreqs[i] && (fp->mreqs[i]->nsel > 0)) {
 					fp->wreqs.push_back (fp->mreqs[i]);
+					// Update total metadata size in wreqs
+					fp->mdsize += fp->mreqs[i]->hdr->meta_size;
 					fp->mreqs[i] = new H5VL_log_merged_wreq_t (fp, i, 1);
 				}
 			}

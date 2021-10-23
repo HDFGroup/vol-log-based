@@ -13,6 +13,7 @@
 #define H5VL_LOGI_META_FLAG_SEL_ENCODE	0x04
 #define H5VL_LOGI_META_FLAG_SEL_DEFLATE 0x08
 #define H5VL_LOGI_META_FLAG_SEL_REF		0x10
+#define H5VL_LOGI_META_FLAG_REC     	0x20
 
 typedef struct H5VL_log_req_data_block_t {
 	char *ubuf;	  // User buffer
@@ -31,18 +32,28 @@ class H5VL_log_wreq_t {
 
 	// H5VL_logi_meta_hdr *meta_hdr;
 	char *meta_buf = NULL;
-	// char *sel_buf = NULL;
+	char *sel_buf  = NULL;
 	int nsel;
 	// size_t meta_size;
 
-	MPI_Offset
-		meta_off;  // Offset of the metadata related to the starting metadata block of the process
+	MPI_Offset meta_off;  // Offset of the metadata related to the starting metadata block of the process
 
 	std::vector<H5VL_log_req_data_block_t> dbufs;  // Data buffers <xbuf, ubuf, size>
 
+	size_t operator() () const;
+	bool operator== (H5VL_log_wreq_t &rhs) const;
+	bool operator== (const H5VL_log_wreq_t rhs) const;
+
+	herr_t resize (size_t size);
+
 	H5VL_log_wreq_t ();
+	H5VL_log_wreq_t (const H5VL_log_wreq_t &obj);
 	H5VL_log_wreq_t (void *dp, H5VL_log_selections *sels);
 	~H5VL_log_wreq_t ();
+};
+template <>
+struct std::hash<H5VL_log_wreq_t> {
+	size_t operator() (H5VL_log_wreq_t const &s) const noexcept;
 };
 
 struct H5VL_log_dset_t;

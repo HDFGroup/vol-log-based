@@ -33,7 +33,8 @@ define(`H5VL_LOG_TIMERS', `( `H5VL_log_file_create', dnl
                             `H5VL_log_dataset_write_init', dnl
                             `H5VL_log_dataset_write_start_count', dnl
                             `H5VL_log_dataset_write_encode', dnl
-                            `H5VL_log_dataset_write_meta_deflate', dnl
+                            `H5VL_log_dataset_write_meta_dedup', dnl
+                            `H5VL_log_dataset_write_meta_zip', dnl
                             `H5VL_log_dataset_write_pack', dnl
                             `H5VL_log_dataset_write_convert', dnl
                             `H5VL_log_dataset_write_filter', dnl
@@ -70,6 +71,10 @@ define(`H5VL_LOG_TIMERS', `( `H5VL_log_file_create', dnl
                             `H5VLdataset_specific', dnl
                             `H5VLdataset_optional', dnl
                             `H5VLdataset_close', dnl
+                            `H5VL_log_filei_metasize', dnl
+                            `H5VL_log_filei_metasize_raw', dnl
+                            `H5VL_log_filei_metasize_dedup', dnl
+                            `H5VL_log_filei_metasize_zip', dnl
                             `H5VL_log_filei_flush', dnl
                             `H5VL_log_filei_metaflush', dnl
                             `H5VL_log_filei_metaflush_init', dnl

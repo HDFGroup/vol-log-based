@@ -452,6 +452,8 @@ herr_t H5VL_log_dataset_specific (void *obj,
 				// Flush merged request as dstep may be changed
 				if (dp->fp->mreqs[dp->id] && (dp->fp->mreqs[dp->id]->nsel > 0)) {
 					dp->fp->wreqs.push_back (dp->fp->mreqs[dp->id]);
+					// Update total metadata size in wreqs
+					dp->fp->mdsize += dp->fp->mreqs[dp->id]->hdr->meta_size;
 					dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
 				}
 			}
@@ -567,6 +569,8 @@ herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 	// Flush and free merged reqeusts
 	if (dp->fp->mreqs[dp->id]->dbufs.size ()) {
 		dp->fp->wreqs.push_back (dp->fp->mreqs[dp->id]);
+		// Update total metadata size in wreqs
+		dp->fp->mdsize += dp->fp->mreqs[dp->id]->hdr->meta_size;
 	} else {
 		delete dp->fp->mreqs[dp->id];
 		dp->fp->mreqs[dp->id] = NULL;
