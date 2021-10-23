@@ -19,7 +19,7 @@ typedef struct H5VL_logi_meta_hdr {
 	int flag;		   // Flag for other metadata, format, vertion ... etc
 	MPI_Offset foff;   // File offset of the data
 	MPI_Offset fsize;  // Size of the data in file
-} H5VL_logi_meta_hdr;
+} __attribute__((packed)) H5VL_logi_meta_hdr; 
 
 typedef struct H5VL_logi_metasel_t {
 	hsize_t start[H5S_MAX_RANK];
