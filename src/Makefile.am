@@ -17,9 +17,9 @@ M4FLAGS = -I${top_srcdir}/m4
 
 lib_LTLIBRARIES = libH5VL_log.la
 
-M4_SRCS = 
+M4_SRCS = H5VL_logi_profiling.m4
 
-M4H_SRCS = 
+M4H_SRCS = H5VL_logi_profiling.m4h
 
 H_SRCS =    H5VL_log.h \
             H5VL_log_internal.h
