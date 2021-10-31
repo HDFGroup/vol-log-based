@@ -316,6 +316,7 @@ void *H5VL_log_file_open (
 	fp->flag   = flags;
 	fp->config = 0;
 	fp->fd	   = -1;
+	fp->sfp	   = NULL;
 	fp->lgp	   = NULL;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR

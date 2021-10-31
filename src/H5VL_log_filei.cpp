@@ -541,6 +541,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	// Clean up
 	if (fp->group_comm != fp->comm) { MPI_Comm_free (&(fp->group_comm)); }
 	MPI_Comm_free (&(fp->comm));
+	H5Pclose(fp->dxplid);
 
 	delete fp;
 
