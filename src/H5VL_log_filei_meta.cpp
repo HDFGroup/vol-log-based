@@ -373,10 +373,12 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	for (i = 0; i < fp->ndset; i++) { fp->idx[i].clear (); }
 
 	// iterate through all metadata datasets
+	loc.type = H5VL_OBJECT_BY_SELF;
+	loc.obj_type = H5I_GROUP;
 	for (i = 0; i < fp->nmdset; i++) {
 		// Open the metadata dataset
 		sprintf (mdname, "_md_%d", i);
-		mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT,
+		mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, mdname, H5P_DATASET_ACCESS_DEFAULT,
 								fp->dxplid, NULL);
 		CHECK_PTR (mdp)
 
