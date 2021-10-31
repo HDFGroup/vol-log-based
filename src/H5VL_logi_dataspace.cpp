@@ -429,7 +429,7 @@ void H5VL_log_selections::convert_to_deep () {
 	}
 }
 
-herr_t H5VL_log_selections::get_mpi_type (size_t esize, MPI_Datatype *type) {
+herr_t H5VL_log_selections::get_mpi_type (hsize_t *hsize, size_t esize, MPI_Datatype *type) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
@@ -439,7 +439,6 @@ herr_t H5VL_log_selections::get_mpi_type (size_t esize, MPI_Datatype *type) {
 	MPI_Datatype *types = NULL;
 	MPI_Datatype etype;
 	int size[H5S_MAX_RANK], ssize[H5S_MAX_RANK], sstart[H5S_MAX_RANK];
-	hsize_t hsize[H5S_MAX_RANK];
 
 	etype = H5VL_logi_get_mpi_type_by_size (esize);
 	if (etype == MPI_DATATYPE_NULL) {
@@ -452,7 +451,7 @@ herr_t H5VL_log_selections::get_mpi_type (size_t esize, MPI_Datatype *type) {
 		derived_etype = false;
 	}
 
-	for (i = 0; i < ndim; i++) { size[i] = (MPI_Offset)hsize[i]; }
+	for (i = 0; i < ndim; i++) { size[i] = (int)hsize[i]; }
 
 	// No selection, return
 	if (nsel == 0) {

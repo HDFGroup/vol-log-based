@@ -24,7 +24,7 @@ class H5VL_log_selections {
 	H5VL_log_selections &operator= (H5VL_log_selections &rhs);
 	bool operator== (H5VL_log_selections &rhs);
 
-	herr_t get_mpi_type (size_t esize, MPI_Datatype *type);
+	herr_t get_mpi_type (hsize_t *hsize, size_t esize, MPI_Datatype *type);
 	hsize_t get_sel_size ();
 	hsize_t get_sel_size (int i);
 	void encode (MPI_Offset *dsteps, char *mbuf);
