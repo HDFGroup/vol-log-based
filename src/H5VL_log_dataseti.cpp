@@ -554,7 +554,7 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 	htri_t eqtype;
 	char *bufp = (char *)buf;
 	H5VL_log_rreq_t r;
-	H5S_sel_type stype, mstype;
+	H5S_sel_type mstype;
 	H5VL_log_req_type_t rtype;
 	H5VL_log_dio_n_arg_t arg;
 	H5VL_log_req_t *rp;
@@ -563,7 +563,7 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 	// Sanity check
-	if (stype == H5S_SEL_NONE) goto err_out;
+	if (dsel->nsel == 0) goto err_out;
 	if (!buf) ERR_OUT ("user buffer can't be NULL");
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_READ_INIT);
 
