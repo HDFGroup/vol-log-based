@@ -12,6 +12,7 @@
 #define H5VL_FILEI_CONFIG_SUBFILING 0x200
 
 // File internals
+extern herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid);
 extern herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp);

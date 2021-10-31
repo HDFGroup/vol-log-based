@@ -47,6 +47,41 @@ err_out:;
 	return err;
 }
 
+herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
+	herr_t err = 0;
+	H5VL_loc_params_t loc;
+	int attbuf[4];
+
+	H5VL_LOGI_PROFILING_TIMER_START;
+
+	// Open the LOG group
+	loc.obj_type = H5I_FILE;
+	loc.type	 = H5VL_OBJECT_BY_SELF;
+	H5VL_LOGI_PROFILING_TIMER_START
+	fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_GROUP_ACCESS_DEFAULT,
+							  fp->dxplid, NULL);
+	CHECK_PTR (fp->lgp)
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
+
+	// Att
+	err = H5VL_logi_get_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
+	CHECK_ERR
+	fp->ndset  = attbuf[0];
+	fp->nldset = attbuf[1];
+	fp->nmdset = attbuf[2];
+	fp->config = attbuf[3];
+	fp->idx.resize (fp->ndset);
+	fp->mreqs.resize (fp->ndset);
+	fp->group_rank = fp->rank;
+	fp->group_comm = fp->comm;
+	fp->group_id   = 0;
+
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
+
+err_out:;
+	return err;
+}
+
 herr_t H5VL_log_filei_bfree (H5VL_log_file_t *fp, void *buf) {
 	herr_t err = 0;
 	size_t *bp;

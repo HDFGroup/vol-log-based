@@ -226,10 +226,6 @@ void *H5VL_log_file_create (
 							 NULL);
 	CHECK_ERR
 
-	// create the contig SID
-	if (H5VL_log_dataspace_contig_ref == 0) { H5VL_log_dataspace_contig = H5Screate (H5S_SCALAR); }
-	H5VL_log_dataspace_contig_ref++;
-
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE);
 
 	goto fn_exit;
@@ -320,6 +316,7 @@ void *H5VL_log_file_open (
 	fp->flag   = flags;
 	fp->config = 0;
 	fp->fd	   = -1;
+	fp->lgp	   = NULL;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR
 	mpierr = MPI_Comm_rank (comm, &(fp->rank));
@@ -349,28 +346,6 @@ void *H5VL_log_file_open (
 	fp->uo = H5VLfile_open (name, flags, under_fapl_id, dxpl_id, NULL);
 	CHECK_PTR (fp->uo)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_OPEN);
-
-	// Create LOG group
-	loc.obj_type = H5I_FILE;
-	loc.type	 = H5VL_OBJECT_BY_SELF;
-	H5VL_LOGI_PROFILING_TIMER_START
-	fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_GROUP_ACCESS_DEFAULT,
-							  dxpl_id, NULL);
-	CHECK_PTR (fp->lgp)
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
-
-	// Att
-	err = H5VL_logi_get_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, dxpl_id);
-	CHECK_ERR
-	fp->ndset  = attbuf[0];
-	fp->nldset = attbuf[1];
-	fp->nmdset = attbuf[2];
-	fp->config = attbuf[3];
-	fp->idx.resize (fp->ndset);
-	fp->mreqs.resize (fp->ndset);
-	fp->group_rank = fp->rank;
-	fp->group_comm = fp->comm;
-	fp->group_id   = 0;
 
 	// Fapl property can overwrite config in file, parse after loading config
 	err = H5VL_log_filei_parse_fapl (fp, fapl_id);
@@ -575,10 +550,25 @@ herr_t H5VL_log_file_optional (void *file, H5VL_optional_args_t *args, hid_t dxp
 		printf ("H5VL_log_file_optional(%p, %s, %s, %p, ...)\n", file, vname[0], vname[1], req);
 	}
 #endif
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VLfile_optional (fp->uo, fp->uvlid, args, dxpl_id, req);
 	CHECK_ERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_OPTIONAL);
+
+	// Open the log group and read file attributes
+	if (args->op_type == H5VL_NATIVE_FILE_POST_OPEN) {
+		if (!(fp->lgp)) {  // Log group is already set for file create
+			err = H5VL_log_filei_post_open (fp);
+			CHECK_ERR
+		}
+
+		// create the contig SID
+		if (H5VL_log_dataspace_contig_ref == 0) {
+			H5VL_log_dataspace_contig = H5Screate (H5S_SCALAR);
+		}
+		H5VL_log_dataspace_contig_ref++;
+	}
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPTIONAL);
 err_out:;
