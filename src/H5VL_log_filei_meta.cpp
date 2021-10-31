@@ -325,6 +325,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	fp->metadirty = false;
 
 	for (auto &rp : fp->wreqs) { delete rp; }
+	fp->wreqs.clear();
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
 err_out:
 	// Cleanup
