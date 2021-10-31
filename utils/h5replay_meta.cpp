@@ -200,6 +200,6 @@ herr_t h5replay_idx_t::insert (H5VL_logi_metablock_t &meta) {
 	return 0;
 }
 
-herr_t h5replay_idx_t::search (H5VL_log_rreq_t &req, std::vector<H5VL_log_idx_search_ret_t> &ret) {
+herr_t h5replay_idx_t::search (H5VL_log_rreq_t *req, std::vector<H5VL_log_idx_search_ret_t> &ret) {
 	return 0;
 }

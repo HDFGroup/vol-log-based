@@ -35,7 +35,7 @@ static bool intersect (
 	return true;
 }
 
-herr_t H5VL_logi_array_idx_t::search (H5VL_log_rreq_t &req,
+herr_t H5VL_logi_array_idx_t::search (H5VL_log_rreq_t *req,
 									  std::vector<H5VL_log_idx_search_ret_t> &ret) {
 	herr_t err = 0;
 	int i, j, k;
@@ -44,29 +44,29 @@ herr_t H5VL_logi_array_idx_t::search (H5VL_log_rreq_t &req,
 	H5VL_log_idx_search_ret_t cur;
 
 	soff = 0;
-	for (i = 0; i < req.sels->nsel; i++) {
+	for (i = 0; i < req->sels->nsel; i++) {
 		for (auto &ent : this->entries) {
 			for (auto &msel : ent.sels) {
-				if (intersect (req.ndim, msel.start, msel.count, req.sels->starts[i],
-							   req.sels->counts[i], os, oc)) {
-					for (j = 0; j < req.ndim; j++) {
+				if (intersect (req->ndim, msel.start, msel.count, req->sels->starts[i],
+							   req->sels->counts[i], os, oc)) {
+					for (j = 0; j < req->ndim; j++) {
 						cur.dstart[j] = os[j] - msel.start[j];
 						cur.dsize[j]  = msel.count[j];
-						cur.mstart[j] = os[j] - req.sels->starts[i][j];
-						cur.msize[j]  = req.sels->counts[i][j];
+						cur.mstart[j] = os[j] - req->sels->starts[i][j];
+						cur.msize[j]  = req->sels->counts[i][j];
 						cur.count[j]  = oc[j];
 					}
-					cur.info  = req.info;
+					cur.info  = req->info;
 					cur.foff  = ent.foff;
 					cur.fsize = ent.fsize;
 					cur.doff  = msel.doff;
 					cur.xsize = ent.dsize;
-					cur.xbuf  = req.xbuf + soff;
+					cur.xbuf  = req->xbuf + soff;
 					ret.push_back (cur);
 				}
 			}
 		}
-		soff += req.sels->get_sel_size(i);
+		soff += req->sels->get_sel_size(i);
 	}
 
 	return err;

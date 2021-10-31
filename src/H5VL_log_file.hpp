@@ -65,7 +65,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
 	std::vector<H5VL_log_wreq_t *> wreqs;  // Queued write reqs
 	int nflushed;  // # entry in wreqs with their data already flushed (metadata haven't)
-	std::vector<H5VL_log_rreq_t> rreqs;
+	std::vector<H5VL_log_rreq_t *> rreqs;
 
 	std::vector<H5VL_log_merged_wreq_t *> mreqs;  // Merged request for every dataset
 	std::vector<H5VL_log_dset_info_t> dsets;	  // Opened datasets

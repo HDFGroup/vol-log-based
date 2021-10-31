@@ -285,7 +285,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 	CHECK_ERR
 
 err_out:;
-	if (dsel) { delete dsel; }
+	// Note: dsel should be freed when the read request is deleted
 	return err;
 } /* end H5VL_log_dataset_read() */
 
@@ -517,7 +517,9 @@ herr_t H5VL_log_dataset_optional (void *obj,
 	}
 
 err_out:;
-	if (dsel) { delete dsel; }
+	if (args->op_type == H5Dwrite_n_op_val) { // Dsel for read will be freed when req is deleted
+		if (dsel) { delete dsel; }
+	}
 
 	return err;
 } /* end H5VL_log_dataset_optional() */

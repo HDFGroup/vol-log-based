@@ -34,7 +34,7 @@ class H5VL_logi_idx_t {
    public:
 	virtual herr_t clear ()																	  = 0;
 	virtual herr_t insert (H5VL_logi_metablock_t &meta)										  = 0;
-	virtual herr_t search (H5VL_log_rreq_t &req, std::vector<H5VL_log_idx_search_ret_t> &ret) = 0;
+	virtual herr_t search (H5VL_log_rreq_t *req, std::vector<H5VL_log_idx_search_ret_t> &ret) = 0;
 };
 
 class H5VL_logi_array_idx_t : public H5VL_logi_idx_t {
@@ -43,5 +43,5 @@ class H5VL_logi_array_idx_t : public H5VL_logi_idx_t {
    public:
 	herr_t clear ();
 	herr_t insert (H5VL_logi_metablock_t &meta);
-	herr_t search (H5VL_log_rreq_t &req, std::vector<H5VL_log_idx_search_ret_t> &ret);
+	herr_t search (H5VL_log_rreq_t *req, std::vector<H5VL_log_idx_search_ret_t> &ret);
 };

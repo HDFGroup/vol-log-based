@@ -231,7 +231,7 @@ err_out:;
 }
 
 inline herr_t H5VL_log_read_idx_search (H5VL_log_file_t *fp,
-										std::vector<H5VL_log_rreq_t> &reqs,
+										std::vector<H5VL_log_rreq_t *> &reqs,
 										std::vector<H5VL_log_idx_search_ret_t> &intersecs) {
 	herr_t err = 0;
 	int md, sec;  // Current metadata dataset and vurrent section
@@ -245,8 +245,8 @@ inline herr_t H5VL_log_read_idx_search (H5VL_log_file_t *fp,
 		}
 
 		// Search index
-		for (auto &r : reqs) {
-			err = fp->idx[r.hdr.did].search (r, intersecs);
+		for (auto r : reqs) {
+			err = fp->idx[r->hdr.did].search (r, intersecs);
 			CHECK_ERR
 		}
 	} else {
@@ -257,7 +257,7 @@ inline herr_t H5VL_log_read_idx_search (H5VL_log_file_t *fp,
 			CHECK_ERR
 			// Search index
 			for (auto &r : reqs) {
-				err = fp->idx[r.hdr.did].search (r, intersecs);
+				err = fp->idx[r->hdr.did].search (r, intersecs);
 				CHECK_ERR
 			}
 		}
@@ -267,7 +267,7 @@ err_out:;
 	return err;
 }
 
-herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> reqs, hid_t dxplid) {
+herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> reqs, hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
@@ -393,37 +393,39 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t> req
 	// Post processing
 	for (auto &r : reqs) {
 		// Type convertion
-		if (r.dtype != r.mtype) {
+		if (r->dtype != r->mtype) {
 			void *bg = NULL;
 
-			esize = H5Tget_size (r.mtype);
+			esize = H5Tget_size (r->mtype);
 			CHECK_ID (esize)
 
-			if (H5Tget_class (r.mtype) == H5T_COMPOUND) bg = malloc (r.rsize * esize);
-			err = H5Tconvert (r.dtype, r.mtype, r.rsize, r.xbuf, bg, dxplid);
+			if (H5Tget_class (r->mtype) == H5T_COMPOUND) bg = malloc (r->rsize * esize);
+			err = H5Tconvert (r->dtype, r->mtype, r->rsize, r->xbuf, bg, dxplid);
 			CHECK_ERR
 			free (bg);
 
-			H5Tclose (r.dtype);
-			H5Tclose (r.mtype);
+			H5Tclose (r->dtype);
+			H5Tclose (r->mtype);
 		} else {
-			esize = r.esize;
+			esize = r->esize;
 		}
 
 		// Packing if memory space is not contiguous
-		if (r.xbuf != r.ubuf) {
-			if (r.ptype != MPI_DATATYPE_NULL) {
+		if (r->xbuf != r->ubuf) {
+			if (r->ptype != MPI_DATATYPE_NULL) {
 				i = 0;
-				MPI_Unpack (r.xbuf, 1, &i, r.ubuf, 1, r.ptype, fp->comm);
-				MPI_Type_free (&(r.ptype));
+				MPI_Unpack (r->xbuf, 1, &i, r->ubuf, 1, r->ptype, fp->comm);
+				MPI_Type_free (&(r->ptype));
 			} else {
-				memcpy (r.ubuf, r.xbuf, r.rsize * esize);
+				memcpy (r->ubuf, r->xbuf, r->rsize * esize);
 			}
 
-			H5VL_log_filei_bfree (fp, r.xbuf);
+			H5VL_log_filei_bfree (fp, r->xbuf);
 		}
 	}
 
+	// Clear the request queue
+	for (auto rp : reqs) { delete rp; }
 	reqs.clear ();
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS);
