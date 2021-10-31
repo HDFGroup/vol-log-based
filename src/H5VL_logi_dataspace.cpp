@@ -295,8 +295,8 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 		case H5S_SEL_ALL: {
 			hsize_t dims[32];
 
-			err = H5Sget_simple_extent_dims (dsid, dims, NULL);
-			CHECK_ERR
+			ndim = H5Sget_simple_extent_dims (dsid, dims, NULL);
+			CHECK_ID(ndim)
 
 			this->nsel = 1;
 			this->reserve (1);
