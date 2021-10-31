@@ -68,15 +68,19 @@ herr_t h5replay_parse_meta (int rank,
 
 		// Dividing jobs
 		// Starting section
-		start = rank * nsec / np * sizeof (MPI_Offset);
+		// We save the end of each section, the start of each section is the end
+		// of previous section
+		// The first element of the datasel is the overall length of the decomposition map so no
+		// need to -1
+		start = rank * nsec / np * sizeof (MPI_Offset) + 1;
 		count = sizeof (MPI_Offset);
 		err	  = H5Sselect_hyperslab (dsid, H5S_SELECT_SET, &start, NULL, &one, &count);
 		CHECK_ERR
 		// Memspace already selected
 		err = H5Dread (did, H5T_NATIVE_B8, msid, dsid, H5P_DEFAULT, &(sec.start));
 		CHECK_ERR
-		if (rank == 0) {  // We save the end of each section, the start of each section is the end
-						  // of previous section
+		if (start == 0) {  // For processes that start in the first section, the start offset is
+						   // right after the end of the decomposition map
 			sec.start = sizeof (MPI_Offset) * (nsec + 1);
 		}
 		// Ending section
@@ -154,7 +158,7 @@ herr_t h5replay_parse_meta (int rank,
 			}
 
 			// Clean up the cache, referenced are local to each section
-			bcache.clear();
+			bcache.clear ();
 		} else {
 			for (j = 0; ep < sec.buf + count; j++) {
 				H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)ep;

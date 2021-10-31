@@ -260,7 +260,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// CHECK_MPIERR
 
 	// The first lens[0] byte is the decomposition map
-	if (fp->group_rank == 0) { mdoffs[0] = lens[0]; }
+	if (fp->group_rank == 0) { mdoffs[0] = lens[0] / sizeof (MPI_Offset) - 1; }
 
 	// NOTE: Some MPI implementation do not produce output for rank 0, moffs must ne initialized
 	// to 0
@@ -373,7 +373,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	for (i = 0; i < fp->ndset; i++) { fp->idx[i].clear (); }
 
 	// iterate through all metadata datasets
-	loc.type = H5VL_OBJECT_BY_SELF;
+	loc.type	 = H5VL_OBJECT_BY_SELF;
 	loc.obj_type = H5I_GROUP;
 	for (i = 0; i < fp->nmdset; i++) {
 		// Open the metadata dataset
@@ -422,7 +422,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		if (fp->config &
 			H5VL_FILEI_CONFIG_METADATA_SHARE) {	 // Need to maintina cache if file contains
 												 // referenced metadata entries
-			while (bufp < buf + mdsize) {
+			while (bufp < buf + count) {
 				H5VL_logi_meta_hdr *hdr_tmp = (H5VL_logi_meta_hdr *)bufp;
 
 				// Have to parse all entries for reference purpose
@@ -445,7 +445,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 				fp->idx[hdr_tmp->did].insert (block);
 			}
 		} else {
-			while (bufp < buf + mdsize) {
+			while (bufp < buf + count) {
 				H5VL_logi_meta_hdr *hdr_tmp = (H5VL_logi_meta_hdr *)bufp;
 
 				err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);
