@@ -405,10 +405,10 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> r
 		CHECK_MPIERR
 	} else {
 		mpierr =
-			MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_DATATYPE_NULL, "native", MPI_INFO_NULL);
+			MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
 		CHECK_MPIERR
 
-		mpierr = MPI_File_read_all (fp->fh, MPI_BOTTOM, 0, MPI_DATATYPE_NULL, &stat);
+		mpierr = MPI_File_read_all (fp->fh, MPI_BOTTOM, 0, MPI_BYTE, &stat);
 		CHECK_MPIERR
 	}
 
