@@ -17,9 +17,9 @@ M4FLAGS = -I${top_srcdir}/m4
 
 lib_LTLIBRARIES = libH5VL_log.la
 
-M4_SRCS = H5VL_logi_profiling.m4
+M4_SRCS = 
 
-M4H_SRCS = H5VL_logi_profiling.m4h
+M4H_SRCS = 
 
 H_SRCS =    H5VL_log.h \
             H5VL_log_internal.h
@@ -51,8 +51,8 @@ CXX_SRCS =  H5VL_log_att.cpp \
             H5VL_logi_filter.cpp \
             H5VL_logi_filter_deflate.cpp \
             H5VL_logi_idx.cpp \
-	    H5VL_logi_idx_list.cpp \
-	    H5VL_logi_mem.cpp \
+	         H5VL_logi_idx_list.cpp \
+	         H5VL_logi_mem.cpp \
             H5VL_logi_meta.cpp \
             H5VL_logi_nb.cpp \
             H5VL_logi_util.cpp \
@@ -64,6 +64,8 @@ if LOGVOL_DEBUG
 endif
 if LOGVOL_PROFILING
    M4_SRCS += H5VL_logi_profiling.m4
+   M4_SRCS += H5VL_logi_profiling.m4
+   M4H_SRCS += H5VL_logi_profiling.m4h
 endif
 
 include_HEADERS = H5VL_log.h
