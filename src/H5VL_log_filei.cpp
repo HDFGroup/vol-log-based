@@ -137,7 +137,6 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 	H5VL_log_sel_encoding_t encoding;
 	char *env;
 
-	/*
 	err = H5Pget_meta_merge (faplid, &ret);
 	CHECK_ERR
 	if (ret) { fp->config |= H5VL_FILEI_CONFIG_METADATA_MERGE; }
@@ -161,7 +160,6 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 			fp->config &= ~H5VL_FILEI_CONFIG_METADATA_SHARE;
 		}
 	}
-	*/
 
 	err = H5Pget_meta_zip (faplid, &ret);
 	CHECK_ERR
@@ -203,7 +201,6 @@ herr_t H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
 	hbool_t subfiling;
 	char *env;
 
-	/*
 	err = H5Pget_data_layout (fcplid, &layout);
 	CHECK_ERR
 	if (layout == H5VL_LOG_DATA_LAYOUT_CHUNK_ALIGNED) {
@@ -241,7 +238,6 @@ herr_t H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
 			fp->ngroup = 0;
 		}
 	}
-	*/
 
 err_out:;
 	return err;
