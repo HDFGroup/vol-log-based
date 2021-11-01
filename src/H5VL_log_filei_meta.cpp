@@ -95,7 +95,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Gather offset and lens
 	for (auto &rp : fp->wreqs) {
 		offs[nentry]   = (MPI_Aint)rp->meta_buf;
-		lens[nentry++] = (int)rp->hdr->meta_size;
+		lens[nentry] = (int)rp->hdr->meta_size;
+		mdsize += lens[nentry++];
 	}
 
 	mpierr = MPI_Type_hindexed (nentry, lens, offs, MPI_BYTE, &mmtype);
