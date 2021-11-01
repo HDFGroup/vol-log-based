@@ -69,11 +69,6 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
 	bufp += sizeof (H5VL_logi_meta_hdr);
-	// Data location and size in the file
-	block.hdr.foff = *((MPI_Offset *)bufp);
-	bufp += sizeof (MPI_Offset);
-	block.hdr.fsize = *((MPI_Offset *)bufp);
-	bufp += sizeof (MPI_Offset);
 
 	// If there is more than 1 selection
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
