@@ -148,15 +148,6 @@ void *H5VL_log_file_create (
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
 
-	// Create LOG group
-	H5VL_LOGI_PROFILING_TIMER_START;
-	loc.obj_type = H5I_FILE;
-	loc.type	 = H5VL_OBJECT_BY_SELF;
-	fp->lgp = H5VLgroup_create (fp->uo, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_LINK_CREATE_DEFAULT,
-								H5P_GROUP_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
-	CHECK_PTR (fp->lgp)
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
-
 	// Figure out lustre configuration
 	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
@@ -194,9 +185,18 @@ void *H5VL_log_file_create (
 		err = H5VL_log_filei_create_subfile (fp, flags, under_fapl_id, dxpl_id);
 		CHECK_ERR
 	} else {
-		fp->sfp = NULL;
+		fp->sfp = fp->uo;
 	}
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_SUBFILE);
+
+	// Create the LOG group
+	H5VL_LOGI_PROFILING_TIMER_START;
+	loc.obj_type = H5I_FILE;
+	loc.type	 = H5VL_OBJECT_BY_SELF;
+	fp->lgp = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_LINK_CREATE_DEFAULT,
+								H5P_GROUP_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
+	CHECK_PTR (fp->lgp)
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
 
 	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
 		fp->fd = open (name, O_RDWR);

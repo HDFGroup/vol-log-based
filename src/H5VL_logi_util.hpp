@@ -30,4 +30,29 @@ extern herr_t H5VL_logi_get_att (
 extern herr_t H5VL_logi_get_att_ex (
 	H5VL_log_obj_t *op, const char *name, hid_t mtype, hsize_t *len, void *buf, hid_t dxpl_id);
 
+extern herr_t H5VL_logi_add_att (void *uo,
+								 hid_t uvlid,
+								 H5I_type_t type,
+								 const char *name,
+								 hid_t atype,
+								 hid_t mtype,
+								 hsize_t len,
+								 void *buf,
+								 hid_t dxpl_id,
+								 void **req);
+extern herr_t H5VL_logi_put_att (void *uo,
+								 hid_t uvlid,
+								 H5I_type_t type,
+								 const char *name,
+								 hid_t mtype,
+								 void *buf,
+								 hid_t dxpl_id);
+extern herr_t H5VL_logi_get_att (void *uo,
+								 hid_t uvlid,
+								 H5I_type_t type,
+								 const char *name,
+								 hid_t mtype,
+								 void *buf,
+								 hid_t dxpl_id);
+
 MPI_Datatype H5VL_logi_get_mpi_type_by_size (size_t size);

@@ -513,16 +513,30 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 		err = H5VL_log_filei_metaflush (fp);
 		CHECK_ERR
 
-		// Att
+		// Update file attr
 		attbuf[0] = fp->ndset;
 		attbuf[1] = fp->nldset;
 		attbuf[2] = fp->nmdset;
 		attbuf[3] = fp->config;
-		err		  = H5VL_logi_put_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
+		// Att in the subfile
+		if (fp->sfp && fp->sfp != fp->uo) {
+			attbuf[0] = fp->ndset;
+			attbuf[1] = fp->nldset;
+			attbuf[2] = fp->nmdset;
+			attbuf[3] =
+				fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
+			err = H5VL_logi_put_att (fp->sfp, fp->uvlid, H5I_FILE, "_int_att", H5T_NATIVE_INT32,
+									 attbuf, fp->dxplid);
+			attbuf[1] = 0;	// No data and metadata in the main file
+			attbuf[2] = 0;
+			attbuf[3] |= H5VL_FILEI_CONFIG_SUBFILING;  // Turn subfiling flag back on
+		}
+		// Att in the main file
+		err = H5VL_logi_put_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
 		CHECK_ERR
 	}
 
-	// Close log group
+	// Close the log group
 	H5VL_LOGI_PROFILING_TIMER_START
 	err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
 	CHECK_ERR
@@ -560,7 +574,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VLfile_close (fp->uo, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
 	CHECK_ERR
-	if (fp->sfp) {
+	if (fp->sfp && (fp->sfp != fp->uo)) {
 		err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
 		CHECK_ERR
 	}
@@ -616,6 +630,7 @@ herr_t H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
 									  hid_t fapl_id,
 									  hid_t dxpl_id) {
 	herr_t err = 0;
+	int attbuf[4];
 	int stat;
 
 	// Create subfile dir
@@ -636,6 +651,15 @@ herr_t H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
 							   dxpl_id, NULL);
 	CHECK_PTR (fp->sfp)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
+
+	// Att
+	attbuf[0] = fp->ndset;
+	attbuf[1] = fp->nldset;
+	attbuf[2] = fp->nmdset;
+	attbuf[3] = fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
+	err		  = H5VL_logi_add_att (fp->sfp, fp->uvlid, H5I_FILE, "_int_att", H5T_STD_I32LE,
+							   H5T_NATIVE_INT32, 4, attbuf, dxpl_id, NULL);
+	CHECK_ERR
 
 err_out:;
 	return err;

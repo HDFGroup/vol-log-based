@@ -548,7 +548,6 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	H5VL_loc_params_t loc;
 	char dname[16];	  // Name of the log dataset
 	MPI_Comm ldcomm;  // Communicator to create data dataset
-	void *ldloc;	  // Location to create data dataset (main file | subfile)
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -589,15 +588,8 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_INIT);
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-	// Where to create data dataset, main file or subfile
 	loc.type = H5VL_OBJECT_BY_SELF;
-	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
-		ldloc		 = fp->sfp;
-		loc.obj_type = H5I_FILE;
-	} else {
-		ldloc		 = fp->lgp;
-		loc.obj_type = H5I_GROUP;
-	}
+    loc.obj_type = H5I_GROUP;
 
 	// Get file offset and total size globally
 	mpierr = MPI_Allreduce (&fsize_local, &fsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
@@ -637,7 +629,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 			ldsid = H5Screate_simple (1, &start, &start);
 			CHECK_ID (ldsid)
 			H5VL_LOGI_PROFILING_TIMER_START;
-			ldp = H5VLdataset_create (ldloc, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
+			ldp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
 									  H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
 									  H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
 			CHECK_PTR (ldp);
@@ -673,7 +665,10 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 					if (d.ubuf != d.xbuf) { H5VL_log_filei_bfree (fp, (void *)(d.xbuf)); }
 				}
 			}
-			fp->nflushed = fp->wreqs.size ();
+			fp->nflushed = fp->wreqs.size ();\
+
+            // Increase number of log dataset
+		    (fp->nldset)++;
 		}
 
 		// Create virtaul log dataset in the main file
@@ -715,9 +710,6 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_CREATE_VIRTUAL);
 		}
 		*/
-
-		// Increase number of log dataset
-		(fp->nldset)++;
 
 		// Mark the metadata flag to dirty (unflushed metadata)
 		if (fsize_group) { fp->metadirty = true; }

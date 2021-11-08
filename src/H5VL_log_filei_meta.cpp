@@ -66,7 +66,6 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	MPI_Datatype mmtype = MPI_DATATYPE_NULL;  // Memory datatype for writing the metadata
 	MPI_Status stat;						  // Status of MPI I/O
 	MPI_Comm ldcomm;						  // Communicator to create data dataset
-	void *ldloc;  // Location to create data dataset (main file | subfile)
 	H5VL_loc_params_t loc;
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -140,13 +139,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 	// Where to create data dataset, main file or subfile
 	loc.type = H5VL_OBJECT_BY_SELF;
-	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
-		ldloc		 = fp->sfp;
-		loc.obj_type = H5I_FILE;
-	} else {
-		ldloc		 = fp->lgp;
-		loc.obj_type = H5I_GROUP;
-	}
+	loc.obj_type = H5I_GROUP;
 
 	dsize = (hsize_t)rbuf[1];
 	if (dsize > 0) {
@@ -156,7 +149,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		CHECK_ID (mdsid)
 		sprintf (mdname, "_md_%d", fp->nmdset);
 		H5VL_LOGI_PROFILING_TIMER_START;
-		mdp = H5VLdataset_create (ldloc, &loc, fp->uvlid, mdname, H5P_LINK_CREATE_DEFAULT,
+		mdp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, mdname, H5P_LINK_CREATE_DEFAULT,
 								  H5T_STD_B8LE, mdsid, H5P_DATASET_CREATE_DEFAULT,
 								  H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
 		CHECK_PTR (mdp);

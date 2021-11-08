@@ -10,7 +10,9 @@
 #include "H5VL_logi_wrapper.hpp"
 #include "hdf5.h"
 
-herr_t H5VL_logi_add_att (H5VL_log_obj_t *op,
+herr_t H5VL_logi_add_att (void *uo,
+						  hid_t uvlid,
+						  H5I_type_t type,
 						  const char *name,
 						  hid_t atype,
 						  hid_t mtype,
@@ -26,15 +28,15 @@ herr_t H5VL_logi_add_att (H5VL_log_obj_t *op,
 	asid = H5Screate_simple (1, &len, &len);
 	CHECK_ID (asid);
 
-	loc.obj_type = op->type;
+	loc.obj_type = type;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
 
-	ap = H5VLattr_create (op->uo, &loc, op->uvlid, name, atype, asid, H5P_ATTRIBUTE_CREATE_DEFAULT,
+	ap = H5VLattr_create (uo, &loc, uvlid, name, atype, asid, H5P_ATTRIBUTE_CREATE_DEFAULT,
 						  H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL);
 	CHECK_PTR (ap);
-	err = H5VLattr_write (ap, op->uvlid, mtype, buf, dxpl_id, NULL);
+	err = H5VLattr_write (ap, uvlid, mtype, buf, dxpl_id, NULL);
 	CHECK_ERR;
-	err = H5VLattr_close (ap, op->uvlid, dxpl_id, NULL);
+	err = H5VLattr_close (ap, uvlid, dxpl_id, NULL);
 	CHECK_ERR
 
 	H5Sclose (asid);
@@ -42,47 +44,74 @@ herr_t H5VL_logi_add_att (H5VL_log_obj_t *op,
 err_out:;
 	return err;
 }
+herr_t H5VL_logi_add_att (H5VL_log_obj_t *op,
+						  const char *name,
+						  hid_t atype,
+						  hid_t mtype,
+						  hsize_t len,
+						  void *buf,
+						  hid_t dxpl_id,
+						  void **req) {
+	return H5VL_logi_add_att (op->uo, op->uvlid, op->type, name, atype, mtype, len, buf, dxpl_id,
+							  req);
+}
 
+herr_t H5VL_logi_put_att (void *uo,
+						  hid_t uvlid,
+						  H5I_type_t type,
+						  const char *name,
+						  hid_t mtype,
+						  void *buf,
+						  hid_t dxpl_id) {
+	herr_t err = 0;
+	H5VL_loc_params_t loc;
+	void *ap;
+
+	loc.obj_type = type;
+	loc.type	 = H5VL_OBJECT_BY_SELF;
+
+	ap = H5VLattr_open (uo, &loc, uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL);
+	CHECK_PTR (ap);
+	err = H5VLattr_write (ap, uvlid, mtype, buf, dxpl_id, NULL);
+	CHECK_ERR;
+	err = H5VLattr_close (ap, uvlid, dxpl_id, NULL);
+	CHECK_ERR
+
+err_out:;
+	return err;
+}
 herr_t H5VL_logi_put_att (
 	H5VL_log_obj_t *op, const char *name, hid_t mtype, void *buf, hid_t dxpl_id) {
+	return H5VL_logi_put_att (op->uo, op->uvlid, op->type, name, mtype, buf, dxpl_id);
+}
+herr_t H5VL_logi_get_att (void *uo,
+						  hid_t uvlid,
+						  H5I_type_t type,
+						  const char *name,
+						  hid_t mtype,
+						  void *buf,
+						  hid_t dxpl_id) {
 	herr_t err = 0;
 	H5VL_loc_params_t loc;
 	void *ap;
 
-	loc.obj_type = op->type;
+	loc.obj_type = type;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
 
-	ap = H5VLattr_open (op->uo, &loc, op->uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL);
+	ap = H5VLattr_open (uo, &loc, uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL);
 	CHECK_PTR (ap);
-	err = H5VLattr_write (ap, op->uvlid, mtype, buf, dxpl_id, NULL);
+	err = H5VLattr_read (ap, uvlid, mtype, buf, dxpl_id, NULL);
 	CHECK_ERR;
-	err = H5VLattr_close (ap, op->uvlid, dxpl_id, NULL);
+	err = H5VLattr_close (ap, uvlid, dxpl_id, NULL);
 	CHECK_ERR
 
 err_out:;
 	return err;
 }
-
 herr_t H5VL_logi_get_att (
 	H5VL_log_obj_t *op, const char *name, hid_t mtype, void *buf, hid_t dxpl_id) {
-	herr_t err = 0;
-	H5VL_loc_params_t loc;
-	void *ap;
-
-	loc.obj_type = op->type;
-	loc.type	 = H5VL_OBJECT_BY_SELF;
-
-	ap = H5VLattr_open (op->uo, &loc, op->uvlid, name, H5P_ATTRIBUTE_ACCESS_DEFAULT, dxpl_id, NULL);
-	CHECK_PTR (ap);
-	err = H5VLattr_read (ap, op->uvlid, mtype, buf, dxpl_id, NULL);
-	CHECK_ERR;
-	err = H5VLattr_close (ap, op->uvlid, dxpl_id, NULL);
-	CHECK_ERR
-
-err_out:;
-	return err;
+	return H5VL_logi_get_att (op->uo, op->uvlid, op->type, name, mtype, buf, dxpl_id);
 }
-
 herr_t H5VL_logi_get_att_ex (
 	H5VL_log_obj_t *op, const char *name, hid_t mtype, hsize_t *len, void *buf, hid_t dxpl_id) {
 	herr_t err = 0;
