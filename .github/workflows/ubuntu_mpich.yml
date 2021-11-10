@@ -30,7 +30,7 @@ jobs:
             cd hdf5
             export HDF5_LIBTOOL=/usr/bin/libtoolize
             ./autogen.sh
-            ./configure --prefix=${WORKDIR}/.local/hdf5/develop --enable-hl --enable-parallel --enable-build-mode=production CC=mpicc
+            ./configure --prefix=${WORKDIR}/.local/hdf5/develop --disable-fortran --disable-hl --disable-tests --disable-tools --enable-parallel --enable-build-mode=production CC=mpicc
             make -j 64
             make -j 64 install
         - name: Test log VOL
