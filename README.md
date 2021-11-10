@@ -3,10 +3,10 @@
 This software repository contains source codes implementing an [HDF5](https://www.hdfgroup.org) Virtual Object Layer ([VOL](https://bitbucket.hdfgroup.org/projects/HDFFV/repos/hdf5doc/browse/RFCs/HDF5/VOL/developer_guide/main.pdf))) plugin that stores HDF5 datasets in a log-based storage layout. It allows applications to generate efficient log-based I/O requests using HDF5 APIs.
 
 ### Software Requirements
-* [HDF5 1.12.0](https://github.com/HDFGroup/hdf5/tree/1.12/master)
+* [HDF5 develop branch](https://github.com/HDFGroup/hdf5)
   + Parallel I/O support (--enable-parallel) is required
 * MPI C and C++ compilers
-  + The plugin uses the constant initializer; a C++ compiler supporting std 11 is required
+  + The plugin uses the constant initializer; a C++ compiler supporting std 17 is required
 * Autotools utility
   + autoconf 2.69
   + automake 1.16.1
@@ -22,9 +22,9 @@ This software repository contains source codes implementing an [HDF5](https://ww
   + Example commands are given below. This example will install
     the HD5 library under the folder `${HOME}/HDF5`.
     ```
-    % git clone https://github.com/HDFGroup/hdf5.git
+    % git clone https://github.com/HDFGroup/hdf5.git -b develop
     % cd hdf5
-    % git checkout hdf5-1_12_0
+    % export HDF5_LIBTOOL=/usr/bin/libtoolize
     % ./autogen
     % ./configure --prefix=${HOME}/HDF5 --enable-parallel CC=mpicc
     % make -j4 install
@@ -37,7 +37,7 @@ This software repository contains source codes implementing an [HDF5](https://ww
     + Compile with zlib library to enable metadata compression
   + Example commands are given below.
     ```
-    % git clone https://github.com/DataLib-ECP/log_io_vol.git
+    % git clone https://github.com/DataLib-ECP/vol-log-based.git
     % cd log_io_vol
     % autoreconf -i
     % ./configure --prefix=${HOME}/Log_IO_VOL --with-hdf5=${HOME}/HDF5 --enable-shared --enable-zlib
@@ -96,14 +96,19 @@ This software repository contains source codes implementing an [HDF5](https://ww
 
 ### Current limitations
   + Not compatible with parallel NetCDF4 applications
-  + Does not support dataset reading.
-    + Feature to read datasets in log-based storage layout is under development
-  + Utility to repack dataset in log-based storage layout into conventional storage layout is under development 
+  + Limited support for dataset reading
+    + Reading is implemented by naively searching through log records
+    + No performance optimization for reading
+    + The entire metadata of the file must fit into the memory
+  + No subfiling support
+    + The feature is under development
+  + Does not support async operations
+    + We will consider the feature when HDF5's async API is officially released.
 
 ### References
-* [HDF5 VOL application developer manual](https://bitbucket.hdfgroup.org/projects/HDFFV/repos/hdf5doc/browse/RFCs/HDF5/VOL/developer_guide/main.pdf)
-* [HDF5 VOL plug-in developer manual](https://bitbucket.hdfgroup.org/projects/HDFFV/repos/hdf5doc/browse/RFCs/HDF5/VOL/user_guide)
-* [HDF5 VOL RFC](https://bitbucket.hdfgroup.org/projects/HDFFV/repos/hdf5doc/browse/RFCs/HDF5/VOL/RFC)
+* [HDF5 VOL application developer manual](https://github.com/HDFGroup/hdf5doc/raw/vol_docs/RFCs/HDF5/VOL/user_guide/vol_user_guide.pdf)
+* [HDF5 VOL plug-in developer manual](https://github.com/HDFGroup/hdf5doc/raw/vol_docs/RFCs/HDF5/VOL/connector_author_guide/vol_connector_author_guide.pdf)
+* [HDF5 VOL RFC](https://github.com/HDFGroup/hdf5doc/raw/vol_docs/RFCs/HDF5/VOL/RFC/RFC_VOL.pdf)
 
 ### Project funding supports:
 Ongoing development and maintenance of Log-based VOL are supported by the Exascale Computing Project (17-SC-20-SC), a joint project of the U.S. Department of Energy's Office of Science and National Nuclear Security Administration, responsible for delivering a capable exascale ecosystem, including software, applications, and hardware technology, to support the nation's exascale computing imperative.
