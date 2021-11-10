@@ -6,6 +6,9 @@
 
 SUBDIRS = src test example utils
 DIST_SUBDIRS = src test example utils
-EXTRA_DIST = 
+EXTRA_DIST =    m4/foreach_idx.m4 \
+                m4/foreach.m4 \
+                m4/list_len.m4 \
+                m4/utils.m4 
 
 .PHONY:

@@ -14,7 +14,6 @@
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_nb.hpp"
-#include "H5VL_logi_profiling.hpp"
 
 #define LOG_GROUP_NAME "_LOG"
 
@@ -98,9 +97,11 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	int config;	 // Config flags
 
 #ifdef LOGVOL_PROFILING
+#ifndef REPLAY_BUILD
 	//#pragma message ( "C Preprocessor got here!" )
 	double tlocal[H5VL_LOG_NTIMER];
 	double clocal[H5VL_LOG_NTIMER];
+#endif
 #endif
 
 	H5VL_log_file_t ();

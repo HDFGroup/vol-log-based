@@ -26,7 +26,7 @@ check_PROGRAMS =    file \
                 #   noclose 
                 #   test
 
-EXTRA_DIST = # wrap_runs.sh parallel_run.sh
+EXTRA_DIST = wrap_runs.sh
 
 TESTPROGRAMS = $(check_PROGRAMS)
 
@@ -45,7 +45,7 @@ TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
 
 H5_FILES = $(check_PROGRAMS:%=$(TESTOUTDIR)/%.h5)
 
-CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out
+CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out *.h5
 
 TEST_EXTENSIONS = .sh
 LOG_COMPILER = $(srcdir)/wrap_runs.sh

@@ -8,7 +8,8 @@
 
 AM_CPPFLAGS = -I$(top_srcdir)/src \
               -I$(top_srcdir) \
-              -I$(srcdir) 
+              -I$(srcdir) \
+              -DREPLAY_BUILD
 if LOGVOL_DEBUG
    AM_CPPFLAGS += -DLOGVOL_DEBUG=1
 endif
@@ -21,9 +22,13 @@ h5replay_LDADD  = $(top_builddir)/src/libH5VL_log.la
 h5replay_LDFLAGS = -no-install
 
 h5replay_SOURCES =   h5replay.cpp \
+                     h5replay.hpp \
                      h5replay_copy.cpp \
+                     h5replay_copy.hpp \
                      h5replay_data.cpp \
-                     h5replay_meta.cpp 
+                     h5replay_data.hpp \
+                     h5replay_meta.cpp \
+                     h5replay_meta.hpp 
 
 CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out
 
