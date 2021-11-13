@@ -3,6 +3,8 @@
 #endif
 // Std hdrs
 #include <array>
+#include <cstring>
+#include <cassert>
 // Sys hdrs
 #include <sys/stat.h>
 #include <unistd.h>

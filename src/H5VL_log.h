@@ -1,38 +1,6 @@
 #ifndef _logVOL_H_
 #define _logVOL_H_
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright by The HDF Group.                                               *
- * All rights reserved.                                                      *
- *                                                                           *
- * This file is part of HDF5.  The full HDF5 copyright notice, including     *
- * terms governing use, modification, and redistribution, is contained in    *
- * the COPYING file, which can be found at the root of the source code       *
- * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
- * If you do not have access to either file, you may request a copy from     *
- * help@hdfgroup.org.                                                        *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-/*
- * Purpose: This is a "log" VOL connector, which forwards each
- *      VOL callback to an underlying connector.
- *
- *      It is designed as an example VOL connector for developers to
- *      use when creating new connectors, especially connectors that
- *      are outside of the HDF5 library.  As such, it should _NOT_
- *      include _any_ private HDF5 header files.  This connector should
- *      therefore only make public HDF5 API calls and use standard C /
- *              POSIX calls.
- */
-
-/* Header files needed */
-/* (Public HDF5 and standard C / POSIX only) */
-#include <assert.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "H5VLpublic.h"
 #include "hdf5.h"
 
