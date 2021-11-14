@@ -49,7 +49,8 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	bool closing;	// If we are closing the file
 	unsigned flag;	// HDF5 file creation/opening flag
 
-	hid_t dxplid;
+	hid_t dxplid;	// Copy of dxpl passed from the application
+	hid_t ufaplid;	// Copy of fapl passed to the underlying VOL
 
 	void *lgp;	 // Log group
 	int ndset;	 // # user datasets, used to assign ID

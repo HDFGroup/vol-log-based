@@ -39,6 +39,10 @@ extern herr_t H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
 											 unsigned flags,
 											 hid_t fapl_id,
 											 hid_t dxpl_id);
+extern herr_t H5VL_log_filei_open_subfile (H5VL_log_file_t *fp,
+										   unsigned flags,
+										   hid_t fapl_id,
+										   hid_t dxpl_id);
 extern herr_t H5VL_log_filei_parse_strip_info (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp);
 
