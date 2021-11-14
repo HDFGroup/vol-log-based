@@ -6,10 +6,12 @@
 #
 # @configure_input@
 
-AM_CPPFLAGS = -I$(top_srcdir)/src \
-              -I$(top_srcdir) \
-              -I$(srcdir) \
-              -DREPLAY_BUILD
+AM_CPPFLAGS = -I${srcdir}
+AM_CPPFLAGS += -I${top_srcdir}
+AM_CPPFLAGS += -I${top_srcdir}/src
+AM_CPPFLAGS += -I${top_builddir}
+AM_CPPFLAGS += -I${top_builddir}/src
+AM_CPPFLAGS += -DREPLAY_BUILD
 if LOGVOL_DEBUG
    AM_CPPFLAGS += -DLOGVOL_DEBUG=1
 endif

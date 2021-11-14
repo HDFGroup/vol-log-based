@@ -15,11 +15,11 @@ AM_EXTRA_RECURSIVE_TARGETS([tests])
 
 AC_CONFIG_HEADERS([config.h])
 AH_TOP([/*
- * Copyright (C) 2019, Northwestern University and Fermi National Accelerator Laboratory
+ * Copyright (C) 2021, Northwestern University and Argonne National Laboratory
  * See COPYRIGHT notice in top-level directory.
  */
 ])
-AC_CONFIG_SRCDIR([src/H5VL_log.h])
+AC_CONFIG_SRCDIR([src/H5VL_log.h.in])
 AC_CONFIG_MACRO_DIRS([m4])
 
 AC_CONFIG_AUX_DIR([./scripts])
@@ -28,7 +28,11 @@ AM_INIT_AUTOMAKE([foreign])
 AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE([enable])
 
-AH_TEMPLATE([ENABLE_ZLIB],              [Define if to enable zlib compression method])
+dnl parse the version numbers to 3 env variables
+H5VL_LOG_VERSION_MAJOR=`echo ${PACKAGE_VERSION} | cut -d. -f1`
+H5VL_LOG_VERSION_MINOR=`echo ${PACKAGE_VERSION} | cut -d. -f2`
+H5VL_LOG_VERSION_SUB=`echo ${PACKAGE_VERSION} | cut -d. -f3`
+H5VL_LOG_VERSION=${PACKAGE_VERSION}
 
 AC_DEFUN([UD_MSG_DEBUG],
          [if test "x${pnc_ac_debug}" = xyes ; then
@@ -37,23 +41,27 @@ AC_DEFUN([UD_MSG_DEBUG],
          ]
 )
 
-dnl parse the version numbers to 3 env variables
-LOGVOL_VERSION_MAJOR=`echo ${PACKAGE_VERSION} | cut -d. -f1`
-LOGVOL_VERSION_MINOR=`echo ${PACKAGE_VERSION} | cut -d. -f2`
-LOGVOL_VERSION_SUB=`echo ${PACKAGE_VERSION} | cut -d. -f3`
-LOGVOL_VERSION=${PACKAGE_VERSION}
-AC_SUBST(LOGVOL_VERSION_MAJOR)
-AC_SUBST(LOGVOL_VERSION_MINOR)
-AC_SUBST(LOGVOL_VERSION_SUB)
-AC_SUBST(LOGVOL_VERSION)
+UD_MSG_DEBUG([H5VL_LOG_VERSION_MAJOR=$H5VL_LOG_VERSION_MAJOR])
+UD_MSG_DEBUG([H5VL_LOG_VERSION_MINOR=$H5VL_LOG_VERSION_MINOR])
+UD_MSG_DEBUG([H5VL_LOG_VERSION_SUB=$H5VL_LOG_VERSION_SUB])
+UD_MSG_DEBUG([H5VL_LOG_VERSION_PRE=$H5VL_LOG_VERSION_PRE])
+UD_MSG_DEBUG([H5VL_LOG_VERSION=$H5VL_LOG_VERSION])
+
+AC_SUBST(H5VL_LOG_VERSION_MAJOR)
+AC_SUBST(H5VL_LOG_VERSION_MINOR)
+AC_SUBST(H5VL_LOG_VERSION_SUB)
+AC_SUBST(H5VL_LOG_VERSION)
 
 dnl Note that command 'date' is not portable across Unix platforms.
 dnl But release date matters only to H5VL_log developers who make the releases.
-LOGVOL_RELEASE_DATE="`date '+%B %-d, %Y'`"
-AC_SUBST(LOGVOL_RELEASE_DATE)
-LOGVOL_RELEASE_DATE_FULL="`date '+%Y-%m-%d'`"
-AC_SUBST(LOGVOL_RELEASE_DATE_FULL)
+H5VL_LOG_RELEASE_DATE="`date '+%B %-d, %Y'`"
+AC_SUBST(H5VL_LOG_RELEASE_DATE)
+H5VL_LOG_RELEASE_DATE_FULL="`date '+%Y-%m-%d'`"
+AC_SUBST(H5VL_LOG_RELEASE_DATE_FULL)
 AC_SUBST(PACKAGE_VERSION)
+
+AH_TEMPLATE([ENABLE_ZLIB],              [Define if to enable zlib compression method])
+AH_TEMPLATE([ENABLE_ZLIB],              [Define if to enable zlib compression method])
 
 AH_TOP([#ifndef _CONFIG_H
 #define _CONFIG_H])
@@ -255,10 +263,13 @@ AC_ARG_ENABLE([profiling],
                    [Enable internal time profiling. @<:@default: disabled@:>@])],
    [enable_profiling=${enableval}], [enable_profiling=no]
 )
-AM_CONDITIONAL(LOGVOL_PROFILING, [test "x$enable_profiling" = xyes])
+ENABLE_PROFILING=0
 if test "x${enable_profiling}" = xyes; then
-   AC_DEFINE(LOGVOL_PROFILING, 1, ["Internal profiling"])
+   AC_DEFINE(ENABLE_PROFILING, 1, ["Internal profiling"])
+   ENABLE_PROFILING=1
 fi
+AC_SUBST(ENABLE_PROFILING)
+AM_CONDITIONAL(LOGVOL_PROFILING, [test "x$enable_profiling" = xyes])
 
 AC_ARG_WITH([hdf5],
    [AS_HELP_STRING([--with-hdf5=/path/to/hdf5], [Specify HDF5 installation path(s):
@@ -416,6 +427,7 @@ fi
 
 AC_CONFIG_FILES(Makefile \
                 src/Makefile \
+                src/H5VL_log.h \
                 test/Makefile \
                 test/basic/Makefile \
                 utils/Makefile \

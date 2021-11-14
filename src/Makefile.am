@@ -6,7 +6,11 @@
 
 SUFFIXES = .cpp .hpp .o
 
-AM_CPPFLAGS = -I.
+AM_CPPFLAGS = -I${srcdir}
+AM_CPPFLAGS += -I${top_srcdir}
+AM_CPPFLAGS += -I${top_srcdir}/src
+AM_CPPFLAGS += -I${top_builddir}
+AM_CPPFLAGS += -I${top_builddir}/src
 if LOGVOL_DEBUG
    AM_CPPFLAGS += -DLOGVOL_DEBUG=1
 endif
@@ -21,8 +25,7 @@ M4_SRCS =
 
 M4H_SRCS = H5VL_logi_profiling.m4h
 
-H_SRCS =    H5VL_log.h \
-            H5VL_log_att.hpp \
+H_SRCS =    H5VL_log_att.hpp \
             H5VL_log_blob.hpp \
             H5VL_log_dataset.hpp \
             H5VL_log_dataseti.hpp \
@@ -96,7 +99,7 @@ if LOGVOL_PROFILING
    M4_SRCS += H5VL_logi_profiling.m4
 endif
 
-include_HEADERS = H5VL_log.h
+nodist_include_HEADERS = H5VL_log.h
 
 $(M4_SRCS:.m4=.cpp): Makefile H5VL_logi_profiling_timers.m4
 $(M4H_SRCS:.m4h=.hpp): Makefile H5VL_logi_profiling_timers.m4
@@ -109,6 +112,7 @@ $(M4H_SRCS:.m4h=.hpp): Makefile H5VL_logi_profiling_timers.m4
 
 libH5VL_log_la_SOURCES = $(C_SRCS) $(CXX_SRCS) $(H_SRCS)
 nodist_libH5VL_log_la_SOURCES = $(M4_SRCS:.m4=.cpp) $(M4H_SRCS:.m4h=.h)
+PNETCDF_HEADER = $(top_builddir)/src/include/pnetcdf.h
 
 BUILT_SOURCES = $(M4_SRCS:.m4=.cpp) $(M4H_SRCS:.m4h=.hpp)
 EXTRA_DIST = $(M4H_SRCS) $(M4_SRCS) H5VL_logi_profiling.m4 H5VL_logi_profiling_timers.m4

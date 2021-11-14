@@ -96,7 +96,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	// Configuration flag
 	int config;	 // Config flags
 
-#ifdef LOGVOL_PROFILING
+#ifdef ENABLE_PROFILING
 #ifndef REPLAY_BUILD
 	//#pragma message ( "C Preprocessor got here!" )
 	double tlocal[H5VL_LOG_NTIMER];

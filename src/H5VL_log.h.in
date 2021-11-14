@@ -4,6 +4,15 @@
 #include "H5VLpublic.h"
 #include "hdf5.h"
 
+#define H5VL_LOG_VERSION       "@H5VL_LOG_VERSION@"
+#define H5VL_LOG_VERSION_MAJOR @H5VL_LOG_VERSION_MAJOR@
+#define H5VL_LOG_VERSION_MINOR @H5VL_LOG_VERSION_MINOR@
+#define H5VL_LOG_VERSION_SUB   @H5VL_LOG_VERSION_SUB@
+#define H5VL_LOG_RELEASE_DATE  "@H5VL_LOG_RELEASE_DATE@"
+
+#define H5VL_LOG_HAVE_METADATA_COMPRESSION @ENABLE_ZLIB@
+#define H5VL_LOG_HAVE_INTERNAL_PROFILING @ENABLE_PROFILING@
+
 /* Identifier for the pass-through VOL connector */
 #define H5VL_log (H5VL_log_register ())
 
