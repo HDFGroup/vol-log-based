@@ -32,12 +32,13 @@ h5replay_SOURCES =   h5replay.cpp \
                      h5replay_meta.cpp \
                      h5replay_meta.hpp 
 
+bin_SCRIPTS = logvol-config
+EXTRA_DIST = logvol-config.in
+
 CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out
 
-dist-hook:
-#	$(SED_I) -e "s|RELEASE_DATE|@LOGVOL_RELEASE_DATE@|g" $(distdir)/main.cpp
-#	$(SED_I) -e "1,10s|_LOGVOL_RELEASE_DATE_|@LOGVOL_RELEASE_DATE@|" $(distdir)/RELEASE_NOTES.md
-#	$(SED_I) -e "1,10s|_LOGVOL_VERSION_|$(LOGVOL_VERSION)|" $(distdir)/RELEASE_NOTES.md
+install-exec-hook:
+	chmod +x $(DESTDIR)$(bindir)/logvol-config
 
 tests-local: all
 

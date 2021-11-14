@@ -197,6 +197,11 @@ dnl Set output variable CPP to a command that runs the C preprocessor.
 dnl Some C compilers require -E to be used as C preprocessor.
 AC_PROG_CPP
 
+AC_C_CHAR_UNSIGNED
+AC_C_BIGENDIAN
+AM_CONDITIONAL(IS_BIGENDIAN, [test x$ac_cv_c_bigendian = xyes])
+AC_SUBST(ac_cv_c_bigendian)dnl for src/utils/pnetcdf-config.in
+
 dnl check if MPICXX works for basic MPI call: MPI_Comm_rank()
 AC_LANG_PUSH(C++)
 AC_CHECK_FUNC([MPI_Comm_rank], [],
@@ -240,8 +245,7 @@ AC_ARG_ENABLE([debug],
                      @<:@default: disabled@:>@])],
     [debug=${enableval}], [debug=no]
 )
-AM_CONDITIONAL(LOGVOL_DEBUG, [test "x$debug" = xyes])
-
+ENABLE_DEBUG=0
 if test "x${debug}" = xyes; then
    dnl add -g flag if not presented
    dnl remove all -O and -fast flags
@@ -255,8 +259,11 @@ if test "x${debug}" = xyes; then
    CXXFLAGS="$CXXFLAGS -O0"
    unset str_found
 
+   ENABLE_DEBUG=1
    AC_DEFINE(LOGVOL_DEBUG, 1, ["Debug build"])
 fi
+AC_SUBST(ENABLE_DEBUG)
+AM_CONDITIONAL(LOGVOL_DEBUG, [test "x$debug" = xyes])
 
 AC_ARG_ENABLE([profiling],
    [AS_HELP_STRING([--enable-profiling],
@@ -372,10 +379,13 @@ if test "x$enable_zlib" = "xyes" ; then
        fi
    )
    
+   ZLIB_LDFLAGS=
+   ZLIB_LIBS=" -lz"
    if test "x${ZLIB_INSTALL}" != x ; then
       CPPFLAGS+=" -I${ZLIB_INSTALL}/include"
       LDFLAGS+=" -L${ZLIB_INSTALL}/lib"
       LIBS+=" -lz"
+      ZLIB_LDFLAGS+=" -L${ZLIB_INSTALL}/lib"
    fi
 
    LIBS+=" -lm -ldl"
@@ -425,14 +435,38 @@ if test "x${TESTOUTDIR}" = x ; then
    TESTOUTDIR=.
 fi
 
+dnl Configuration Date
+dnl Note that command 'date' is not portable across Unix platforms
+if test "x$SOURCE_DATE_EPOCH" != x ; then
+    date_str=`date -d @${SOURCE_DATE_EPOCH}`
+    if test "x$date_str" != x ; then
+       AC_SUBST([CONFIG_DATE], ["$date_str"])
+    else
+       date_str=`date -r $SOURCE_DATE_EPOCH`
+       if test "x$date_str" != x ; then
+          AC_SUBST([CONFIG_DATE], ["$date_str"])
+       else dnl ignore SOURCE_DATE_EPOCH
+          AC_SUBST([CONFIG_DATE], ["`date`"])
+       fi
+    fi
+else
+    AC_SUBST([CONFIG_DATE], ["`date`"])
+fi
+UD_MSG_DEBUG([CONFIG_DATE=$CONFIG_DATE])
+
+AC_SUBST(INSTALL_PREFIX,${prefix})
+AC_SUBST(INSTALL_EXEC_PREFIX,${exec_prefix})
+AC_SUBST(PACKAGE_NAME)
+
 AC_CONFIG_FILES(Makefile \
                 src/Makefile \
                 src/H5VL_log.h \
                 test/Makefile \
                 test/basic/Makefile \
                 utils/Makefile \
+                utils/logvol-config \
                 examples/Makefile \
-                examples/hdf5/Makefile \
+                examples/hdf5/Makefile
                 )
 
 AC_OUTPUT

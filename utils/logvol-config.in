@@ -1,0 +1,259 @@
+#! /bin/sh
+#
+# Copyright (C) 2021, Northwestern University and Argonne National Laboratory
+# See COPYRIGHT notice in top-level directory.
+#
+# This forms the basis for the pnetcdf-config utility, which tells you
+# various things about the PnetCDF installation. This code was based on
+# file nc-config.in from netCDF distribution.
+#
+# $Id$
+#
+# @configure_input@
+
+prefix=@INSTALL_PREFIX@
+exec_prefix=@INSTALL_EXEC_PREFIX@
+libdir="@libdir@"
+includedir="@includedir@"
+
+# Preprocessing:
+CPP="@CPP@"
+
+profiling_mode="@ENABLE_PROFILING@"
+debug_mode="@ENABLE_DEBUG@"
+
+CPPFLAGS="@CPPFLAGS@"
+if test "x$debug_mode" = x1 ; then
+   if test "x$CPPFLAGS" = x ; then
+      CPPFLAGS="-DLOGVOL_DEBUG"
+   else
+      CPPFLAGS="$CPPFLAGS -DLOGVOL_DEBUG"
+   fi
+fi
+
+# Compilation:
+MPICC="@MPICC@"
+MPICXX="@MPICXX@"
+
+# debugging and optimization options for compiling and linking
+CFLAGS="@CFLAGS@"
+CXXFLAGS="@CXXFLAGS@"
+
+# Linking:
+LDFLAGS="@LDFLAGS@"
+LIBS="@LIBS@"
+
+version="@PACKAGE_NAME@ @H5VL_LOG_VERSION@"
+CC=${MPICC}
+
+# enable_subfiling="@ENABLE_SUBFILING@"
+is_bigendian="@ac_cv_c_bigendian@"
+enable_zlib="@enable_zlib@"
+
+if test "x$enable_zlib" = x1; then
+   # zlib header files are required to build Log-based VOL, but not Log-based VOL applications
+   LDFLAGS="@ADIOS_LDFLAGS@ $LDFLAGS"
+   LIBS="@ADIOS_LIBS@ $LIBS"
+fi
+
+config_date="@CONFIG_DATE@"
+release_date="@H5VL_LOG_RELEASE_DATE@"
+
+usage()
+{
+    cat <<EOF
+logvol-config is a utility program to display the build and installation
+information of the Log-based VOL library.
+
+Usage: logvol-config [OPTION]
+
+Available values for OPTION include:
+
+  --help                      display this help message and exit
+  --all                       display all options
+  --cc                        C compiler used to build PnetCDF
+  --cflags                    C compiler flags used to build PnetCDF
+  --cppflags                  C pre-processor flags used to build PnetCDF
+  --c++                       C++ compiler used to build PnetCDF
+  --cxxflags                  C++ compiler flags used to build PnetCDF
+  --ldflags                   Linker flags used to build PnetCDF
+  --libs                      Extra libraries used to build PnetCDF
+  --profiling                 Whether internal profiling is enabled or not
+  --debug                     Whether PnetCDF is built with debug mode
+  --prefix                    Installation directory
+  --includedir                Installation directory containing header files
+  --libdir                    Installation directory containing library files
+  --version                   Library version
+  --release-date              Date of PnetCDF source was released
+  --config-date               Date of PnetCDF library was configured
+EOF
+    exit $1
+}
+
+all()
+{
+        echo
+        echo "This $version was built with the following features:"
+        echo
+        echo "  --has-c++                   -> $has_cxx"
+        echo "  --has-fortran               -> $has_fortran"
+if test "x$enable_zlib" = x1; then
+        echo "  --zlib                     -> enabled"
+else
+        echo "  --zlib                     -> disabled"
+fi
+# if test "x$enable_subfiling" = x1; then
+#         echo "  --subfiling                 -> enabled"
+# else
+#         echo "  --subfiling                 -> disabled"
+# fi
+if test "x$profiling_mode" = x1; then
+        echo "  --profiling                 -> enabled"
+else
+        echo "  --profiling                 -> disabled"
+fi
+if test "x$debug_mode" = x1; then
+        echo "  --debug                     -> enabled"
+else
+        echo "  --debug                     -> disabled"
+fi
+        echo
+        echo "This $version was built using the following compilers and flags:"
+        echo
+        echo "  --cc            -> $MPICC"
+        echo "  --cxx           -> $MPICXX"
+        echo "  --cppflags      -> $CPPFLAGS"
+        echo "  --cflags        -> $CFLAGS"
+        echo "  --cxxflags      -> $CXXFLAGS"
+        echo "  --ldflags       -> $LDFLAGS"
+        echo "  --libs          -> $LIBS"
+        echo
+        echo "This $version has been installed under the following directories:"
+        echo
+        echo "  --prefix        -> $prefix"
+        echo "  --includedir    -> $includedir"
+        echo "  --libdir        -> $libdir"
+        echo
+        echo "Additional information:"
+        echo
+        echo "  --version       -> $version"
+        echo "  --release-date  -> $release_date"
+        echo "  --config-date   -> $config_date"
+}
+
+if test $# -eq 0; then
+    usage 1
+fi
+
+while test $# -gt 0; do
+    case "$1" in
+    # this deals with options in the style
+    # --option=value and extracts the value part
+    # [not currently used]
+    -*=*) value=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+    *) value= ;;
+    esac
+
+    case "$1" in
+
+    --help)
+        usage 0
+        ;;
+
+    --all)
+        all
+        ;;
+
+    --cc)
+        echo "$MPICC" | sed -e 's/^[ \t]*//'
+        ;;
+
+    --cflags)
+        echo "$CFLAGS" | sed -e 's/^[ \t]*//'
+        ;;
+
+    --cppflags)
+        echo "$CPPFLAGS" | sed -e 's/^[ \t]*//'
+        ;;
+
+    --prefix)
+       echo "$prefix" | sed -e 's/^[ \t]*//'
+       ;;
+
+    --includedir)
+       echo "$includedir" | sed -e 's/^[ \t]*//'
+       ;;
+
+    --libdir)
+       echo "$libdir" | sed -e 's/^[ \t]*//'
+       ;;
+
+    --ldflags)
+       echo "$LDFLAGS" | sed -e 's/^[ \t]*//'
+       ;;
+
+    --libs)
+       echo "$LIBS" | sed -e 's/^[ \t]*//'
+       ;;
+
+    --version)
+        echo "$version" | sed -e 's/^[ \t]*//'
+        ;;
+
+    --cxx)
+        echo "$MPICXX" | sed -e 's/^[ \t]*//'
+        ;;
+
+    --cxxflags)
+        echo "$CXXFLAGS" | sed -e 's/^[ \t]*//'
+        ;;
+
+    --zlib)
+if test "x$enable_zlib" = x1; then
+        echo "enabled"
+else
+        echo "disabled"
+fi
+        ;;
+
+#     --subfiling)
+# if test "x$enable_subfiling" = x1; then
+#         echo "enabled"
+# else
+#         echo "disabled"
+# fi
+#        ;;
+
+    --profiling)
+if test "x$profiling_mode" = x1; then
+        echo "enabled"
+else
+        echo "disabled"
+fi
+        ;;
+
+    --debug)
+if test "x$debug_mode" = x1; then
+        echo "enabled"
+else
+        echo "disabled"
+fi
+        ;;
+
+    --release-date)
+        echo "$release_date"
+        ;;
+
+    --config-date)
+        echo "$config_date"
+        ;;
+
+    *)
+        echo "unknown option: $1"
+        usage 1
+        ;;
+    esac
+    shift
+done
+
+exit 0
