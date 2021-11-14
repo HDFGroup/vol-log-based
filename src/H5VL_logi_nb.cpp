@@ -352,7 +352,9 @@ err_out:;
 	return err;
 }
 
-herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> reqs, hid_t dxplid) {
+herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
+								 std::vector<H5VL_log_rreq_t *> &reqs,
+								 hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
@@ -366,7 +368,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> r
 		NULL;  // Temporary buffers for packing data from unfiltered data block into request buffer
 	size_t tbsize = 0;	// size of tbuf
 	MPI_Status stat;
-	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Search index
@@ -405,8 +407,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> r
 		mpierr = MPI_File_read_all (fp->fh, MPI_BOTTOM, 1, mtype, &stat);
 		CHECK_MPIERR
 	} else {
-		mpierr =
-			MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
+		mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
 		CHECK_MPIERR
 
 		mpierr = MPI_File_read_all (fp->fh, MPI_BOTTOM, 0, MPI_BYTE, &stat);
@@ -509,16 +510,75 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> r
 		}
 	}
 
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_PERFORM_READ);
+err_out:;
+	free (tbuf);
+	for (auto const &buf : bufs) { free (buf.second); }
+
+	return err;
+}
+
+herr_t H5VL_log_nb_flush_read_reqs (void *file,
+									std::vector<H5VL_log_rreq_t *> &reqs,
+									hid_t dxplid) {
+	herr_t err = 0;
+	int mpierr;
+	int i;
+	int group_id;  // Original group ID
+	H5VL_loc_params_t loc;
+	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+
+	H5VL_LOGI_PROFILING_TIMER_START;
+
+	// Iterate through all subfiles
+	group_id = fp->group_id;  // Backup group ID
+	for (i = 1; i <= fp->ngroup;
+		 i++) {				   // Process our own subfile last so wew don't need to reopen it
+		if (fp->ngroup > 1) {  // No need to reopen if no subfiles
+			H5VL_LOGI_PROFILING_TIMER_START;
+
+			// Close the log group
+			err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
+			CHECK_ERR
+			// Close previous subfile with MPI
+			mpierr = MPI_File_close (&(fp->fh));
+			CHECK_MPIERR
+			// Close previous subfile
+			err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
+			CHECK_ERR
+
+			// Open the current subfile
+			fp->group_id = (group_id + i) % fp->ngroup;
+			err			 = H5VL_log_filei_open_subfile (fp, fp->flag, fp->ufaplid, fp->dxplid);
+			CHECK_ERR
+			// Open the LOG group
+			loc.obj_type = H5I_FILE;
+			loc.type	 = H5VL_OBJECT_BY_SELF;
+			fp->lgp		 = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, LOG_GROUP_NAME,
+									   H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
+			CHECK_PTR (fp->lgp)
+			// Open the file with MPI
+			mpierr = MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, fp->info,
+									&(fp->fh));
+			CHECK_MPIERR
+
+			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS_SWITCH_SUBFILE);
+		}
+
+		// Erase the index table of previous subfile
+		for (auto &t : fp->idx) { t.clear (); }
+
+		err = H5VL_log_nb_perform_read (fp, reqs, dxplid);
+		CHECK_ERR
+	}
+
 	// Clear the request queue
 	for (auto rp : reqs) { delete rp; }
 	reqs.clear ();
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS);
+
 err_out:;
-
-	free (tbuf);
-	for (auto const &buf : bufs) { free (buf.second); }
-
 	return err;
 }
 
@@ -588,8 +648,8 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_INIT);
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-	loc.type = H5VL_OBJECT_BY_SELF;
-    loc.obj_type = H5I_GROUP;
+	loc.type	 = H5VL_OBJECT_BY_SELF;
+	loc.obj_type = H5I_GROUP;
 
 	// Get file offset and total size globally
 	mpierr = MPI_Allreduce (&fsize_local, &fsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
@@ -665,10 +725,10 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 					if (d.ubuf != d.xbuf) { H5VL_log_filei_bfree (fp, (void *)(d.xbuf)); }
 				}
 			}
-			fp->nflushed = fp->wreqs.size ();\
+			fp->nflushed = fp->wreqs.size ();
 
-            // Increase number of log dataset
-		    (fp->nldset)++;
+			// Increase number of log dataset
+			(fp->nldset)++;
 		}
 
 		// Create virtaul log dataset in the main file

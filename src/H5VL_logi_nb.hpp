@@ -13,7 +13,7 @@
 #define H5VL_LOGI_META_FLAG_SEL_ENCODE	0x04
 #define H5VL_LOGI_META_FLAG_SEL_DEFLATE 0x08
 #define H5VL_LOGI_META_FLAG_SEL_REF		0x10
-#define H5VL_LOGI_META_FLAG_REC     	0x20
+#define H5VL_LOGI_META_FLAG_REC			0x20
 
 typedef struct H5VL_log_req_data_block_t {
 	char *ubuf;	  // User buffer
@@ -36,7 +36,8 @@ class H5VL_log_wreq_t {
 	int nsel;
 	// size_t meta_size;
 
-	MPI_Offset meta_off;  // Offset of the metadata related to the starting metadata block of the process
+	MPI_Offset
+		meta_off;  // Offset of the metadata related to the starting metadata block of the process
 
 	std::vector<H5VL_log_req_data_block_t> dbufs;  // Data buffers <xbuf, ubuf, size>
 
@@ -102,7 +103,10 @@ class H5VL_log_rreq_t {
 	~H5VL_log_rreq_t ();
 };
 
-herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> reqs, hid_t dxplid);
+herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &reqs, hid_t dxplid);
+herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
+								 std::vector<H5VL_log_rreq_t *> &reqs,
+								 hid_t dxplid);
 herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid);
 herr_t H5VL_log_nb_ost_write (
 	void *file, off64_t doff, off64_t off, int cnt, int *mlens, off64_t *moffs);

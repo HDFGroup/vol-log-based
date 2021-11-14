@@ -31,6 +31,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	int rank;		// Global rank of current process
 	int np;			// Number of processes
 	MPI_Comm comm;	// Global communicator
+	MPI_Comm info;	// Main file info
 
 	/* Aligned data layout */
 	// Group is a set of processes sharing the same subfile or lustre stripe

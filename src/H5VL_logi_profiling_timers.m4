@@ -100,6 +100,8 @@ define(`H5VL_LOG_TIMERS', `( `H5VL_log_file_create', dnl
                             `H5VL_logi_get_dataspace_sel_type', dnl
                             `H5VL_logi_get_dataspace_selection', dnl
                             `H5VL_log_nb_flush_read_reqs', dnl
+                            `H5VL_log_nb_perform_read', dnl
+                            `H5VL_log_nb_flush_read_reqs_switch_subfile', dnl
                             `H5VL_log_nb_flush_write_reqs', dnl
                             `H5VL_log_nb_flush_write_reqs_init', dnl
                             `H5VL_log_nb_flush_write_reqs_sync', dnl

@@ -701,7 +701,8 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 
 	// Flush it immediately if blocking, otherwise place into queue
 	if (rtype != H5VL_LOG_REQ_NONBLOCKING) {
-		err = H5VL_log_nb_flush_read_reqs (dp->fp, std::vector<H5VL_log_rreq_t *> (1, r), plist_id);
+		std::vector<H5VL_log_rreq_t *> tmp(1, r);
+		err = H5VL_log_nb_flush_read_reqs (dp->fp, tmp, plist_id);
 		CHECK_ERR
 	} else {
 		dp->fp->rreqs.push_back (r);

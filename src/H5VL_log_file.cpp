@@ -117,6 +117,8 @@ void *H5VL_log_file_create (
 	fp->zbuf   = NULL;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR
+	mpierr = MPI_Info_dup (mpiinfo, &(fp->info));
+	CHECK_MPIERR
 	mpierr = MPI_Comm_rank (comm, &(fp->rank));
 	CHECK_MPIERR
 	mpierr = MPI_Comm_size (comm, &(fp->np));
@@ -174,6 +176,7 @@ void *H5VL_log_file_create (
 		fp->group_np   = fp->np;
 		fp->group_comm = fp->comm;
 		fp->group_id   = 0;
+		fp->ngroup	   = 1;
 	}
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP_RANK);
 
@@ -317,6 +320,8 @@ void *H5VL_log_file_open (
 	fp->zbsize = 0;
 	fp->zbuf   = NULL;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
+	CHECK_MPIERR
+	mpierr = MPI_Info_dup (mpiinfo, &(fp->info));
 	CHECK_MPIERR
 	mpierr = MPI_Comm_rank (comm, &(fp->rank));
 	CHECK_MPIERR

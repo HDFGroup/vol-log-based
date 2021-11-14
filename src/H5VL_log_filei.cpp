@@ -76,16 +76,6 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	fp->group_rank = fp->rank;
 	fp->group_comm = fp->comm;
 	fp->group_id   = 0;
-
-	// Visit all dataasets for info
-	args.op_type			 = H5VL_OBJECT_VISIT;
-	args.args.visit.idx_type = H5_INDEX_CRT_ORDER;
-	args.args.visit.order	 = H5_ITER_INC;
-	args.args.visit.op		 = H5VL_log_filei_dset_visit;
-	args.args.visit.op_data	 = NULL;
-	args.args.visit.fields	 = H5O_INFO_ALL;
-	err = H5VLobject_specific (fp->uo, &loc, fp->uvlid, &args, fp->dxplid, NULL);
-	CHECK_ERR
 	
 	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
@@ -96,6 +86,7 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 		fp->group_np   = fp->np;
 		fp->group_comm = fp->comm;
 		fp->group_id   = 0;
+		fp->ngroup	   = 1;
 	}
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN_GROUP_RANK);
 
@@ -122,16 +113,22 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
 
 	// Open the file with MPI
-	err = H5Pget_fapl_mpio (fp->ufaplid, NULL, &mpiinfo);
-	if (err != 0) {	 // No MPI, use MPI_INFO_NULL
-		mpiinfo = MPI_INFO_NULL;
-	}
 	H5VL_LOGI_PROFILING_TIMER_START;
 	mpierr =
-		MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, mpiinfo, &(fp->fh));
+		MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, fp->info, &(fp->fh));
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FH);
 	CHECK_MPIERR
+
+	// Visit all dataasets for info
+	args.op_type			 = H5VL_OBJECT_VISIT;
+	args.args.visit.idx_type = H5_INDEX_CRT_ORDER;
+	args.args.visit.order	 = H5_ITER_INC;
+	args.args.visit.op		 = H5VL_log_filei_dset_visit;
+	args.args.visit.op_data	 = NULL;
+	args.args.visit.fields	 = H5O_INFO_ALL;
+	err = H5VLobject_specific (fp->uo, &loc, fp->uvlid, &args, fp->dxplid, NULL);
+	CHECK_ERR
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
 
@@ -633,6 +630,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	// Clean up
 	if (fp->group_comm != fp->comm) { MPI_Comm_free (&(fp->group_comm)); }
 	MPI_Comm_free (&(fp->comm));
+	MPI_Info_free (&(fp->info));
 	H5Pclose (fp->dxplid);
 	H5Pclose (fp->ufaplid);
 
