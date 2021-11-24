@@ -109,8 +109,7 @@ Below describes  two ways to use the log-based VOL plugin.
       the log blocks intersecting with the read request.
     + The searching requires to read the entire metadata of the file into the memory.
   + The subfiling feature is under development.
-  + Does not support async operations
-    + We will consider the feature when HDF5's async API is officially released.
+  + Async I/O (a new feature of HDF5 in the future release) is not yet supported.
 
 ### References
 * [HDF5 VOL application developer manual](https://github.com/HDFGroup/hdf5doc/raw/vol_docs/RFCs/HDF5/VOL/user_guide/vol_user_guide.pdf)
