@@ -95,11 +95,11 @@ This software repository contains source codes implementing an [HDF5](https://ww
       ```
 
 ### Current limitations
-  + Not compatible with parallel NetCDF4 applications
-  + Limited support for dataset reading
-    + Reading is implemented by naively searching through log records
-    + No performance optimization for reading
-    + The entire metadata of the file must fit into the memory
+  + It does not support NetCDF4 programs that write in the HDF5 file format.
+  + Read operations:
+    + Reading is implemented by naively searching through log records to find
+      the log blocks intersecting with the read request.
+    + The searching requires to read the entire metadata of the file into the memory.
   + No subfiling support
     + The feature is under development
   + Does not support async operations
