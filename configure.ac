@@ -416,8 +416,8 @@ AC_CONFIG_FILES(Makefile \
                 test/Makefile \
                 test/basic/Makefile \
                 utils/Makefile \
-                example/Makefile \
-                example/hdf5/Makefile \
+                examples/Makefile \
+                examples/hdf5/Makefile \
                 )
 
 AC_OUTPUT
