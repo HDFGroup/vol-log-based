@@ -61,6 +61,9 @@ AH_BOTTOM([#endif])
 
 AC_PROG_SED
 dnl check sed command option -i and set SED_I (this requires RM defined)
+if test "x$RM" = x ; then
+   RM=rm
+fi
 UD_PROG_SED_I
 AC_PROG_EGREP
 
