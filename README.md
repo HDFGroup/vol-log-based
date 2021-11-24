@@ -1,24 +1,24 @@
 ## Log-based VOL - an HDF5 VOL Plugin that stores HDF5 datasets in a log-based storage layout
 
-This software repository contains source codes implementing an [HDF5](https://www.hdfgroup.org) Virtual Object Layer ([VOL](https://bitbucket.hdfgroup.org/projects/HDFFV/repos/hdf5doc/browse/RFCs/HDF5/VOL/developer_guide/main.pdf))) plugin that stores HDF5 datasets in a log-based storage layout. It allows applications to generate efficient log-based I/O requests using HDF5 APIs.
+This software repository contains source codes implementing an [HDF5](https://www.hdfgroup.org) Virtual Object Layer ([VOL](https://bitbucket.hdfgroup.org/projects/HDFFV/repos/hdf5doc/browse/RFCs/HDF5/VOL/developer_guide/main.pdf))) plugin that stores HDF5 datasets in a log-based storage layout. In the log-based layout, data of multiple write requests made by an MPI process are appended one after another in the file. Such I/O strategy can avoid the expensive inter-process communication and I/O serialization due to file lock contentions when storing data in the canonical order. Files created by this VOL conform with the HDF5 file format, but require this VOL to read them back. Through the log-based VOL, exist HDF5 programs can achieve a better parallel write performance with minimal changes to their codes.
 
 ### Software Requirements
 * [HDF5 develop branch](https://github.com/HDFGroup/hdf5)
-  + Parallel I/O support (--enable-parallel) is required
+  + Configured with parallel I/O support (--enable-parallel)
 * MPI C and C++ compilers
   + The plugin uses the constant initializer; a C++ compiler supporting std 17 is required
 * Autotools utility
-  + autoconf 2.69
-  + automake 1.16.1
-  + libtoolize 2.4.6
-  + m4 1.4.18
+  + [autoconf](https://www.gnu.org/software/autoconf/) 2.69
+  + [automake](https://www.gnu.org/software/automake/) 1.16.1
+  + [libtool](https://www.gnu.org/software/libtool/) 2.4.6
+  + [m4](https://www.gnu.org/software/m4/) 1.4.18
 
 ### Building Steps
 * Build HDF5 with VOL and parallel I/O support
   + Clone the develop branch from the HDF5 repository
-  + Run command ./autogen.sh
+  + Run command "./autogen.sh"
   + Configure HDF5 with parallel I/O enabled
-  + Run make install
+  + Run "make install"
   + Example commands are given below. This example will install
     the HD5 library under the folder `${HOME}/HDF5`.
     ```
@@ -31,8 +31,8 @@ This software repository contains source codes implementing an [HDF5](https://ww
     ```
 * Build this VOL plugin, `log-based vol.`
   + Clone this VOL plugin repository
-  + Run command autoreconf -i
-  + Configure log-based VOL 
+  + Run command "autoreconf -i"
+  + Configure log-based VOL
     + Shared library is required to enable log-based VOL by environment variables
     + Compile with zlib library to enable metadata compression
   + Example commands are given below.
@@ -48,7 +48,7 @@ This software repository contains source codes implementing an [HDF5](https://ww
 ### Compile user programs that use this VOL plugin
 * Enable log-based VOL programmatically
   * Include header file.
-    + Add the following line to your C/C++ source codes.
+    + Add the following line to include the log-based VOL header file in your C/C++ source codes.
       ```
       #include <H5VL_log.h>
       ```
@@ -64,13 +64,13 @@ This software repository contains source codes implementing an [HDF5](https://ww
       % mpicc prog.o -o prog -L${HOME}/Log_IO_VOL/lib -lH5VL_log \
                              -L${HOME}/HDF5/lib -lhdf5
       ```
-  * Edit the source code to use log-based VOL when opening HDF5 files
-    + Register VOL callback structure using `H5VLregister_connector`
+  * Edit the source code to use log-based VOL when creating or opening an HDF5 file.
+    + Register VOL callback structure through a call to `H5VLregister_connector()`
     + Callback structure is named `H5VL_log_g`
     + Set a file creation property list to use log-based vol
-    + For example,
+    + Below shows an example code fragment.
         ```
-        fapl_id = H5Pcreate(H5P_FILE_ACCESS); 
+        fapl_id = H5Pcreate(H5P_FILE_ACCESS);
         H5Pset_fapl_mpio(fapl_id, comm, info);
         H5Pset_all_coll_metadata_ops(fapl_id, true);
         H5Pset_coll_metadata_write(fapl_id, true);
