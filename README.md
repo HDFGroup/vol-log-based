@@ -25,17 +25,18 @@ This software repository contains source codes implementing an [HDF5](https://ww
     % git clone https://github.com/HDFGroup/hdf5.git -b develop
     % cd hdf5
     % export HDF5_LIBTOOL=/usr/bin/libtoolize
-    % ./autogen
+    % ./autogen.sh
     % ./configure --prefix=${HOME}/HDF5 --enable-parallel CC=mpicc
     % make -j4 install
     ```
-* Build this VOL plugin, `log-based vol.`
+* Build this VOL plugin, `log-based vol`.
   + Clone this VOL plugin repository
   + Run command "autoreconf -i"
   + Configure log-based VOL
-    + Shared library is required to enable log-based VOL by environment variables
-    + Compile with zlib library to enable metadata compression
-  + Example commands are given below.
+    + Shared library (--enable-shared) is required when using the log-based VOL
+      through setting the HDF5 environment variables. See below for details.
+    + Compile with zlib library (--enable-zlib) to enable metadata compression.
+  + Example build commands are given below.
     ```
     % git clone https://github.com/DataLib-ECP/vol-log-based.git
     % cd log_io_vol
@@ -46,7 +47,9 @@ This software repository contains source codes implementing an [HDF5](https://ww
     The VOL plugin library is now installed under the folder `${HOME}/Log_IO_VOL.`
 
 ### Compile user programs that use this VOL plugin
-* Enable log-based VOL programmatically
+Below describes  two ways to use the log-based VOL plugin.
+* Modify the source codes, particularly if you would like to use the new APIs,
+  such as `H5Dwrite_n()`, created by this VOL.
   * Include header file.
     + Add the following line to include the log-based VOL header file in your C/C++ source codes.
       ```
@@ -78,21 +81,26 @@ This software repository contains source codes implementing an [HDF5](https://ww
         H5Pset_vol(fapl_id, log_vol_id, NULL);
         ```
     + See a full example program in `examples/create_open.c`
-* Enable log-based VOL dynamically through environment variables
-  + No additional action required on programming and compiling
-  + Tell HDF5 to use the log-based VOL through environment variables
-    + Append log-based VOL lib directory to shared object search path (LD_LIBRARY_PATH)
-      ```
-      % export LD_LIBRARY_PATH=${HOME}/Log_IO_VOL/lib
-      ```
-    + Append log-based VOL lib directory to HDF5 VOL search path (HDF5_PLUGIN_PATH)
-      ```
-      % export HDF5_PLUGIN_PATH=${HOME}/Log_IO_VOL/lib
-      ```
-    + Set log-based VOL as HDF5's default VOL (HDF5_VOL_CONNECTOR)
-      ```
-      % export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
-      ```
+
+* Without modifying the source codes.
+  + Using log-based VOL can be enabled at the run time through setting the
+    environment variables below. No source code changes of existing HDF5
+    programs is required when using this approach.
+    (Note this is an HDF5 feature, applicable to all VOL plugins.)
+  + Append log-based VOL library directory to shared object search path,
+    `LD_LIBRARY_PATH`.
+    ```
+    % export LD_LIBRARY_PATH=${HOME}/Log_IO_VOL/lib
+    ```
+  + Set or add the log-based VOL library directory to HDF5 VOL search path,
+    `HDF5_PLUGIN_PATH`.
+    ```
+    % export HDF5_PLUGIN_PATH=${HOME}/Log_IO_VOL/lib
+    ```
+  + Set the HDF5's default VOL, `HDF5_VOL_CONNECTOR`.
+    ```
+    % export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
+    ```
 
 ### Current limitations
   + It does not support NetCDF4 programs that write in the HDF5 file format.
@@ -100,8 +108,7 @@ This software repository contains source codes implementing an [HDF5](https://ww
     + Reading is implemented by naively searching through log records to find
       the log blocks intersecting with the read request.
     + The searching requires to read the entire metadata of the file into the memory.
-  + No subfiling support
-    + The feature is under development
+  + The subfiling feature is under development.
   + Does not support async operations
     + We will consider the feature when HDF5's async API is officially released.
 
