@@ -133,14 +133,13 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 		case H5S_SEL_HYPERSLABS: {
 			nblock = H5Sget_select_hyper_nblocks (dsid);
 			CHECK_ID (nblock)
+			this->nsel = nblock;
+			this->reserve (nblock);
 
 			if (nblock == 1) {
 				hsize_t cord[H5S_MAX_RANK * 2];
 
 				err = H5Sget_select_hyper_blocklist (dsid, 0, 1, cord);
-
-				this->nsel = 1;
-				this->reserve (1);
 
 				for (i = 0; i < ndim; i++) {
 					starts[0][i] = (MPI_Offset)cord[i];
