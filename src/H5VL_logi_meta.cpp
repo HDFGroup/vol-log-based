@@ -5,6 +5,7 @@
 #include <cstring>
 #include <functional>
 #include <vector>
+#include <map>
 //
 #include <hdf5.h>
 //
@@ -17,24 +18,38 @@
 herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 									   void *ent,
 									   H5VL_logi_metablock_t &block,
-									   std::vector<H5VL_logi_metasel_t> &sels) {
+									   std::map<char *, std::vector<H5VL_logi_metasel_t>> &bcache){
 	herr_t err = 0;
 	int i;
 	MPI_Offset *bp;			   // Next 8 byte selection to process
 	char *bufp = (char *)ent;  // Next byte to process in ent
 	size_t bsize;			   // Size of a selection block
+	hsize_t recnum;					  // Record number
+	MPI_Offset roff;	// Related offset of the referenced entry
 
 	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
 	bufp += sizeof (H5VL_logi_meta_hdr);
-	// Data location and size in the file
-	block.hdr.foff = *((MPI_Offset *)bufp);
-	bufp += sizeof (MPI_Offset);
-	block.hdr.fsize = *((MPI_Offset *)bufp);
-	bufp += sizeof (MPI_Offset);
+
+	// Check if it is a record entry
+	if (block.hdr.flag & H5VL_LOGI_META_FLAG_REC) {
+		// Get record number
+		recnum = *((MPI_Offset *)bufp);
+		bufp += sizeof (MPI_Offset);
+	} 
 
 	// Get referenced selections
-	block.sels = sels;
+	roff = *((MPI_Offset *)bufp);
+	block.sels = bcache[bufp + roff];
+
+	// Overwrite first dim if it is rec entry
+	if (block.hdr.flag & H5VL_LOGI_META_FLAG_REC) {
+		for (auto &sel : block.sels) {
+			sel.start[0] = recnum;
+			sel.count[0] = 1;
+		}
+	}
+
 
 	// Calculate the unfiltered size of the data block
 	block.dsize = 0;
@@ -47,8 +62,8 @@ herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 	// Calculate the unfiltered size of the data block
 	// Data size = data offset of the last block + size of the alst block
 	block.dsize = dset.esize;
-	for (i = 0; i < dset.ndim; i++) { block.dsize *= block.sels[sels.size () - 1].count[i]; }
-	block.dsize += block.sels[sels.size () - 1].doff;
+	for (i = 0; i < dset.ndim; i++) { block.dsize *= block.sels[block.sels.size () - 1].count[i]; }
+	block.dsize += block.sels[block.sels.size () - 1].doff;
 
 err_out:;
 	return err;
@@ -65,10 +80,25 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	bool zbufalloc = false;			  // Should we free zbuf
 	char *bufp	   = (char *)ent;	  // Next byte to process in ent
 	MPI_Offset *bp;					  // Next 8 byte selection to process
+	hsize_t recnum;					  // Record number
+	int encdim;						  // number of dim encoded (ndim or ndim - 1)
+	int isrec;						  // Is a record entry
 
 	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
 	bufp += sizeof (H5VL_logi_meta_hdr);
+
+	// Check if it is a record entry
+	if (block.hdr.flag & H5VL_LOGI_META_FLAG_REC) {
+		encdim = dset.ndim - 1;
+		isrec  = 1;
+		// Get record number
+		recnum = *((MPI_Offset *)bufp);
+		bufp += sizeof (MPI_Offset);
+	} else {
+		isrec  = 0;
+		encdim = dset.ndim;
+	}
 
 	// If there is more than 1 selection
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
@@ -91,10 +121,10 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 			if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
 				// Encoded start and count
 				esize += nsel * sizeof (MPI_Offset) * 2;
-				bsize += sizeof (MPI_Offset) * (dset.ndim - 1);
+				bsize += sizeof (MPI_Offset) * (encdim - 1);
 			} else {
 				// Start and count as coordinate
-				esize += nsel * sizeof (MPI_Offset) * 2 * dset.ndim;
+				esize += nsel * sizeof (MPI_Offset) * 2 * encdim;
 			}
 			/*
 			if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SELX) {  // Physical location
@@ -111,8 +141,8 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 
 			// Decompress the metadata
 			inlen = block.hdr.meta_size - sizeof (H5VL_logi_meta_hdr) - sizeof (int);
-			clen = bsize;
-			err	 = H5VL_log_zip_decompress (bufp, inlen, zbuf, &clen);
+			clen  = bsize;
+			err	  = H5VL_log_zip_decompress (bufp, inlen, zbuf, &clen);
 			CHECK_ERR
 #else
 			RET_ERR ("Comrpessed Metadata Support Not Enabled")
@@ -131,9 +161,9 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	bp = (MPI_Offset *)zbuf;
 	// Retrieve the selection encoding info
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-		memcpy (dsteps, bp, sizeof (MPI_Offset) * (dset.ndim - 1));
-		dsteps[dset.ndim - 1] = 1;
-		bp += dset.ndim - 1;
+		memcpy (dsteps, bp, sizeof (MPI_Offset) * (encdim - 1));
+		dsteps[encdim - 1] = 1;
+		bp += encdim - 1;
 	}
 
 	/* Old code for merged metadata
@@ -173,24 +203,32 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 
 	block.sels.resize (nsel);
 
+	// Fill up the first dim if it is rec entry
+	if (isrec) {
+		for (auto &sel : block.sels) {
+			sel.start[0] = recnum;
+			sel.count[0] = 1;
+		}
+	}
+
 	// Retrieve starts of selections
 	for (i = 0; i < nsel; i++) {
 		if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-			H5VL_logi_sel_decode (dset.ndim, dsteps, *((MPI_Offset *)bp), block.sels[i].start);
+			H5VL_logi_sel_decode (encdim, dsteps, *((MPI_Offset *)bp), block.sels[i].start + isrec);
 			bp++;
 		} else {
-			memcpy (block.sels[i].start, bp, sizeof (MPI_Offset) * dset.ndim);
-			bp += dset.ndim;
+			memcpy (block.sels[i].start + isrec, bp, sizeof (MPI_Offset) * encdim);
+			bp += encdim;
 		}
 	}
 	// Retrieve counts of selections
 	for (i = 0; i < nsel; i++) {
 		if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-			H5VL_logi_sel_decode (dset.ndim, dsteps, *((MPI_Offset *)bp), block.sels[i].count);
+			H5VL_logi_sel_decode (encdim, dsteps, *((MPI_Offset *)bp), block.sels[i].count + isrec);
 			bp++;
 		} else {
-			memcpy (block.sels[i].count, bp, sizeof (MPI_Offset) * dset.ndim);
-			bp += dset.ndim;
+			memcpy (block.sels[i].count + isrec, bp, sizeof (MPI_Offset) * encdim);
+			bp += encdim;
 		}
 		// Calculate the offset of data of the selection within the unfiltered data block
 		if (i > 0) {
@@ -205,7 +243,7 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	// Calculate the unfiltered size of the data block
 	// Data size = data offset of the last block + size of the alst block
 	block.dsize = dset.esize;
-	for (j = 0; j < dset.ndim; j++) { block.dsize *= block.sels[i - 1].count[j]; }
+	for (j = 0; j < encdim; j++) { block.dsize *= block.sels[i - 1].count[j]; }
 	block.dsize += block.sels[i - 1].doff;
 
 err_out:;
@@ -232,7 +270,7 @@ int H5VL_logi_metacache::add(char *buf, size_t size) {
 }
 
 int H5VL_logi_metacache::find(char *buf, size_t size) {
-	
+
 }
 
 void H5VL_logi_metacache::clear() {

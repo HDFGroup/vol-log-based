@@ -36,6 +36,7 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 	herr_t err			= 0;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	size_t mbsize;
+	hsize_t recnum;	// Record number
 	int i;
 	int encdim;	 // number of dim encoded (ndim or ndim - 1)
 	int flag;
@@ -50,10 +51,10 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 	// Check if it is a record write
 	if (dp->ndim && dp->mdims[0] == H5S_UNLIMITED) {
 		if (sels->nsel > 0) {
-			hsize_t tmp = sels->starts[0][0];
+			recnum = sels->starts[0][0];
 			for (i = 0; i < sels->nsel; i++) {
 				if (sels->counts[i][0] != 1) break;
-				if (sels->starts[i][0] != tmp) break;
+				if (sels->starts[i][0] != recnum) break;
 			}
 			if (i == sels->nsel) {
 				flag |= H5VL_LOGI_META_FLAG_REC;
@@ -99,7 +100,7 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 
 	// Add record number
 	if (flag & H5VL_LOGI_META_FLAG_REC) {
-		*((MPI_Offset *)this->sel_buf) = nsel;
+		*((MPI_Offset *)this->sel_buf) = recnum;
 		this->sel_buf += sizeof (MPI_Offset);
 	}
 	bufp = this->sel_buf;

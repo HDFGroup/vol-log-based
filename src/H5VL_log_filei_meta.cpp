@@ -94,7 +94,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 	// Gather offset and lens
 	for (auto &rp : fp->wreqs) {
-		offs[nentry]   = (MPI_Aint)rp->meta_buf;
+		offs[nentry] = (MPI_Aint)rp->meta_buf;
 		lens[nentry] = (int)rp->hdr->meta_size;
 		mdsize += lens[nentry++];
 	}
@@ -309,7 +309,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 					MPI_Offset roff = *((MPI_Offset *)hdr_tmp + 1);
 
 					err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr_tmp->did], bufp, block,
-														  bcache[bufp + roff]);
+														  bcache);
 					CHECK_ERR
 				} else {
 					err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);
@@ -468,8 +468,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 			if (hdr_tmp->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
 				MPI_Offset roff = *((MPI_Offset *)hdr_tmp + 1);
 
-				err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr_tmp->did], bufp, block,
-													  bcache[bufp + roff]);
+				err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr_tmp->did], bufp, block, bcache);
 				CHECK_ERR
 			} else {
 				err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);

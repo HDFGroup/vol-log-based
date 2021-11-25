@@ -3,6 +3,7 @@
 #include <functional>
 #include <vector>
 #include <unordered_map>
+#include <map>
 //
 #include "H5VL_logi_dataspace.hpp"
 //#include "H5VL_logi_idx.hpp"
@@ -113,4 +114,4 @@ struct H5VL_log_selections;
 herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 									   void *ent,
 									   H5VL_logi_metablock_t &block,
-									   std::vector<H5VL_logi_metasel_t> &sels);
+									   std::map<char *, std::vector<H5VL_logi_metasel_t>> &bcache);

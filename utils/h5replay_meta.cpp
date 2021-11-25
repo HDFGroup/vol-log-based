@@ -139,9 +139,7 @@ herr_t h5replay_parse_meta (int rank,
 
 				// Have to parse all entries for reference purpose
 				if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-					MPI_Offset roff = *((MPI_Offset *)hdr + 1);
-
-					H5VL_logi_metaentry_ref_decode (dsets[hdr->did], ep, block, bcache[ep + roff]);
+					H5VL_logi_metaentry_ref_decode (dsets[hdr->did], ep, block, bcache);
 				} else {
 					H5VL_logi_metaentry_decode (dsets[hdr->did], ep, block);
 
