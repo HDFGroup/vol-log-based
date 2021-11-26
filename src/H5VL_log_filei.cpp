@@ -8,6 +8,7 @@
 #include <unistd.h>
 // Logvol hdrs
 #include "H5VL_log.h"
+#include "H5VL_log_dataset.hpp"
 #include "H5VL_log_file.hpp"
 #include "H5VL_log_filei.hpp"
 #include "H5VL_logi.hpp"
@@ -50,6 +51,7 @@ err_out:;
 herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	H5VL_loc_params_t loc;
+	H5VL_object_specific_args_t args;
 	int attbuf[4];
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -72,11 +74,44 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	fp->config = attbuf[3];
 	fp->idx.resize (fp->ndset);
 	fp->mreqs.resize (fp->ndset);
+	fp->dsets.resize (fp->ndset);
 	fp->group_rank = fp->rank;
 	fp->group_comm = fp->comm;
 	fp->group_id   = 0;
 
+	// Visit all dataasets for info
+	args.op_type			 = H5VL_OBJECT_VISIT;
+	args.args.visit.idx_type = H5_INDEX_CRT_ORDER;
+	args.args.visit.order	 = H5_ITER_INC;
+	args.args.visit.op		 = H5VL_log_filei_dset_visit;
+	args.args.visit.op_data	 = NULL;
+	args.args.visit.fields	 = H5O_INFO_ALL;
+	err = H5VLobject_specific (fp->uo, &loc, fp->uvlid, &args, fp->dxplid, NULL);
+	CHECK_ERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
+
+err_out:;
+	return err;
+}
+
+herr_t H5VL_log_filei_dset_visit (hid_t o_id,
+								  const char *name,
+								  const H5O_info_t *object_info,
+								  void *op_data) {
+	herr_t err = 0;
+	hid_t did  = -1;  // Target dataset ID
+
+	// Skip unnamed and hidden object
+	if ((name == NULL) || (name[0] == '_') || (name[0] == '/' || (name[0] == '.'))) {
+		goto err_out;
+	}
+
+	// Open the dataset so that the dset metadata is cached in the file
+	if (object_info->type == H5O_TYPE_DATASET) {
+		did = H5Dopen2 (o_id, name, H5P_DEFAULT);
+		CHECK_ID (did)
+		H5Dclose (did);
+	}
 
 err_out:;
 	return err;
@@ -521,7 +556,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	if (H5VL_log_dataspace_contig_ref == 0) { H5Sclose (H5VL_log_dataspace_contig); }
 
 	// Free compression buffer
-	free(fp->zbuf);
+	free (fp->zbuf);
 
 	// Close the file with under VOL
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -545,7 +580,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	// Clean up
 	if (fp->group_comm != fp->comm) { MPI_Comm_free (&(fp->group_comm)); }
 	MPI_Comm_free (&(fp->comm));
-	H5Pclose(fp->dxplid);
+	H5Pclose (fp->dxplid);
 
 	delete fp;
 

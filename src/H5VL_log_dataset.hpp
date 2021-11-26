@@ -15,7 +15,7 @@
 typedef struct H5VL_log_dset_info_t {
 	hsize_t ndim;
 	hsize_t esize;
-	hid_t dtype;
+	hid_t dtype = -1;
 	hsize_t dims[H5S_MAX_RANK];
 	MPI_Offset dsteps[H5S_MAX_RANK];
 	std::vector<H5VL_log_filter_t> filters;

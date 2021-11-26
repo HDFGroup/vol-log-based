@@ -57,12 +57,14 @@ void *H5VL_log_dataset_create (void *obj,
 	int i;
 	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
 	H5VL_log_dset_t *dp = NULL;
-	H5VL_loc_params_t locp;
+	// H5VL_link_create_args_t args;
+	// H5VL_loc_params_t loc;
 	hid_t sid = -1;
 	void *ap;
 	int ndim, nfilter;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
+	char lname[1024];
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	sid = H5Screate (H5S_SCALAR);
@@ -140,6 +142,21 @@ void *H5VL_log_dataset_create (void *obj,
 		CHECK_ID (dp->filters[i].id);
 	}
 
+	// Create soft link to aid dataset visiting on file opening
+	// Broken
+	/*
+	sprintf (lname, "_dset%d", dp->id);
+	args.op_type					 = H5VL_LINK_CREATE_SOFT;
+	args.args.soft.target			 = name;
+	loc.type						 = H5VL_OBJECT_BY_NAME;
+	loc.loc_data.loc_by_name.lapl_id = H5P_LINK_ACCESS_DEFAULT;
+	loc.loc_data.loc_by_name.name	 = lname;
+	loc.obj_type					 = op->type;
+	err = H5VLlink_create (&args, op->fp->uo, &loc, op->uvlid, H5P_LINK_CREATE_DEFAULT,
+						   H5P_LINK_ACCESS_DEFAULT, dp->fp->dxplid, req);
+	CHECK_ERR
+	*/
+
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CREATE);
 
 	goto fn_exit;
@@ -203,14 +220,14 @@ void *H5VL_log_dataset_open (void *obj,
 	CHECK_ID (dp->esize)
 
 	// Atts
+	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), dxpl_id);
+	CHECK_ERR
 	err = H5VL_logi_get_att_ex (dp, "_dims", H5T_NATIVE_INT64, &(dp->ndim), dp->dims, dxpl_id);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
 	err = H5VL_logi_get_att (dp, "_mdims", H5T_NATIVE_INT64, dp->mdims, dxpl_id);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
-	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), dxpl_id);
-	CHECK_ERR
 	if (req) {
 		rp->append (ureq);
 		*req = rp;
@@ -221,12 +238,6 @@ void *H5VL_log_dataset_open (void *obj,
 		dp->dsteps[dp->ndim - 1] = 1;
 		for (i = dp->ndim - 2; i > -1; i--) { dp->dsteps[i] = dp->dsteps[i + 1] * dp->dims[i + 1]; }
 	}
-
-	// Record metadata in fp
-	dp->fp->idx.resize (dp->fp->ndset);
-	dp->fp->dsets.resize (dp->fp->ndset);
-	dp->fp->dsets[dp->id] = *dp;
-	dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
 
 	// Filters
 	dcpl_id = H5VL_logi_dataset_get_dcpl (dp->fp, dp->uo, dp->uvlid, dxpl_id);
@@ -241,6 +252,10 @@ void *H5VL_log_dataset_open (void *obj,
 											&(dp->filters[i].filter_config));
 		CHECK_ID (dp->filters[i].id);
 	}
+
+	// Record metadata in fp
+	dp->fp->dsets[dp->id] = *dp;
+	dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_OPEN);
 
