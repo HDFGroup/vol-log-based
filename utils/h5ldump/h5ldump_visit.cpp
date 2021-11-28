@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cassert>
 //
 #include <hdf5.h>
 //
