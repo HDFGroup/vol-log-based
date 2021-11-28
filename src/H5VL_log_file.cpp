@@ -117,8 +117,12 @@ void *H5VL_log_file_create (
 	fp->zbuf   = NULL;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR
-	mpierr = MPI_Info_dup (mpiinfo, &(fp->info));
-	CHECK_MPIERR
+	if (mpiinfo != MPI_INFO_NULL) {
+		mpierr = MPI_Info_dup (mpiinfo, &(fp->info));
+		CHECK_MPIERR
+	} else {
+		fp->info = MPI_INFO_NULL;
+	}
 	mpierr = MPI_Comm_rank (comm, &(fp->rank));
 	CHECK_MPIERR
 	mpierr = MPI_Comm_size (comm, &(fp->np));
@@ -185,7 +189,7 @@ void *H5VL_log_file_create (
 		// Aligned write not supported in subfiles
 		fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
 
-		err = H5VL_log_filei_create_subfile (fp, flags, fp->uvlid, dxpl_id);
+		err = H5VL_log_filei_create_subfile (fp, flags, fp->ufaplid, dxpl_id);
 		CHECK_ERR
 	} else {
 		fp->sfp		= fp->uo;
@@ -321,8 +325,12 @@ void *H5VL_log_file_open (
 	fp->zbuf   = NULL;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR
-	mpierr = MPI_Info_dup (mpiinfo, &(fp->info));
-	CHECK_MPIERR
+	if (mpiinfo != MPI_INFO_NULL) {
+		mpierr = MPI_Info_dup (mpiinfo, &(fp->info));
+		CHECK_MPIERR
+	} else {
+		fp->info = MPI_INFO_NULL;
+	}
 	mpierr = MPI_Comm_rank (comm, &(fp->rank));
 	CHECK_MPIERR
 	mpierr = MPI_Comm_size (comm, &(fp->np));

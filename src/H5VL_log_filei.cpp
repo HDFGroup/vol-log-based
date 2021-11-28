@@ -630,7 +630,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	// Clean up
 	if (fp->group_comm != fp->comm) { MPI_Comm_free (&(fp->group_comm)); }
 	MPI_Comm_free (&(fp->comm));
-	MPI_Info_free (&(fp->info));
+	if (fp->info != MPI_INFO_NULL) { MPI_Info_free (&(fp->info)); }
 	H5Pclose (fp->dxplid);
 	H5Pclose (fp->ufaplid);
 
