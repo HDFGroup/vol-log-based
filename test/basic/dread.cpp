@@ -84,6 +84,7 @@ int main(int argc, char **argv) {
         EXP_VAL_EX(buf[i], (rank + i + 1), "buf[" << i << "]")
     }
 
+    err = H5Sclose(msid); CHECK_ERR(err)
     err = H5Sclose(sid); CHECK_ERR(err)
     err = H5Dclose(did); CHECK_ERR(err)
     err = H5Fclose(fid); CHECK_ERR(err)
