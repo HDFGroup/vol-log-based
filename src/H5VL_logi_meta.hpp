@@ -1,9 +1,9 @@
 #pragma once
 //
 #include <functional>
-#include <vector>
-#include <unordered_map>
 #include <map>
+#include <unordered_map>
+#include <vector>
 //
 #include "H5VL_logi_dataspace.hpp"
 //#include "H5VL_logi_idx.hpp"
@@ -21,7 +21,7 @@ typedef struct H5VL_logi_meta_hdr {
 	int flag;		   // Flag for other metadata, format, vertion ... etc
 	MPI_Offset foff;   // File offset of the data
 	MPI_Offset fsize;  // Size of the data in file
-} __attribute__((packed)) H5VL_logi_meta_hdr; 
+} __attribute__ ((packed)) H5VL_logi_meta_hdr;
 
 typedef struct H5VL_logi_metasel_t {
 	hsize_t start[H5S_MAX_RANK];
@@ -67,9 +67,8 @@ class H5VL_logi_wreq_hash {
 	};
 
 	struct equal_pair {
-		bool operator() (const std::pair<void *, size_t> &a, const std::pair<void *, size_t> &b) const {
-			if (a.second != b.second) { return false; }
-			return memcmp (a.first, b.first, a.second) == 0;
+		bool operator() (const std::pair<void *, size_t> &a, const std::pair<void *, size_t> &b)
+const { if (a.second != b.second) { return false; } return memcmp (a.first, b.first, a.second) == 0;
 		}
 	};
 
@@ -91,6 +90,10 @@ struct H5VL_log_dset_info_t;
 herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 								   void *ent,
 								   H5VL_logi_metablock_t &block);
+herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
+								   void *ent,
+								   H5VL_logi_metablock_t &block,
+								   MPI_Offset *dsteps);
 
 inline MPI_Offset H5VL_logi_get_metaentry_size (int ndim, H5VL_logi_meta_hdr &hdr, int nsel) {
 	MPI_Offset size;

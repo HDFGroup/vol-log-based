@@ -4,8 +4,8 @@
 //
 #include <cstring>
 #include <functional>
-#include <vector>
 #include <map>
+#include <vector>
 //
 #include <hdf5.h>
 //
@@ -18,14 +18,14 @@
 herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 									   void *ent,
 									   H5VL_logi_metablock_t &block,
-									   std::map<char *, std::vector<H5VL_logi_metasel_t>> &bcache){
+									   std::map<char *, std::vector<H5VL_logi_metasel_t>> &bcache) {
 	herr_t err = 0;
 	int i;
 	MPI_Offset *bp;			   // Next 8 byte selection to process
 	char *bufp = (char *)ent;  // Next byte to process in ent
 	size_t bsize;			   // Size of a selection block
-	hsize_t recnum;					  // Record number
-	MPI_Offset roff;	// Related offset of the referenced entry
+	hsize_t recnum;			   // Record number
+	MPI_Offset roff;		   // Related offset of the referenced entry
 
 	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
@@ -36,10 +36,10 @@ herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 		// Get record number
 		recnum = *((MPI_Offset *)bufp);
 		bufp += sizeof (MPI_Offset);
-	} 
+	}
 
 	// Get referenced selections
-	roff = *((MPI_Offset *)bufp);
+	roff	   = *((MPI_Offset *)bufp);
 	block.sels = bcache[bufp + roff];
 
 	// Overwrite first dim if it is rec entry
@@ -49,7 +49,6 @@ herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 			sel.count[0] = 1;
 		}
 	}
-
 
 	// Calculate the unfiltered size of the data block
 	block.dsize = 0;
@@ -72,17 +71,24 @@ err_out:;
 herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 								   void *ent,
 								   H5VL_logi_metablock_t &block) {
+	MPI_Offset dsteps[H5S_MAX_RANK];  // corrdinate to offset encoding info in ent
+	return H5VL_logi_metaentry_decode (dset, ent, block, dsteps);
+}
+
+herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
+								   void *ent,
+								   H5VL_logi_metablock_t &block,
+								   MPI_Offset *dsteps) {
 	herr_t err = 0;
 	int i, j;
-	int nsel;						  // Nunmber of selections in ent
-	MPI_Offset dsteps[H5S_MAX_RANK];  // corrdinate to offset encoding info in ent
-	char *zbuf	   = NULL;			  // Buffer for decompressing metadata
-	bool zbufalloc = false;			  // Should we free zbuf
-	char *bufp	   = (char *)ent;	  // Next byte to process in ent
-	MPI_Offset *bp;					  // Next 8 byte selection to process
-	hsize_t recnum;					  // Record number
-	int encdim;						  // number of dim encoded (ndim or ndim - 1)
-	int isrec;						  // Is a record entry
+	int nsel;					   // Nunmber of selections in ent
+	char *zbuf	   = NULL;		   // Buffer for decompressing metadata
+	bool zbufalloc = false;		   // Should we free zbuf
+	char *bufp	   = (char *)ent;  // Next byte to process in ent
+	MPI_Offset *bp;				   // Next 8 byte selection to process
+	hsize_t recnum;				   // Record number
+	int encdim;					   // number of dim encoded (ndim or ndim - 1)
+	int isrec;					   // Is a record entry
 
 	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);

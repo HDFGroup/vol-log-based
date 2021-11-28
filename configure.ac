@@ -464,6 +464,8 @@ AC_CONFIG_FILES(Makefile \
                 test/Makefile \
                 test/basic/Makefile \
                 utils/Makefile \
+                utils/h5ldump/Makefile \
+                utils/h5replay/Makefile \
                 utils/logvol-config \
                 examples/Makefile \
                 examples/hdf5/Makefile
