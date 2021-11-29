@@ -182,10 +182,11 @@ herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int n
 					aid = -1;
 				}
 #ifdef LOGVOL_DEBUG
-				else
+				else {
 					std::cout << "Warning: cannot open subfile" << subpath << std::endl;
-			}
+				}
 #endif
+			}
 		}
 	} else {
 		// Open the log group
