@@ -83,7 +83,7 @@ static void sortblocks (int ndim, int len, hsize_t **starts, hsize_t **counts) {
 
 H5VL_log_selections::H5VL_log_selections () : ndim (0), nsel (0), sels_arr (NULL) {}
 H5VL_log_selections::H5VL_log_selections (int ndim, int nsel) : ndim (ndim), nsel (nsel) {
-	this->reserve (nsel);
+	this->alloc (nsel);
 }
 H5VL_log_selections::H5VL_log_selections (int ndim, int nsel, hsize_t **starts, hsize_t **counts)
 	: ndim (ndim), nsel (nsel), starts (starts), counts (counts) {}
@@ -93,7 +93,7 @@ H5VL_log_selections::H5VL_log_selections (H5VL_log_selections &rhs)
 	int i;
 
 	if (rhs.sels_arr) {
-		this->reserve (rhs.nsel);
+		this->alloc (rhs.nsel);
 
 		// Copy the data
 		memcpy (starts, rhs.starts, sizeof (hsize_t *) * nsel);
@@ -133,11 +133,13 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 		case H5S_SEL_HYPERSLABS: {
 			nblock = H5Sget_select_hyper_nblocks (dsid);
 			CHECK_ID (nblock)
-			this->nsel = nblock;
-			this->reserve (nblock);
 
 			if (nblock == 1) {
 				hsize_t cord[H5S_MAX_RANK * 2];
+
+				// Allocate buffer
+				this->nsel = nblock;
+				this->alloc (nblock);
 
 				err = H5Sget_select_hyper_blocklist (dsid, 0, 1, cord);
 
@@ -202,7 +204,8 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 				}
 
 				// Allocate buffer
-				this->reserve (nreq);
+				this->nsel = nreq;
+				this->alloc (nreq);
 
 				// Fill up selections
 				nreq = 0;
@@ -273,7 +276,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 			CHECK_ID (nblock)
 
 			this->nsel = nblock;
-			this->reserve (nblock);
+			this->alloc (nblock);
 
 			if (nblock) {
 				hstarts	   = (hsize_t **)malloc (sizeof (hsize_t) * nblock);
@@ -298,7 +301,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 			CHECK_ID(ndim)
 
 			this->nsel = 1;
-			this->reserve (1);
+			this->alloc (1);
 
 			for (j = 0; j < ndim; j++) {
 				starts[0][j] = (MPI_Offset)dims[j];
@@ -308,7 +311,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 		} break;
 		case H5S_SEL_NONE: {
 			this->nsel = 0;
-			this->reserve (0);
+			this->alloc (0);
 		} break;
 		default:
 			ERR_OUT ("Unsupported selection type");
@@ -344,7 +347,7 @@ H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
 	this->ndim = rhs.ndim;
 
 	if (rhs.sels_arr) {
-		this->reserve (nsel);
+		this->alloc (nsel);
 
 		// Copy the data
 		memcpy (starts, rhs.starts, sizeof (hsize_t *) * nsel);
@@ -380,7 +383,7 @@ bool H5VL_log_selections::operator== (H5VL_log_selections &rhs) {
 }
 
 // Should only be called once
-void H5VL_log_selections::reserve (int nsel) {
+void H5VL_log_selections::alloc (int nsel) {
 	int err = 0;
 	int i;
 
@@ -415,7 +418,7 @@ void H5VL_log_selections::convert_to_deep () {
 		counts_tmp = counts;
 
 		// Allocate new space
-		this->reserve (nsel);
+		this->alloc (nsel);
 
 		// Copy the data
 		memcpy (starts, starts_tmp, sizeof (hsize_t *) * nsel);

@@ -32,7 +32,7 @@ class H5VL_log_selections {
    private:
 	hsize_t *sels_arr = NULL;  // Allocated starts and counts array, if present, need free
 
-	void reserve (int nsel);  // Allocate space for nsel blocks
+	void alloc (int nsel);  // Allocate space for nsel blocks
 	void convert_to_deep ();  // Coverts a shallow copy to deep copy
 };
 
