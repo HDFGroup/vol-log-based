@@ -36,7 +36,7 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 	herr_t err			= 0;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	size_t mbsize;
-	hsize_t recnum;	// Record number
+	hsize_t recnum;	 // Record number
 	int i;
 	int encdim;	 // number of dim encoded (ndim or ndim - 1)
 	int flag;
@@ -358,8 +358,14 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
-	size_t esize;				// Element size of the user buffer type
-	MPI_Datatype ftype, mtype;	// File and memory type for reading the raw data blocks
+	size_t esize;							  // Element size of the user buffer type
+	MPI_Datatype ftype	= MPI_DATATYPE_NULL;  // File type for reading the raw data blocks
+	MPI_Datatype mtype	= MPI_DATATYPE_NULL;  // Memory type for reading the raw data blocks
+	MPI_Datatype zftype = MPI_DATATYPE_NULL;  // File type for packing the data
+	MPI_Datatype zmtype = MPI_DATATYPE_NULL;  // Memory type for packing the data
+	MPI_Datatype zetype = MPI_DATATYPE_NULL;  // Element type for packing the data
+	bool compound_zetype =
+		false;	// If element type for packing the data is compound (need to be freed)
 	std::vector<H5VL_log_idx_search_ret_t>
 		intersecs;	// Any intersection between selections in reqeusts and the metadata entries
 	std::vector<H5VL_log_copy_ctx> overlaps;  // Any overlapping read regions
@@ -421,7 +427,6 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 	if (tbsize > 0) { tbuf = (char *)malloc (tbsize); }
 	for (auto &block : intersecs) {
 		if (block.zbuf) {
-			MPI_Datatype ftype, mtype, etype;
 			if (block.fsize > 0) {
 				char *buf = NULL;
 				int csize = 0;
@@ -435,44 +440,44 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 			}
 
 			// Pack from zbuf to xbuf
-			etype = H5VL_logi_get_mpi_type_by_size (block.info->esize);
-			if (etype == MPI_DATATYPE_NULL) {
-				mpierr = MPI_Type_contiguous (block.info->esize, MPI_BYTE, &etype);
+			zetype = H5VL_logi_get_mpi_type_by_size (block.info->esize);
+			if (zetype == MPI_DATATYPE_NULL) {
+				mpierr = MPI_Type_contiguous (block.info->esize, MPI_BYTE, &zetype);
 				CHECK_MPIERR
-				mpierr = MPI_Type_commit (&etype);
+				mpierr = MPI_Type_commit (&zetype);
 				CHECK_MPIERR
-				i = 1;
+				compound_zetype = true;
 			} else {
-				i = 0;
+				compound_zetype = false;
 			}
 
-			mpierr =
-				H5VL_log_debug_MPI_Type_create_subarray (block.info->ndim, block.dsize, block.count,
-														 block.dstart, MPI_ORDER_C, etype, &ftype);
+			mpierr = H5VL_log_debug_MPI_Type_create_subarray (block.info->ndim, block.dsize,
+															  block.count, block.dstart,
+															  MPI_ORDER_C, zetype, &zftype);
 			CHECK_MPIERR
-			mpierr =
-				H5VL_log_debug_MPI_Type_create_subarray (block.info->ndim, block.msize, block.count,
-														 block.mstart, MPI_ORDER_C, etype, &mtype);
+			mpierr = H5VL_log_debug_MPI_Type_create_subarray (block.info->ndim, block.msize,
+															  block.count, block.mstart,
+															  MPI_ORDER_C, zetype, &zmtype);
 
 			CHECK_MPIERR
-			mpierr = MPI_Type_commit (&ftype);
+			mpierr = MPI_Type_commit (&zftype);
 			CHECK_MPIERR
-			mpierr = MPI_Type_commit (&mtype);
+			mpierr = MPI_Type_commit (&zmtype);
 			CHECK_MPIERR
 
-			if (i) {
-				mpierr = MPI_Type_free (&etype);
+			if (compound_zetype) {
+				mpierr = MPI_Type_free (&zetype);
 				CHECK_MPIERR
 			}
 
 			i = 0;
-			MPI_Pack (block.zbuf + block.doff, 1, ftype, tbuf, 1, &i, fp->comm);
+			MPI_Pack (block.zbuf + block.doff, 1, zftype, tbuf, 1, &i, fp->comm);
 
 			i = 0;
-			MPI_Unpack (tbuf, 1, &i, block.xbuf, 1, mtype, fp->comm);
+			MPI_Unpack (tbuf, 1, &i, block.xbuf, 1, zmtype, fp->comm);
 
-			MPI_Type_free (&ftype);
-			MPI_Type_free (&mtype);
+			MPI_Type_free (&zftype);
+			MPI_Type_free (&zmtype);
 		}
 	}
 
@@ -514,7 +519,11 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 err_out:;
 	free (tbuf);
 	for (auto const &buf : bufs) { free (buf.second); }
-
+	if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
+	if (ftype != MPI_DATATYPE_NULL) MPI_Type_free (&ftype);
+	if (zftype != MPI_DATATYPE_NULL) MPI_Type_free (&zftype);
+	if (zmtype != MPI_DATATYPE_NULL) MPI_Type_free (&zmtype);
+	if (compound_zetype && zetype != MPI_DATATYPE_NULL) MPI_Type_free (&zetype);
 	return err;
 }
 
