@@ -412,6 +412,8 @@ if test "x$enable_zlib" = "xyes" ; then
    AC_DEFINE(ENABLE_ZLIB)
 fi
 
+AM_CONDITIONAL(ENABLE_SHARED, [test x$enable_shared = xyes])
+
 AC_LANG_POP(C++)
 
 if test "x$LIBS" = x ; then
@@ -463,6 +465,7 @@ AC_CONFIG_FILES(Makefile \
                 src/H5VL_log.h \
                 test/Makefile \
                 test/basic/Makefile \
+                test/dynamic/Makefile \
                 utils/Makefile \
                 utils/h5ldump/Makefile \
                 utils/h5replay/Makefile \

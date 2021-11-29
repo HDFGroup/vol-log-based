@@ -6,7 +6,7 @@
 #
 # @configure_input@
 
-C_SUBDIRS = basic 
+C_SUBDIRS = basic dynamic
 
 DIST_SUBDIRS = $(C_SUBDIRS) 
 
