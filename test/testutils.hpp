@@ -40,6 +40,12 @@
     } \
 }
 
+#define RET_ERR(A) { \
+        nerrs++; \
+        std::cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": " << A << std::endl; \
+        goto err_out; \
+}
+
 #define SHOW_TEST_INFO(A) { \
     if (rank == 0) { \
         std::cout << "*** TESTING CXX    " << basename(argv[0]) << ": " << A << std::endl; \
