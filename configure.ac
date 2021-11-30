@@ -460,6 +460,23 @@ AC_SUBST(INSTALL_PREFIX,${prefix})
 AC_SUBST(INSTALL_EXEC_PREFIX,${exec_prefix})
 AC_SUBST(PACKAGE_NAME)
 
+dnl Enable creation of libtool-style versioning or no versioning
+AC_ARG_ENABLE(versioning,
+        [AC_HELP_STRING([--disable-versioning],[Disable library versioning. @<:@default: enabled@:>@])],
+        [enable_versioning=${enableval}], [enable_versioning=yes]
+)
+dnl For libtool ABI versioning rules see:
+dnl http://www.gnu.org/software/libtool/manual/libtool.html#Updating-version-info
+dnl Update the version information only immediately before a public release.
+ABIVERSION="1:0:0"
+AC_SUBST(ABIVERSION)
+if test "$enable_versioning" = "yes" ; then
+   ABIVERSIONFLAGS="-version-info \$(ABIVERSION)"
+else
+   ABIVERSIONFLAGS="-avoid-version"
+fi
+AC_SUBST(ABIVERSIONFLAGS)
+
 AC_CONFIG_FILES(Makefile \
                 src/Makefile \
                 src/H5VL_log.h \
