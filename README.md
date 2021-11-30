@@ -13,7 +13,7 @@ This software repository contains source codes implementing an [HDF5](https://ww
   + [libtool](https://www.gnu.org/software/libtool/) 2.4.6
   + [m4](https://www.gnu.org/software/m4/) 1.4.18
 
-### Building Steps
+### Build and install HDF5 library
 * Build HDF5 with VOL and parallel I/O support
   + Clone the develop branch from the HDF5 repository
   + Run command "./autogen.sh"
@@ -29,7 +29,7 @@ This software repository contains source codes implementing an [HDF5](https://ww
     % ./configure --prefix=${HOME}/HDF5 --enable-parallel CC=mpicc
     % make -j4 install
     ```
-* Build this VOL plugin, `log-based vol`.
+* Build and install this VOL plugin, `log-based vol`.
   + Clone this VOL plugin repository
   + Run command "autoreconf -i"
   + Configure log-based VOL
@@ -46,12 +46,16 @@ This software repository contains source codes implementing an [HDF5](https://ww
     ```
     The VOL plugin library is now installed under the folder `${HOME}/Log_IO_VOL.`
 
-### Compile user programs that use this VOL plugin
-Below describes  two ways to use the log-based VOL plugin.
-* Modify the source codes, particularly if you would like to use the new APIs,
-  such as `H5Dwrite_n()`, created by this VOL.
+### Compile user programs to use this VOL plugin
+There are two ways to use the log-based VOL plugin. One is by modifying the
+application source codes to add a few function calls. The other is by setting
+HDF5 environment variables.
+
+* Modify the user's application source codes, particularly if you would like to
+  use the new APIs, such as `H5Dwrite_n()`, created by this VOL.
   * Include header file.
-    + Add the following line to include the log-based VOL header file in your C/C++ source codes.
+    + Add the following line to include the log-based VOL header file in your
+      C/C++ source codes.
       ```
       #include <H5VL_log.h>
       ```
@@ -82,11 +86,12 @@ Below describes  two ways to use the log-based VOL plugin.
         ```
     + See a full example program in `examples/create_open.c`
 
-* Without modifying the source codes.
-  + Using log-based VOL can be enabled at the run time through setting the
-    environment variables below. No source code changes of existing HDF5
-    programs is required when using this approach.
-    (Note this is an HDF5 feature, applicable to all VOL plugins.)
+* Use HDF5 environment variables, without modifying the user's application
+  source codes.
+  + The log-based VOL can be enabled at the run time through setting the
+    environment variables below. No source code changes of existing user
+    programs is required. (Note this is an HDF5 feature, applicable to all VOL
+    plugins.)
   + Append log-based VOL library directory to shared object search path,
     `LD_LIBRARY_PATH`.
     ```
