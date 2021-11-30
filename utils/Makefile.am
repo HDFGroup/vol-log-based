@@ -7,4 +7,7 @@
 SUBDIRS = h5replay h5ldump
 DIST_SUBDIRS = h5replay h5ldump
 
+bin_SCRIPTS = logvol-config
+EXTRA_DIST = logvol-config.in
+
 .PHONY:
