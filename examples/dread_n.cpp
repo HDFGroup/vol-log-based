@@ -7,9 +7,9 @@
 /* $Id$ */
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * This example shows how to use the H5Dwrite_n API wrapper comes with the
+ * This example shows how to use the H5Dread_n API wrapper comes with the
  * log-vased VOL.
- * The H5Dwrite_n API is analogous to the ncmpi_put_varn* APIs in PnetCDF.
+ * The H5Dread_n API is analogous to the ncmpi_get_varn* APIs in PnetCDF.
  *
  *    To compile:
  *        mpicxx -O2 dwrite_n.cpp -o dwrite_n -lH5VL_log -lhdf5
@@ -80,9 +80,22 @@ int main (int argc, char **argv) {
 	for (i = 0; i < N; i++) { buf[i] = rank + i; }
 
 	// Write to the dataset using H5Dwrite
-	dims[0] = 1;
-	msid	= H5Screate_simple (1, dims, dims);
+	msid = H5Screate_simple (1, dims + 1, dims + 1);
 	assert (msid >= 0);
+	start[0] = rank;
+	start[1] = 0;
+	count[0] = 1;
+	count[1] = N;
+	err		 = H5Sselect_hyperslab (sid, H5S_SELECT_SET, start, NULL, count, one);
+	assert (err == 0);
+	err = H5Dwrite (did, H5T_NATIVE_INT, msid, sid, H5P_DEFAULT, buf);
+	assert (err == 0);
+
+	// Read from the dataset using H5Dread
+	start[0] = 0;
+	count[0] = 1;
+	err		 = H5Sselect_hyperslab (msid, H5S_SELECT_SET, start, NULL, count, one);
+	assert (err == 0);
 	for (i = 0; i < N; i++) {
 		start[0] = rank;
 		start[1] = i;
@@ -90,11 +103,11 @@ int main (int argc, char **argv) {
 		count[1] = 1;
 		err		 = H5Sselect_hyperslab (sid, H5S_SELECT_SET, start, NULL, count, one);
 		assert (err == 0);
-		err = H5Dwrite (did, H5T_NATIVE_INT, msid, sid, H5P_DEFAULT, buf + i);
+		err = H5Dread (did, H5T_NATIVE_INT, msid, sid, H5P_DEFAULT, buf + i);
 		assert (err == 0);
 	}
 
-	// Equivalent operation using H5Dwrite_n
+	// Equivalent operation using H5Dread_n
 	dims[0] = 1;
 	msid	= H5Screate_simple (1, dims, dims);
 	assert (msid >= 0);
@@ -108,7 +121,7 @@ int main (int argc, char **argv) {
 		starts[i] = starts[i - 1] + 2;
 		counts[i] = counts[i - 1] + 2;
 	}
-	H5Dwrite_n (did, H5T_NATIVE_INT, N, starts, counts, H5P_DEFAULT, buf);
+	H5Dread_n (did, H5T_NATIVE_INT, N, starts, counts, H5P_DEFAULT, buf);
 	free (starts[0]);
 	free (starts);
 

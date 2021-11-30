@@ -471,7 +471,7 @@ AC_CONFIG_FILES(Makefile \
                 utils/h5replay/Makefile \
                 utils/logvol-config \
                 examples/Makefile \
-                examples/hdf5/Makefile
+                examples/hdf5_examples/Makefile
                 )
 
 AC_OUTPUT

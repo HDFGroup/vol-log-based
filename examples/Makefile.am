@@ -20,6 +20,7 @@ LDADD = $(top_builddir)/src/.libs/libH5VL_log.la
 
 check_PROGRAMS =    create_open \
                     dwrite_n \
+                    dread_n \
                     non_blocking
 
 EXTRA_DIST = wrap_runs.sh
@@ -52,7 +53,7 @@ TESTS = $(TESTPROGRAMS)
 # build check targets but not invoke
 tests-local: all $(check_PROGRAMS)
 
-C_SUBDIRS = hdf5 
+C_SUBDIRS = hdf5_examples
 
 DIST_SUBDIRS = $(C_SUBDIRS) 
 

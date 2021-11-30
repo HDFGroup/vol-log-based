@@ -18,10 +18,12 @@
       + Demonstrates the way to use log-based vol programmatically
     + dwrite_n
       + Demonstrates the use of H5Dwrite_n API of log-based VOL.
+    + dread_n
+      + Demonstrates the use of H5Dread_n API of log-based VOL.
     + non_blocking
       + Demonstrates the way to set non-blocking dataset transfer property
       + It tells log-based VOL to keep the data in the user buffer instead of making a copy in the internal buffer
-  * Supported HDF5 examples modified to use log-based VOL
+  * The folder [hdf5_examples](hdf5_examples) contains supported HDF5 example programs modified to use log-based VOL
     + h5_attribute
       + Example of H5A* APIs
     + h5_crtdat

@@ -37,11 +37,11 @@ int main (int argc, char **argv) {
 	hid_t msid;	 // Memory space ID
 	hid_t faplid;
 	hid_t dxplid;
-	hid_t log_vlid;				 // ID of log-based VOL
-	hsize_t dims[2] = {0, N};	 // Size of the dataset
-	hsize_t start[2], count[2];	 // Buffer for setting selection
-	hsize_t **starts, **counts;	 // Buffer for setting selection in H5Dwrite_n
-	int buf[N];					 // Data buffer
+	hid_t log_vlid;								  // ID of log-based VOL
+	hsize_t dims[2] = {0, N};					  // Size of the dataset
+	hsize_t start[2], count[2], one[2] = {1, 1};  // Buffer for setting selection
+	hsize_t **starts, **counts;					  // Buffer for setting selection in H5Dwrite_n
+	int buf[N];									  // Data buffer
 
 	MPI_Init (&argc, &argv);
 	MPI_Comm_size (MPI_COMM_WORLD, &np);
@@ -93,7 +93,7 @@ int main (int argc, char **argv) {
 	start[1] = 0;
 	count[0] = 1;
 	count[1] = N;
-	err		 = H5Sselect_hyperslab (sid, H5S_SELECT_SET, start, NULL, count, NULL);
+	err		 = H5Sselect_hyperslab (sid, H5S_SELECT_SET, start, NULL, count, one);
 	assert (err == 0);
 	err = H5Dwrite (did, H5T_NATIVE_INT, msid, sid, dxplid, buf);
 	assert (err == 0);
