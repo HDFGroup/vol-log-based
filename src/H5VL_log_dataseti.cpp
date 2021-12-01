@@ -257,7 +257,11 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 
 	mpierr = MPI_Type_struct (nt, lens, foffs, ftypes, ftype);
 	CHECK_MPIERR
+	mpierr = MPI_Type_commit (ftype);
+	CHECK_MPIERR
 	mpierr = MPI_Type_struct (nt, lens, moffs, mtypes, mtype);
+	CHECK_MPIERR
+	mpierr = MPI_Type_commit (mtype);
 	CHECK_MPIERR
 
 err_out:
@@ -276,9 +280,11 @@ err_out:
 		free (mtypes);
 	}
 
-	H5VL_log_free (foffs) H5VL_log_free (moffs) H5VL_log_free (lens)
+	H5VL_log_free (foffs);
+	H5VL_log_free (moffs);
+	H5VL_log_free (lens);
 
-		return err;
+	return err;
 }
 
 /*-------------------------------------------------------------------------
@@ -649,17 +655,17 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 		mstype = H5Sget_select_type (mem_space_id);
 
 	// Setting metadata;
-	r = new H5VL_log_rreq_t ();
-	r->info	  = &(dp->fp->dsets[dp->id]);
+	r		   = new H5VL_log_rreq_t ();
+	r->info	   = &(dp->fp->dsets[dp->id]);
 	r->hdr.did = dp->id;
-	r->ndim	  = dp->ndim;
-	r->ubuf	  = (char *)buf;
-	r->ptype	  = MPI_DATATYPE_NULL;
-	r->dtype	  = -1;
-	r->mtype	  = -1;
-	r->esize	  = dp->esize;
-	r->rsize	  = 0;	// Nomber of elements in record
-	r->sels	  = dsel;
+	r->ndim	   = dp->ndim;
+	r->ubuf	   = (char *)buf;
+	r->ptype   = MPI_DATATYPE_NULL;
+	r->dtype   = -1;
+	r->mtype   = -1;
+	r->esize   = dp->esize;
+	r->rsize   = 0;	 // Nomber of elements in record
+	r->sels	   = dsel;
 
 	// Non-blocking?
 	err = H5Pget_nonblocking (plist_id, &rtype);
@@ -701,7 +707,7 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 
 	// Flush it immediately if blocking, otherwise place into queue
 	if (rtype != H5VL_LOG_REQ_NONBLOCKING) {
-		std::vector<H5VL_log_rreq_t *> tmp(1, r);
+		std::vector<H5VL_log_rreq_t *> tmp (1, r);
 		err = H5VL_log_nb_flush_read_reqs (dp->fp, tmp, plist_id);
 		CHECK_ERR
 	} else {
