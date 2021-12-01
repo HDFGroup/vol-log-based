@@ -410,13 +410,13 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 		mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, ftype, "native", MPI_INFO_NULL);
 		CHECK_MPIERR
 
-		mpierr = MPI_File_read_all (fp->fh, MPI_BOTTOM, 1, mtype, &stat);
+		mpierr = MPI_File_read_at_all (fp->fh, 0, MPI_BOTTOM, 1, mtype, &stat);
 		CHECK_MPIERR
 	} else {
 		mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
 		CHECK_MPIERR
 
-		mpierr = MPI_File_read_all (fp->fh, MPI_BOTTOM, 0, MPI_BYTE, &stat);
+		mpierr = MPI_File_read_at_all (fp->fh, 0, MPI_BOTTOM, 0, MPI_BYTE, &stat);
 		CHECK_MPIERR
 	}
 
