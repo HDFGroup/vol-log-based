@@ -100,6 +100,9 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 
 	// Add record number
 	if (flag & H5VL_LOGI_META_FLAG_REC) {
+#ifdef WORDS_BIGENDIAN
+		H5VL_logi_llreverse ((uint64_t *)(&recnum));
+#endif
 		*((MPI_Offset *)this->sel_buf) = recnum;
 		this->sel_buf += sizeof (MPI_Offset);
 	}
@@ -107,6 +110,9 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 
 	// Add nreq field if more than 1 blocks
 	if (flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
+#ifdef WORDS_BIGENDIAN
+		H5VL_logi_lreverse ((uint32_t *)(&nsel));
+#endif
 		*((int *)bufp) = nsel;
 		bufp += sizeof (int);
 	}
@@ -114,6 +120,10 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 	else {
 		if (nsel > 1) { RET_ERR ("Meta flag mismatch") }
 	}
+#endif
+
+#ifdef WORDS_BIGENDIAN
+	uint64_t *rstart = (uint64_t *)bufp;  // Start addr to do endian reverse
 #endif
 
 	// Dsteps
@@ -127,6 +137,9 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 	} else {
 		sels->encode (bufp, NULL, flag & H5VL_LOGI_META_FLAG_REC ? 1 : 0);
 	}
+#ifdef WORDS_BIGENDIAN
+	H5VL_logi_llreverse (rstart, (uint64_t *)(meta_buf + mbsize));
+#endif
 
 err_out:;
 	if (err) { throw "OOM"; }

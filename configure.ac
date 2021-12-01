@@ -278,6 +278,12 @@ fi
 AC_SUBST(ENABLE_PROFILING)
 AM_CONDITIONAL(LOGVOL_PROFILING, [test "x$enable_profiling" = xyes])
 
+AC_C_BIGENDIAN
+AM_CONDITIONAL(IS_BIGENDIAN, [test x$ac_cv_c_bigendian = xyes])
+if test "x${ac_cv_c_bigendian}" = xyes; then
+   AC_DEFINE(WORDS_BIGENDIAN, 1, ["Underlying platform is big endian"])
+fi
+
 AC_ARG_WITH([hdf5],
    [AS_HELP_STRING([--with-hdf5=/path/to/hdf5], [Specify HDF5 installation path(s):
     --with-hdf5=INC,LIB for include directory and library directory separated by a comma

@@ -18,6 +18,7 @@
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_meta.hpp"
 #include "H5VL_logi_zip.hpp"
+#include "H5VL_logi_util.hpp"
 #include "h5replay.hpp"
 #include "h5replay_meta.hpp"
 
@@ -136,6 +137,10 @@ herr_t h5replay_parse_meta (int rank,
 														  // referenced metadata entries
 			for (j = 0; ep < sec.buf + count; j++) {
 				H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)ep;
+
+#ifdef WORDS_BIGENDIAN
+				H5VL_logi_lreverse ((uint64_t *)ep, (uint64_t *)(ep + sizeof (H5VL_logi_meta_hdr)));
+#endif
 
 				// Have to parse all entries for reference purpose
 				if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {

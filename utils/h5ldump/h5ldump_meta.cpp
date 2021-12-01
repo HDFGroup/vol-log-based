@@ -13,6 +13,7 @@
 //
 #include "H5VL_log_filei.hpp"
 #include "H5VL_logi_nb.hpp"
+#include "H5VL_logi_util.hpp"
 #include "h5ldump.hpp"
 
 herr_t h5ldump_mdset (hid_t lgid,
@@ -105,6 +106,10 @@ herr_t h5ldump_mdsec (uint8_t *buf,
 	while (bufp < buf + len) {
 		hdr = (H5VL_logi_meta_hdr *)bufp;
 
+#ifdef WORDS_BIGENDIAN
+		H5VL_logi_lreverse ((uint64_t *)bufp, (uint64_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
+#endif
+
 		// Have to parse all entries for reference purpose
 		if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
 			H5VL_logi_metaentry_ref_decode (dsets[hdr->did], bufp, block, bcache);
@@ -117,7 +122,8 @@ herr_t h5ldump_mdsec (uint8_t *buf,
 
 		std::cout << std::string (indent, ' ') << "Metadata entry at " << (off_t) (bufp - buf)
 				  << ": " << std::endl;
-		indent += 4;;
+		indent += 4;
+		;
 
 		std::cout << std::string (indent, ' ') << "Dataset ID: " << hdr->did
 				  << "; Entry size: " << hdr->meta_size << std::endl;
@@ -143,7 +149,8 @@ herr_t h5ldump_mdsec (uint8_t *buf,
 		}
 		std::cout << std::string (indent, ' ') << "Selections: " << block.sels.size () << " blocks"
 				  << std::endl;
-		indent += 4;;
+		indent += 4;
+		;
 		for (auto &s : block.sels) {
 			std::cout << std::string (indent, ' ') << s.doff << ": ( ";
 			for (i = 0; i < dsets[hdr->did].ndim; i++) { std::cout << s.start[i] << ", "; }
@@ -151,9 +158,11 @@ herr_t h5ldump_mdsec (uint8_t *buf,
 			for (i = 0; i < dsets[hdr->did].ndim; i++) { std::cout << s.count[i] << ", "; }
 			std::cout << ")" << std::endl;
 		}
-		indent -= 4;;
+		indent -= 4;
+		;
 
-		indent -= 4;;
+		indent -= 4;
+		;
 		// std::cout << std::string (indent, ' ') << "End metadata entry : " << (off_t) (bufp - buf)
 		// << std::endl;
 

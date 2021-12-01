@@ -56,3 +56,26 @@ extern herr_t H5VL_logi_get_att (void *uo,
 								 hid_t dxpl_id);
 
 MPI_Datatype H5VL_logi_get_mpi_type_by_size (size_t size);
+
+inline void H5VL_logi_sreverse (uint16_t *val) {
+	*val = ((((*val) >> 8) & 0x00FF) | (((*val) << 8) & 0xFF00));
+}
+inline void H5VL_logi_lreverse (uint32_t *val) {
+	*val = (((*val) >> 24) & 0x000000FF) | (((*val) >> 8) & 0x0000FF00) |
+		   (((*val) << 8) & 0x00FF0000) | (((*val) << 24) & 0xFF000000);
+}
+inline void H5VL_logi_llreverse (uint64_t *val) {
+	*val = ((((*val) >> 56) & 0x00000000000000FF) | (((*val) >> 40) & 0x000000000000FF00) |
+			(((*val) >> 24) & 0x0000000000FF0000) | (((*val) >> 8) & 0x00000000FF000000) |
+			(((*val) << 8) & 0x000000FF00000000) | (((*val) << 24) & 0x0000FF0000000000) |
+			(((*val) << 40) & 0x00FF000000000000) | (((*val) << 56) & 0xFF00000000000000));
+}
+inline void H5VL_logi_sreverse (uint16_t *start, uint16_t *end) {
+	for (; start < end; start++) { H5VL_logi_sreverse (start); }
+}
+inline void H5VL_logi_lreverse (uint32_t *start, uint32_t *end) {
+	for (; start < end; start++) { H5VL_logi_lreverse (start); }
+}
+inline void H5VL_logi_llreverse (uint64_t *start, uint64_t *end) {
+	for (; start < end; start++) { H5VL_logi_llreverse (start); }
+}

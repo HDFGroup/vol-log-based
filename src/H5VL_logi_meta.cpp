@@ -13,6 +13,7 @@
 #include "H5VL_logi_dataspace.hpp"
 #include "H5VL_logi_err.hpp"
 #include "H5VL_logi_meta.hpp"
+#include "H5VL_logi_util.hpp"
 #include "H5VL_logi_zip.hpp"
 
 herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
@@ -34,11 +35,17 @@ herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 	// Check if it is a record entry
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_REC) {
 		// Get record number
+#ifdef WORDS_BIGENDIAN
+		H5VL_logi_llreverse ((uint64_t *)bufp);
+#endif
 		recnum = *((MPI_Offset *)bufp);
 		bufp += sizeof (MPI_Offset);
 	}
 
 	// Get referenced selections
+#ifdef WORDS_BIGENDIAN
+	H5VL_logi_llreverse ((uint64_t *)bufp);
+#endif
 	roff	   = *((MPI_Offset *)bufp);
 	block.sels = bcache[bufp + roff];
 
@@ -89,6 +96,8 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	hsize_t recnum;				   // Record number
 	int encdim;					   // number of dim encoded (ndim or ndim - 1)
 	int isrec;					   // Is a record entry
+	MPI_Offset bsize;			   // Size of decomrpessed selection
+	MPI_Offset esize;			   // Size of a decomrpessed selection block
 
 	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
@@ -98,6 +107,9 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_REC) {
 		encdim = dset.ndim - 1;
 		isrec  = 1;
+#ifdef WORDS_BIGENDIAN
+		H5VL_logi_llreverse ((uint64_t *)(bufp));
+#endif
 		// Get record number
 		recnum = *((MPI_Offset *)bufp);
 		bufp += sizeof (MPI_Offset);
@@ -109,37 +121,31 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	// If there is more than 1 selection
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
 		// Get number of selection (right after the header)
+#ifdef WORDS_BIGENDIAN
+		H5VL_logi_lreverse ((uint32_t *)(bufp));
+#endif
 		nsel = *((int *)bufp);
 		bufp += sizeof (int);
+
+		// Calculate buffer size;
+		esize = 0;
+		bsize = 0;
+		// Count selections
+		if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
+			// Encoded start and count
+			esize = sizeof (MPI_Offset) * 2;
+			bsize += sizeof (MPI_Offset) * (encdim - 1);
+		} else {
+			// Start and count as coordinate
+			esize = sizeof (MPI_Offset) * 2 * encdim;
+		}
+		bsize += esize * nsel;
 
 		// If the rest of the entry is comrpessed, decomrpess it
 		if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
 #ifdef ENABLE_ZLIB
-			int inlen;		   // Size of comrpessed metadata
-			int clen;		   // Size of decompressed metadata
-			MPI_Offset bsize;  // Size of zbuf
-			MPI_Offset esize;  // Size of a selection block
-
-			// Calculate buffer size;
-			esize = 0;
-			bsize = 0;
-			// Count selections
-			if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-				// Encoded start and count
-				esize += nsel * sizeof (MPI_Offset) * 2;
-				bsize += sizeof (MPI_Offset) * (encdim - 1);
-			} else {
-				// Start and count as coordinate
-				esize += nsel * sizeof (MPI_Offset) * 2 * encdim;
-			}
-			/*
-			if (block.hdr.flag & H5VL_LOGI_META_FLAG_MUL_SELX) {  // Physical location
-				esize += sizeof (MPI_Offset) * 2;
-			} else {
-				bsize += sizeof (MPI_Offset) * 2;
-			}
-			*/
-			bsize += esize * nsel;
+			int inlen;	// Size of comrpessed metadata
+			int clen;	// Size of decompressed metadata
 
 			// Allocate decompression buffer
 			zbuf	  = (char *)malloc (bsize);
@@ -160,11 +166,15 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	} else {
 		// Entries with single selection will never be comrpessed
 		nsel	  = 1;
+		bsize	  = sizeof (MPI_Offset) * 2 * encdim * nsel;
 		zbuf	  = bufp;
 		zbufalloc = false;
 	}
 
 	bp = (MPI_Offset *)zbuf;
+#ifdef WORDS_BIGENDIAN
+	H5VL_logi_llreverse ((uint64_t *)(bp), (uint64_t *)(bp + bsize));
+#endif
 	// Retrieve the selection encoding info
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
 		memcpy (dsteps, bp, sizeof (MPI_Offset) * (encdim - 1));

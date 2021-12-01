@@ -463,7 +463,10 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 				}
 				*((MPI_Offset *)(r->sel_buf)) =
 					ret->second->meta_off - dp->fp->mdsize;	 // Record the relative offset
-				selsize = sizeof (MPI_Offset);				 // New metadata size
+#ifdef WORDS_BIGENDIAN
+				H5VL_logi_llreverse ((uint64_t *)(rp->r->sel_buf));
+#endif
+				selsize = sizeof (MPI_Offset);	// New metadata size
 #ifdef LOGVOL_PROFILING
 				// Count size saved by duplication
 				H5VL_log_profile_add_time (dp->fp, TIMER_H5VL_LOG_FILEI_METASIZE_DEDUP,
