@@ -1,6 +1,8 @@
 #include <hdf5.h>
+
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 
 #include "H5VL_log.h"
@@ -14,9 +16,11 @@ int main (int argc, char **argv) {
 	const char *file_name;
 	hid_t fid;
 	hid_t faplid;
-	char volname[128];	   // Name of current VOL
-	ssize_t volname_len;   // Length of volname
-	std::string vol_name;  // String object of volname
+	char volname[128];			  // Name of current VOL
+	ssize_t volname_len;		  // Length of volname
+	std::string vol_name;		  // Name of the VOL used
+	std::string target_vol_name;  // Name of the specified VOL
+	char *env;					  // HDF5_VOL_CONNECTOR environment variable
 
 	MPI_Init (&argc, &argv);
 	MPI_Comm_size (MPI_COMM_WORLD, &np);
@@ -43,10 +47,16 @@ int main (int argc, char **argv) {
 	CHECK_ERR (fid)
 
 	// Check VOL name
+	env = getenv ("HDF5_VOL_CONNECTOR");
+	if (env) {
+		target_vol_name = std::string (strtok (env, " "));
+	} else {
+		target_vol_name = "native";
+	}
 	volname_len			 = H5VLget_connector_name (fid, volname, 128);
 	volname[volname_len] = '\0';
 	vol_name			 = std::string (volname);
-	EXP_VAL (vol_name, "LOG")
+	EXP_VAL (vol_name, target_vol_name)
 
 	err = H5Fclose (fid);
 	CHECK_ERR (err)
