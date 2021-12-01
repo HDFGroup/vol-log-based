@@ -188,7 +188,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 						CHECK_MPIERR
 					}
 
-					foffs[nt] = blocks[j].foff;
+					foffs[nt] = blocks[j].foff + blocks[j].doff;
 					moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
 					lens[nt]  = 1;
 					nt++;
@@ -209,7 +209,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 					while (ctr[0] < blocks[j].count[0]) {  // Foreach row
 						lens[nt] =
 							blocks[j].count[blocks[i].info->ndim - 1] * blocks[j].info->esize;
-						foffs[nt] = blocks[j].foff;
+						foffs[nt] = blocks[j].foff + blocks[j].doff;
 						moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
 						for (k = 0; k < blocks[i].info->ndim; k++) {  // Calculate offset
 							foffs[nt] += fssize[k] * (blocks[j].dstart[k] + ctr[k]);
