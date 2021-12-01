@@ -2,11 +2,12 @@
 
 ### Version _VERSION_ (_RELEASE_DATE_)
 * First public release of log-based VOL.
-  + This release reflects the progress of 2 years of work under the ECP project.
-* Major changes since the pre-release version.
-  + New example programs to demonstrate log-based VOL-specific features.
-  + Add documentation on log-based VOL APIs.
-  + New utility programs to inspect the log entries.
-  + New utility script for querying install options.
-  + Bug fixes and code readability improvements.
-  + Covers more HDF5 APIs.
+* Features implemented.
+  + Support major HDF5 APIs.
+  + Documentation on log-based VOL APIs.
+  + Utility programs.
+    + h5ldump - Dump the log metadata in a log-based VOL outptu file.
+    + h5replay - Convert log-based VOL output file to traditional HDF5 file.
+  + Utility script for querying configuration and installation options.
+    + logvol-config 
+  + Example programs to demonstrate the use of log-based VOL.
