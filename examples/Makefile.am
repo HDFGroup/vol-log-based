@@ -23,7 +23,8 @@ check_PROGRAMS =    create_open \
                     dread_n \
                     non_blocking
 
-EXTRA_DIST = wrap_runs.sh
+EXTRA_DIST = wrap_runs.sh \
+             README.md
 
 TESTPROGRAMS = $(check_PROGRAMS)
 

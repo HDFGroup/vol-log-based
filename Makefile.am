@@ -4,8 +4,8 @@
 #
 # @configure_input@
 
-SUBDIRS = src test examples utils
-DIST_SUBDIRS = src test examples utils
+SUBDIRS = src test examples utils doc
+DIST_SUBDIRS = src test examples utils doc
 EXTRA_DIST =    m4/foreach_idx.m4 \
                 m4/foreach.m4 \
                 m4/list_len.m4 \

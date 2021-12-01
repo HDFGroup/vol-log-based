@@ -478,6 +478,7 @@ fi
 AC_SUBST(ABIVERSIONFLAGS)
 
 AC_CONFIG_FILES(Makefile \
+                doc/Makefile \
                 src/Makefile \
                 src/H5VL_log.h \
                 test/Makefile \
