@@ -14,7 +14,7 @@ APIs not listed below is assumed to be unsupported.
   + The behavior may differ slightly from the underlying VOL.
 * Partial
   + The API only work under certain condition or a limited set of parameters.
-  + The API will return an error outside of it's limtied usage.
+  + The API will return an error if the input argument is not supported.
 * Repurposed
   + The API serves a different purpose than the origin HDF5 API.
 * None
