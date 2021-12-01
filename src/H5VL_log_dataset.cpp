@@ -389,22 +389,14 @@ herr_t H5VL_log_dataset_get (void *dset, H5VL_dataset_get_args_t *args, hid_t dx
 		}
 
 		/* H5Dargs->get_type */
-		case H5VL_DATASET_GET_TYPE: {
-			args->args.get_type.type_id = H5Tcopy (dp->dtype);
-			break;
-		}
-
+		case H5VL_DATASET_GET_TYPE:
 		/* H5Dget_create_plist */
-		case H5VL_DATASET_GET_DCPL: {
-			err = -1;
-			ERR_OUT ("H5VL_DATASET_GET_DCPL not supported")
-			break;
-		}
-
+		case H5VL_DATASET_GET_DCPL:
 		/* H5Dget_access_plist */
 		case H5VL_DATASET_GET_DAPL: {
-			err = -1;
-			ERR_OUT ("H5VL_DATASET_GET_DAPL not supported")
+			H5VL_LOGI_PROFILING_TIMER_START;
+			err = H5VLdataset_get (dp->uo, dp->uvlid, args, dxpl_id, req);
+			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_GET);
 			break;
 		}
 
