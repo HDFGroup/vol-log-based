@@ -74,6 +74,8 @@ herr_t H5Dwrite_n (hid_t did,
 	H5VL_log_dio_n_arg_t varnarg;
 	H5VL_optional_args_t arg;
 
+	if (dxplid == H5P_DEFAULT) { dxplid = H5P_DATASET_XFER_DEFAULT; }
+
 	varnarg.mem_type_id = mem_type_id;
 	varnarg.n			= n;
 	varnarg.starts		= starts;
@@ -99,6 +101,8 @@ herr_t H5Dread_n (hid_t did,
 	herr_t err = 0;
 	H5VL_log_dio_n_arg_t varnarg;
 	H5VL_optional_args_t arg;
+
+	if (dxplid == H5P_DEFAULT) { dxplid = H5P_DATASET_XFER_DEFAULT; }
 
 	varnarg.mem_type_id = mem_type_id;
 	varnarg.n			= n;
