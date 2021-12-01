@@ -67,7 +67,7 @@ herr_t H5VL_logi_array_idx_t::search (H5VL_log_rreq_t *req,
 				}
 			}
 		}
-		soff += req->sels->get_sel_size (i);
+		soff += req->sels->get_sel_size (i) * req->esize;
 	}
 
 	return err;
