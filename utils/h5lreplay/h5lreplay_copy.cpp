@@ -8,11 +8,11 @@
 //
 #include <hdf5.h>
 //
-#include "h5replay.hpp"
-#include "h5replay_copy.hpp"
+#include "h5lreplay.hpp"
+#include "h5lreplay_copy.hpp"
 #include "H5VL_log_dataset.hpp"
 
-herr_t h5replay_copy_handler (hid_t o_id,
+herr_t h5lreplay_copy_handler (hid_t o_id,
 							  const char *name,
 							  const H5O_info_t *object_info,
 							  void *op_data) {
@@ -26,7 +26,7 @@ herr_t h5replay_copy_handler (hid_t o_id,
 	hid_t tid	  = -1;
 	hid_t dcplid  = -1;
 	dset_info dset;
-	h5replay_copy_handler_arg *argp = (h5replay_copy_handler_arg *)op_data;
+	h5lreplay_copy_handler_arg *argp = (h5lreplay_copy_handler_arg *)op_data;
 
 	// Skip unnamed and hidden object
 	if ((name == NULL) || (name[0] == '_') || (name[0] == '/' || (name[0] == '.'))) {
@@ -107,7 +107,7 @@ herr_t h5replay_copy_handler (hid_t o_id,
 
 		// Copy all attributes
 		// err = H5Aiterate2 (src_did, H5_INDEX_CRT_ORDER, H5_ITER_INC, &zero,
-		//				   h5replay_attr_copy_handler, &dst_did);
+		//				   h5lreplay_attr_copy_handler, &dst_did);
 		// CHECK_ERR
 
 		dset.id	   = dst_did;
@@ -131,7 +131,7 @@ err_out:;
 	return err;
 }
 
-herr_t h5replay_attr_copy_handler (hid_t location_id,
+herr_t h5lreplay_attr_copy_handler (hid_t location_id,
 								   const char *attr_name,
 								   const H5A_info_t *ainfo,
 								   void *op_data) {

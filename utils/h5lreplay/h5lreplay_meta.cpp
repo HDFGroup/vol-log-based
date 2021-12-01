@@ -19,15 +19,15 @@
 #include "H5VL_logi_meta.hpp"
 #include "H5VL_logi_zip.hpp"
 #include "H5VL_logi_util.hpp"
-#include "h5replay.hpp"
-#include "h5replay_meta.hpp"
+#include "h5lreplay.hpp"
+#include "h5lreplay_meta.hpp"
 
-herr_t h5replay_parse_meta (int rank,
+herr_t h5lreplay_parse_meta (int rank,
 							int np,
 							hid_t lgid,
 							int nmdset,
 							std::vector<dset_info> &dsets,
-							std::vector<h5replay_idx_t> &reqs,
+							std::vector<h5lreplay_idx_t> &reqs,
 							int config) {
 	herr_t err = 0;
 	int i, j, k, l;
@@ -184,13 +184,13 @@ err_out:;
 	return err;
 }
 
-herr_t h5replay_idx_t::clear () {
+herr_t h5lreplay_idx_t::clear () {
 	this->entries.clear ();
 
 	return 0;
 }
 
-herr_t h5replay_idx_t::insert (H5VL_logi_metablock_t &meta) {
+herr_t h5lreplay_idx_t::insert (H5VL_logi_metablock_t &meta) {
 	meta_block block;
 
 	block.dsize = meta.dsize;
@@ -201,6 +201,6 @@ herr_t h5replay_idx_t::insert (H5VL_logi_metablock_t &meta) {
 	return 0;
 }
 
-herr_t h5replay_idx_t::search (H5VL_log_rreq_t *req, std::vector<H5VL_log_idx_search_ret_t> &ret) {
+herr_t h5lreplay_idx_t::search (H5VL_log_rreq_t *req, std::vector<H5VL_log_idx_search_ret_t> &ret) {
 	return 0;
 }

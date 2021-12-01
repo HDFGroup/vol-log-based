@@ -16,9 +16,9 @@
 //
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_logi_filter.hpp"
-#include "h5replay.hpp"
-#include "h5replay_data.hpp"
-#include "h5replay_meta.hpp"
+#include "h5lreplay.hpp"
+#include "h5lreplay_data.hpp"
+#include "h5lreplay_meta.hpp"
 
 typedef struct hidx {
 	MPI_Aint foff;
@@ -27,9 +27,9 @@ typedef struct hidx {
 	bool operator< (struct hidx &rhs) { return foff < rhs.foff; }
 } hidx;
 
-herr_t h5replay_read_data (MPI_File fin,
+herr_t h5lreplay_read_data (MPI_File fin,
 						   std::vector<dset_info> &dsets,
-						   std::vector<h5replay_idx_t> &reqs) {
+						   std::vector<h5lreplay_idx_t> &reqs) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j, k, l;
@@ -116,9 +116,9 @@ err_out:;
 	return err;
 }
 
-herr_t h5replay_write_data (hid_t foutid,
+herr_t h5lreplay_write_data (hid_t foutid,
 							std::vector<dset_info> &dsets,
-							std::vector<h5replay_idx_t> &reqs) {
+							std::vector<h5lreplay_idx_t> &reqs) {
 	herr_t err = 0;
 	hid_t dsid = -1;
 	hid_t msid = -1;

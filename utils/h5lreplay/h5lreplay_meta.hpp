@@ -19,7 +19,7 @@ typedef struct meta_block : H5VL_logi_metablock_t {
 	std::vector<char *> bufs;
 } meta_block;
 
-class h5replay_idx_t : public H5VL_logi_idx_t {
+class h5lreplay_idx_t : public H5VL_logi_idx_t {
    public:
 	std::vector<meta_block> entries;
 	herr_t clear ();
@@ -27,10 +27,10 @@ class h5replay_idx_t : public H5VL_logi_idx_t {
 	herr_t search (H5VL_log_rreq_t *req, std::vector<H5VL_log_idx_search_ret_t> &ret);
 };
 
-herr_t h5replay_parse_meta (int rank,
+herr_t h5lreplay_parse_meta (int rank,
 							int np,
 							hid_t lgid,
 							int nmdset,
 							std::vector<dset_info> &dsets,
-							std::vector<h5replay_idx_t> &reqs,
+							std::vector<h5lreplay_idx_t> &reqs,
 							int config);

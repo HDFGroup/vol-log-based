@@ -16,10 +16,10 @@
 #include "H5VL_log_file.hpp"
 #include "H5VL_log_filei.hpp"
 #include "H5VL_logi_nb.hpp"
-#include "h5replay.hpp"
-#include "h5replay_copy.hpp"
-#include "h5replay_data.hpp"
-#include "h5replay_meta.hpp"
+#include "h5lreplay.hpp"
+#include "h5lreplay_copy.hpp"
+#include "h5lreplay_data.hpp"
+#include "h5lreplay_meta.hpp"
 
 int main (int argc, char *argv[]) {
 	herr_t ret;
@@ -43,19 +43,19 @@ int main (int argc, char *argv[]) {
 			case 'h':
 			default:
 				if (rank == 0) {
-					std::cout << "Usage: h5reply -i <input file path> -o <output file path>"
+					std::cout << "Usage: h5lreplay -i <input file path> -o <output file path>"
 							  << std::endl;
 				}
 				return 0;
 		}
 	}
 
-	ret = h5replay_core (inpath, outpath, rank, np);
+	ret = h5lreplay_core (inpath, outpath, rank, np);
 
 	return 0;
 }
 
-herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int np) {
+herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np) {
 	herr_t err = 0;
 	int mpierr;
 	int i;
@@ -71,8 +71,8 @@ herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int n
 	int nmdset;		 // # metadata dataset in the current file (main file| subfile)
 	int config;		 // Config flags of the input file
 	int att_buf[4];	 // Temporary buffer for reading file attributes
-	h5replay_copy_handler_arg copy_arg;	 // File structure
-	std::vector<h5replay_idx_t> reqs;  // Requests recorded in the current file (main file| subfile)
+	h5lreplay_copy_handler_arg copy_arg;	 // File structure
+	std::vector<h5lreplay_idx_t> reqs;  // Requests recorded in the current file (main file| subfile)
 	MPI_File fin  = MPI_FILE_NULL;	   // file handle of the input file
 	MPI_File fout = MPI_FILE_NULL;	   // file handle of the output file
 	MPI_File fsub = MPI_FILE_NULL;	   // file handle of the subfile
@@ -113,7 +113,7 @@ herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int n
 	// Copy data objects
 	copy_arg.dsets.resize (ndset);
 	copy_arg.fid = foutid;
-	err = H5Ovisit3 (finid, H5_INDEX_CRT_ORDER, H5_ITER_INC, h5replay_copy_handler, &copy_arg,
+	err = H5Ovisit3 (finid, H5_INDEX_CRT_ORDER, H5_ITER_INC, h5lreplay_copy_handler, &copy_arg,
 					 H5O_INFO_ALL);
 	CHECK_ERR
 
@@ -160,15 +160,15 @@ herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int n
 
 					// Read the metadata
 					err =
-						h5replay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs, config);
+						h5lreplay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs, config);
 					CHECK_ERR
 
 					// Read the data
-					err = h5replay_read_data (fsub, copy_arg.dsets, reqs);
+					err = h5lreplay_read_data (fsub, copy_arg.dsets, reqs);
 					CHECK_ERR
 
 					// Write the data
-					err = h5replay_write_data (foutid, copy_arg.dsets, reqs);
+					err = h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
 					CHECK_ERR
 
 					// Close the subfile
@@ -194,15 +194,15 @@ herr_t h5replay_core (std::string &inpath, std::string &outpath, int rank, int n
 		CHECK_ID (lgid)
 
 		// Read the metadata
-		err = h5replay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs, config);
+		err = h5lreplay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs, config);
 		CHECK_ERR
 
 		// Read the data
-		err = h5replay_read_data (fin, copy_arg.dsets, reqs);
+		err = h5lreplay_read_data (fin, copy_arg.dsets, reqs);
 		CHECK_ERR
 
 		// Write the data
-		err = h5replay_write_data (foutid, copy_arg.dsets, reqs);
+		err = h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
 		CHECK_ERR
 	}
 

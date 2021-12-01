@@ -4,10 +4,10 @@
 #
 # @configure_input@
 
-SUBDIRS = h5replay h5ldump
-DIST_SUBDIRS = h5replay h5ldump
+SUBDIRS = h5lreplay h5ldump
+DIST_SUBDIRS = h5lreplay h5ldump
 
-bin_SCRIPTS = logvol-config
-EXTRA_DIST = logvol-config.in
+bin_SCRIPTS = h5lconfig
+EXTRA_DIST = h5lconfig.in
 
 .PHONY:
