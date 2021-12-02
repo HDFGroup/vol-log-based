@@ -3,8 +3,8 @@
 # Copyright (C) 2021, Northwestern University and Argonne National Laboratory
 # See COPYRIGHT notice in top-level directory.
 #
-# This forms the basis for the pnetcdf-config utility, which tells you
-# various things about the PnetCDF installation. This code was based on
+# This forms the basis for the log-based VOL-config utility, which tells you
+# various things about the log-based VOL installation. This code was based on
 # file nc-config.in from netCDF distribution.
 #
 # $Id$
@@ -62,30 +62,30 @@ release_date="@H5VL_LOG_RELEASE_DATE@"
 usage()
 {
     cat <<EOF
-logvol-config is a utility program to display the build and installation
-information of the Log-based VOL library.
+h5lconfig is a utility program to display the build and installation
+information of the log-based VOL library.
 
-Usage: logvol-config [OPTION]
+Usage: h5lconfig [OPTION]
 
 Available values for OPTION include:
 
   --help                      display this help message and exit
   --all                       display all options
-  --cc                        C compiler used to build PnetCDF
-  --cflags                    C compiler flags used to build PnetCDF
-  --cppflags                  C pre-processor flags used to build PnetCDF
-  --c++                       C++ compiler used to build PnetCDF
-  --cxxflags                  C++ compiler flags used to build PnetCDF
-  --ldflags                   Linker flags used to build PnetCDF
-  --libs                      Extra libraries used to build PnetCDF
+  --cc                        C compiler used to build log-based VOL
+  --cflags                    C compiler flags used to build log-based VOL
+  --cppflags                  C pre-processor flags used to build log-based VOL
+  --c++                       C++ compiler used to build log-based VOL
+  --cxxflags                  C++ compiler flags used to build log-based VOL
+  --ldflags                   Linker flags used to build log-based VOL
+  --libs                      Extra libraries used to build log-based VOL
   --profiling                 Whether internal profiling is enabled or not
-  --debug                     Whether PnetCDF is built with debug mode
+  --debug                     Whether log-based VOL is built with debug mode
   --prefix                    Installation directory
   --includedir                Installation directory containing header files
   --libdir                    Installation directory containing library files
   --version                   Library version
-  --release-date              Date of PnetCDF source was released
-  --config-date               Date of PnetCDF library was configured
+  --release-date              Date of log-based VOL source was released
+  --config-date               Date of log-based VOL library was configured
 EOF
     exit $1
 }
@@ -98,14 +98,14 @@ all()
         echo "  --has-c++                   -> $has_cxx"
         echo "  --has-fortran               -> $has_fortran"
 if test "x$enable_zlib" = x1; then
-        echo "  --zlib                     -> enabled"
+        echo "  --zlib                      -> enabled"
 else
-        echo "  --zlib                     -> disabled"
+        echo "  --zlib                      -> disabled"
 fi
 # if test "x$enable_subfiling" = x1; then
-#         echo "  --subfiling                 -> enabled"
+#         echo "  --subfiling               -> enabled"
 # else
-#         echo "  --subfiling                 -> disabled"
+#         echo "  --subfiling               -> disabled"
 # fi
 if test "x$profiling_mode" = x1; then
         echo "  --profiling                 -> enabled"
