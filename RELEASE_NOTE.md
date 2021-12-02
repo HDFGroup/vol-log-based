@@ -1,6 +1,6 @@
 ## Log Layout Based HDF5 Virtual Object Layer
 
-### Version _VERSION_ (_RELEASE_DATE_)
+### Version 1.0.0 (December 2, 2021)
 * First public release of log-based VOL.
 * Features implemented.
   + Support major HDF5 APIs.
