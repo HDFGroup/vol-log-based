@@ -8,14 +8,14 @@
 //
 #include <hdf5.h>
 //
+#include "H5VL_log_dataset.hpp"
 #include "h5lreplay.hpp"
 #include "h5lreplay_copy.hpp"
-#include "H5VL_log_dataset.hpp"
 
 herr_t h5lreplay_copy_handler (hid_t o_id,
-							  const char *name,
-							  const H5O_info_t *object_info,
-							  void *op_data) {
+							   const char *name,
+							   const H5O_info_t *object_info,
+							   void *op_data) {
 	herr_t err = 0;
 	int i;
 	int nfilter;
@@ -31,7 +31,9 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 	// Skip unnamed and hidden object
 	if ((name == NULL) || (name[0] == '_') || (name[0] == '/' || (name[0] == '.'))) {
 #ifdef LOGVOL_DEBUG
-		std::cout << "Stkip " << name << std::endl;
+		if (name[0] == '_') {
+			std::cout << "Skip log-based VOL data objects " << name << std::endl;
+		}
 #endif
 		goto err_out;
 	}
@@ -46,7 +48,7 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 		hsize_t dims[H5S_MAX_RANK], mdims[H5S_MAX_RANK];
 
 #ifdef LOGVOL_DEBUG
-		std::cout << "Copying " << name << std::endl;
+		std::cout << "Reconstructing user dataset " << name << std::endl;
 #endif
 
 		// Open src dataset
@@ -111,7 +113,7 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 		// CHECK_ERR
 
 		dset.id	   = dst_did;
-		dset.dtype  = tid;
+		dset.dtype = tid;
 		dset.esize = H5Tget_size (tid);
 		dset.ndim  = ndim;
 
@@ -132,9 +134,9 @@ err_out:;
 }
 
 herr_t h5lreplay_attr_copy_handler (hid_t location_id,
-								   const char *attr_name,
-								   const H5A_info_t *ainfo,
-								   void *op_data) {
+									const char *attr_name,
+									const H5A_info_t *ainfo,
+									void *op_data) {
 	herr_t err	  = 0;
 	hid_t dst_did = *((hid_t *)(op_data));
 
