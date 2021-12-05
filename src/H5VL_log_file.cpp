@@ -2,10 +2,11 @@
 #include <config.h>
 #endif
 
+#include <mpi.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+//
 #include "H5VL_log.h"
 #include "H5VL_log_file.hpp"
 #include "H5VL_log_filei.hpp"

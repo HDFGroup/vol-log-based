@@ -11,6 +11,7 @@
 //
 #include <hdf5.h>
 #include <unistd.h>
+#include <mpi.h>
 //
 #include "H5VL_log_filei.hpp"
 #include "H5VL_logi_nb.hpp"

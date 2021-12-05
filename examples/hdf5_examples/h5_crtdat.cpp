@@ -16,7 +16,8 @@
  *  array.  It is used in the HDF5 Tutorial.
  */
 
-#include "hdf5.h"
+#include <hdf5.h>
+#include <mpi.h>
 #include "H5VL_log.h"
 #include <cassert>
 #define FILE "dset.h5"

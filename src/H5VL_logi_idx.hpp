@@ -1,6 +1,7 @@
 #pragma once
 
 #include <hdf5.h>
+#include <mpi.h>
 
 #include "H5VL_logi_nb.hpp"
 

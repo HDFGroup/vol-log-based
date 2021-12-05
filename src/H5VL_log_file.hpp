@@ -7,7 +7,9 @@
 #include <array>
 #include <string>
 #include <unordered_map>
-
+//
+#include <mpi.h>
+//
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_obj.hpp"

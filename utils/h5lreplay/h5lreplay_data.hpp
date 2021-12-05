@@ -1,6 +1,7 @@
 #pragma once
 
 #include "h5lreplay_meta.hpp"
+#include <mpi.h>
 
 herr_t h5lreplay_read_data (MPI_File fin,
 						   std::vector<dset_info> &dsets,

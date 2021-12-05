@@ -21,6 +21,7 @@
 
 
 #include "hdf5.h"
+#include <mpi.h>
 #include "H5VL_log.h"
 #include <cassert>
 

@@ -12,6 +12,7 @@
 #include <dirent.h>
 #include <hdf5.h>
 #include <unistd.h>
+#include <mpi.h>
 //
 #include "H5VL_log_file.hpp"
 #include "H5VL_log_filei.hpp"

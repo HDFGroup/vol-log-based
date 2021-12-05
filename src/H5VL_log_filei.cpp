@@ -9,6 +9,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <mpi.h>
 // Logvol hdrs
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"

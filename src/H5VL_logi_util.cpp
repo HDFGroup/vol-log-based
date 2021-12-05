@@ -9,6 +9,7 @@
 #include "H5VL_logi_util.hpp"
 #include "H5VL_logi_wrapper.hpp"
 #include "hdf5.h"
+#include <mpi.h>
 
 herr_t H5VL_logi_add_att (void *uo,
 						  hid_t uvlid,

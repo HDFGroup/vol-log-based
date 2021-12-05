@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <vector>
 //
+#include <mpi.h>
+//
 #include "H5VL_logi_dataspace.hpp"
 //#include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_err.hpp"

@@ -9,6 +9,7 @@
 //
 #include <sys/types.h>
 #include <unistd.h>
+#include <mpi.h>
 //
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_dataseti.hpp"

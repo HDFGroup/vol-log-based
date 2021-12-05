@@ -18,6 +18,7 @@
 
 #include "hdf5.h"
 #include "H5VL_log.h"
+#include <mpi.h>
 #include <cassert>
 
 #define FILE "subset.h5"

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <H5VLconnector.h>
+#include <mpi.h>
 
 #include "H5VL_log_obj.hpp"
 

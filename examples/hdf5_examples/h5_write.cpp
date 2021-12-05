@@ -18,6 +18,7 @@
 
 #include "hdf5.h"
 #include "H5VL_log.h"
+#include <mpi.h>
 #include <cassert>
 
 #define H5FILE_NAME "SDS.h5"

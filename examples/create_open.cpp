@@ -15,6 +15,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include <hdf5.h>
+#include <mpi.h>
 
 #include <cassert>
 #include <cstdio>
@@ -23,7 +24,7 @@
 #include "H5VL_log.h"
 
 int main (int argc, char **argv) {
-    herr_t err;
+	herr_t err;
 	int rank, np;
 	const char *file_name;
 	hid_t log_vol_id;  // ID of log-based VOL

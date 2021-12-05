@@ -1,4 +1,5 @@
 #include <hdf5.h>
+#include <mpi.h>
 
 #include <cstdio>
 #include <cstdlib>

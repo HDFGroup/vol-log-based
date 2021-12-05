@@ -8,6 +8,7 @@
 #include <vector>
 //
 #include <hdf5.h>
+#include <mpi.h>
 //
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_logi_dataspace.hpp"

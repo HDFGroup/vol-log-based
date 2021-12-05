@@ -6,7 +6,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
-
+//
+#include <mpi.h>
+//
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_dataseti.hpp"

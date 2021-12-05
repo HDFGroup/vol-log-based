@@ -1,6 +1,7 @@
 #include <hdf5.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <mpi.h>
 
 #include "H5VL_log.h"
 #include "testutils.hpp"
