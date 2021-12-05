@@ -49,8 +49,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	MPI_Offset mdsize  = 0;	 // Local metadata size
 	MPI_Offset *mdoffs = NULL;
 	MPI_Offset *mdoffs_snd;
-	MPI_Aint *offs = NULL;	// Offset in MPI_Type_hindexed
-	int *lens	   = NULL;	// Lens in MPI_Type_hindexed
+	MPI_Aint *offs = NULL;	// Offset in MPI_Type_create_hindexed
+	int *lens	   = NULL;	// Lens in MPI_Type_create_hindexed
 	int nentry	   = 0;		// Number of metadata entries
 	size_t bsize   = 0;		// Size of metadata buffer = size of metadata before compression
 	size_t esize;			// Size of the current processing metadata entry
@@ -99,7 +99,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		mdsize += lens[nentry++];
 	}
 
-	mpierr = MPI_Type_hindexed (nentry, lens, offs, MPI_BYTE, &mmtype);
+	mpierr = MPI_Type_create_hindexed (nentry, lens, offs, MPI_BYTE, &mmtype);
 	CHECK_MPIERR
 	mpierr = MPI_Type_commit (&mmtype);
 	CHECK_MPIERR
