@@ -1,0 +1,61 @@
+name: Mac
+
+on:
+  push:
+    branches: [ master, dev ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'docs/**'
+  pull_request:
+    branches: [ master, dev ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'docs/**'
+
+jobs:
+    build:
+      runs-on: macos-latest
+      steps:
+        - uses: actions/checkout@v2
+        - name: Set up dependencies
+          run: |
+            brew update
+            brew instal automake autoconf libtool m4
+            ln -s /usr/local/bin/glibtoolize /usr/local/bin/libtoolize
+            # mpi
+            brew install mpich
+            # zlib
+            brew install zlib     
+        - name: Install HDF5
+          run: |
+            WORKDIR=$(pwd)
+            git clone https://github.com/HDFGroup/hdf5.git -b develop hdf5
+            cd hdf5
+            export HDF5_LIBTOOL=$(which glibtoolize)
+            echo ${HDF5_LIBTOOL}
+            ./autogen.sh
+            ./configure --prefix=${WORKDIR}/.local/hdf5/develop --disable-fortran --disable-hl --disable-tests --disable-tools \
+            --enable-parallel --enable-build-mode=production CC=mpicc
+            make -j 64
+            make -j 64 install
+        - name: Test log VOL
+          run: |
+            WORKDIR=$(pwd)
+            autoreconf -i
+            ./configure --prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/develop --enable-shared CXXFLAGS="-std=c++14"
+            make -j 64 V=1
+            make -j 64 tests
+            export LD_LIBRARY_PATH=${WORKDIR}/.local/hdf5/develop:$LD_LIBRARY_PATH
+            make check
+            make distcheck DISTCHECK_CONFIGURE_FLAGS="--prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/develop --enable-shared"
+        - name: Print log
+          if: ${{ failure() }}
+          run: |
+            WORKDIR=$(pwd)
+            cat ${WORKDIR}/config.log
+            cat ${WORKDIR}/test/dynamic/test-suite.log
+            cat ${WORKDIR}/test/basic/test-suite.log
+            cat ${WORKDIR}/examples/hdf5/test-suite.log
+
