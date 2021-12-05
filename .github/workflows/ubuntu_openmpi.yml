@@ -1,4 +1,4 @@
-name: Ubuntu_mpich
+name: Ubuntu_openmpi
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install automake autoconf libtool libtool-bin m4
             # mpi
-            sudo apt-get install mpich
+            sudo apt-get install openmpi-bin
             # zlib
             sudo apt-get install zlib1g-dev        
         - name: Install HDF5
