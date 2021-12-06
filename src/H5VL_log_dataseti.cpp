@@ -669,7 +669,7 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 	r->dtype   = -1;
 	r->mtype   = -1;
 	r->esize   = dp->esize;
-	r->rsize   = 0;	 // Nomber of elements in record
+	r->rsize   = dsel->get_sel_size ();	 // Nomber of elements in selection
 	r->sels	   = dsel;
 
 	// Non-blocking?

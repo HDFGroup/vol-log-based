@@ -499,15 +499,15 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 	for (auto &r : reqs) {
 		// Type convertion
 		if (r->dtype != r->mtype) {
-			void *bg = NULL;
+			// void *bg = NULL;
 
 			esize = H5Tget_size (r->mtype);
 			CHECK_ID (esize)
 
-			if (H5Tget_class (r->mtype) == H5T_COMPOUND) bg = malloc (r->rsize * esize);
-			err = H5Tconvert (r->dtype, r->mtype, r->rsize, r->xbuf, bg, dxplid);
+			// if (H5Tget_class (r->mtype) == H5T_COMPOUND) bg = malloc (r->rsize * esize);
+			err = H5Tconvert (r->dtype, r->mtype, r->rsize, r->xbuf, NULL, dxplid);
 			CHECK_ERR
-			free (bg);
+			// free (bg);
 
 			H5Tclose (r->dtype);
 			H5Tclose (r->mtype);
@@ -519,7 +519,7 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 		if (r->xbuf != r->ubuf) {
 			if (r->ptype != MPI_DATATYPE_NULL) {
 				i = 0;
-				MPI_Unpack (r->xbuf, 1, &i, r->ubuf, 1, r->ptype, fp->comm);
+				MPI_Unpack (r->xbuf, r->rsize * r->esize, &i, r->ubuf, 1, r->ptype, fp->comm);
 				MPI_Type_free (&(r->ptype));
 			} else {
 				memcpy (r->ubuf, r->xbuf, r->rsize * esize);
