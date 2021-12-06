@@ -23,7 +23,7 @@ typedef struct H5VL_log_req_data_block_t {
 
 class H5VL_log_wreq_t {
    public:
-	H5VL_logi_meta_hdr *hdr;
+	H5VL_logi_meta_hdr *hdr;  // Location of header in meta_buf
 	// int ndim;  // Dim of the target dataset
 	// MPI_Offset start[H5S_MAX_RANK];
 	// MPI_Offset count[H5S_MAX_RANK];
@@ -31,9 +31,9 @@ class H5VL_log_wreq_t {
 	// std::vector<H5VL_log_selection> sels;  // Selections within the dataset
 
 	// H5VL_logi_meta_hdr *meta_hdr;
-	char *meta_buf = NULL;
-	char *sel_buf  = NULL;
-	int nsel;
+	char *meta_buf = NULL;	// Encoded metadata
+	char *sel_buf  = NULL;	// Location of selection in meta_buf
+	int nsel;				// Number of selections
 	// size_t meta_size;
 
 	MPI_Offset
@@ -70,13 +70,15 @@ class H5VL_log_merged_wreq_t : public H5VL_log_wreq_t {
 	H5VL_log_merged_wreq_t (H5VL_log_dset_t *dp, int nsel);
 	~H5VL_log_merged_wreq_t ();
 
-	herr_t append (H5VL_log_dset_t *dp, H5VL_log_req_data_block_t &db, H5VL_log_selections *sels);
+	herr_t append (H5VL_log_dset_t *dp,
+				   H5VL_log_req_data_block_t &db,
+				   H5VL_log_selections *sels);	// Append new requests into this reqeust
 	herr_t reset (H5VL_log_dset_info_t &dset);
 
    private:
 	herr_t init (H5VL_log_dset_t *dp, int nsel);
 	herr_t init (H5VL_log_file_t *fp, int id, int nsel);
-	herr_t reserve (size_t size);
+	herr_t reserve (size_t size);  // Allocate meta_buf of size at least size
 };
 class H5VL_log_rreq_t {
    public:

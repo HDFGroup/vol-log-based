@@ -547,7 +547,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 	herr_t err = 0;
 	int mpierr;
 	int i;
-	int group_id;  // Original group ID
+	int group_id;  // Original group ID (subfile to access)
 	H5VL_loc_params_t loc;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
@@ -827,6 +827,7 @@ err_out:;
 	return err;
 }
 
+// Deprecated
 herr_t H5VL_log_nb_ost_write (
 	void *file, off64_t doff, off64_t off, int cnt, int *mlens, off64_t *moffs) {
 	herr_t err = 0;
@@ -907,6 +908,7 @@ err_out:
 	return err;
 }
 
+// Deprecated
 herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;

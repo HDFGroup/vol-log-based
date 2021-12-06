@@ -8,9 +8,9 @@
 #include "H5VL_logi_idx.hpp"
 
 typedef struct H5VL_log_copy_ctx {
-	char *src;
-	char *dst;
-	size_t size;
+	char *src;	  // Copy from
+	char *dst;	  // Copy to
+	size_t size;  // Size in byte to copy
 } H5VL_log_copy_ctx;
 
 void *H5VL_log_dataseti_open_with_uo (void *obj,

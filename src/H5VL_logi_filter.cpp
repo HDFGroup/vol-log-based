@@ -15,8 +15,12 @@ herr_t H5VL_logi_filter (
 	H5VL_log_filter_pipeline_t &pipeline, void *in, int in_len, void **out, int *out_len) {
 	herr_t err = 0;
 	int i;
-	int bsize[2], size_in, size_out;
-	char *buf[2], *bin, *bout;
+	int bsize[2];  // Size of buf
+	int size_in;   // Size of bin
+	int size_out;  // Size of bout
+	char *buf[2];  // Buffer for intermediate results in the filter pipeline
+	char *bin;	   // Current input
+	char *bout;	   // Current output
 
 	bsize[0] = bsize[1] = 0;
 	buf[0] = buf[1] = NULL;
@@ -67,9 +71,13 @@ herr_t H5VL_logi_unfilter (
 	H5VL_log_filter_pipeline_t &pipeline, void *in, int in_len, void **out, int *out_len) {
 	herr_t err = 0;
 	int i;
-	int bsize[2], size_in, size_out;
-	char *buf[2], *bin, *bout;
-
+	int bsize[2];  // Size of buf
+	int size_in;   // Size of bin
+	int size_out;  // Size of bout
+	char *buf[2];  // Buffer for intermediate results in the filter pipeline
+	char *bin;	   // Current input
+	char *bout;	   // Current output
+	
 	bsize[0] = bsize[1] = 0;
 	buf[0] = buf[1] = NULL;
 

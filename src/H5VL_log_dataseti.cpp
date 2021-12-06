@@ -90,15 +90,26 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 	herr_t err = 0;
 	int mpierr;
 	int i, j, k, l;
-	int nblock = blocks.size ();
-	std::vector<bool> newgroup (nblock, 0);
-	int nt, nrow, old_nt;
-	int *lens;
-	MPI_Aint *foffs = NULL, *moffs = NULL;
-	MPI_Datatype *ftypes = NULL, *mtypes = NULL, etype = MPI_DATATYPE_NULL;
-	MPI_Offset fssize[H5S_MAX_RANK], mssize[H5S_MAX_RANK];
-	MPI_Offset ctr[H5S_MAX_RANK];
-	H5VL_log_copy_ctx ctx;
+	int nblock = blocks.size ();  // Number of place to read
+	std::vector<bool> newgroup (nblock,
+								0);	 // Whether the current block interleave with previous block
+	int nt;							 // Number of sub-types in ftype and mtype
+	int nrow;	 // Number of contiguous sections after breaking down a set of interleaving blocks
+	int old_nt;	 // Number of elements in foffs, moffs, and lens that has been sorted by foffs
+	int *lens;	 // array_of_blocklengths in MPI_Type_create_struct for ftype and mtype
+	MPI_Aint *foffs		 = NULL;			   // array_of_displacements in ftype
+	MPI_Aint *moffs		 = NULL;			   // array_of_displacements in mtype
+	MPI_Datatype *ftypes = NULL;			   // array_of_types in ftype
+	MPI_Datatype *mtypes = NULL;			   // array_of_types in mtype
+	MPI_Datatype etype	 = MPI_DATATYPE_NULL;  // element type for each ftypes and mtypes
+	MPI_Offset fssize[H5S_MAX_RANK];  // number of elements in the subspace below each dimensions in
+									  // dataset dataspace
+	MPI_Offset mssize[H5S_MAX_RANK];  // number of elements in the subspace below each dimensions in
+									  // memory dataspace
+	MPI_Offset ctr[H5S_MAX_RANK];	  // Logical position of the current contiguous section in the
+									  // dataspace of the block being broken down
+	H5VL_log_copy_ctx ctx;	// Datastructure to record overlaps so we can copy the data to all the
+							// destination buffer
 
 	if (!nblock) {
 		*ftype = *mtype = MPI_DATATYPE_NULL;
@@ -634,13 +645,12 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 	herr_t err = 0;
 	int i, j;
 	int n;
-	size_t esize;
-	htri_t eqtype;
+	size_t esize;	// Element size of mem_type_id
+	htri_t eqtype;	// Is mem_type_id same as dataset external type
 	char *bufp = (char *)buf;
-	H5VL_log_rreq_t *r;
-	H5S_sel_type mstype;
-	H5VL_log_req_type_t rtype;
-	H5VL_log_dio_n_arg_t arg;
+	H5VL_log_rreq_t *r;			// Request entry
+	H5S_sel_type mstype;		// Type of selection in mem_space_id
+	H5VL_log_req_type_t rtype;	// Non-blocking?
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;

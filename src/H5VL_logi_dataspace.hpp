@@ -25,15 +25,19 @@ class H5VL_log_selections {
 	H5VL_log_selections &operator= (H5VL_log_selections &rhs);
 	bool operator== (H5VL_log_selections &rhs);
 
-	herr_t get_mpi_type (hsize_t *hsize, size_t esize, MPI_Datatype *type);
-	hsize_t get_sel_size ();
-	hsize_t get_sel_size (int i);
-	void encode (char *mbuf, MPI_Offset *dsteps = NULL, int dimoff = 0);
+	herr_t get_mpi_type (hsize_t *hsize,
+						 size_t esize,
+						 MPI_Datatype *type);  // Calculate a MPI datatype describing the selection
+	hsize_t get_sel_size ();				   // Get number of elements in the selection
+	hsize_t get_sel_size (int i);			   // Get number of elements in the i-th selected block
+	void encode (char *mbuf,
+				 MPI_Offset *dsteps = NULL,
+				 int dimoff = 0);  // Encode the selection according to logvol metadata format
 
    private:
 	hsize_t *sels_arr = NULL;  // Allocated starts and counts array, if present, need free
 
-	void alloc (int nsel);  // Allocate space for nsel blocks
+	void alloc (int nsel);	  // Allocate space for nsel blocks
 	void convert_to_deep ();  // Coverts a shallow copy to deep copy
 };
 

@@ -7,9 +7,9 @@
 #include <cstring>
 // Sys hdrs
 #include <dirent.h>
+#include <mpi.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <mpi.h>
 // Logvol hdrs
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
@@ -77,7 +77,7 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	fp->group_rank = fp->rank;
 	fp->group_comm = fp->comm;
 	fp->group_id   = 0;
-	
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
 		err = H5VL_log_filei_calc_node_rank (fp);
@@ -753,7 +753,7 @@ herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
 	int mpierr;
 	int i, j;
 	MPI_Info info	 = MPI_INFO_NULL;
-	int *group_ranks = NULL;
+	int *group_ranks = NULL;  // Rank of the group (processes sharing a subfile)
 
 	group_ranks = (int *)malloc (sizeof (int) * fp->np);
 	CHECK_PTR (group_ranks);
@@ -774,7 +774,7 @@ herr_t H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
 
 	mpierr = MPI_Allgather (&(fp->group_rank), 1, MPI_INT, group_ranks, 1, MPI_INT, fp->comm);
 	CHECK_MPIERR
-	// Assign group ID based ont he global rank of group rank 0
+	// Assign group ID based on the global rank of group rank 0
 	fp->group_id = 0;
 	for (i = 0; i < fp->rank; i++) {
 		if (group_ranks[i] == 0) { fp->group_id++; }

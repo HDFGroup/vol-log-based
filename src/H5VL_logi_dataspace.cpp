@@ -113,11 +113,13 @@ H5VL_log_selections::H5VL_log_selections (H5VL_log_selections &rhs)
 H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 	herr_t err = 0;
 	int i, j, k, l;
-	int nreq, old_nreq, nbreq;
-	hssize_t nblock;
-	H5S_sel_type stype;
-	hsize_t **hstarts = NULL, **hends;
-	int *group		  = NULL;
+	int nreq;			 // Number of non-interleaving sections in the selection
+	int old_nreq;		 // Number of non-interleaving sections in previous processed groups
+	int nbreq;			 // Number of non-interleaving sections in current block
+	hssize_t nblock;	 // Number of blocks in the selection (before breaking interleaving blocks)
+	H5S_sel_type stype;	 // Tpye of selection (block list, point list ...)
+	hsize_t **hstarts = NULL, **hends;	// Output buffer of H5Sget_select_hyper_nblocks
+	int *group		  = NULL;			// blocks with the same group number are interleaved
 
 	ndim = H5Sget_simple_extent_ndims (dsid);
 	CHECK_ID (ndim)
@@ -298,7 +300,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 			hsize_t dims[32];
 
 			ndim = H5Sget_simple_extent_dims (dsid, dims, NULL);
-			CHECK_ID(ndim)
+			CHECK_ID (ndim)
 
 			this->nsel = 1;
 			this->alloc (1);
