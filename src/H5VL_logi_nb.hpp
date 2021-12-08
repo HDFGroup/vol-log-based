@@ -111,5 +111,5 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 								 hid_t dxplid);
 herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid);
 herr_t H5VL_log_nb_ost_write (
-	void *file, off64_t doff, off64_t off, int cnt, int *mlens, off64_t *moffs);
+	void *file, off_t doff, off_t off, int cnt, int *mlens, off_t *moffs);
 herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid);

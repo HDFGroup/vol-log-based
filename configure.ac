@@ -197,6 +197,7 @@ dnl Set output variable CPP to a command that runs the C preprocessor.
 dnl Some C compilers require -E to be used as C preprocessor.
 AC_PROG_CPP
 
+AC_SYS_LARGEFILE
 AC_C_CHAR_UNSIGNED
 AC_C_BIGENDIAN
 AM_CONDITIONAL(IS_BIGENDIAN, [test x$ac_cv_c_bigendian = xyes])

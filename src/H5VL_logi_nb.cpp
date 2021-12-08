@@ -829,15 +829,15 @@ err_out:;
 
 // Deprecated
 herr_t H5VL_log_nb_ost_write (
-	void *file, off64_t doff, off64_t off, int cnt, int *mlens, off64_t *moffs) {
+	void *file, off_t doff, off_t off, int cnt, int *mlens, off_t *moffs) {
 	herr_t err = 0;
 	int mpierr;
 	int i;
 	char *bs = NULL, *be, *bp;
 	char *mbuf;
-	off64_t ost_base;  // File offset of the first byte on the target ost
-	off64_t cur_off;   // Offset of current stripe
-	off64_t seek_off;
+	off_t ost_base;  // File offset of the first byte on the target ost
+	off_t cur_off;   // Offset of current stripe
+	off_t seek_off;
 	size_t skip_size;  // First chunk can be partial
 	size_t mlen;
 	size_t bused;
@@ -915,7 +915,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 	int i, j;
 	int cnt;
 	int *mlens		   = NULL;
-	off64_t *moffs	   = NULL;
+	off_t *moffs	   = NULL;
 	MPI_Datatype mtype = MPI_DATATYPE_NULL;
 	MPI_Status stat;
 	MPI_Offset *fsize_local, *fsize_all, foff, fbase;
@@ -937,7 +937,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 
 	// Construct memory type
 	mlens = (int *)malloc (sizeof (int) * cnt);
-	moffs = (off64_t *)malloc (sizeof (off64_t) * cnt);
+	moffs = (off_t *)malloc (sizeof (off_t) * cnt);
 	j	  = 0;
 	for (i = fp->nflushed; i < fp->wreqs.size (); i++) {
 		for (auto &d : fp->wreqs[i]->dbufs) {
