@@ -129,7 +129,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 		// Iterate subdir
 		subdir = opendir ((inpath + ".subfiles").c_str ());
 		CHECK_PTR (subdir)
-		while (subfile = readdir (subdir)) {
+		while ((subfile = readdir (subdir))) {
 			subpath = std::string (subfile->d_name);
 			if (subpath.substr (subpath.size () - 2) == ".h5") {
 #ifdef LOGVOL_DEBUG

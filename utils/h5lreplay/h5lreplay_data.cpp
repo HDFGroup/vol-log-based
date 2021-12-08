@@ -24,7 +24,7 @@ typedef struct hidx {
 	MPI_Aint foff;
 	MPI_Aint moff;
 	int len;
-	bool operator< (struct hidx &rhs) { return foff < rhs.foff; }
+	bool operator< (const struct hidx &rhs) const { return foff < rhs.foff; }
 } hidx;
 
 herr_t h5lreplay_read_data (MPI_File fin,
