@@ -49,7 +49,7 @@ jobs:
             make -j 64 tests
             export LD_LIBRARY_PATH=${WORKDIR}/.local/hdf5/develop:$LD_LIBRARY_PATH
             make check
-            make distcheck DISTCHECK_CONFIGURE_FLAGS="--prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/develop --enable-shared"
+            make distcheck DISTCHECK_CONFIGURE_FLAGS="--prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/develop --enable-shared CXXFLAGS=\"-std=c++14\""
         - name: Print log
           if: ${{ failure() }}
           run: |
