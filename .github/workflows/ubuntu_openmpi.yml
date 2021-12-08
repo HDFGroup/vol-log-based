@@ -1,0 +1,59 @@
+name: Ubuntu_openmpi
+
+on:
+  push:
+    branches: [ master, dev ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'docs/**'
+  pull_request:
+    branches: [ master, dev ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'docs/**'
+
+jobs:
+    build:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+        - name: Set up dependencies
+          run: |
+            sudo apt-get update
+            sudo apt-get install automake autoconf libtool libtool-bin m4
+            # mpi
+            sudo apt-get install openmpi-bin
+            # zlib
+            sudo apt-get install zlib1g-dev        
+        - name: Install HDF5
+          run: |
+            WORKDIR=$(pwd)
+            git clone https://github.com/HDFGroup/hdf5.git -b develop hdf5
+            cd hdf5
+            export HDF5_LIBTOOL=/usr/bin/libtoolize
+            ./autogen.sh
+            ./configure --prefix=${WORKDIR}/.local/hdf5/develop --disable-fortran --disable-hl --disable-tests --disable-tools \
+            --enable-parallel --enable-build-mode=production CC=mpicc
+            make -j 64
+            make -j 64 install
+        - name: Test log VOL
+          run: |
+            WORKDIR=$(pwd)
+            autoreconf -i
+            ./configure --prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/develop --enable-shared
+            make -j 64
+            make -j 64 tests
+            export LD_LIBRARY_PATH=${WORKDIR}/.local/hdf5/develop:$LD_LIBRARY_PATH
+            make check
+            make distcheck DISTCHECK_CONFIGURE_FLAGS="--prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/develop --enable-shared"
+        - name: Print log
+          if: ${{ failure() }}
+          run: |
+            WORKDIR=$(pwd)
+            cat ${WORKDIR}/test/dynamic/test-suite.log
+            cat ${WORKDIR}/test/dynamic/test-suite.log
+            cat ${WORKDIR}/test/basic/test-suite.log
+            cat ${WORKDIR}/examples/hdf5/test-suite.log
+

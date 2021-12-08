@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include <hdf5.h>
+#include <mpi.h>
 #include "ncmpi_vol.h"
 
 #define N 10

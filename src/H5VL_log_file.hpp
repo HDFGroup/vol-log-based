@@ -7,14 +7,15 @@
 #include <array>
 #include <string>
 #include <unordered_map>
-
+//
+#include <mpi.h>
+//
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_obj.hpp"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_nb.hpp"
-#include "H5VL_logi_profiling.hpp"
 
 #define LOG_GROUP_NAME "_LOG"
 
@@ -32,6 +33,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	int rank;		// Global rank of current process
 	int np;			// Number of processes
 	MPI_Comm comm;	// Global communicator
+	MPI_Info info;	// Main file info
 
 	/* Aligned data layout */
 	// Group is a set of processes sharing the same subfile or lustre stripe
@@ -50,7 +52,8 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	bool closing;	// If we are closing the file
 	unsigned flag;	// HDF5 file creation/opening flag
 
-	hid_t dxplid;
+	hid_t dxplid;	// Copy of dxpl passed from the application
+	hid_t ufaplid;	// Copy of fapl passed to the underlying VOL
 
 	void *lgp;	 // Log group
 	int ndset;	 // # user datasets, used to assign ID
@@ -97,10 +100,12 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	// Configuration flag
 	int config;	 // Config flags
 
-#ifdef LOGVOL_PROFILING
+#ifdef ENABLE_PROFILING
+#ifndef REPLAY_BUILD
 	//#pragma message ( "C Preprocessor got here!" )
 	double tlocal[H5VL_LOG_NTIMER];
 	double clocal[H5VL_LOG_NTIMER];
+#endif
 #endif
 
 	H5VL_log_file_t ();

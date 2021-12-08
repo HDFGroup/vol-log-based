@@ -83,7 +83,7 @@ static void sortblocks (int ndim, int len, hsize_t **starts, hsize_t **counts) {
 
 H5VL_log_selections::H5VL_log_selections () : ndim (0), nsel (0), sels_arr (NULL) {}
 H5VL_log_selections::H5VL_log_selections (int ndim, int nsel) : ndim (ndim), nsel (nsel) {
-	this->reserve (nsel);
+	this->alloc (nsel);
 }
 H5VL_log_selections::H5VL_log_selections (int ndim, int nsel, hsize_t **starts, hsize_t **counts)
 	: ndim (ndim), nsel (nsel), starts (starts), counts (counts) {}
@@ -93,7 +93,7 @@ H5VL_log_selections::H5VL_log_selections (H5VL_log_selections &rhs)
 	int i;
 
 	if (rhs.sels_arr) {
-		this->reserve (rhs.nsel);
+		this->alloc (rhs.nsel);
 
 		// Copy the data
 		memcpy (starts, rhs.starts, sizeof (hsize_t *) * nsel);
@@ -113,11 +113,13 @@ H5VL_log_selections::H5VL_log_selections (H5VL_log_selections &rhs)
 H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 	herr_t err = 0;
 	int i, j, k, l;
-	int nreq, old_nreq, nbreq;
-	hssize_t nblock;
-	H5S_sel_type stype;
-	hsize_t **hstarts = NULL, **hends;
-	int *group		  = NULL;
+	int nreq;			 // Number of non-interleaving sections in the selection
+	int old_nreq;		 // Number of non-interleaving sections in previous processed groups
+	int nbreq;			 // Number of non-interleaving sections in current block
+	hssize_t nblock;	 // Number of blocks in the selection (before breaking interleaving blocks)
+	H5S_sel_type stype;	 // Tpye of selection (block list, point list ...)
+	hsize_t **hstarts = NULL, **hends;	// Output buffer of H5Sget_select_hyper_nblocks
+	int *group		  = NULL;			// blocks with the same group number are interleaved
 
 	ndim = H5Sget_simple_extent_ndims (dsid);
 	CHECK_ID (ndim)
@@ -137,10 +139,11 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 			if (nblock == 1) {
 				hsize_t cord[H5S_MAX_RANK * 2];
 
-				err = H5Sget_select_hyper_blocklist (dsid, 0, 1, cord);
+				// Allocate buffer
+				this->nsel = nblock;
+				this->alloc (nblock);
 
-				this->nsel = 1;
-				this->reserve (1);
+				err = H5Sget_select_hyper_blocklist (dsid, 0, 1, cord);
 
 				for (i = 0; i < ndim; i++) {
 					starts[0][i] = (MPI_Offset)cord[i];
@@ -203,7 +206,8 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 				}
 
 				// Allocate buffer
-				this->reserve (nreq);
+				this->nsel = nreq;
+				this->alloc (nreq);
 
 				// Fill up selections
 				nreq = 0;
@@ -274,7 +278,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 			CHECK_ID (nblock)
 
 			this->nsel = nblock;
-			this->reserve (nblock);
+			this->alloc (nblock);
 
 			if (nblock) {
 				hstarts	   = (hsize_t **)malloc (sizeof (hsize_t) * nblock);
@@ -296,10 +300,10 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 			hsize_t dims[32];
 
 			ndim = H5Sget_simple_extent_dims (dsid, dims, NULL);
-			CHECK_ID(ndim)
+			CHECK_ID (ndim)
 
 			this->nsel = 1;
-			this->reserve (1);
+			this->alloc (1);
 
 			for (j = 0; j < ndim; j++) {
 				starts[0][j] = (MPI_Offset)dims[j];
@@ -309,7 +313,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 		} break;
 		case H5S_SEL_NONE: {
 			this->nsel = 0;
-			this->reserve (0);
+			this->alloc (0);
 		} break;
 		default:
 			ERR_OUT ("Unsupported selection type");
@@ -345,7 +349,7 @@ H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
 	this->ndim = rhs.ndim;
 
 	if (rhs.sels_arr) {
-		this->reserve (nsel);
+		this->alloc (nsel);
 
 		// Copy the data
 		memcpy (starts, rhs.starts, sizeof (hsize_t *) * nsel);
@@ -381,7 +385,7 @@ bool H5VL_log_selections::operator== (H5VL_log_selections &rhs) {
 }
 
 // Should only be called once
-void H5VL_log_selections::reserve (int nsel) {
+void H5VL_log_selections::alloc (int nsel) {
 	int err = 0;
 	int i;
 
@@ -416,7 +420,7 @@ void H5VL_log_selections::convert_to_deep () {
 		counts_tmp = counts;
 
 		// Allocate new space
-		this->reserve (nsel);
+		this->alloc (nsel);
 
 		// Copy the data
 		memcpy (starts, starts_tmp, sizeof (hsize_t *) * nsel);
@@ -482,7 +486,7 @@ herr_t H5VL_log_selections::get_mpi_type (hsize_t *hsize, size_t esize, MPI_Data
 		lens[i] = 1;
 	}
 
-	mpierr = MPI_Type_struct (nsel, lens, offs, types, type);
+	mpierr = MPI_Type_create_struct (nsel, lens, offs, types, type);
 	CHECK_MPIERR
 	mpierr = MPI_Type_commit (type);
 	CHECK_MPIERR

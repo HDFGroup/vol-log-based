@@ -6,11 +6,10 @@
 #
 # @configure_input@
 
-C_SUBDIRS = basic \
-			parallel
-            # hdf5 \
-			# phdf5
+C_SUBDIRS = basic dynamic
 
 DIST_SUBDIRS = $(C_SUBDIRS) 
 
 SUBDIRS = $(C_SUBDIRS)
+
+EXTRA_DIST = testutils.hpp

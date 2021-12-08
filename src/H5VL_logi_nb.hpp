@@ -13,7 +13,7 @@
 #define H5VL_LOGI_META_FLAG_SEL_ENCODE	0x04
 #define H5VL_LOGI_META_FLAG_SEL_DEFLATE 0x08
 #define H5VL_LOGI_META_FLAG_SEL_REF		0x10
-#define H5VL_LOGI_META_FLAG_REC     	0x20
+#define H5VL_LOGI_META_FLAG_REC			0x20
 
 typedef struct H5VL_log_req_data_block_t {
 	char *ubuf;	  // User buffer
@@ -23,7 +23,7 @@ typedef struct H5VL_log_req_data_block_t {
 
 class H5VL_log_wreq_t {
    public:
-	H5VL_logi_meta_hdr *hdr;
+	H5VL_logi_meta_hdr *hdr;  // Location of header in meta_buf
 	// int ndim;  // Dim of the target dataset
 	// MPI_Offset start[H5S_MAX_RANK];
 	// MPI_Offset count[H5S_MAX_RANK];
@@ -31,12 +31,13 @@ class H5VL_log_wreq_t {
 	// std::vector<H5VL_log_selection> sels;  // Selections within the dataset
 
 	// H5VL_logi_meta_hdr *meta_hdr;
-	char *meta_buf = NULL;
-	char *sel_buf  = NULL;
-	int nsel;
+	char *meta_buf = NULL;	// Encoded metadata
+	char *sel_buf  = NULL;	// Location of selection in meta_buf
+	int nsel;				// Number of selections
 	// size_t meta_size;
 
-	MPI_Offset meta_off;  // Offset of the metadata related to the starting metadata block of the process
+	MPI_Offset
+		meta_off;  // Offset of the metadata related to the starting metadata block of the process
 
 	std::vector<H5VL_log_req_data_block_t> dbufs;  // Data buffers <xbuf, ubuf, size>
 
@@ -69,13 +70,15 @@ class H5VL_log_merged_wreq_t : public H5VL_log_wreq_t {
 	H5VL_log_merged_wreq_t (H5VL_log_dset_t *dp, int nsel);
 	~H5VL_log_merged_wreq_t ();
 
-	herr_t append (H5VL_log_dset_t *dp, H5VL_log_req_data_block_t &db, H5VL_log_selections *sels);
+	herr_t append (H5VL_log_dset_t *dp,
+				   H5VL_log_req_data_block_t &db,
+				   H5VL_log_selections *sels);	// Append new requests into this reqeust
 	herr_t reset (H5VL_log_dset_info_t &dset);
 
    private:
 	herr_t init (H5VL_log_dset_t *dp, int nsel);
 	herr_t init (H5VL_log_file_t *fp, int id, int nsel);
-	herr_t reserve (size_t size);
+	herr_t reserve (size_t size);  // Allocate meta_buf of size at least size
 };
 class H5VL_log_rreq_t {
    public:
@@ -102,8 +105,11 @@ class H5VL_log_rreq_t {
 	~H5VL_log_rreq_t ();
 };
 
-herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> reqs, hid_t dxplid);
+herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &reqs, hid_t dxplid);
+herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
+								 std::vector<H5VL_log_rreq_t *> &reqs,
+								 hid_t dxplid);
 herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid);
 herr_t H5VL_log_nb_ost_write (
-	void *file, off64_t doff, off64_t off, int cnt, int *mlens, off64_t *moffs);
+	void *file, off_t doff, off_t off, int cnt, int *mlens, off_t *moffs);
 herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid);

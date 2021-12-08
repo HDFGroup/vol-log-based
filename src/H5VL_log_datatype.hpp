@@ -1,6 +1,7 @@
 #pragma once
 
 #include <H5VLconnector.h>
+#include <mpi.h>
 
 static void *H5VL_log_datatype_commit (void *obj,
 									   const H5VL_loc_params_t *loc_params,

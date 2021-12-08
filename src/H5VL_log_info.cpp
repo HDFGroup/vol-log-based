@@ -3,6 +3,7 @@
 #endif
 
 #include <hdf5.h>
+#include <mpi.h>
 
 #include <cassert>
 #include <cstdlib>

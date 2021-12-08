@@ -10,9 +10,12 @@ SUFFIXES = .o .cpp
 
 AM_DEFAULT_SOURCE_EXT = .cpp
 
-AM_CPPFLAGS = -I$(top_srcdir)/src \
-			  -I$(top_srcdir)/test \
-              -I$(srcdir) 
+AM_CPPFLAGS = -I${srcdir}
+AM_CPPFLAGS += -I${top_srcdir}
+AM_CPPFLAGS += -I${top_srcdir}/src
+AM_CPPFLAGS += -I${top_srcdir}/test
+AM_CPPFLAGS += -I${top_builddir}
+AM_CPPFLAGS += -I${top_builddir}/src
 LDADD = $(top_builddir)/src/.libs/libH5VL_log.la
 
 check_PROGRAMS =    file \
@@ -26,7 +29,7 @@ check_PROGRAMS =    file \
                 #   noclose 
                 #   test
 
-EXTRA_DIST = # wrap_runs.sh parallel_run.sh
+EXTRA_DIST = wrap_runs.sh
 
 TESTPROGRAMS = $(check_PROGRAMS)
 
@@ -45,7 +48,7 @@ TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
 
 H5_FILES = $(check_PROGRAMS:%=$(TESTOUTDIR)/%.h5)
 
-CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out
+CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out *.h5
 
 TEST_EXTENSIONS = .sh
 LOG_COMPILER = $(srcdir)/wrap_runs.sh

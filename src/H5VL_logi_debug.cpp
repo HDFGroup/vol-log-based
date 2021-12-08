@@ -4,7 +4,9 @@
 
 #include <cassert>
 #include <cstdio>
-
+//
+#include <mpi.h>
+//
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_debug.hpp"
 

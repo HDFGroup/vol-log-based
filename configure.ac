@@ -15,11 +15,11 @@ AM_EXTRA_RECURSIVE_TARGETS([tests])
 
 AC_CONFIG_HEADERS([config.h])
 AH_TOP([/*
- * Copyright (C) 2019, Northwestern University and Fermi National Accelerator Laboratory
+ * Copyright (C) 2021, Northwestern University and Argonne National Laboratory
  * See COPYRIGHT notice in top-level directory.
  */
 ])
-AC_CONFIG_SRCDIR([src/H5VL_log.h])
+AC_CONFIG_SRCDIR([src/H5VL_log.h.in])
 AC_CONFIG_MACRO_DIRS([m4])
 
 AC_CONFIG_AUX_DIR([./scripts])
@@ -28,7 +28,11 @@ AM_INIT_AUTOMAKE([foreign])
 AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE([enable])
 
-AH_TEMPLATE([ENABLE_ZLIB],              [Define if to enable zlib compression method])
+dnl parse the version numbers to 3 env variables
+H5VL_LOG_VERSION_MAJOR=`echo ${PACKAGE_VERSION} | cut -d. -f1`
+H5VL_LOG_VERSION_MINOR=`echo ${PACKAGE_VERSION} | cut -d. -f2`
+H5VL_LOG_VERSION_SUB=`echo ${PACKAGE_VERSION} | cut -d. -f3`
+H5VL_LOG_VERSION=${PACKAGE_VERSION}
 
 AC_DEFUN([UD_MSG_DEBUG],
          [if test "x${pnc_ac_debug}" = xyes ; then
@@ -37,23 +41,27 @@ AC_DEFUN([UD_MSG_DEBUG],
          ]
 )
 
-dnl parse the version numbers to 3 env variables
-LOGVOL_VERSION_MAJOR=`echo ${PACKAGE_VERSION} | cut -d. -f1`
-LOGVOL_VERSION_MINOR=`echo ${PACKAGE_VERSION} | cut -d. -f2`
-LOGVOL_VERSION_SUB=`echo ${PACKAGE_VERSION} | cut -d. -f3`
-LOGVOL_VERSION=${PACKAGE_VERSION}
-AC_SUBST(LOGVOL_VERSION_MAJOR)
-AC_SUBST(LOGVOL_VERSION_MINOR)
-AC_SUBST(LOGVOL_VERSION_SUB)
-AC_SUBST(LOGVOL_VERSION)
+UD_MSG_DEBUG([H5VL_LOG_VERSION_MAJOR=$H5VL_LOG_VERSION_MAJOR])
+UD_MSG_DEBUG([H5VL_LOG_VERSION_MINOR=$H5VL_LOG_VERSION_MINOR])
+UD_MSG_DEBUG([H5VL_LOG_VERSION_SUB=$H5VL_LOG_VERSION_SUB])
+UD_MSG_DEBUG([H5VL_LOG_VERSION_PRE=$H5VL_LOG_VERSION_PRE])
+UD_MSG_DEBUG([H5VL_LOG_VERSION=$H5VL_LOG_VERSION])
+
+AC_SUBST(H5VL_LOG_VERSION_MAJOR)
+AC_SUBST(H5VL_LOG_VERSION_MINOR)
+AC_SUBST(H5VL_LOG_VERSION_SUB)
+AC_SUBST(H5VL_LOG_VERSION)
 
 dnl Note that command 'date' is not portable across Unix platforms.
 dnl But release date matters only to H5VL_log developers who make the releases.
-LOGVOL_RELEASE_DATE="`date '+%B %-d, %Y'`"
-AC_SUBST(LOGVOL_RELEASE_DATE)
-LOGVOL_RELEASE_DATE_FULL="`date '+%Y-%m-%d'`"
-AC_SUBST(LOGVOL_RELEASE_DATE_FULL)
+H5VL_LOG_RELEASE_DATE="`date '+%B %-d, %Y'`"
+AC_SUBST(H5VL_LOG_RELEASE_DATE)
+H5VL_LOG_RELEASE_DATE_FULL="`date '+%Y-%m-%d'`"
+AC_SUBST(H5VL_LOG_RELEASE_DATE_FULL)
 AC_SUBST(PACKAGE_VERSION)
+
+AH_TEMPLATE([ENABLE_ZLIB],              [Define if to enable zlib compression method])
+AH_TEMPLATE([ENABLE_ZLIB],              [Define if to enable zlib compression method])
 
 AH_TOP([#ifndef _CONFIG_H
 #define _CONFIG_H])
@@ -61,6 +69,9 @@ AH_BOTTOM([#endif])
 
 AC_PROG_SED
 dnl check sed command option -i and set SED_I (this requires RM defined)
+if test "x$RM" = x ; then
+   RM=rm
+fi
 UD_PROG_SED_I
 AC_PROG_EGREP
 
@@ -186,6 +197,12 @@ dnl Set output variable CPP to a command that runs the C preprocessor.
 dnl Some C compilers require -E to be used as C preprocessor.
 AC_PROG_CPP
 
+AC_SYS_LARGEFILE
+AC_C_CHAR_UNSIGNED
+AC_C_BIGENDIAN
+AM_CONDITIONAL(IS_BIGENDIAN, [test x$ac_cv_c_bigendian = xyes])
+AC_SUBST(ac_cv_c_bigendian)dnl for src/utils/pnetcdf-config.in
+
 dnl check if MPICXX works for basic MPI call: MPI_Comm_rank()
 AC_LANG_PUSH(C++)
 AC_CHECK_FUNC([MPI_Comm_rank], [],
@@ -229,8 +246,7 @@ AC_ARG_ENABLE([debug],
                      @<:@default: disabled@:>@])],
     [debug=${enableval}], [debug=no]
 )
-AM_CONDITIONAL(LOGVOL_DEBUG, [test "x$debug" = xyes])
-
+ENABLE_DEBUG=0
 if test "x${debug}" = xyes; then
    dnl add -g flag if not presented
    dnl remove all -O and -fast flags
@@ -244,17 +260,29 @@ if test "x${debug}" = xyes; then
    CXXFLAGS="$CXXFLAGS -O0"
    unset str_found
 
+   ENABLE_DEBUG=1
    AC_DEFINE(LOGVOL_DEBUG, 1, ["Debug build"])
 fi
+AC_SUBST(ENABLE_DEBUG)
+AM_CONDITIONAL(LOGVOL_DEBUG, [test "x$debug" = xyes])
 
 AC_ARG_ENABLE([profiling],
    [AS_HELP_STRING([--enable-profiling],
                    [Enable internal time profiling. @<:@default: disabled@:>@])],
    [enable_profiling=${enableval}], [enable_profiling=no]
 )
-AM_CONDITIONAL(LOGVOL_PROFILING, [test "x$enable_profiling" = xyes])
+ENABLE_PROFILING=0
 if test "x${enable_profiling}" = xyes; then
-   AC_DEFINE(LOGVOL_PROFILING, 1, ["Internal profiling"])
+   AC_DEFINE(ENABLE_PROFILING, 1, ["Internal profiling"])
+   ENABLE_PROFILING=1
+fi
+AC_SUBST(ENABLE_PROFILING)
+AM_CONDITIONAL(LOGVOL_PROFILING, [test "x$enable_profiling" = xyes])
+
+AC_C_BIGENDIAN
+AM_CONDITIONAL(IS_BIGENDIAN, [test x$ac_cv_c_bigendian = xyes])
+if test "x${ac_cv_c_bigendian}" = xyes; then
+   AC_DEFINE(WORDS_BIGENDIAN, 1, ["Underlying platform is big endian"])
 fi
 
 AC_ARG_WITH([hdf5],
@@ -358,10 +386,13 @@ if test "x$enable_zlib" = "xyes" ; then
        fi
    )
    
+   ZLIB_LDFLAGS=
+   ZLIB_LIBS=" -lz"
    if test "x${ZLIB_INSTALL}" != x ; then
       CPPFLAGS+=" -I${ZLIB_INSTALL}/include"
       LDFLAGS+=" -L${ZLIB_INSTALL}/lib"
       LIBS+=" -lz"
+      ZLIB_LDFLAGS+=" -L${ZLIB_INSTALL}/lib"
    fi
 
    LIBS+=" -lm -ldl"
@@ -388,6 +419,8 @@ if test "x$enable_zlib" = "xyes" ; then
    AC_DEFINE(ENABLE_ZLIB)
 fi
 
+AM_CONDITIONAL(ENABLE_SHARED, [test x$enable_shared = xyes])
+
 AC_LANG_POP(C++)
 
 if test "x$LIBS" = x ; then
@@ -411,16 +444,59 @@ if test "x${TESTOUTDIR}" = x ; then
    TESTOUTDIR=.
 fi
 
+dnl Configuration Date
+dnl Note that command 'date' is not portable across Unix platforms
+if test "x$SOURCE_DATE_EPOCH" != x ; then
+    date_str=`date -d @${SOURCE_DATE_EPOCH}`
+    if test "x$date_str" != x ; then
+       AC_SUBST([CONFIG_DATE], ["$date_str"])
+    else
+       date_str=`date -r $SOURCE_DATE_EPOCH`
+       if test "x$date_str" != x ; then
+          AC_SUBST([CONFIG_DATE], ["$date_str"])
+       else dnl ignore SOURCE_DATE_EPOCH
+          AC_SUBST([CONFIG_DATE], ["`date`"])
+       fi
+    fi
+else
+    AC_SUBST([CONFIG_DATE], ["`date`"])
+fi
+UD_MSG_DEBUG([CONFIG_DATE=$CONFIG_DATE])
+
+AC_SUBST(INSTALL_PREFIX,${prefix})
+AC_SUBST(INSTALL_EXEC_PREFIX,${exec_prefix})
+AC_SUBST(PACKAGE_NAME)
+
+dnl Enable creation of libtool-style versioning or no versioning
+AC_ARG_ENABLE(versioning,
+        [AC_HELP_STRING([--disable-versioning],[Disable library versioning. @<:@default: enabled@:>@])],
+        [enable_versioning=${enableval}], [enable_versioning=yes]
+)
+dnl For libtool ABI versioning rules see:
+dnl http://www.gnu.org/software/libtool/manual/libtool.html#Updating-version-info
+dnl Update the version information only immediately before a public release.
+ABIVERSION="1:0:0"
+AC_SUBST(ABIVERSION)
+if test "$enable_versioning" = "yes" ; then
+   ABIVERSIONFLAGS="-version-info \$(ABIVERSION)"
+else
+   ABIVERSIONFLAGS="-avoid-version"
+fi
+AC_SUBST(ABIVERSIONFLAGS)
+
 AC_CONFIG_FILES(Makefile \
+                doc/Makefile \
                 src/Makefile \
+                src/H5VL_log.h \
                 test/Makefile \
                 test/basic/Makefile \
-                test/parallel/Makefile \
-                test/hdf5/Makefile \
-                test/phdf5/Makefile \
+                test/dynamic/Makefile \
                 utils/Makefile \
-                example/Makefile \
-                example/hdf5/Makefile \
+                utils/h5ldump/Makefile \
+                utils/h5lreplay/Makefile \
+                utils/h5lconfig \
+                examples/Makefile \
+                examples/hdf5_examples/Makefile
                 )
 
 AC_OUTPUT

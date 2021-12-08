@@ -24,6 +24,8 @@ dnl
 #include <config.h>
 #endif
 
+#include <mpi.h>
+
 /*
  * Report performance profiling
  */

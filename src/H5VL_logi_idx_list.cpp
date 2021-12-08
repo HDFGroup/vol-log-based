@@ -28,8 +28,9 @@ static bool intersect (
 
 	for (i = 0; i < ndim; i++) {
 		so[i] = std::max (sa[i], sb[i]);
-		co[i] = std::min (sa[i] + ca[i], sb[i] + cb[i]) - so[i];
-		if (co[i] <= 0) return false;
+		co[i] = std::min (sa[i] + ca[i], sb[i] + cb[i]);
+		if (co[i] <= so[i]) return false;
+		co[i] -= so[i];
 	}
 
 	return true;
@@ -66,7 +67,7 @@ herr_t H5VL_logi_array_idx_t::search (H5VL_log_rreq_t *req,
 				}
 			}
 		}
-		soff += req->sels->get_sel_size(i);
+		soff += req->sels->get_sel_size (i) * req->esize;
 	}
 
 	return err;

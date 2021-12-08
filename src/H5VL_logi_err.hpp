@@ -9,6 +9,8 @@
 #ifdef LOGVOL_DEBUG
 #include <cstdlib>
 #include <cstring>
+#include <cassert>
+#include <mpi.h>
 #define DEBUG_ABORT                                        \
 	{                                                      \
 		char *val = getenv ("LOGVOL_DEBUG_ABORT_ON_ERR");  \

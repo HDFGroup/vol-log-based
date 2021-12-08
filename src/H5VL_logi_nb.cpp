@@ -9,6 +9,7 @@
 //
 #include <sys/types.h>
 #include <unistd.h>
+#include <mpi.h>
 //
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_dataseti.hpp"
@@ -36,6 +37,7 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 	herr_t err			= 0;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	size_t mbsize;
+	hsize_t recnum;	 // Record number
 	int i;
 	int encdim;	 // number of dim encoded (ndim or ndim - 1)
 	int flag;
@@ -50,10 +52,10 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 	// Check if it is a record write
 	if (dp->ndim && dp->mdims[0] == H5S_UNLIMITED) {
 		if (sels->nsel > 0) {
-			hsize_t tmp = sels->starts[0][0];
+			recnum = sels->starts[0][0];
 			for (i = 0; i < sels->nsel; i++) {
 				if (sels->counts[i][0] != 1) break;
-				if (sels->starts[i][0] != tmp) break;
+				if (sels->starts[i][0] != recnum) break;
 			}
 			if (i == sels->nsel) {
 				flag |= H5VL_LOGI_META_FLAG_REC;
@@ -99,13 +101,19 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 
 	// Add record number
 	if (flag & H5VL_LOGI_META_FLAG_REC) {
-		*((MPI_Offset *)this->sel_buf) = nsel;
+#ifdef WORDS_BIGENDIAN
+		H5VL_logi_llreverse ((uint64_t *)(&recnum));
+#endif
+		*((MPI_Offset *)this->sel_buf) = recnum;
 		this->sel_buf += sizeof (MPI_Offset);
 	}
 	bufp = this->sel_buf;
 
 	// Add nreq field if more than 1 blocks
 	if (flag & H5VL_LOGI_META_FLAG_MUL_SEL) {
+#ifdef WORDS_BIGENDIAN
+		H5VL_logi_lreverse ((uint32_t *)(&nsel));
+#endif
 		*((int *)bufp) = nsel;
 		bufp += sizeof (int);
 	}
@@ -113,6 +121,10 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 	else {
 		if (nsel > 1) { RET_ERR ("Meta flag mismatch") }
 	}
+#endif
+
+#ifdef WORDS_BIGENDIAN
+	uint64_t *rstart = (uint64_t *)bufp;  // Start addr to do endian reverse
 #endif
 
 	// Dsteps
@@ -126,6 +138,9 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 	} else {
 		sels->encode (bufp, NULL, flag & H5VL_LOGI_META_FLAG_REC ? 1 : 0);
 	}
+#ifdef WORDS_BIGENDIAN
+	H5VL_logi_llreverse (rstart, (uint64_t *)(meta_buf + mbsize));
+#endif
 
 err_out:;
 	if (err) { throw "OOM"; }
@@ -351,12 +366,20 @@ err_out:;
 	return err;
 }
 
-herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> reqs, hid_t dxplid) {
+herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
+								 std::vector<H5VL_log_rreq_t *> &reqs,
+								 hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
-	size_t esize;				// Element size of the user buffer type
-	MPI_Datatype ftype, mtype;	// File and memory type for reading the raw data blocks
+	size_t esize;							  // Element size of the user buffer type
+	MPI_Datatype ftype	= MPI_DATATYPE_NULL;  // File type for reading the raw data blocks
+	MPI_Datatype mtype	= MPI_DATATYPE_NULL;  // Memory type for reading the raw data blocks
+	MPI_Datatype zftype = MPI_DATATYPE_NULL;  // File type for packing the data
+	MPI_Datatype zmtype = MPI_DATATYPE_NULL;  // Memory type for packing the data
+	MPI_Datatype zetype = MPI_DATATYPE_NULL;  // Element type for packing the data
+	bool compound_zetype =
+		false;	// If element type for packing the data is compound (need to be freed)
 	std::vector<H5VL_log_idx_search_ret_t>
 		intersecs;	// Any intersection between selections in reqeusts and the metadata entries
 	std::vector<H5VL_log_copy_ctx> overlaps;  // Any overlapping read regions
@@ -365,7 +388,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> r
 		NULL;  // Temporary buffers for packing data from unfiltered data block into request buffer
 	size_t tbsize = 0;	// size of tbuf
 	MPI_Status stat;
-	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Search index
@@ -401,14 +424,13 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> r
 		mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, ftype, "native", MPI_INFO_NULL);
 		CHECK_MPIERR
 
-		mpierr = MPI_File_read_all (fp->fh, MPI_BOTTOM, 1, mtype, &stat);
+		mpierr = MPI_File_read_at_all (fp->fh, 0, MPI_BOTTOM, 1, mtype, &stat);
 		CHECK_MPIERR
 	} else {
-		mpierr =
-			MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
+		mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
 		CHECK_MPIERR
 
-		mpierr = MPI_File_read_all (fp->fh, MPI_BOTTOM, 0, MPI_BYTE, &stat);
+		mpierr = MPI_File_read_at_all (fp->fh, 0, MPI_BOTTOM, 0, MPI_BYTE, &stat);
 		CHECK_MPIERR
 	}
 
@@ -419,7 +441,6 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> r
 	if (tbsize > 0) { tbuf = (char *)malloc (tbsize); }
 	for (auto &block : intersecs) {
 		if (block.zbuf) {
-			MPI_Datatype ftype, mtype, etype;
 			if (block.fsize > 0) {
 				char *buf = NULL;
 				int csize = 0;
@@ -433,44 +454,44 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> r
 			}
 
 			// Pack from zbuf to xbuf
-			etype = H5VL_logi_get_mpi_type_by_size (block.info->esize);
-			if (etype == MPI_DATATYPE_NULL) {
-				mpierr = MPI_Type_contiguous (block.info->esize, MPI_BYTE, &etype);
+			zetype = H5VL_logi_get_mpi_type_by_size (block.info->esize);
+			if (zetype == MPI_DATATYPE_NULL) {
+				mpierr = MPI_Type_contiguous (block.info->esize, MPI_BYTE, &zetype);
 				CHECK_MPIERR
-				mpierr = MPI_Type_commit (&etype);
+				mpierr = MPI_Type_commit (&zetype);
 				CHECK_MPIERR
-				i = 1;
+				compound_zetype = true;
 			} else {
-				i = 0;
+				compound_zetype = false;
 			}
 
-			mpierr =
-				H5VL_log_debug_MPI_Type_create_subarray (block.info->ndim, block.dsize, block.count,
-														 block.dstart, MPI_ORDER_C, etype, &ftype);
+			mpierr = H5VL_log_debug_MPI_Type_create_subarray (block.info->ndim, block.dsize,
+															  block.count, block.dstart,
+															  MPI_ORDER_C, zetype, &zftype);
 			CHECK_MPIERR
-			mpierr =
-				H5VL_log_debug_MPI_Type_create_subarray (block.info->ndim, block.msize, block.count,
-														 block.mstart, MPI_ORDER_C, etype, &mtype);
+			mpierr = H5VL_log_debug_MPI_Type_create_subarray (block.info->ndim, block.msize,
+															  block.count, block.mstart,
+															  MPI_ORDER_C, zetype, &zmtype);
 
 			CHECK_MPIERR
-			mpierr = MPI_Type_commit (&ftype);
+			mpierr = MPI_Type_commit (&zftype);
 			CHECK_MPIERR
-			mpierr = MPI_Type_commit (&mtype);
+			mpierr = MPI_Type_commit (&zmtype);
 			CHECK_MPIERR
 
-			if (i) {
-				mpierr = MPI_Type_free (&etype);
+			if (compound_zetype) {
+				mpierr = MPI_Type_free (&zetype);
 				CHECK_MPIERR
 			}
 
 			i = 0;
-			MPI_Pack (block.zbuf + block.doff, 1, ftype, tbuf, 1, &i, fp->comm);
+			MPI_Pack (block.zbuf + block.doff, 1, zftype, tbuf, 1, &i, fp->comm);
 
 			i = 0;
-			MPI_Unpack (tbuf, 1, &i, block.xbuf, 1, mtype, fp->comm);
+			MPI_Unpack (tbuf, 1, &i, block.xbuf, 1, zmtype, fp->comm);
 
-			MPI_Type_free (&ftype);
-			MPI_Type_free (&mtype);
+			MPI_Type_free (&zftype);
+			MPI_Type_free (&zmtype);
 		}
 	}
 
@@ -478,15 +499,15 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> r
 	for (auto &r : reqs) {
 		// Type convertion
 		if (r->dtype != r->mtype) {
-			void *bg = NULL;
+			// void *bg = NULL;
 
 			esize = H5Tget_size (r->mtype);
 			CHECK_ID (esize)
 
-			if (H5Tget_class (r->mtype) == H5T_COMPOUND) bg = malloc (r->rsize * esize);
-			err = H5Tconvert (r->dtype, r->mtype, r->rsize, r->xbuf, bg, dxplid);
+			// if (H5Tget_class (r->mtype) == H5T_COMPOUND) bg = malloc (r->rsize * esize);
+			err = H5Tconvert (r->dtype, r->mtype, r->rsize, r->xbuf, NULL, dxplid);
 			CHECK_ERR
-			free (bg);
+			// free (bg);
 
 			H5Tclose (r->dtype);
 			H5Tclose (r->mtype);
@@ -498,7 +519,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> r
 		if (r->xbuf != r->ubuf) {
 			if (r->ptype != MPI_DATATYPE_NULL) {
 				i = 0;
-				MPI_Unpack (r->xbuf, 1, &i, r->ubuf, 1, r->ptype, fp->comm);
+				MPI_Unpack (r->xbuf, r->rsize * r->esize, &i, r->ubuf, 1, r->ptype, fp->comm);
 				MPI_Type_free (&(r->ptype));
 			} else {
 				memcpy (r->ubuf, r->xbuf, r->rsize * esize);
@@ -508,16 +529,79 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> r
 		}
 	}
 
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_PERFORM_READ);
+err_out:;
+	free (tbuf);
+	for (auto const &buf : bufs) { free (buf.second); }
+	if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
+	if (ftype != MPI_DATATYPE_NULL) MPI_Type_free (&ftype);
+	if (zftype != MPI_DATATYPE_NULL) MPI_Type_free (&zftype);
+	if (zmtype != MPI_DATATYPE_NULL) MPI_Type_free (&zmtype);
+	if (compound_zetype && zetype != MPI_DATATYPE_NULL) MPI_Type_free (&zetype);
+	return err;
+}
+
+herr_t H5VL_log_nb_flush_read_reqs (void *file,
+									std::vector<H5VL_log_rreq_t *> &reqs,
+									hid_t dxplid) {
+	herr_t err = 0;
+	int mpierr;
+	int i;
+	int group_id;  // Original group ID (subfile to access)
+	H5VL_loc_params_t loc;
+	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+
+	H5VL_LOGI_PROFILING_TIMER_START;
+
+	// Iterate through all subfiles
+	group_id = fp->group_id;  // Backup group ID
+	for (i = 1; i <= fp->ngroup;
+		 i++) {				   // Process our own subfile last so wew don't need to reopen it
+		if (fp->ngroup > 1) {  // No need to reopen if no subfiles
+			H5VL_LOGI_PROFILING_TIMER_START;
+
+			// Close the log group
+			err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
+			CHECK_ERR
+			// Close previous subfile with MPI
+			mpierr = MPI_File_close (&(fp->fh));
+			CHECK_MPIERR
+			// Close previous subfile
+			err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
+			CHECK_ERR
+
+			// Open the current subfile
+			fp->group_id = (group_id + i) % fp->ngroup;
+			err			 = H5VL_log_filei_open_subfile (fp, fp->flag, fp->ufaplid, fp->dxplid);
+			CHECK_ERR
+			// Open the LOG group
+			loc.obj_type = H5I_FILE;
+			loc.type	 = H5VL_OBJECT_BY_SELF;
+			fp->lgp		 = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, LOG_GROUP_NAME,
+									   H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
+			CHECK_PTR (fp->lgp)
+			// Open the file with MPI
+			mpierr = MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, fp->info,
+									&(fp->fh));
+			CHECK_MPIERR
+
+			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS_SWITCH_SUBFILE);
+		}
+
+		// Erase the index table of previous subfile
+		for (auto &t : fp->idx) { t.clear (); }
+
+		err = H5VL_log_nb_perform_read (fp, reqs, dxplid);
+		CHECK_ERR
+	}
+
 	// Clear the request queue
 	for (auto rp : reqs) { delete rp; }
 	reqs.clear ();
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS);
+
 err_out:;
-
-	free (tbuf);
-	for (auto const &buf : bufs) { free (buf.second); }
-
 	return err;
 }
 
@@ -547,7 +631,6 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	H5VL_loc_params_t loc;
 	char dname[16];	  // Name of the log dataset
 	MPI_Comm ldcomm;  // Communicator to create data dataset
-	void *ldloc;	  // Location to create data dataset (main file | subfile)
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -573,7 +656,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 			fsize_local += fp->wreqs[i]->hdr->fsize;
 		}
 
-		mpierr = MPI_Type_hindexed (cnt, mlens, moffs, MPI_BYTE, &mtype);
+		mpierr = MPI_Type_create_hindexed (cnt, mlens, moffs, MPI_BYTE, &mtype);
 		CHECK_MPIERR
 		mpierr = MPI_Type_commit (&mtype);
 		CHECK_MPIERR
@@ -588,15 +671,8 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_INIT);
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-	// Where to create data dataset, main file or subfile
-	loc.type = H5VL_OBJECT_BY_SELF;
-	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
-		ldloc		 = fp->sfp;
-		loc.obj_type = H5I_FILE;
-	} else {
-		ldloc		 = fp->lgp;
-		loc.obj_type = H5I_GROUP;
-	}
+	loc.type	 = H5VL_OBJECT_BY_SELF;
+	loc.obj_type = H5I_GROUP;
 
 	// Get file offset and total size globally
 	mpierr = MPI_Allreduce (&fsize_local, &fsize_all, 1, MPI_LONG_LONG, MPI_SUM, fp->comm);
@@ -636,7 +712,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 			ldsid = H5Screate_simple (1, &start, &start);
 			CHECK_ID (ldsid)
 			H5VL_LOGI_PROFILING_TIMER_START;
-			ldp = H5VLdataset_create (ldloc, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
+			ldp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
 									  H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
 									  H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
 			CHECK_PTR (ldp);
@@ -673,6 +749,9 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 				}
 			}
 			fp->nflushed = fp->wreqs.size ();
+
+			// Increase number of log dataset
+			(fp->nldset)++;
 		}
 
 		// Create virtaul log dataset in the main file
@@ -715,9 +794,6 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 		}
 		*/
 
-		// Increase number of log dataset
-		(fp->nldset)++;
-
 		// Mark the metadata flag to dirty (unflushed metadata)
 		if (fsize_group) { fp->metadirty = true; }
 	}
@@ -751,16 +827,17 @@ err_out:;
 	return err;
 }
 
+// Deprecated
 herr_t H5VL_log_nb_ost_write (
-	void *file, off64_t doff, off64_t off, int cnt, int *mlens, off64_t *moffs) {
+	void *file, off_t doff, off_t off, int cnt, int *mlens, off_t *moffs) {
 	herr_t err = 0;
 	int mpierr;
 	int i;
 	char *bs = NULL, *be, *bp;
 	char *mbuf;
-	off64_t ost_base;  // File offset of the first byte on the target ost
-	off64_t cur_off;   // Offset of current stripe
-	off64_t seek_off;
+	off_t ost_base;  // File offset of the first byte on the target ost
+	off_t cur_off;   // Offset of current stripe
+	off_t seek_off;
 	size_t skip_size;  // First chunk can be partial
 	size_t mlen;
 	size_t bused;
@@ -779,8 +856,8 @@ herr_t H5VL_log_nb_ost_write (
 
 	cur_off	  = ost_base + (off / fp->ssize) * stride;
 	skip_size = off % fp->ssize;
-	seek_off  = lseek64 (fp->fd, cur_off + skip_size, SEEK_SET);
-	if (seek_off < 0) { ERR_OUT ("lseek64 fail"); }
+	seek_off  = lseek (fp->fd, cur_off + skip_size, SEEK_SET);
+	if (seek_off < 0) { ERR_OUT ("lseek fail"); }
 	bp = bs + skip_size;
 
 	for (i = 0; i < cnt; i++) {
@@ -801,8 +878,8 @@ herr_t H5VL_log_nb_ost_write (
 				CHECK_ERR
 
 				// Move to next stride
-				seek_off = lseek64 (fp->fd, stride, SEEK_CUR);
-				if (seek_off < 0) { ERR_OUT ("lseek64 fail"); }
+				seek_off = lseek (fp->fd, stride, SEEK_CUR);
+				if (seek_off < 0) { ERR_OUT ("lseek fail"); }
 
 				// Bytes written
 				mlen -= be - bp;
@@ -831,13 +908,14 @@ err_out:
 	return err;
 }
 
+// Deprecated
 herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
 	int cnt;
 	int *mlens		   = NULL;
-	off64_t *moffs	   = NULL;
+	off_t *moffs	   = NULL;
 	MPI_Datatype mtype = MPI_DATATYPE_NULL;
 	MPI_Status stat;
 	MPI_Offset *fsize_local, *fsize_all, foff, fbase;
@@ -859,7 +937,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 
 	// Construct memory type
 	mlens = (int *)malloc (sizeof (int) * cnt);
-	moffs = (off64_t *)malloc (sizeof (off64_t) * cnt);
+	moffs = (off_t *)malloc (sizeof (off_t) * cnt);
 	j	  = 0;
 	for (i = fp->nflushed; i < fp->wreqs.size (); i++) {
 		for (auto &d : fp->wreqs[i]->dbufs) {

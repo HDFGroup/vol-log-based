@@ -8,15 +8,12 @@
 #include "H5VL_logi_idx.hpp"
 
 typedef struct H5VL_log_copy_ctx {
-	char *src;
-	char *dst;
-	size_t size;
+	char *src;	  // Copy from
+	char *dst;	  // Copy to
+	size_t size;  // Size in byte to copy
 } H5VL_log_copy_ctx;
 
-void *H5VL_log_dataseti_open_with_uo (void *obj,
-									  void *uo,
-									  const H5VL_loc_params_t *loc_params,
-									  hid_t dxpl_id);
+void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id);
 void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_obj_t *cp);
 herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> blocks,
 										  MPI_Datatype *ftype,

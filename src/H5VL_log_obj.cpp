@@ -58,7 +58,7 @@ void *H5VL_log_object_open (void *obj,
 	if (uo == NULL) { CHECK_PTR (uo); }
 
 	if (*opened_type == H5I_DATASET) {
-		return H5VL_log_dataseti_open_with_uo (obj, uo, loc_params, dxpl_id);
+		return H5VL_log_dataseti_open (obj, uo, dxpl_id);
 	} else {
 		return H5VL_log_obj_open_with_uo (obj, uo, *opened_type, loc_params);
 	}

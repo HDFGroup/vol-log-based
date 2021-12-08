@@ -6,7 +6,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
-
+//
+#include <mpi.h>
+//
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_dataseti.hpp"
@@ -88,15 +90,26 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 	herr_t err = 0;
 	int mpierr;
 	int i, j, k, l;
-	int nblock = blocks.size ();
-	std::vector<bool> newgroup (nblock, 0);
-	int nt, nrow, old_nt;
-	int *lens;
-	MPI_Aint *foffs = NULL, *moffs = NULL;
-	MPI_Datatype *ftypes = NULL, *mtypes = NULL, etype = MPI_DATATYPE_NULL;
-	MPI_Offset fssize[H5S_MAX_RANK], mssize[H5S_MAX_RANK];
-	MPI_Offset ctr[H5S_MAX_RANK];
-	H5VL_log_copy_ctx ctx;
+	int nblock = blocks.size ();  // Number of place to read
+	std::vector<bool> newgroup (nblock,
+								0);	 // Whether the current block interleave with previous block
+	int nt;							 // Number of sub-types in ftype and mtype
+	int nrow;	 // Number of contiguous sections after breaking down a set of interleaving blocks
+	int old_nt;	 // Number of elements in foffs, moffs, and lens that has been sorted by foffs
+	int *lens;	 // array_of_blocklengths in MPI_Type_create_struct for ftype and mtype
+	MPI_Aint *foffs		 = NULL;			   // array_of_displacements in ftype
+	MPI_Aint *moffs		 = NULL;			   // array_of_displacements in mtype
+	MPI_Datatype *ftypes = NULL;			   // array_of_types in ftype
+	MPI_Datatype *mtypes = NULL;			   // array_of_types in mtype
+	MPI_Datatype etype	 = MPI_DATATYPE_NULL;  // element type for each ftypes and mtypes
+	MPI_Offset fssize[H5S_MAX_RANK];  // number of elements in the subspace below each dimensions in
+									  // dataset dataspace
+	MPI_Offset mssize[H5S_MAX_RANK];  // number of elements in the subspace below each dimensions in
+									  // memory dataspace
+	MPI_Offset ctr[H5S_MAX_RANK];	  // Logical position of the current contiguous section in the
+									  // dataspace of the block being broken down
+	H5VL_log_copy_ctx ctx;	// Datastructure to record overlaps so we can copy the data to all the
+							// destination buffer
 
 	if (!nblock) {
 		*ftype = *mtype = MPI_DATATYPE_NULL;
@@ -188,7 +201,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 						CHECK_MPIERR
 					}
 
-					foffs[nt] = blocks[j].foff;
+					foffs[nt] = blocks[j].foff + blocks[j].doff;
 					moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
 					lens[nt]  = 1;
 					nt++;
@@ -209,7 +222,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 					while (ctr[0] < blocks[j].count[0]) {  // Foreach row
 						lens[nt] =
 							blocks[j].count[blocks[i].info->ndim - 1] * blocks[j].info->esize;
-						foffs[nt] = blocks[j].foff;
+						foffs[nt] = blocks[j].foff + blocks[j].doff;
 						moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
 						for (k = 0; k < blocks[i].info->ndim; k++) {  // Calculate offset
 							foffs[nt] += fssize[k] * (blocks[j].dstart[k] + ctr[k]);
@@ -255,9 +268,13 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 		}
 	}
 
-	mpierr = MPI_Type_struct (nt, lens, foffs, ftypes, ftype);
+	mpierr = MPI_Type_create_struct (nt, lens, foffs, ftypes, ftype);
 	CHECK_MPIERR
-	mpierr = MPI_Type_struct (nt, lens, moffs, mtypes, mtype);
+	mpierr = MPI_Type_commit (ftype);
+	CHECK_MPIERR
+	mpierr = MPI_Type_create_struct (nt, lens, moffs, mtypes, mtype);
+	CHECK_MPIERR
+	mpierr = MPI_Type_commit (mtype);
 	CHECK_MPIERR
 
 err_out:
@@ -276,13 +293,15 @@ err_out:
 		free (mtypes);
 	}
 
-	H5VL_log_free (foffs) H5VL_log_free (moffs) H5VL_log_free (lens)
+	H5VL_log_free (foffs);
+	H5VL_log_free (moffs);
+	H5VL_log_free (lens);
 
-		return err;
+	return err;
 }
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_log_dataset_open
+ * Function:    H5VL_log_dataseti_open
  *
  * Purpose:     Opens a dataset in a container
  *
@@ -291,11 +310,11 @@ err_out:
  *
  *-------------------------------------------------------------------------
  */
-void *H5VL_log_dataseti_open_with_uo (void *obj,
-									  void *uo,
-									  const H5VL_loc_params_t *loc_params,
-									  hid_t dxpl_id) {
-	herr_t err			= 0;
+void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
+	herr_t err = 0;
+	int i;
+	int nfilter;
+	hid_t dcpl_id		= -1;
 	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
 	H5VL_log_dset_t *dp = NULL;
 	H5VL_loc_params_t locp;
@@ -314,20 +333,45 @@ void *H5VL_log_dataseti_open_with_uo (void *obj,
 	CHECK_ID (dp->esize)
 
 	// Atts
+	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), dxpl_id);
+	CHECK_ERR
 	err = H5VL_logi_get_att_ex (dp, "_dims", H5T_NATIVE_INT64, &(dp->ndim), dp->dims, dxpl_id);
 	CHECK_ERR
 	err = H5VL_logi_get_att (dp, "_mdims", H5T_NATIVE_INT64, dp->mdims, dxpl_id);
 	CHECK_ERR
-	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), dxpl_id);
-	CHECK_ERR
 
-	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASETI_OPEN_WITH_UO);
+	// Dstep for encoding selection
+	if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+		dp->dsteps[dp->ndim - 1] = 1;
+		for (i = dp->ndim - 2; i > -1; i--) { dp->dsteps[i] = dp->dsteps[i + 1] * dp->dims[i + 1]; }
+	}
+
+	// Filters
+	dcpl_id = H5VL_logi_dataset_get_dcpl (dp->fp, dp->uo, dp->uvlid, dxpl_id);
+	CHECK_ID (dcpl_id)
+	nfilter = H5Pget_nfilters (dcpl_id);
+	CHECK_ID (nfilter);
+	dp->filters.resize (nfilter);
+	for (i = 0; i < nfilter; i++) {
+		dp->filters[i].id = H5Pget_filter2 (dcpl_id, (unsigned int)i, &(dp->filters[i].flags),
+											&(dp->filters[i].cd_nelmts), dp->filters[i].cd_values,
+											LOGVOL_FILTER_NAME_MAX, dp->filters[i].name,
+											&(dp->filters[i].filter_config));
+		CHECK_ID (dp->filters[i].id);
+	}
+
+	// Record metadata in fp
+	dp->fp->dsets[dp->id] = *dp;
+	dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
+
+	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_OPEN);
 
 	goto fn_exit;
 err_out:;
 	if (dp) delete dp;
 	dp = NULL;
 fn_exit:;
+	if (dcpl_id >= 0) { H5Pclose (dcpl_id); }
 	return (void *)dp;
 } /* end H5VL_log_dataset_open() */
 
@@ -342,39 +386,7 @@ fn_exit:;
  *-------------------------------------------------------------------------
  */
 void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_obj_t *cp) {
-	herr_t err			= 0;
-	H5VL_log_dset_t *dp = NULL;
-	H5VL_loc_params_t locp;
-	va_list args;
-	void *ap;
-	int ndim;
-	H5VL_LOGI_PROFILING_TIMER_START;
-
-	dp = new H5VL_log_dset_t (cp, H5I_DATASET, uo);
-	CHECK_PTR (dp)
-
-	dp->dtype = H5VL_logi_dataset_get_type (dp->fp, dp->uo, dp->uvlid, H5P_DATASET_XFER_DEFAULT);
-	CHECK_ID (dp->dtype)
-	dp->esize = H5Tget_size (dp->dtype);
-	CHECK_ID (dp->esize)
-
-	// Atts
-	err = H5VL_logi_get_att_ex (dp, "_dims", H5T_NATIVE_INT64, &(dp->ndim), dp->dims,
-								H5P_DATASET_XFER_DEFAULT);
-	CHECK_ERR
-	err = H5VL_logi_get_att (dp, "_mdims", H5T_NATIVE_INT64, dp->mdims, H5P_DATASET_XFER_DEFAULT);
-	CHECK_ERR
-	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), H5P_DATASET_XFER_DEFAULT);
-	CHECK_ERR
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASETI_WRAP);
-
-	goto fn_exit;
-err_out:;
-	if (dp) delete dp;
-	dp = NULL;
-fn_exit:;
-	return (void *)dp;
+	return H5VL_log_dataseti_open (cp, uo, cp->fp->dxplid);
 } /* end H5VL_log_dataset_open() */
 
 /*-------------------------------------------------------------------------
@@ -457,7 +469,10 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 				}
 				*((MPI_Offset *)(r->sel_buf)) =
 					ret->second->meta_off - dp->fp->mdsize;	 // Record the relative offset
-				selsize = sizeof (MPI_Offset);				 // New metadata size
+#ifdef WORDS_BIGENDIAN
+				H5VL_logi_llreverse ((uint64_t *)(rp->r->sel_buf));
+#endif
+				selsize = sizeof (MPI_Offset);	// New metadata size
 #ifdef LOGVOL_PROFILING
 				// Count size saved by duplication
 				H5VL_log_profile_add_time (dp->fp, TIMER_H5VL_LOG_FILEI_METASIZE_DEDUP,
@@ -623,13 +638,12 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 	herr_t err = 0;
 	int i, j;
 	int n;
-	size_t esize;
-	htri_t eqtype;
+	size_t esize;	// Element size of mem_type_id
+	htri_t eqtype;	// Is mem_type_id same as dataset external type
 	char *bufp = (char *)buf;
-	H5VL_log_rreq_t *r;
-	H5S_sel_type mstype;
-	H5VL_log_req_type_t rtype;
-	H5VL_log_dio_n_arg_t arg;
+	H5VL_log_rreq_t *r;			// Request entry
+	H5S_sel_type mstype;		// Type of selection in mem_space_id
+	H5VL_log_req_type_t rtype;	// Non-blocking?
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -649,17 +663,17 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 		mstype = H5Sget_select_type (mem_space_id);
 
 	// Setting metadata;
-	r = new H5VL_log_rreq_t ();
-	r->info	  = &(dp->fp->dsets[dp->id]);
+	r		   = new H5VL_log_rreq_t ();
+	r->info	   = &(dp->fp->dsets[dp->id]);
 	r->hdr.did = dp->id;
-	r->ndim	  = dp->ndim;
-	r->ubuf	  = (char *)buf;
-	r->ptype	  = MPI_DATATYPE_NULL;
-	r->dtype	  = -1;
-	r->mtype	  = -1;
-	r->esize	  = dp->esize;
-	r->rsize	  = 0;	// Nomber of elements in record
-	r->sels	  = dsel;
+	r->ndim	   = dp->ndim;
+	r->ubuf	   = (char *)buf;
+	r->ptype   = MPI_DATATYPE_NULL;
+	r->dtype   = -1;
+	r->mtype   = -1;
+	r->esize   = dp->esize;
+	r->rsize   = dsel->get_sel_size ();	 // Nomber of elements in selection
+	r->sels	   = dsel;
 
 	// Non-blocking?
 	err = H5Pget_nonblocking (plist_id, &rtype);
@@ -701,7 +715,8 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 
 	// Flush it immediately if blocking, otherwise place into queue
 	if (rtype != H5VL_LOG_REQ_NONBLOCKING) {
-		err = H5VL_log_nb_flush_read_reqs (dp->fp, std::vector<H5VL_log_rreq_t *> (1, r), plist_id);
+		std::vector<H5VL_log_rreq_t *> tmp (1, r);
+		err = H5VL_log_nb_flush_read_reqs (dp->fp, tmp, plist_id);
 		CHECK_ERR
 	} else {
 		dp->fp->rreqs.push_back (r);
