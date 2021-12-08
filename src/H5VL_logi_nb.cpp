@@ -856,8 +856,8 @@ herr_t H5VL_log_nb_ost_write (
 
 	cur_off	  = ost_base + (off / fp->ssize) * stride;
 	skip_size = off % fp->ssize;
-	seek_off  = lseek64 (fp->fd, cur_off + skip_size, SEEK_SET);
-	if (seek_off < 0) { ERR_OUT ("lseek64 fail"); }
+	seek_off  = lseek (fp->fd, cur_off + skip_size, SEEK_SET);
+	if (seek_off < 0) { ERR_OUT ("lseek fail"); }
 	bp = bs + skip_size;
 
 	for (i = 0; i < cnt; i++) {
@@ -878,8 +878,8 @@ herr_t H5VL_log_nb_ost_write (
 				CHECK_ERR
 
 				// Move to next stride
-				seek_off = lseek64 (fp->fd, stride, SEEK_CUR);
-				if (seek_off < 0) { ERR_OUT ("lseek64 fail"); }
+				seek_off = lseek (fp->fd, stride, SEEK_CUR);
+				if (seek_off < 0) { ERR_OUT ("lseek fail"); }
 
 				// Bytes written
 				mlen -= be - bp;
