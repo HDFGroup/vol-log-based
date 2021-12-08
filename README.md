@@ -2,6 +2,9 @@
 
 This software repository contains source codes implementing an [HDF5](https://www.hdfgroup.org) Virtual Object Layer ([VOL](https://bitbucket.hdfgroup.org/projects/HDFFV/repos/hdf5doc/browse/RFCs/HDF5/VOL/developer_guide/main.pdf))) plugin that stores HDF5 datasets in a log-based storage layout. In the log-based layout, data of multiple write requests made by an MPI process are appended one after another in the file. Such I/O strategy can avoid the expensive inter-process communication and I/O serialization due to file lock contentions when storing data in the canonical order. Files created by this VOL conform with the HDF5 file format, but require this VOL to read them back. Through the log-based VOL, exist HDF5 programs can achieve a better parallel write performance with minimal changes to their codes.
 
+### HDF5 VOL Connector ID
+* This log-based VOL has been registered with the HDF group with [Connector Identifier 514](https://portal.hdfgroup.org/display/support/Registered+VOL+Connectors).
+ 
 ### Software Requirements
 * [HDF5 develop branch](https://github.com/HDFGroup/hdf5)
   + Configured with parallel I/O support (--enable-parallel)
