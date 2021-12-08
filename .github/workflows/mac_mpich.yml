@@ -31,12 +31,13 @@ jobs:
         - name: Install HDF5
           run: |
             WORKDIR=$(pwd)
-            git clone https://github.com/HDFGroup/hdf5.git -b develop hdf5
-            cd hdf5
+            wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz
+            tar -zxf hdf5-1.13.0.tar.gz
+            cd hdf5-1.13.0
             export HDF5_LIBTOOL=$(which glibtoolize)
             echo ${HDF5_LIBTOOL}
             ./autogen.sh
-            ./configure --prefix=${WORKDIR}/.local/hdf5/develop --disable-fortran --disable-hl --disable-tests --disable-tools \
+            ./configure --prefix=${WORKDIR}/.local/hdf5/1.13.0 --disable-fortran --disable-hl --disable-tests --disable-tools \
             --enable-parallel --enable-build-mode=production CC=mpicc
             make -j 64
             make -j 64 install
@@ -44,12 +45,12 @@ jobs:
           run: |
             WORKDIR=$(pwd)
             autoreconf -i
-            ./configure --prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/develop --enable-shared CXXFLAGS="-std=c++14"
+            ./configure --prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared CXXFLAGS="-std=c++14"
             make -j 64 V=1
             make -j 64 tests
-            export LD_LIBRARY_PATH=${WORKDIR}/.local/hdf5/develop:$LD_LIBRARY_PATH
+            export LD_LIBRARY_PATH=${WORKDIR}/.local/hdf5/1.13.0:$LD_LIBRARY_PATH
             make check
-            make distcheck DISTCHECK_CONFIGURE_FLAGS="--prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/develop --enable-shared CXXFLAGS=\"-std=c++14\""
+            make distcheck DISTCHECK_CONFIGURE_FLAGS="--prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared CXXFLAGS=\"-std=c++14\""
         - name: Print log
           if: ${{ failure() }}
           run: |

@@ -6,7 +6,7 @@ This software repository contains source codes implementing an [HDF5](https://ww
 * This log-based VOL has been registered with the HDF group with [Connector Identifier 514](https://portal.hdfgroup.org/display/support/Registered+VOL+Connectors).
  
 ### Software Requirements
-* [HDF5 develop branch](https://github.com/HDFGroup/hdf5)
+* [HDF5 1.13.0](https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz)
   + Configured with parallel I/O support (--enable-parallel)
 * MPI C and C++ compilers
   + The plugin uses the constant initializer; a C++ compiler supporting std 17 is required
@@ -18,15 +18,16 @@ This software repository contains source codes implementing an [HDF5](https://ww
 
 ### Build and install HDF5 library
 * Build HDF5 with VOL and parallel I/O support
-  + Clone the develop branch from the HDF5 repository
+  + Download and extract HDF5 1.13.0 source package
   + Run command "./autogen.sh"
   + Configure HDF5 with parallel I/O enabled
   + Run "make install"
   + Example commands are given below. This example will install
     the HD5 library under the folder `${HOME}/HDF5`.
     ```
-    % git clone https://github.com/HDFGroup/hdf5.git -b develop
-    % cd hdf5
+    % wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz
+    % tar -zxf hdf5-1_13_0.tar.gz
+    % cd hdf5-1_13_0.tar.gz
     % export HDF5_LIBTOOL=/usr/bin/libtoolize
     % ./autogen.sh
     % ./configure --prefix=${HOME}/HDF5 --enable-parallel CC=mpicc
