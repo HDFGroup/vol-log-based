@@ -28,16 +28,15 @@ typedef struct hidx {
 } hidx;
 
 herr_t h5lreplay_read_data (MPI_File fin,
-						   std::vector<dset_info> &dsets,
-						   std::vector<h5lreplay_idx_t> &reqs) {
+							std::vector<dset_info> &dsets,
+							std::vector<h5lreplay_idx_t> &reqs) {
 	herr_t err = 0;
 	int mpierr;
-	int i, j, k, l;
+	int i, j;
 	size_t bsize;	// Data buffer size of a req
 	size_t esize;	// Size of a sel block
 	size_t zbsize;	// Size of the decompression buffer
 	char *buf;
-	char *zbuf;
 	std::vector<MPI_Aint> foffs, moffs;
 	std::vector<int> lens;
 	std::vector<hidx> idxs;
@@ -51,19 +50,23 @@ herr_t h5lreplay_read_data (MPI_File fin,
 		for (auto &req : reqp.entries) {
 			req.bufs.resize (req.sels.size ());
 			bsize = 0;
-			for (j = 0; j < req.sels.size (); j++) {
+			for (j = 0; j < (int)(req.sels.size ()); j++) {
 				esize = dsets[req.hdr.did].esize;
-				for (i = 0; i < dsets[req.hdr.did].ndim; i++) { esize *= req.sels[j].count[i]; }
+				for (i = 0; i < (int)(dsets[req.hdr.did].ndim); i++) {
+					esize *= req.sels[j].count[i];
+				}
 				req.bufs[j] = (char *)bsize;
 				bsize += esize;
 			}
 			if (zbsize < bsize) { zbsize = bsize; }
 			// Comrpessed size can be larger
-			if (bsize < req.hdr.fsize) { bsize = req.hdr.fsize; }
+			if (bsize < (size_t) (req.hdr.fsize)) { bsize = req.hdr.fsize; }
 			// Allocate buffer
 			buf = (char *)malloc (bsize);
 			assert (buf != NULL);
-			for (j = 0; j < req.sels.size (); j++) { req.bufs[j] = buf + (size_t)req.bufs[j]; }
+			for (j = 0; j < (int)(req.sels.size ()); j++) {
+				req.bufs[j] = buf + (size_t)req.bufs[j];
+			}
 
 			// Record off and len for mpi type
 			idxs.push_back ({req.hdr.foff, (MPI_Aint)req.bufs[0], (int)req.hdr.fsize});
@@ -81,9 +84,11 @@ herr_t h5lreplay_read_data (MPI_File fin,
 		moffs.push_back (idx.moff);
 		lens.push_back (idx.len);
 	}
-	mpierr = MPI_Type_create_hindexed (foffs.size (), lens.data (), foffs.data (), MPI_BYTE, &ftype);
+	mpierr =
+		MPI_Type_create_hindexed (foffs.size (), lens.data (), foffs.data (), MPI_BYTE, &ftype);
 	CHECK_MPIERR
-	mpierr = MPI_Type_create_hindexed (moffs.size (), lens.data (), moffs.data (), MPI_BYTE, &mtype);
+	mpierr =
+		MPI_Type_create_hindexed (moffs.size (), lens.data (), moffs.data (), MPI_BYTE, &mtype);
 	CHECK_MPIERR
 	mpierr = MPI_Type_commit (&ftype);
 	CHECK_MPIERR
@@ -117,8 +122,8 @@ err_out:;
 }
 
 herr_t h5lreplay_write_data (hid_t foutid,
-							std::vector<dset_info> &dsets,
-							std::vector<h5lreplay_idx_t> &reqs) {
+							 std::vector<dset_info> &dsets,
+							 std::vector<h5lreplay_idx_t> &reqs) {
 	herr_t err = 0;
 	hid_t dsid = -1;
 	hid_t msid = -1;
@@ -132,12 +137,14 @@ herr_t h5lreplay_write_data (hid_t foutid,
 
 	for (i = 0; i < H5S_MAX_RANK; i++) { one[i] = 1; }
 
-	for (i = 0; i < dsets.size (); i++) {
+	for (i = 0; i < (int)(dsets.size ()); i++) {
 		dsid = H5Dget_space (dsets[i].id);
 		for (auto &req : reqs[i].entries) {
-			for (k = 0; k < req.sels.size (); k++) {
+			for (k = 0; k < (int)(req.sels.size ()); k++) {
 				msize = 1;
-				for (j = 0; j < dsets[req.hdr.did].ndim; j++) { msize *= req.sels[k].count[j]; }
+				for (j = 0; j < (int)(dsets[req.hdr.did].ndim); j++) {
+					msize *= req.sels[k].count[j];
+				}
 				err = H5Sselect_hyperslab (msid, H5S_SELECT_SET, &zero, NULL, one, &msize);
 				CHECK_ERR
 				err = H5Sselect_hyperslab (dsid, H5S_SELECT_SET, req.sels[k].start, NULL, one,

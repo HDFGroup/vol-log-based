@@ -42,7 +42,6 @@ const H5VL_request_class_t H5VL_log_request_g {
  */
 herr_t H5VL_log_request_wait (void *obj, uint64_t timeout, H5VL_request_status_t *status) {
 	herr_t err = 0;
-	uint64_t t1, t2;
 	H5VL_log_req_t *rp = (H5VL_log_req_t *)obj;
 
 	*status = H5VL_REQUEST_STATUS_SUCCEED;

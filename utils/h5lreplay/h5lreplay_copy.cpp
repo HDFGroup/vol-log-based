@@ -42,9 +42,7 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 	if (object_info->type == H5O_TYPE_DATASET) {
 		int id;
 		int ndim;
-		int one;
 		hsize_t hndim;
-		hsize_t zero = 0;
 		hsize_t dims[H5S_MAX_RANK], mdims[H5S_MAX_RANK];
 
 #ifdef LOGVOL_DEBUG
@@ -137,12 +135,12 @@ herr_t h5lreplay_attr_copy_handler (hid_t location_id,
 									const char *attr_name,
 									const H5A_info_t *ainfo,
 									void *op_data) {
-	herr_t err	  = 0;
-	hid_t dst_did = *((hid_t *)(op_data));
+	herr_t err = 0;
+	// hid_t dst_did = *((hid_t *)(op_data));
 
 	// err=H5Ocopy(location_id,attr_name,dst_did,attr_name,H5P_DEFAULT,H5P_DEFAULT);
 	// CHECK_ERR
 
-err_out:;
+	// err_out:;
 	return err;
 }

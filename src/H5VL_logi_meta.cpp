@@ -23,7 +23,6 @@ herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 									   std::map<char *, std::vector<H5VL_logi_metasel_t>> &bcache) {
 	herr_t err = 0;
 	int i;
-	MPI_Offset *bp;			   // Next 8 byte selection to process
 	char *bufp = (char *)ent;  // Next byte to process in ent
 	size_t bsize;			   // Size of a selection block
 	hsize_t recnum;			   // Record number
@@ -62,17 +61,18 @@ herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 	block.dsize = 0;
 	for (auto &s : block.sels) {
 		bsize = dset.esize;
-		for (i = 0; i < dset.ndim; i++) { block.dsize *= s.count[i]; }
+		for (i = 0; i < (int)(dset.ndim); i++) { block.dsize *= s.count[i]; }
 		block.dsize += bsize;
 	}
 
 	// Calculate the unfiltered size of the data block
 	// Data size = data offset of the last block + size of the alst block
 	block.dsize = dset.esize;
-	for (i = 0; i < dset.ndim; i++) { block.dsize *= block.sels[block.sels.size () - 1].count[i]; }
+	for (i = 0; i < (int)(dset.ndim); i++) {
+		block.dsize *= block.sels[block.sels.size () - 1].count[i];
+	}
 	block.dsize += block.sels[block.sels.size () - 1].doff;
 
-err_out:;
 	return err;
 }
 
@@ -250,7 +250,9 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 		// Calculate the offset of data of the selection within the unfiltered data block
 		if (i > 0) {
 			block.sels[i].doff = dset.esize;
-			for (j = 0; j < dset.ndim; j++) { block.sels[i].doff *= block.sels[i - 1].count[j]; }
+			for (j = 0; j < (int)(dset.ndim); j++) {
+				block.sels[i].doff *= block.sels[i - 1].count[j];
+			}
 			block.sels[i].doff += block.sels[i - 1].doff;
 		} else {
 			block.sels[i].doff = 0;
@@ -264,8 +266,11 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	block.dsize += block.sels[i - 1].doff;
 
 err_out:;
-	if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) { free (zbuf); }
-
+#ifdef ENABLE_ZLIB
+	if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
+		if (zbufalloc) { free (zbuf); }
+	}
+#endif
 	return err;
 }
 

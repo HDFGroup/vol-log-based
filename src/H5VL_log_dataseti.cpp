@@ -3,6 +3,7 @@
 #endif
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <vector>
@@ -89,7 +90,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 										  std::vector<H5VL_log_copy_ctx> &overlaps) {
 	herr_t err = 0;
 	int mpierr;
-	int i, j, k, l;
+	int32_t i, j, k, l;
 	int nblock = blocks.size ();  // Number of place to read
 	std::vector<bool> newgroup (nblock,
 								0);	 // Whether the current block interleave with previous block
@@ -141,7 +142,9 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 			} else {
 				for (; j <= i; j++) {  // Breakdown
 					nrow = 1;
-					for (k = 0; k < blocks[i].info->ndim - 1; k++) { nrow *= blocks[j].count[k]; }
+					for (k = 0; k < (int32_t) (blocks[i].info->ndim) - 1; k++) {
+						nrow *= blocks[j].count[k];
+					}
 					nt += nrow;
 				}
 			}
@@ -224,7 +227,8 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 							blocks[j].count[blocks[i].info->ndim - 1] * blocks[j].info->esize;
 						foffs[nt] = blocks[j].foff + blocks[j].doff;
 						moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
-						for (k = 0; k < blocks[i].info->ndim; k++) {  // Calculate offset
+						for (k = 0; k < (int32_t) (blocks[i].info->ndim);
+							 k++) {	 // Calculate offset
 							foffs[nt] += fssize[k] * (blocks[j].dstart[k] + ctr[k]);
 							moffs[nt] += mssize[k] * (blocks[j].mstart[k] + ctr[k]);
 						}
@@ -317,10 +321,7 @@ void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
 	hid_t dcpl_id		= -1;
 	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
 	H5VL_log_dset_t *dp = NULL;
-	H5VL_loc_params_t locp;
-	va_list args;
-	void *ap;
-	int ndim;
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	dp = new H5VL_log_dset_t (op, H5I_DATASET, uo);
@@ -409,16 +410,13 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 	herr_t err = 0;
 	int i;
 	size_t esize;				   // Element size of the memory type
-	size_t ssize;				   // Size of a selection block
 	size_t selsize;				   // Size of metadata selection after deduplication and compression
 	H5VL_log_wreq_t *r;			   // Request obj
 	H5VL_log_req_data_block_t db;  // Request data
 	htri_t eqtype;				   // user buffer type equals dataset type?
-	H5S_sel_type stype;			   // Dataset sselection type
 	H5S_sel_type mstype;		   // Memory space selection type
 	H5VL_log_req_type_t rtype;	   // Whether req is nonblocking
 	MPI_Datatype ptype = MPI_DATATYPE_NULL;	 // Packing type for non-contiguous memory buffer
-	H5VL_log_req_t *rp;						 // Request obj
 	int clen, inlen;						 // Compressed size; Size of data to be compressed
 	H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -514,7 +512,7 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 #endif
 
 		// Resize metadata buffer
-		if (r->hdr->meta_size > r->sel_buf - r->meta_buf + selsize) {
+		if (r->hdr->meta_size > (int32_t) (r->sel_buf + selsize - r->meta_buf)) {
 			r->resize (r->sel_buf - r->meta_buf + selsize);
 		}
 	}
@@ -554,7 +552,7 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 
 			MPI_Pack (db.ubuf, 1, ptype, db.xbuf, db.size * esize, &i, dp->fp->comm);
 
-			LOG_VOL_ASSERT (i == db.size * esize)
+			LOG_VOL_ASSERT (i == (int)(db.size * esize))
 		} else {
 			memcpy (db.xbuf, db.ubuf, db.size * esize);
 		}
@@ -636,16 +634,11 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 							   void *buf,
 							   void **req) {
 	herr_t err = 0;
-	int i, j;
-	int n;
-	size_t esize;	// Element size of mem_type_id
-	htri_t eqtype;	// Is mem_type_id same as dataset external type
-	char *bufp = (char *)buf;
+	size_t esize;				// Element size of mem_type_id
+	htri_t eqtype;				// Is mem_type_id same as dataset external type
 	H5VL_log_rreq_t *r;			// Request entry
 	H5S_sel_type mstype;		// Type of selection in mem_space_id
 	H5VL_log_req_type_t rtype;	// Non-blocking?
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	H5VL_LOGI_PROFILING_TIMER_START;

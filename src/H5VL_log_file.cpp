@@ -2,8 +2,8 @@
 #include <config.h>
 #endif
 
-#include <mpi.h>
 #include <fcntl.h>
+#include <mpi.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 //
@@ -50,7 +50,6 @@ void *H5VL_log_file_create (
 	void *under_vol_info;
 	MPI_Comm comm	 = MPI_COMM_WORLD;
 	MPI_Info mpiinfo = MPI_INFO_NULL;
-	hbool_t po_supported;
 	int attbuf[5];
 	H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -261,7 +260,6 @@ void *H5VL_log_file_open (
 	int mpierr;
 	H5VL_log_info_t *info = NULL;
 	H5VL_log_file_t *fp	  = NULL;
-	H5VL_loc_params_t loc;
 	hid_t uvlid;
 	void *under_vol_info;
 	MPI_Comm comm;
@@ -496,7 +494,7 @@ herr_t H5VL_log_file_specific (void *file,
 		} break;
 		case H5VL_FILE_FLUSH: {
 			// Flush all merged requests
-			for (i = 0; i < fp->mreqs.size (); i++) {
+			for (i = 0; i < (int)(fp->mreqs.size ()); i++) {
 				if (fp->mreqs[i] && (fp->mreqs[i]->nsel > 0)) {
 					fp->wreqs.push_back (fp->mreqs[i]);
 					// Update total metadata size in wreqs

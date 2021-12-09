@@ -31,7 +31,7 @@ herr_t H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf) {
 	// printf("Balloc %llu\n", size);
 
 	if (fp->bsize != LOG_VOL_BSIZE_UNLIMITED) {
-		if (fp->bused + size > fp->bsize) {
+		if (fp->bused + size > (size_t) (fp->bsize)) {
 			err = -1;
 			ERR_OUT ("Out of buffer")
 		}
@@ -57,8 +57,6 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	int mpierr;
 	H5VL_loc_params_t loc;
 	H5VL_object_specific_args_t args;
-	MPI_Comm comm;
-	MPI_Info mpiinfo = MPI_INFO_NULL;
 	int attbuf[5];
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -161,15 +159,13 @@ err_out:;
 }
 
 herr_t H5VL_log_filei_bfree (H5VL_log_file_t *fp, void *buf) {
-	herr_t err = 0;
 	size_t *bp;
 
 	bp = ((size_t *)buf) - 1;
 	fp->bused -= bp[0];
 	free (bp);
 
-err_out:;
-	return err;
+	return 0;
 }
 
 herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
@@ -237,7 +233,6 @@ err_out:;
 
 herr_t H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
 	herr_t err = 0;
-	hbool_t ret;
 	H5VL_log_data_layout_t layout;
 	hbool_t subfiling;
 	char *env;
@@ -285,7 +280,7 @@ err_out:;
 }
 
 H5VL_log_buffer_block_t *H5VL_log_filei_pool_new_block (size_t bsize) {
-	herr_t err					= 0;
+	// herr_t err					= 0;
 	H5VL_log_buffer_block_t *bp = NULL;
 
 	assert (bsize > 0);
@@ -307,19 +302,17 @@ err_out:;
 	return bp;
 }
 
-herr_t H5VL_log_filei_pool_alloc (H5VL_log_buffer_pool_t *p, size_t bsize, void **buf) {
+herr_t H5VL_log_filei_pool_alloc (H5VL_log_buffer_pool_t *p, ssize_t bsize, void **buf) {
 	herr_t err = 0;
 	H5VL_log_buffer_block_t *bp;
 
 	// Need to add blocks
 	if (p->head->cur + bsize > p->head->end) {
-		size_t asize;
 		if (!(p->inf)) {
 			err = -1;
 			ERR_OUT ("Out of buffer")
 		}
 
-		asize = p->bsize;
 		if (bsize > p->bsize) {
 			bp = H5VL_log_filei_pool_new_block (bsize);
 		} else {
@@ -383,7 +376,7 @@ herr_t H5VL_log_filei_pool_free (H5VL_log_buffer_pool_t *p) {
 	}
 	p->head->cur = p->head->begin;
 
-err_out:;
+	// err_out:;
 	return err;
 }
 
@@ -406,7 +399,7 @@ herr_t H5VL_log_filei_pool_finalize (H5VL_log_buffer_pool_t *p) {
 
 	p->bsize = 0;
 	p->inf	 = 0;
-err_out:;
+	// err_out:;
 	return err;
 }
 
@@ -467,7 +460,7 @@ herr_t H5VL_log_filei_contig_buffer_alloc (H5VL_log_buffer_pool_t *p) {
 
 	p->bsize = 0;
 	p->inf	 = 0;
-err_out:;
+	// err_out:;
 	return err;
 }
 
@@ -541,7 +534,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 
 	if (fp->flag != H5F_ACC_RDONLY) {
 		// Flush write requests
-		if (fp->wreqs.size () > fp->nflushed) {
+		if ((int)(fp->wreqs.size ()) > fp->nflushed) {
 			if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
 				err = H5VL_log_nb_flush_write_reqs_align (fp, fp->dxplid);
 			} else {
@@ -828,11 +821,11 @@ err_out:
  *-------------------------------------------------------------------------
  */
 void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
-	herr_t err = 0;
-	int mpierr;
+	// herr_t err = 0;
+	// int mpierr;
 	H5VL_log_file_t *fp = NULL;
-	H5VL_loc_params_t loc;
-	int attbuf[3];
+	// H5VL_loc_params_t loc;
+	// int attbuf[3];
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	/*
@@ -878,7 +871,7 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
 
 	goto fn_exit;
-err_out:;
+	// err_out:;
 	if (fp) { delete fp; }
 	fp = NULL;
 fn_exit:;

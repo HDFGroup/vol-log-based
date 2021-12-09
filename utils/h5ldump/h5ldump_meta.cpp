@@ -62,7 +62,7 @@ herr_t h5ldump_mdset (hid_t lgid,
 
 	// Allocate metadata buffer
 	for (i = 0; i < nsec; i++) {
-		if (bsize < offs[i + 1] - offs[i]) bsize = offs[i + 1] - offs[i];
+		if (bsize < (size_t) (offs[i + 1] - offs[i])) bsize = offs[i + 1] - offs[i];
 	}
 	buf = (uint8_t *)malloc (bsize);
 	CHECK_PTR (buf);
@@ -139,13 +139,15 @@ herr_t h5ldump_mdsec (uint8_t *buf,
 		std::cout << std::endl;
 		if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
 			// Get referenced selections
-			auto roff = *((MPI_Offset *)(hdr + 1) + (block.hdr.flag & H5VL_LOGI_META_FLAG_REC));
+			// auto roff = *((MPI_Offset *)(hdr + 1) + (block.hdr.flag & H5VL_LOGI_META_FLAG_REC));
 			std::cout << std::string (indent, ' ') << "Referenced entry offset: " << (off_t)bufp
 					  << std::endl;
 		}
 		if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
 			std::cout << std::string (indent, ' ') << "Encoding slice size: (";
-			for (i = 0; i < dsets[hdr->did].ndim - 1; i++) { std::cout << dsteps[i] << ", "; }
+			for (i = 0; i < (int)(dsets[hdr->did].ndim) - 1; i++) {
+				std::cout << dsteps[i] << ", ";
+			}
 			std::cout << ")" << std::endl;
 		}
 		std::cout << std::string (indent, ' ') << "Selections: " << block.sels.size () << " blocks"
@@ -154,9 +156,9 @@ herr_t h5ldump_mdsec (uint8_t *buf,
 		;
 		for (auto &s : block.sels) {
 			std::cout << std::string (indent, ' ') << s.doff << ": ( ";
-			for (i = 0; i < dsets[hdr->did].ndim; i++) { std::cout << s.start[i] << ", "; }
+			for (i = 0; i < (int)(dsets[hdr->did].ndim); i++) { std::cout << s.start[i] << ", "; }
 			std::cout << ") : ( ";
-			for (i = 0; i < dsets[hdr->did].ndim; i++) { std::cout << s.count[i] << ", "; }
+			for (i = 0; i < (int)(dsets[hdr->did].ndim); i++) { std::cout << s.count[i] << ", "; }
 			std::cout << ")" << std::endl;
 		}
 		indent -= 4;
@@ -170,6 +172,6 @@ herr_t h5ldump_mdsec (uint8_t *buf,
 		bufp += hdr->meta_size;
 	}
 
-err_out:;
+	// err_out:;
 	return err;
 }

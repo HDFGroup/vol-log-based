@@ -4,6 +4,7 @@
 #include <map>
 #include <unordered_map>
 #include <vector>
+#include <cstdint>
 //
 #include <mpi.h>
 //
@@ -18,11 +19,11 @@
 #define H5VL_LOGI_META_FLAG_SEL_DEFLATE 0x08
 
 typedef struct H5VL_logi_meta_hdr {
-	int meta_size;	   // Size of the metadata entry
-	int did;		   // Target dataset ID
-	int flag;		   // Flag for other metadata, format, vertion ... etc
-	MPI_Offset foff;   // File offset of the data
-	MPI_Offset fsize;  // Size of the data in file
+	int32_t meta_size;	// Size of the metadata entry
+	int32_t did;		// Target dataset ID
+	int32_t flag;		// Flag for other metadata, format, vertion ... etc
+	MPI_Offset foff;	// File offset of the data
+	MPI_Offset fsize;	// Size of the data in file
 } __attribute__ ((packed)) H5VL_logi_meta_hdr;
 
 typedef struct H5VL_logi_metasel_t {

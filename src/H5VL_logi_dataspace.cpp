@@ -215,8 +215,8 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 					if (group[i] != group[j]) {	 // Within 1 group
 						if (i - j == 1) {		 // Sinlge block, no need to breakdown
 							for (k = 0; k < ndim; k++) {
-								starts[nreq][k] = (MPI_Offset)hstarts[j][k];
-								counts[nreq][k] = (MPI_Offset) (hends[j][k] - hstarts[j][k] + 1);
+								starts[nreq][k] = hstarts[j][k];
+								counts[nreq][k] = hends[j][k] - hstarts[j][k] + 1;
 							}
 							// offs[k] = nreq; // Record offset
 							nreq++;
@@ -225,30 +225,29 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 							old_nreq = nreq;
 							for (; j < i; j++) {  // Breakdown each block
 								for (k = 0; k < ndim; k++) {
-									starts[nreq][k] = (MPI_Offset)hstarts[j][k];
+									starts[nreq][k] = (hsize_t)hstarts[j][k];
 									counts[nreq][k] = 1;
 								}
 								starts[nreq][ndim - 1] =
-									(MPI_Offset) (hends[j][ndim - 1] - hstarts[j][ndim - 1] + 1);
+									(hsize_t) (hends[j][ndim - 1] - hstarts[j][ndim - 1] + 1);
 
 								for (l = 0; l < ndim;
 									 l++) {	 // The lowest dimension that we haven't reach the end
-									if (starts[nreq][l] < (MPI_Offset)hends[j][l]) break;
+									if (starts[nreq][l] < hends[j][l]) break;
 								}
 								nreq++;
 								while (l < ndim - 1) {	// While we haven't handle the last one
-									memcpy (
-										starts[nreq], starts[nreq - 1],
-										sizeof (MPI_Offset) * ndim);  // Start from previous value
+									memcpy (starts[nreq], starts[nreq - 1],
+											sizeof (hsize_t) * ndim);  // Start from previous value
 									memcpy (counts[nreq], counts[nreq - 1],
-											sizeof (MPI_Offset) * ndim);  // Fill in Count
+											sizeof (hsize_t) * ndim);  // Fill in Count
 
 									// Increase start to the next location, carry to lower dim if
 									// overflow
 									starts[nreq][ndim - 2]++;
 									for (k = ndim - 2; k > 0; k--) {
-										if (starts[nreq][k] > (MPI_Offset) (hends[j][k])) {
-											starts[nreq][k] = (MPI_Offset) (hstarts[j][k]);
+										if (starts[nreq][k] > hends[j][k]) {
+											starts[nreq][k] = hstarts[j][k];
 											starts[nreq][k - 1]++;
 										} else {
 											break;
@@ -257,7 +256,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 
 									for (l = 0; l < ndim; l++) {  // The lowest dimension that we
 																  // haven't reach the end
-										if (starts[nreq][l] < (MPI_Offset)hends[j][l]) break;
+										if (starts[nreq][l] < hends[j][l]) break;
 									}
 									nreq++;
 								}

@@ -22,7 +22,6 @@
 // A hash function used to hash a pair of any kind
 struct hash_pair {
 	size_t operator() (const std::pair<void *, size_t> &p) const {
-		int i;
 		size_t ret = 0;
 		size_t *val;
 		size_t *end = (size_t *)((char *)(p.first) + p.second - p.second % sizeof (size_t));
@@ -43,22 +42,15 @@ struct equal_pair {
 herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int mpierr;
-	int i, j;
+	int i;
 	MPI_Offset
 		rbuf[2];  // [Local metadata offset within the metadata dataset, Global metadata size]
 	MPI_Offset mdsize  = 0;	 // Local metadata size
 	MPI_Offset *mdoffs = NULL;
 	MPI_Offset *mdoffs_snd;
-	MPI_Aint *offs = NULL;	// Offset in MPI_Type_create_hindexed
-	int *lens	   = NULL;	// Lens in MPI_Type_create_hindexed
-	int nentry	   = 0;		// Number of metadata entries
-	size_t bsize   = 0;		// Size of metadata buffer = size of metadata before compression
-	size_t esize;			// Size of the current processing metadata entry
-#ifdef ENABLE_ZLIB
-	MPI_Offset zbsize = 0;	   // Size of zbuf
-	char *zbuf		  = NULL;  // Buffer to temporarily sotre compressed data
-#endif
-	char *ptr;
+	MPI_Aint *offs = NULL;					  // Offset in MPI_Type_create_hindexed
+	int *lens	   = NULL;					  // Lens in MPI_Type_create_hindexed
+	int nentry	   = 0;						  // Number of metadata entries
 	char mdname[32];						  // Name of metadata dataset
 	void *mdp;								  // under VOL object of the metadata dataset
 	hid_t mdsid = -1;						  // metadata dataset data space ID
@@ -66,7 +58,6 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	haddr_t mdoff;							  // File offset of the metadata dataset
 	MPI_Datatype mmtype = MPI_DATATYPE_NULL;  // Memory datatype for writing the metadata
 	MPI_Status stat;						  // Status of MPI I/O
-	MPI_Comm ldcomm;						  // Communicator to create data dataset
 	H5VL_loc_params_t loc;
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -220,9 +211,6 @@ err_out:
 	H5VL_log_free (offs);
 	H5VL_log_free (lens);
 	H5VL_log_free (mdoffs);
-#ifdef ENABLE_ZLIB
-	H5VL_log_free (zbuf);
-#endif
 	H5VL_log_Sclose (mdsid);
 	if (mmtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mmtype); }
 	return err;
@@ -321,8 +309,6 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 
 				// Have to parse all entries for reference purpose
 				if (hdr_tmp->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-					MPI_Offset roff = *((MPI_Offset *)hdr_tmp + 1);
-
 					err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr_tmp->did], bufp, block,
 														  bcache);
 					CHECK_ERR
@@ -448,7 +434,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 		start = offs[sec - 1];
 	}
 	for (i = sec + 1; i < nsec; i++) {
-		if (offs[i] - start > fp->mbuf_size) { break; }
+		if (offs[i] - start > (size_t) (fp->mbuf_size)) { break; }
 	}
 	if (i <= sec) { RET_ERR ("OOM") }  // At least 1 section should fit into buffer limit
 	count = offs[i - 1] - start;
@@ -486,8 +472,6 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 
 			// Have to parse all entries for reference purpose
 			if (hdr_tmp->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-				MPI_Offset roff = *((MPI_Offset *)hdr_tmp + 1);
-
 #ifdef WORDS_BIGENDIAN
 				H5VL_logi_lreverse ((uint64_t *)bufp,
 									(uint64_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));

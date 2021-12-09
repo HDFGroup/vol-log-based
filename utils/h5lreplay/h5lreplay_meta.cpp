@@ -30,7 +30,7 @@ herr_t h5lreplay_parse_meta (int rank,
 							 std::vector<h5lreplay_idx_t> &reqs,
 							 int config) {
 	herr_t err = 0;
-	int i, j, k, l;
+	int i, j;
 	hid_t did = -1;
 	MPI_Offset nsec;
 	hid_t dsid = -1, msid = -1;

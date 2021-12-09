@@ -15,7 +15,7 @@ bool H5VL_log_idx_search_ret_t::operator< (const H5VL_log_idx_search_ret_t &rhs)
 	else if (foff > rhs.foff)
 		return false;
 
-	for (i = 0; i < info->ndim; i++) {
+	for (i = 0; i < (int)(info->ndim); i++) {
 		if (dstart[i] < rhs.dstart[i])
 			return true;
 		else if (dstart[i] > rhs.dstart[i])

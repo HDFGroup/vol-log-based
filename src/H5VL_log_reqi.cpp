@@ -14,8 +14,7 @@
 #include "H5VL_logi_debug.hpp"
 
 herr_t H5VL_log_reqi_notify_cb (void *ctx, H5VL_request_status_t status) {
-	herr_t err = 0;
-	int i;
+	herr_t err					  = 0;
 	H5VL_log_req_notify_ctx_t *cp = (H5VL_log_req_notify_ctx_t *)ctx;
 
 	if (status == H5VL_REQUEST_STATUS_FAIL) {

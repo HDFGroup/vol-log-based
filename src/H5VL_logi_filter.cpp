@@ -25,7 +25,7 @@ herr_t H5VL_logi_filter (
 	bsize[0] = bsize[1] = 0;
 	buf[0] = buf[1] = NULL;
 
-	for (i = 0; i < pipeline.size (); i++) {
+	for (i = 0; i < (int)(pipeline.size ()); i++) {
 		// Alternate input and output buffer
 		bin		 = buf[i & 1];
 		bout	 = buf[(i + 1) & 1];
@@ -37,7 +37,7 @@ herr_t H5VL_logi_filter (
 			size_in = in_len;
 		}
 		// Last iteration write to user buffer
-		if (i == pipeline.size () - 1) {
+		if (i == (int)(pipeline.size ()) - 1) {
 			bout	 = (char *)*out;
 			size_out = *out_len;
 		}
@@ -53,7 +53,7 @@ herr_t H5VL_logi_filter (
 				break;
 		}
 
-		if (i == pipeline.size () - 1) {
+		if (i == (int)(pipeline.size ()) - 1) {
 			*out_len = size_out;
 			*out	 = bout;
 		} else {
@@ -93,7 +93,7 @@ herr_t H5VL_logi_unfilter (
 			size_out = *out_len;
 		}
 		// Last iteration write to user buffer
-		if (i == pipeline.size () - 1) {
+		if (i == (int)(pipeline.size ()) - 1) {
 			bin		= (char *)in;
 			size_in = in_len;
 		}

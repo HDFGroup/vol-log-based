@@ -7,9 +7,9 @@
 #include <unordered_map>
 #include <vector>
 //
+#include <mpi.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <mpi.h>
 //
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_dataseti.hpp"
@@ -170,7 +170,6 @@ err_out:;
 }
 
 size_t std::hash<H5VL_log_wreq_t>::operator() (H5VL_log_wreq_t const &r) const noexcept {
-	int i;
 	size_t ret = 0;
 	size_t *val;
 	size_t *end;
@@ -371,7 +370,7 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 								 hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;
-	int i, j;
+	int i;
 	size_t esize;							  // Element size of the user buffer type
 	MPI_Datatype ftype	= MPI_DATATYPE_NULL;  // File type for reading the raw data blocks
 	MPI_Datatype mtype	= MPI_DATATYPE_NULL;  // Memory type for reading the raw data blocks
@@ -402,7 +401,7 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 				block.zbuf = (char *)malloc (std::max (block.xsize, block.fsize));
 				CHECK_PTR (block.zbuf)
 				bufs[block.foff] = block.zbuf;
-				if (tbsize < block.xsize) { tbsize = block.xsize; }
+				if (tbsize < (hsize_t)block.xsize) { tbsize = block.xsize; }
 			} else {
 				block.zbuf	= bufs[block.foff];
 				block.fsize = 0;  // Don't need to read
@@ -614,23 +613,21 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	MPI_Aint *moffs	   = NULL;				 // Offs of mtype for writing data
 	MPI_Datatype mtype = MPI_DATATYPE_NULL;	 // Mtype for writing data
 	MPI_Status stat;
-	MPI_Offset fsize_local;		  // Total data size on this process
-	MPI_Offset fsize_all;		  // Total data size across all process
-	MPI_Offset fsize_group;		  // Total data size across all process sharing the same file
-	MPI_Offset fsize_group_scan;  // Copy of fsize_group for exscan
-	MPI_Offset foff_all;		  // File offsset of the data block of current process globally
-	MPI_Offset foff_group;		  // File offsset of the data block in the current group
-	void *ldp;					  // Handle to the log dataset
-	void *vldp;					  // Handle to the log dataset
-	hid_t ldsid	  = -1;			  // Space of the log dataset
-	hid_t vldsid  = -1;			  // Space of the virtual log dataset in the main file
-	hid_t vdcplid = -1;			  // Virtual log dataset creation property list
-	hsize_t start, count;		  // Size for dataspace selection
-	const hsize_t one = 1;		  // Constant 1 for dataspace selection
-	haddr_t doff;				  // File offset of the log dataset
+	MPI_Offset fsize_local;	 // Total data size on this process
+	MPI_Offset fsize_all;	 // Total data size across all process
+	MPI_Offset fsize_group;	 // Total data size across all process sharing the same file
+	MPI_Offset foff_all;	 // File offsset of the data block of current process globally
+	MPI_Offset foff_group;	 // File offsset of the data block in the current group
+	void *ldp;				 // Handle to the log dataset
+	// void *vldp;				 // Handle to the log dataset
+	hid_t ldsid = -1;  // Space of the log dataset
+	// hid_t vldsid  = -1;			  // Space of the virtual log dataset in the main file
+	// hid_t vdcplid = -1;	 // Virtual log dataset creation property list
+	hsize_t start;	// Size for dataspace selection
+	// const hsize_t one = 1;		  // Constant 1 for dataspace selection
+	haddr_t doff;  // File offset of the log dataset
 	H5VL_loc_params_t loc;
-	char dname[16];	  // Name of the log dataset
-	MPI_Comm ldcomm;  // Communicator to create data dataset
+	char dname[16];	 // Name of the log dataset
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -638,7 +635,9 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 
 	// Calculate number of blocks in mtype
 	cnt = 0;
-	for (i = fp->nflushed; i < fp->wreqs.size (); i++) { cnt += fp->wreqs[i]->dbufs.size (); }
+	for (i = fp->nflushed; i < (int)(fp->wreqs.size ()); i++) {
+		cnt += fp->wreqs[i]->dbufs.size ();
+	}
 
 	// Construct memory type
 	fsize_local = 0;
@@ -647,7 +646,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 		moffs = (MPI_Aint *)malloc (sizeof (MPI_Aint) * cnt);
 		j	  = 0;
 		// Gather offset and lens requests
-		for (i = fp->nflushed; i < fp->wreqs.size (); i++) {
+		for (i = fp->nflushed; i < (int)(fp->wreqs.size ()); i++) {
 			for (auto &d : fp->wreqs[i]->dbufs) {
 				moffs[j]   = (MPI_Aint)d.xbuf;
 				mlens[j++] = d.size;
@@ -742,7 +741,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
 
 			// Update metadata in requests
-			for (i = fp->nflushed; i < fp->wreqs.size (); i++) {
+			for (i = fp->nflushed; i < (int)(fp->wreqs.size ()); i++) {
 				fp->wreqs[i]->hdr->foff += foff_group + doff;
 				for (auto &d : fp->wreqs[i]->dbufs) {
 					if (d.ubuf != d.xbuf) { H5VL_log_filei_bfree (fp, (void *)(d.xbuf)); }
@@ -804,7 +803,7 @@ err_out:
 	// Cleanup
 	if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
 	H5VL_log_Sclose (ldsid);
-	H5VL_log_Sclose (vldsid);
+	// H5VL_log_Sclose (vldsid);
 
 	H5VL_log_free (mlens);
 	H5VL_log_free (moffs);
@@ -831,16 +830,14 @@ err_out:;
 herr_t H5VL_log_nb_ost_write (
 	void *file, off_t doff, off_t off, int cnt, int *mlens, off_t *moffs) {
 	herr_t err = 0;
-	int mpierr;
 	int i;
 	char *bs = NULL, *be, *bp;
 	char *mbuf;
-	off_t ost_base;  // File offset of the first byte on the target ost
-	off_t cur_off;   // Offset of current stripe
+	off_t ost_base;	 // File offset of the first byte on the target ost
+	off_t cur_off;	 // Offset of current stripe
 	off_t seek_off;
 	size_t skip_size;  // First chunk can be partial
 	size_t mlen;
-	size_t bused;
 	size_t stride;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
@@ -864,7 +861,7 @@ herr_t H5VL_log_nb_ost_write (
 		mlen = mlens[i];
 		mbuf = (char *)(moffs[i]);
 		while (mlen > 0) {
-			if (be - bp <= mlen) {
+			if ((size_t) (be - bp) <= mlen) {
 				memcpy (bp, mbuf, be - bp);
 
 				// flush
@@ -939,7 +936,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 	mlens = (int *)malloc (sizeof (int) * cnt);
 	moffs = (off_t *)malloc (sizeof (off_t) * cnt);
 	j	  = 0;
-	for (i = fp->nflushed; i < fp->wreqs.size (); i++) {
+	for (i = fp->nflushed; i < (int)(fp->wreqs.size ()); i++) {
 		for (auto &d : fp->wreqs[i]->dbufs) {
 			moffs[j]   = (MPI_Aint)d.xbuf;
 			mlens[j++] = d.size;
@@ -960,7 +957,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 	// The max size among OSTs
 	dsize = 0;
 	for (i = 0; i < fp->scount; i++) {
-		if (fsize_all[i] > dsize) dsize = fsize_all[i];
+		if ((hsize_t) (fsize_all[i]) > dsize) dsize = fsize_all[i];
 	}
 
 	// Create log dataset
@@ -1023,7 +1020,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 		}
 
 		// Update metadata
-		for (i = fp->nflushed; i < fp->wreqs.size (); i++) {
+		for (i = fp->nflushed; i < (int)(fp->wreqs.size ()); i++) {
 			fp->wreqs[i]->hdr->foff += foff;
 			for (auto &db : fp->wreqs[i]->dbufs) {
 				if (db.xbuf != db.ubuf) { H5VL_log_filei_bfree (fp, (void *)(db.xbuf)); }

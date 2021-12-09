@@ -68,7 +68,7 @@ herr_t H5VL_logi_filter_deflate_alloc (
 
 	// Prepare the buffer
 	bsize = deflateBound (&defstream, (unsigned long)in_len);
-	if (bsize > *out_len) {
+	if ((int)bsize > *out_len) {
 		buf = (char *)malloc (bsize);
 		CHECK_PTR (buf)
 		*out = buf;

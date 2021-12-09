@@ -24,7 +24,7 @@ extern herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int 
 extern herr_t H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf);
 extern herr_t H5VL_log_filei_bfree (H5VL_log_file_t *fp, void *buf);
 
-extern herr_t H5VL_log_filei_pool_alloc (H5VL_log_buffer_pool_t *p, size_t bsize, void **buf);
+extern herr_t H5VL_log_filei_pool_alloc (H5VL_log_buffer_pool_t *p, ssize_t bsize, void **buf);
 extern herr_t H5VL_log_filei_pool_init (H5VL_log_buffer_pool_t *p, ssize_t bsize);
 extern herr_t H5VL_log_filei_pool_free (H5VL_log_buffer_pool_t *p);
 extern herr_t H5VL_log_filei_pool_finalize (H5VL_log_buffer_pool_t *p);

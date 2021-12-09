@@ -39,7 +39,7 @@ static bool intersect (
 herr_t H5VL_logi_array_idx_t::search (H5VL_log_rreq_t *req,
 									  std::vector<H5VL_log_idx_search_ret_t> &ret) {
 	herr_t err = 0;
-	int i, j, k;
+	int i, j;
 	size_t soff;
 	hsize_t os[H5S_MAX_RANK], oc[H5S_MAX_RANK];
 	H5VL_log_idx_search_ret_t cur;

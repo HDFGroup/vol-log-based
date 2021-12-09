@@ -3,6 +3,8 @@
 #endif
 #include <assert.h>
 
+#include <cstdint>
+
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
 #include "H5VL_log_dataseti.hpp"
@@ -60,11 +62,10 @@ void *H5VL_log_dataset_create (void *obj,
 	// H5VL_link_create_args_t args;
 	// H5VL_loc_params_t loc;
 	hid_t sid = -1;
-	void *ap;
 	int ndim, nfilter;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	char lname[1024];
+	// char lname[1024];
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	sid = H5Screate (H5S_SCALAR);
@@ -185,7 +186,7 @@ void *H5VL_log_dataset_open (void *obj,
 							 hid_t dapl_id,
 							 hid_t dxpl_id,
 							 void **req) {
-	herr_t err		   = 0;
+	// herr_t err		   = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	void *uo		   = NULL;
 
@@ -302,8 +303,8 @@ err_out:;
 herr_t H5VL_log_dataset_get (void *dset, H5VL_dataset_get_args_t *args, hid_t dxpl_id, void **req) {
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 	herr_t err			= 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+	// H5VL_log_req_t *rp;
+	// void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	switch (args->op_type) {
@@ -363,17 +364,17 @@ herr_t H5VL_log_dataset_specific (void *obj,
 								  void **req) {
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)obj;
 	herr_t err			= 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+	// H5VL_log_req_t *rp;
+	// void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	switch (args->op_type) {
 		case H5VL_DATASET_SET_EXTENT: { /* H5Dset_extent */
-			int i;
+			int32_t i;
 			const hsize_t *new_sizes = args->args.set_extent.size;
 
 			// Adjust dim
-			for (i = 0; i < dp->ndim; i++) {
+			for (i = 0; i < (int32_t) (dp->ndim); i++) {
 				if (dp->mdims[i] != H5S_UNLIMITED && new_sizes[i] > dp->mdims[i]) {
 					err = -1;
 					ERR_OUT ("size cannot exceed max size")
@@ -427,8 +428,8 @@ herr_t H5VL_log_dataset_optional (void *obj,
 	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)op;
 	herr_t err			= 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+	// H5VL_log_req_t *rp;
+	// void **ureqp, *ureq;
 	H5VL_log_selections *dsel	  = NULL;								   // Selection blocks
 	H5VL_log_dio_n_arg_t *varnarg = (H5VL_log_dio_n_arg_t *)(args->args);  // H5Dwrite_n args
 
@@ -453,21 +454,25 @@ herr_t H5VL_log_dataset_optional (void *obj,
 									  varnarg->buf, req);
 		CHECK_ERR
 	} else {
+		/*
 		if (req) {
 			rp	  = new H5VL_log_req_t ();
 			ureqp = &ureq;
 		} else {
 			ureqp = NULL;
 		}
+		*/
 
 		H5VL_LOGI_PROFILING_TIMER_START;
 		err = H5VLdataset_optional (op->uo, op->uvlid, args, dxpl_id, req);
 		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLDATASET_OPTIONAL);
 
+		/*
 		if (req) {
 			rp->append (ureq);
 			*req = rp;
 		}
+		*/
 
 		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_DATASET_OPTIONAL);
 	}

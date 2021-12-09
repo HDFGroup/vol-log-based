@@ -3,12 +3,12 @@
 #endif
 //
 #include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cassert>
 //
 #include <hdf5.h>
 //
@@ -20,26 +20,17 @@
 herr_t h5ldump_visit (std::string path, std::vector<H5VL_log_dset_info_t> &dsets) {
 	herr_t err = 0;
 	hid_t fid  = -1;  // File ID
-	hid_t aid  = -1;  // File attribute ID
-	int ndset;		  // Number of user datasets
-	int att_buf[5];	  // attirbute buffer
 
 	// Open the input file
 	fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, H5P_DEFAULT);
 	CHECK_ID (fid)
-
-	// Read file metadata
-	aid = H5Aopen (fid, "_int_att", H5P_DEFAULT);
-	CHECK_ID (aid)
-	err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
-	CHECK_ERR
-	ndset = att_buf[0];
 
 	err = H5Ovisit3 (fid, H5_INDEX_CRT_ORDER, H5_ITER_INC, h5ldump_visit_handler, &dsets,
 					 H5O_INFO_ALL);
 	CHECK_ERR
 
 err_out:;
+	if (fid >= 0) { H5Fclose (fid); }
 	return err;
 }
 
@@ -48,14 +39,14 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 							  const H5O_info_t *object_info,
 							  void *op_data) {
 	herr_t err = 0;
-	hid_t did  = -1;  // Current dataset ID
-	hid_t aid  = -1;  // Dataset attribute ID
-	hid_t sid  = -1;  // Dataset attribute space ID
-	hid_t tid  = -1;  // Dataset type ID
-	int id;			  // Log VOL dataset ID
+	hid_t did  = -1;			// Current dataset ID
+	hid_t aid  = -1;			// Dataset attribute ID
+	hid_t sid  = -1;			// Dataset attribute space ID
+	hid_t tid  = -1;			// Dataset type ID
+	int id;						// Log VOL dataset ID
 	H5VL_log_dset_info_t dset;	// Current dataset info
 	std::vector<H5VL_log_dset_info_t> *dsets = (std::vector<H5VL_log_dset_info_t> *)op_data;
-	
+
 	// Skip unnamed and hidden object
 	if ((name == NULL) || (name[0] == '_') || (name[0] == '/' || (name[0] == '.'))) {
 		goto err_out;
@@ -63,12 +54,8 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 
 	// Visit a dataset
 	if (object_info->type == H5O_TYPE_DATASET) {
-		int id;
 		int ndim;
-		int one;
 		hsize_t hndim;
-		hsize_t zero = 0;
-		hsize_t dims[H5S_MAX_RANK], mdims[H5S_MAX_RANK];
 
 		// Open src dataset
 		did = H5Dopen2 (o_id, name, H5P_DEFAULT);

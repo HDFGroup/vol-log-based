@@ -34,8 +34,7 @@ void *H5VL_log_object_open (void *obj,
 							H5I_type_t *opened_type,
 							hid_t dxpl_id,
 							void **req) {
-	herr_t err = 0;
-	H5VL_log_obj_t *new_obj;
+	// herr_t err = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	void *uo;
 #ifdef LOGVOL_VERBOSE_DEBUG

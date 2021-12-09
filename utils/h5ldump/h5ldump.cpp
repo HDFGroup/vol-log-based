@@ -63,7 +63,6 @@ err_out:;
 
 herr_t h5ldump_file (std::string path, std::vector<H5VL_log_dset_info_t> &dsets, int indent) {
 	herr_t err = 0;
-	int mpierr;
 	int i;
 	hid_t fid  = -1;  // File ID
 	hid_t lgid = -1;  // Log group ID

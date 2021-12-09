@@ -172,7 +172,7 @@ err_out:;
 herr_t H5Pset_nb_buffer_size (hid_t plist, size_t size) {
 	herr_t err = 0;
 	htri_t isfapl;
-	htri_t isdxpl, pexist;
+	htri_t pexist;
 
 	// TODO: Fix pclass problem
 	return 0;
@@ -225,7 +225,7 @@ err_out:;
 herr_t H5Pset_idx_buffer_size (hid_t plist, size_t size) {
 	herr_t err = 0;
 	htri_t isfapl;
-	htri_t isdxpl, pexist;
+	htri_t pexist;
 
 	// TODO: Fix pclass problem
 	return 0;
@@ -278,7 +278,7 @@ err_out:;
 herr_t H5Pset_meta_merge (hid_t plist, hbool_t merge) {
 	herr_t err = 0;
 	htri_t isfapl;
-	htri_t isdxpl, pexist;
+	htri_t pexist;
 
 	// TODO: Fix pclass problem
 	return 0;
@@ -331,7 +331,7 @@ err_out:;
 herr_t H5Pset_meta_share (hid_t plist, hbool_t share) {
 	herr_t err = 0;
 	htri_t isfapl;
-	htri_t isdxpl, pexist;
+	htri_t pexist;
 
 	// TODO: Fix pclass problem
 	return 0;
@@ -383,7 +383,7 @@ err_out:;
 herr_t H5Pset_meta_zip (hid_t plist, hbool_t zip) {
 	herr_t err = 0;
 	htri_t isfapl;
-	htri_t isdxpl, pexist;
+	htri_t pexist;
 
 	// TODO: Fix pclass problem
 	return 0;
@@ -436,7 +436,7 @@ err_out:;
 herr_t H5Pset_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t encoding) {
 	herr_t err = 0;
 	htri_t isfapl;
-	htri_t isdxpl, pexist;
+	htri_t pexist;
 
 	// TODO: Fix pclass problem
 	return 0;
@@ -489,7 +489,7 @@ err_out:;
 herr_t H5Pset_data_layout (hid_t plist, H5VL_log_data_layout_t layout) {
 	herr_t err = 0;
 	htri_t isfapl;
-	htri_t isdxpl, pexist;
+	htri_t pexist;
 
 	isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
 	CHECK_ID (isfapl)
@@ -539,7 +539,7 @@ err_out:;
 herr_t H5Pset_subfiling (hid_t plist, hbool_t subfiling) {
 	herr_t err = 0;
 	htri_t isfapl;
-	htri_t isdxpl, pexist;
+	htri_t pexist;
 
 	isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
 	CHECK_ID (isfapl)
