@@ -141,8 +141,8 @@ herr_t h5lreplay_parse_meta (int rank,
 					H5VL_logi_meta_hdr *hdr = (H5VL_logi_meta_hdr *)ep;
 
 #ifdef WORDS_BIGENDIAN
-					H5VL_logi_lreverse ((uint64_t *)ep,
-										(uint64_t *)(ep + sizeof (H5VL_logi_meta_hdr)));
+					H5VL_logi_lreverse ((uint32_t *)ep,
+										(uint32_t *)(ep + sizeof (H5VL_logi_meta_hdr)));
 #endif
 
 					// Have to parse all entries for reference purpose

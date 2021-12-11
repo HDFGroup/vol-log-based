@@ -132,7 +132,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Swap endian of metadata headers before writing
 #ifdef WORDS_BIGENDIAN
 	for (auto &rp : fp->wreqs) {
-		H5VL_logi_lreverse (rp->meta_buf, (uint64_t *)(rp->meta_buf + sizeof (H5VL_logi_meta_hdr)));
+		H5VL_logi_lreverse ((uint32_t *)rp->meta_buf, (uint32_t *)(rp->meta_buf + sizeof (H5VL_logi_meta_hdr)));
 	}
 #endif
 
@@ -303,8 +303,8 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 				H5VL_logi_meta_hdr *hdr_tmp = (H5VL_logi_meta_hdr *)bufp;
 
 #ifdef WORDS_BIGENDIAN
-				H5VL_logi_lreverse ((uint64_t *)bufp,
-									(uint64_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
+				H5VL_logi_lreverse ((uint32_t *)bufp,
+									(uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
 #endif
 
 				// Have to parse all entries for reference purpose
@@ -329,8 +329,8 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 				H5VL_logi_meta_hdr *hdr_tmp = (H5VL_logi_meta_hdr *)bufp;
 
 #ifdef WORDS_BIGENDIAN
-				H5VL_logi_lreverse ((uint64_t *)bufp,
-									(uint64_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
+				H5VL_logi_lreverse ((uint32_t *)bufp,
+									(uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
 #endif
 
 				err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);
@@ -473,8 +473,8 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 			// Have to parse all entries for reference purpose
 			if (hdr_tmp->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
 #ifdef WORDS_BIGENDIAN
-				H5VL_logi_lreverse ((uint64_t *)bufp,
-									(uint64_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
+				H5VL_logi_lreverse ((uint32_t *)bufp,
+									(uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
 #endif
 
 				err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr_tmp->did], bufp, block, bcache);
@@ -496,7 +496,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 			H5VL_logi_meta_hdr *hdr_tmp = (H5VL_logi_meta_hdr *)bufp;
 
 #ifdef WORDS_BIGENDIAN
-			H5VL_logi_lreverse ((uint64_t *)bufp, (uint64_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
+			H5VL_logi_lreverse ((uint32_t *)bufp, (uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
 #endif
 
 			err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);

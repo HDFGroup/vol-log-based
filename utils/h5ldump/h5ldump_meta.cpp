@@ -108,7 +108,7 @@ herr_t h5ldump_mdsec (uint8_t *buf,
 		hdr = (H5VL_logi_meta_hdr *)bufp;
 
 #ifdef WORDS_BIGENDIAN
-		H5VL_logi_lreverse ((uint64_t *)bufp, (uint64_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
+		H5VL_logi_lreverse ((uint32_t *)bufp, (uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
 #endif
 
 		// Have to parse all entries for reference purpose

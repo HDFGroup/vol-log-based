@@ -124,22 +124,24 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 #endif
 
 #ifdef WORDS_BIGENDIAN
-	uint64_t *rstart = (uint64_t *)bufp;  // Start addr to do endian reverse
+	{
+		uint64_t *rstart = (uint64_t *)bufp;  // Start addr to do endian reverse
 #endif
 
-	// Dsteps
-	if (flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-		memcpy (bufp, dp->dsteps, sizeof (MPI_Offset) * (encdim - 1));
-		bufp += sizeof (MPI_Offset) * (encdim - 1);
-	}
+		// Dsteps
+		if (flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
+			memcpy (bufp, dp->dsteps, sizeof (MPI_Offset) * (encdim - 1));
+			bufp += sizeof (MPI_Offset) * (encdim - 1);
+		}
 
-	if (flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-		sels->encode (bufp, dp->dsteps, flag & H5VL_LOGI_META_FLAG_REC ? 1 : 0);
-	} else {
-		sels->encode (bufp, NULL, flag & H5VL_LOGI_META_FLAG_REC ? 1 : 0);
-	}
+		if (flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
+			sels->encode (bufp, dp->dsteps, flag & H5VL_LOGI_META_FLAG_REC ? 1 : 0);
+		} else {
+			sels->encode (bufp, NULL, flag & H5VL_LOGI_META_FLAG_REC ? 1 : 0);
+		}
 #ifdef WORDS_BIGENDIAN
-	H5VL_logi_llreverse (rstart, (uint64_t *)(meta_buf + mbsize));
+		H5VL_logi_llreverse (rstart, (uint64_t *)(meta_buf + mbsize));
+	}
 #endif
 
 err_out:;
