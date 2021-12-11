@@ -144,7 +144,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	loc.obj_type = H5I_GROUP;
 
 	dsize = (hsize_t)rbuf[1];
-	if (dsize > 0) {
+	if (dsize > (hsize_t) (sizeof (MPI_Offset) * (fp->group_np + 1))) {
 		// Create metadata dataset
 		H5VL_LOGI_PROFILING_TIMER_START;
 		mdsid = H5Screate_simple (1, &dsize, &dsize);
