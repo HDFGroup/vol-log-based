@@ -59,3 +59,30 @@ C_SUBDIRS = hdf5_examples
 DIST_SUBDIRS = $(C_SUBDIRS) 
 
 SUBDIRS = $(C_SUBDIRS)
+
+ptest ptest4: $(SUBDIRS)
+	@echo "==========================================================="
+	@echo "    $(subdir): Parallel testing on 4 MPI processes"
+	@echo "==========================================================="
+	$(TESTS_ENVIRONMENT) \
+	$(srcdir)/parallel_run.sh 4 || exit 1
+
+ptest2: $(check_PROGRAMS)
+	@echo "==========================================================="
+	@echo "    $(subdir): Parallel testing on 2 MPI processes"
+	@echo "==========================================================="
+	$(TESTS_ENVIRONMENT) \
+	$(srcdir)/parallel_run.sh 2 || exit 1
+
+ptest6: $(check_PROGRAMS)
+	@echo "==========================================================="
+	@echo "    $(subdir): Parallel testing on 6 MPI processes"
+	@echo "==========================================================="
+	$(TESTS_ENVIRONMENT) \
+	$(srcdir)/parallel_run.sh 6 || exit 1
+
+ptests: ptest2 ptest4 ptest6
+
+ptest8 ptest10:
+
+.PHONY: ptest ptests ptest2 ptest4 ptest6 ptest8 ptest10

@@ -13,3 +13,15 @@ DIST_SUBDIRS = $(C_SUBDIRS)
 SUBDIRS = $(C_SUBDIRS)
 
 EXTRA_DIST = testutils.hpp
+
+ptest:
+	for d in $(SUBDIRS) ; do \
+		$(MAKE) $(MFLAGS) -C $$d ptest $$* || exit 1 ; \
+	done
+
+ptests:
+	for d in $(SUBDIRS) ; do \
+		$(MAKE) $(MFLAGS) -C $$d ptests $$* || exit 1 ; \
+	done
+
+.PHONY: ptest ptests

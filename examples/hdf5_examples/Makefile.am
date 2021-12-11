@@ -60,5 +60,3 @@ TESTS = $(TESTPROGRAMS)
 
 # build check targets but not invoke
 tests-local: all $(check_PROGRAMS)
-
-

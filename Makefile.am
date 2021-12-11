@@ -14,7 +14,19 @@ EXTRA_DIST =    m4/foreach_idx.m4 \
                 COPYRIGHT \
                 RELEASE_NOTE.md
 
-.PHONY:
+PTEST_SUBDIRS = test examples
+
+ptest:
+	for d in $(PTEST_SUBDIRS) ; do \
+		$(MAKE) $(MFLAGS) -C $$d ptest $$* || exit 1 ; \
+	done
+
+ptests:
+	for d in $(PTEST_SUBDIRS) ; do \
+		$(MAKE) $(MFLAGS) -C $$d ptests $$* || exit 1 ; \
+	done
+
+.PHONY: ptest ptests
 
 dist-hook:
 #	$(SED_I) -e "1,10s|_RELEASE_DATE_|@H5VL_LOG_RELEASE_DATE@|" $(distdir)/RELEASE_NOTE.md
