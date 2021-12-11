@@ -24,7 +24,6 @@ check_PROGRAMS =    h5_attribute \
                     h5_crtgrp \
                     h5_crtgrpar \
                     h5_crtgrpd \
-                    h5_group \
                     h5_interm_group \
                     h5_rdwt \
                     h5_write \
