@@ -122,6 +122,12 @@ int main (int argc, char **argv) {
 		starts[i] = starts[i - 1] + 2;
 		counts[i] = counts[i - 1] + 2;
 	}
+	for (i = 0; i < N; i++) {
+		starts[i][0] = rank;
+		starts[i][1] = i;
+		counts[i][0] = 1;
+		counts[i][1] = 1;
+	}
 	H5Dread_n (did, H5T_NATIVE_INT, N, starts, counts, H5P_DEFAULT, buf);
 	free (starts[0]);
 	free (starts);
