@@ -90,10 +90,12 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		mdsize += lens[nentry++];
 	}
 
-	mpierr = MPI_Type_create_hindexed (nentry, lens, offs, MPI_BYTE, &mmtype);
-	CHECK_MPIERR
-	mpierr = MPI_Type_commit (&mmtype);
-	CHECK_MPIERR
+	if (nentry) {
+		mpierr = MPI_Type_create_hindexed (nentry, lens, offs, MPI_BYTE, &mmtype);
+		CHECK_MPIERR
+		mpierr = MPI_Type_commit (&mmtype);
+		CHECK_MPIERR
+	}
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp,
 									TIMER_H5VL_LOG_FILEI_METAFLUSH_PACK);  // Part of writing
 
@@ -132,7 +134,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Swap endian of metadata headers before writing
 #ifdef WORDS_BIGENDIAN
 	for (auto &rp : fp->wreqs) {
-		H5VL_logi_lreverse ((uint32_t *)rp->meta_buf, (uint32_t *)(rp->meta_buf + sizeof (H5VL_logi_meta_hdr)));
+		H5VL_logi_lreverse ((uint32_t *)rp->meta_buf,
+							(uint32_t *)(rp->meta_buf + sizeof (H5VL_logi_meta_hdr)));
 	}
 #endif
 
@@ -170,7 +173,11 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
 		// Write metadata
 		H5VL_LOGI_PROFILING_TIMER_START;  // TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE
-		err = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 1, mmtype, &stat);
+		if (nentry) {
+			err = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 1, mmtype, &stat);
+		} else {
+			err = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 0, MPI_INT, &stat);
+		}
 		CHECK_MPIERR
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
 
