@@ -66,8 +66,9 @@ int main(int argc, char **argv) {
     err = H5Pclose(faplid); CHECK_ERR(err)
 
 err_out:
+	if (log_vlid >= 00) H5VLclose (log_vlid);
     SHOW_TEST_RESULT
-    
+
     MPI_Finalize();
 
     return (nerrs > 0);

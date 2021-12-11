@@ -71,6 +71,9 @@ int main()
    status = H5Pclose(faplid);
    assert(status == 0);
 
+    // Close log-based VOL
+    H5VLclose(log_vlid);
+	
    MPI_Finalize();
 
    return 0;

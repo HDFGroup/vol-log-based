@@ -245,6 +245,9 @@ int main(void)
     H5Dclose(dataset);
     H5Fclose(file);
     H5Pclose(faplid);
+    
+    // Close log-based VOL
+    H5VLclose(log_vlid);
 
     MPI_Finalize();
 

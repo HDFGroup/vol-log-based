@@ -341,6 +341,9 @@ main (void)
 
 	ret = H5Pclose(faplid); assert(ret == 0);
 
+    // Close log-based VOL
+    H5VLclose(log_vlid);
+	
 	MPI_Finalize();
 
     return 0;
