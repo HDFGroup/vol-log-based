@@ -16,7 +16,7 @@ AM_CPPFLAGS += -I${top_srcdir}/src
 AM_CPPFLAGS += -I${top_srcdir}/test
 AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
-LDADD = $(top_builddir)/src/.libs/libH5VL_log.la
+LDADD = $(top_builddir)/src/libH5VL_log.la
 
 check_PROGRAMS = 
 
