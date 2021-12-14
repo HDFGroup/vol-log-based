@@ -17,7 +17,7 @@ int main (int argc, char **argv) {
 	const char *file_name;
 	hid_t fid;
 	hid_t faplid;
-	char volname[128];			  // Name of current VOL
+	char volname[128]={0};			  // Name of current VOL
 	ssize_t volname_len;		  // Length of volname
 	std::string vol_name;		  // Name of the VOL used
 	std::string target_vol_name;  // Name of the specified VOL
