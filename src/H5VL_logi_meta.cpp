@@ -32,6 +32,9 @@ herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
 	bufp += sizeof (H5VL_logi_meta_hdr);
 
+	// Entry size must be > 0
+	if (block.hdr.meta_size <= 0) { RET_ERR ("Invalid metadata entry") }
+
 	// Check if it is a record entry
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_REC) {
 		// Get record number
@@ -73,6 +76,7 @@ herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 	}
 	block.dsize += block.sels[block.sels.size () - 1].doff;
 
+err_out:;
 	return err;
 }
 
@@ -103,6 +107,9 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
 	bufp += sizeof (H5VL_logi_meta_hdr);
+
+	// Entry size must be > 0
+	if (block.hdr.meta_size <= 0) { RET_ERR ("Invalid metadata entry") }
 
 	// Check if it is a record entry
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_REC) {
