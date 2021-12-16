@@ -161,6 +161,37 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		// Get metadata dataset file offset
 		err = H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, fp->dxplid, &mdoff);
 		CHECK_ERR
+		if (mdoff == HADDR_UNDEF) {
+			H5VL_file_specific_args_t arg;
+
+			// Close the dataset
+			err = H5VLdataset_close (mdp, fp->uvlid, fp->dxplid, NULL);
+			CHECK_ERR
+
+			// Flush the file
+			arg.op_type				= H5VL_FILE_FLUSH;
+			arg.args.flush.scope	= H5F_SCOPE_GLOBAL;
+			arg.args.flush.obj_type = H5I_FILE;
+			err						= H5VLfile_specific (fp->uo, fp->uvlid, &arg, fp->dxplid, NULL);
+			CHECK_ERR
+
+			// Reopen the dataset
+			mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, mdname, H5P_DATASET_ACCESS_DEFAULT,
+									fp->dxplid, NULL);
+			CHECK_PTR (mdp);
+
+			// Get dataset file offset
+			err = H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, fp->dxplid, &mdoff);
+			CHECK_ERR
+
+			if (mdoff == HADDR_UNDEF) {
+				printf ("WARNING: Log dataset creation failed, data is not recorded\n");
+				fflush (stdout);
+
+				nentry = 0;
+				mdoff  = 0;
+			}
+		}
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_CREATE);
 
 		// Close the metadata dataset

@@ -720,12 +720,47 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 
 			H5VL_LOGI_PROFILING_TIMER_START;
+			// Get dataset file offset
 			err = H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
-			CHECK_ERR  // Get dataset file offset
+			CHECK_ERR
+			// Dataset file space not allocated, try flushing
+			if (doff == HADDR_UNDEF) {
+				H5VL_file_specific_args_t arg;
+
+				// Close the dataset
+				err = H5VLdataset_close (ldp, fp->uvlid, dxplid, NULL);
+				CHECK_ERR
+
+				// Flush the file
+				arg.op_type				= H5VL_FILE_FLUSH;
+				arg.args.flush.scope	= H5F_SCOPE_GLOBAL;
+				arg.args.flush.obj_type = H5I_FILE;
+				err						= H5VLfile_specific (fp->uo, fp->uvlid, &arg, dxplid, NULL);
+				CHECK_ERR
+
+				// Reopen the dataset
+				ldp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, dname, H5P_DATASET_ACCESS_DEFAULT,
+										dxplid, NULL);
+				CHECK_PTR (ldp);
+
+				// Get dataset file offset
+				err = H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
+				CHECK_ERR
+
+				if (doff == HADDR_UNDEF) {
+					printf ("WARNING: Log dataset creation failed, data is not recorded\n");
+					fflush (stdout);
+
+					if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
+					mtype = MPI_DATATYPE_NULL;
+					doff  = 0;
+				}
+			}
 			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
 
+			// Close the dataset
 			err = H5VLdataset_close (ldp, fp->uvlid, dxplid, NULL);
-			CHECK_ERR  // Close the dataset
+			CHECK_ERR
 
 			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_CREATE);
 
