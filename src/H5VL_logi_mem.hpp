@@ -19,6 +19,10 @@
 	{                              \
 		if (A != -1) H5Sclose (A); \
 	}
+#define H5VL_log_Pclose(A)         \
+	{                              \
+		if (A != -1) H5Pclose (A); \
+	}
 #define H5VL_log_Tclose(A)         \
 	{                              \
 		if (A != -1) H5Tclose (A); \

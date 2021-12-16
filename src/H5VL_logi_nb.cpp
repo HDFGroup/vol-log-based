@@ -622,7 +622,8 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	MPI_Offset foff_group;	 // File offsset of the data block in the current group
 	void *ldp;				 // Handle to the log dataset
 	// void *vldp;				 // Handle to the log dataset
-	hid_t ldsid = -1;  // Space of the log dataset
+	hid_t ldsid	 = -1;	// Space of the log dataset
+	hid_t dcplid = -1;	// log dataset creation property ID
 	// hid_t vldsid  = -1;			  // Space of the virtual log dataset in the main file
 	// hid_t vdcplid = -1;	 // Virtual log dataset creation property list
 	hsize_t start;	// Size for dataspace selection
@@ -707,23 +708,29 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 		// Create log dataset
 		if (fsize_group) {
 			H5VL_LOGI_PROFILING_TIMER_START;
-
 			// Create the group data dataset
 			start = (hsize_t)fsize_group;
 			ldsid = H5Screate_simple (1, &start, &start);
 			CHECK_ID (ldsid)
+
+			// Allocate file space at creation time
+			dcplid = H5Pcreate (H5P_DATASET_CREATE);
+			CHECK_ID (dcplid)
+			err = H5Pset_alloc_time (dcplid, H5D_ALLOC_TIME_EARLY);
+
+			// Create dataset with under VOL
 			H5VL_LOGI_PROFILING_TIMER_START;
 			ldp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
-									  H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
-									  H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
-			CHECK_PTR (ldp);
+									  H5T_STD_B8LE, ldsid, dcplid, H5P_DATASET_ACCESS_DEFAULT,
+									  dxplid, NULL);
 			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
+			CHECK_PTR (ldp);
 
 			H5VL_LOGI_PROFILING_TIMER_START;
 			// Get dataset file offset
 			err = H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
 			CHECK_ERR
-			// Dataset file space not allocated, try flushing
+			// If not allocated, flush the file and reopen the dataset
 			if (doff == HADDR_UNDEF) {
 				H5VL_file_specific_args_t arg;
 
@@ -747,6 +754,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 				err = H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
 				CHECK_ERR
 
+				// Still don't work, discard the data
 				if (doff == HADDR_UNDEF) {
 					printf ("WARNING: Log dataset creation failed, data is not recorded\n");
 					fflush (stdout);
@@ -841,6 +849,7 @@ err_out:
 	if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
 	H5VL_log_Sclose (ldsid);
 	// H5VL_log_Sclose (vldsid);
+	H5VL_log_Pclose (dcplid);
 
 	H5VL_log_free (mlens);
 	H5VL_log_free (moffs);

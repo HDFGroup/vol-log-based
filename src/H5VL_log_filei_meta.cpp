@@ -53,7 +53,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	int nentry	   = 0;						  // Number of metadata entries
 	char mdname[32];						  // Name of metadata dataset
 	void *mdp;								  // under VOL object of the metadata dataset
-	hid_t mdsid = -1;						  // metadata dataset data space ID
+	hid_t mdsid	 = -1;						  // metadata dataset data space ID
+	hid_t dcplid = -1;						  // metadata dataset creation property ID
 	hsize_t dsize;							  // Size of the metadata dataset = mdsize_all
 	haddr_t mdoff;							  // File offset of the metadata dataset
 	MPI_Datatype mmtype = MPI_DATATYPE_NULL;  // Memory datatype for writing the metadata
@@ -149,18 +150,26 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		H5VL_LOGI_PROFILING_TIMER_START;
 		mdsid = H5Screate_simple (1, &dsize, &dsize);
 		CHECK_ID (mdsid)
+
+		// Allocate file space at creation time
+		dcplid = H5Pcreate (H5P_DATASET_CREATE);
+		CHECK_ID (dcplid)
+		err = H5Pset_alloc_time (dcplid, H5D_ALLOC_TIME_EARLY);
+
+		// Create dataset with under VOL
 		sprintf (mdname, "_md_%d", fp->nmdset);
 		H5VL_LOGI_PROFILING_TIMER_START;
 		mdp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, mdname, H5P_LINK_CREATE_DEFAULT,
-								  H5T_STD_B8LE, mdsid, H5P_DATASET_CREATE_DEFAULT,
-								  H5P_DATASET_ACCESS_DEFAULT, fp->dxplid, NULL);
+								  H5T_STD_B8LE, mdsid, dcplid, H5P_DATASET_ACCESS_DEFAULT,
+								  fp->dxplid, NULL);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 		CHECK_PTR (mdp);
 		fp->nmdset++;
-		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
 
 		// Get metadata dataset file offset
 		err = H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, fp->dxplid, &mdoff);
 		CHECK_ERR
+		// If not allocated, flush the file and reopen the dataset
 		if (mdoff == HADDR_UNDEF) {
 			H5VL_file_specific_args_t arg;
 
@@ -184,8 +193,9 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			err = H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, fp->dxplid, &mdoff);
 			CHECK_ERR
 
+			// Still don't work, discard the data
 			if (mdoff == HADDR_UNDEF) {
-				printf ("WARNING: Log dataset creation failed, data is not recorded\n");
+				printf ("WARNING: Log dataset creation failed, metadata is not recorded\n");
 				fflush (stdout);
 
 				nentry = 0;
@@ -250,6 +260,7 @@ err_out:
 	H5VL_log_free (lens);
 	H5VL_log_free (mdoffs);
 	H5VL_log_Sclose (mdsid);
+	H5VL_log_Pclose (dcplid);
 	if (mmtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mmtype); }
 	return err;
 }
