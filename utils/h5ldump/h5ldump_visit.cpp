@@ -20,16 +20,27 @@
 herr_t h5ldump_visit (std::string path, std::vector<H5VL_log_dset_info_t> &dsets) {
 	herr_t err = 0;
 	hid_t fid  = -1;  // File ID
+	hid_t aid  = -1;  // ID of file attribute
+	int att_buf[5];	  // Temporary buffer for reading file attributes
 
 	// Open the input file
 	fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, H5P_DEFAULT);
 	CHECK_ID (fid)
+
+	// Read file metadata
+	aid = H5Aopen (fid, "_int_att", H5P_DEFAULT);
+	CHECK_ID (aid)
+
+	err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
+	CHECK_ERR
+	dsets.resize (att_buf[0]);
 
 	err = H5Ovisit3 (fid, H5_INDEX_CRT_ORDER, H5_ITER_INC, h5ldump_visit_handler, &dsets,
 					 H5O_INFO_ALL);
 	CHECK_ERR
 
 err_out:;
+	if (aid >= 0) { H5Aclose (aid); }
 	if (fid >= 0) { H5Fclose (fid); }
 	return err;
 }
@@ -38,7 +49,7 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 							  const char *name,
 							  const H5O_info_t *object_info,
 							  void *op_data) {
-	herr_t err	 = 0;
+	herr_t err = 0;
 	int i;
 	hid_t did	 = -1;			// Current dataset ID
 	hid_t dcplid = -1;			// Current dataset creation property list ID
@@ -106,7 +117,7 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 			CHECK_ID (dset.filters[i].id);
 		}
 
-		dsets->push_back (dset);
+		(*dsets)[id] = dset;
 	}
 err_out:;
 	if (sid >= 0) { H5Sclose (sid); }
