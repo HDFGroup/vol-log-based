@@ -174,39 +174,46 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 						nt++;
 					}
 				} else {
-					etype = H5VL_logi_get_mpi_type_by_size (blocks[i].info->esize);
-					if (etype == MPI_DATATYPE_NULL) {
-						mpierr = MPI_Type_contiguous (blocks[i].info->esize, MPI_BYTE, &etype);
-						CHECK_MPIERR
-						mpierr = MPI_Type_commit (&etype);
-						CHECK_MPIERR
-						k = 1;
-					} else {
-						k = 0;
-					}
+					if (blocks[i].info->ndim) {
+						etype = H5VL_logi_get_mpi_type_by_size (blocks[i].info->esize);
+						if (etype == MPI_DATATYPE_NULL) {
+							mpierr = MPI_Type_contiguous (blocks[i].info->esize, MPI_BYTE, &etype);
+							CHECK_MPIERR
+							mpierr = MPI_Type_commit (&etype);
+							CHECK_MPIERR
+							k = 1;
+						} else {
+							k = 0;
+						}
 
-					mpierr = H5VL_log_debug_MPI_Type_create_subarray (
-						blocks[i].info->ndim, blocks[j].dsize, blocks[j].count, blocks[j].dstart,
-						MPI_ORDER_C, etype, ftypes + nt);
-					CHECK_MPIERR
-					mpierr = H5VL_log_debug_MPI_Type_create_subarray (
-						blocks[i].info->ndim, blocks[j].msize, blocks[j].count, blocks[j].mstart,
-						MPI_ORDER_C, etype, mtypes + nt);
-
-					CHECK_MPIERR
-					mpierr = MPI_Type_commit (ftypes + nt);
-					CHECK_MPIERR
-					mpierr = MPI_Type_commit (mtypes + nt);
-					CHECK_MPIERR
-
-					if (k) {
-						mpierr = MPI_Type_free (&etype);
+						mpierr = H5VL_log_debug_MPI_Type_create_subarray (
+							blocks[i].info->ndim, blocks[j].dsize, blocks[j].count,
+							blocks[j].dstart, MPI_ORDER_C, etype, ftypes + nt);
 						CHECK_MPIERR
+						mpierr = H5VL_log_debug_MPI_Type_create_subarray (
+							blocks[i].info->ndim, blocks[j].msize, blocks[j].count,
+							blocks[j].mstart, MPI_ORDER_C, etype, mtypes + nt);
+
+						CHECK_MPIERR
+						mpierr = MPI_Type_commit (ftypes + nt);
+						CHECK_MPIERR
+						mpierr = MPI_Type_commit (mtypes + nt);
+						CHECK_MPIERR
+
+						if (k) {
+							mpierr = MPI_Type_free (&etype);
+							CHECK_MPIERR
+						}
+
+						lens[nt] = 1;
+					} else {  // Special case for scalar entry
+						ftypes[nt] = MPI_BYTE;
+						mtypes[nt] = MPI_BYTE;
+						lens[nt]   = blocks[i].info->esize;
 					}
 
 					foffs[nt] = blocks[j].foff + blocks[j].doff;
 					moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
-					lens[nt]  = 1;
 					nt++;
 				}
 

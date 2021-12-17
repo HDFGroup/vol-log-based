@@ -329,9 +329,9 @@ err_out:;
 }
 
 H5VL_log_selections::~H5VL_log_selections () {
-	if (sels_arr) {
-		free (sels_arr);
+	if (starts) {
 		free (starts);
+		if (sels_arr) { free (sels_arr); }
 	}
 }
 
@@ -388,12 +388,15 @@ void H5VL_log_selections::alloc (int nsel) {
 	int err = 0;
 	int i;
 
-	if (ndim && nsel) {
+	if (nsel) {
 		this->starts = (hsize_t **)malloc (sizeof (hsize_t *) * nsel * 2);
 		CHECK_PTR (starts)
-		this->counts	= this->starts + nsel;
-		this->starts[0] = sels_arr = (hsize_t *)malloc (sizeof (hsize_t) * nsel * ndim * 2);
-		CHECK_PTR (starts[0])
+		this->counts = this->starts + nsel;
+		if (ndim) {
+			sels_arr = (hsize_t *)malloc (sizeof (hsize_t) * nsel * ndim * 2);
+			CHECK_PTR (sels_arr)
+		}
+		this->starts[0] = sels_arr;
 		this->counts[0] = this->starts[0] + nsel * ndim;
 		for (i = 1; i < nsel; i++) {
 			starts[i] = starts[i - 1] + ndim;
