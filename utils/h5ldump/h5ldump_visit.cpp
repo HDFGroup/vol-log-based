@@ -38,11 +38,14 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 							  const char *name,
 							  const H5O_info_t *object_info,
 							  void *op_data) {
-	herr_t err = 0;
-	hid_t did  = -1;			// Current dataset ID
-	hid_t aid  = -1;			// Dataset attribute ID
-	hid_t sid  = -1;			// Dataset attribute space ID
-	hid_t tid  = -1;			// Dataset type ID
+	herr_t err	 = 0;
+	int i;
+	hid_t did	 = -1;			// Current dataset ID
+	hid_t dcplid = -1;			// Current dataset creation property list ID
+	hid_t aid	 = -1;			// Dataset attribute ID
+	hid_t sid	 = -1;			// Dataset attribute space ID
+	hid_t tid	 = -1;			// Dataset type ID
+	int nfilter;				// Number of filters in current dataset
 	int id;						// Log VOL dataset ID
 	H5VL_log_dset_info_t dset;	// Current dataset info
 	std::vector<H5VL_log_dset_info_t> *dsets = (std::vector<H5VL_log_dset_info_t> *)op_data;
@@ -85,9 +88,23 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 		aid = -1;
 
 		// Datatype and esize
-		tid = H5Dget_type (did);
-		CHECK_ID (tid)
-		dset.esize = H5Tget_size (tid);
+		dset.dtype = H5Dget_type (did);
+		CHECK_ID (dset.dtype)
+		dset.esize = H5Tget_size (dset.dtype);
+
+		// Filters
+		dcplid = H5Dget_create_plist (did);
+		CHECK_ID (dcplid)
+		nfilter = H5Pget_nfilters (dcplid);
+		CHECK_ID (nfilter);
+		dset.filters.resize (nfilter);
+		for (i = 0; i < nfilter; i++) {
+			dset.filters[i].id = H5Pget_filter2 (
+				dcplid, (unsigned int)i, &(dset.filters[i].flags), &(dset.filters[i].cd_nelmts),
+				dset.filters[i].cd_values, LOGVOL_FILTER_NAME_MAX, dset.filters[i].name,
+				&(dset.filters[i].filter_config));
+			CHECK_ID (dset.filters[i].id);
+		}
 
 		dsets->push_back (dset);
 	}

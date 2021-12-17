@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -20,6 +21,7 @@
 herr_t h5ldump_mdset (hid_t lgid,
 					  std::string name,
 					  std::vector<H5VL_log_dset_info_t> &dsets,
+					  MPI_File fh,
 					  int indent) {
 	herr_t err = 0;
 	int i;
@@ -80,7 +82,7 @@ herr_t h5ldump_mdset (hid_t lgid,
 		CHECK_ERR
 
 		std::cout << std::string (indent, ' ') << "Metadata section " << i << ": " << std::endl;
-		err = h5ldump_mdsec (buf, count, dsets, indent + 4);
+		err = h5ldump_mdsec (buf, count, dsets, fh, indent + 4);
 		CHECK_ERR
 		// std::cout << std::string (indent, ' ') << "End metadata section " << i << ": " <<
 		// std::endl;
@@ -91,18 +93,93 @@ err_out:;
 	return err;
 }
 
-herr_t h5ldump_mdsec (uint8_t *buf,
-					  size_t len,
-					  std::vector<H5VL_log_dset_info_t> &dsets,
-					  int indent) {
+template <typename T>
+inline void h5ldump_print_data_core (T *buf, size_t nelem, int indent) {
+	int i;
+	std::cout << std::string (indent, ' ');
+	for (i = 0; i < nelem; i++) { std::cout << buf[i] << ", "; }
+	std::cout << std::endl;
+}
+inline void h5ldump_print_data_core (void *buf, size_t nelem, int indent) {
+	int i;
+	std::cout << std::string (indent, ' ');
+	for (i = 0; i < nelem; i++) { std::cout << std::hex << ((uint8_t *)buf)[i] << ", "; }
+	std::cout << std::endl;
+}
+inline void h5ldump_print_data (uint8_t *buf, size_t nelem, size_t esize, hid_t etype, int indent) {
+	H5T_class_t tclass;
+
+	tclass = H5Tget_class (etype);
+	switch (tclass) {
+		case H5T_INTEGER:;
+			if (H5Tget_sign (etype) == H5T_SGN_NONE) {
+				switch (esize) {
+					case 1:;
+						h5ldump_print_data_core ((uint8_t *)buf, nelem, indent);
+						break;
+					case 2:;
+						h5ldump_print_data_core ((uint16_t *)buf, nelem, indent);
+						break;
+					case 4:;
+						h5ldump_print_data_core ((uint32_t *)buf, nelem, indent);
+						break;
+					case 8:;
+						h5ldump_print_data_core ((uint64_t *)buf, nelem, indent);
+						break;
+					default:
+						h5ldump_print_data_core ((void *)buf, nelem * esize, indent);
+						break;
+				}
+			} else {
+				switch (esize) {
+					case 1:;
+						h5ldump_print_data_core ((int8_t *)buf, nelem, indent);
+						break;
+					case 2:;
+						h5ldump_print_data_core ((int16_t *)buf, nelem, indent);
+						break;
+					case 4:;
+						h5ldump_print_data_core ((int32_t *)buf, nelem, indent);
+						break;
+					case 8:;
+						h5ldump_print_data_core ((int64_t *)buf, nelem, indent);
+						break;
+					default:
+						h5ldump_print_data_core ((void *)buf, nelem * esize, indent);
+						break;
+				}
+			}
+			break;
+		case H5T_FLOAT:;
+			if (esize > 4) {
+				h5ldump_print_data_core ((double *)buf, nelem, indent);
+			} else {
+				h5ldump_print_data_core ((float *)buf, nelem, indent);
+			}
+			break;
+		case H5T_STRING:;
+			h5ldump_print_data_core ((char *)buf, nelem, indent);
+			break;
+		default:;  // Unknown type treate as bytes
+			h5ldump_print_data_core ((void *)buf, nelem * esize, indent);
+	}
+}
+
+herr_t h5ldump_mdsec (
+	uint8_t *buf, size_t len, std::vector<H5VL_log_dset_info_t> &dsets, MPI_File fh, int indent) {
 	herr_t err = 0;
+	int mpierr;
 	int i;
 	uint8_t *bufp = buf;			  // Current decoding location in buf
 	H5VL_logi_meta_hdr *hdr;		  // Header of current decoding entry
 	H5VL_logi_metablock_t block;	  // Current metadata block
 	MPI_Offset dsteps[H5S_MAX_RANK];  // corrdinate to offset encoding info in ent
 	std::map<char *, std::vector<H5VL_logi_metasel_t>>
-		bcache;	 // Cache for deduplicated metadata entry
+		bcache;			   // Cache for deduplicated metadata entry
+	uint8_t *dbuf = NULL;  // Data buffer
+	size_t dbsize = 0;	   // Size of dbuf
+	size_t bsize  = 0;	   // Size of a selection block
+	MPI_Status stat;
 
 	while (bufp < buf + len) {
 		hdr = (H5VL_logi_meta_hdr *)bufp;
@@ -113,18 +190,50 @@ herr_t h5ldump_mdsec (uint8_t *buf,
 
 		// Have to parse all entries for reference purpose
 		if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-			H5VL_logi_metaentry_ref_decode (dsets[hdr->did], bufp, block, bcache);
+			err = H5VL_logi_metaentry_ref_decode (dsets[hdr->did], bufp, block, bcache);
+			CHECK_ERR
 		} else {
-			H5VL_logi_metaentry_decode (dsets[hdr->did], bufp, block, dsteps);
+			err = H5VL_logi_metaentry_decode (dsets[hdr->did], bufp, block, dsteps);
+			CHECK_ERR
 
 			// Insert to cache
 			bcache[(char *)bufp] = block.sels;
 		}
 
+		if (fh != MPI_FILE_NULL) {
+			// Total selection size = size of last block + off of last block
+			bsize = 1;
+			for (i = 0; i < dsets[block.hdr.did].ndim; i++) {
+				bsize *= block.sels.back ().count[i];
+			}
+			bsize += block.sels.back ().doff;
+			bsize *= dsets[block.hdr.did].esize;
+
+			if (dbsize < bsize) {
+				dbsize = bsize;
+				dbuf   = (uint8_t *)realloc (dbuf, dbsize);
+			}
+
+			mpierr = MPI_File_read_at (fh, block.hdr.foff, dbuf, block.hdr.fsize, MPI_BYTE, &stat);
+			CHECK_MPIERR
+
+			// Unfilter the data
+			if (dsets[block.hdr.did].filters.size ()) {
+				uint8_t *tbuf;
+				int csize;
+
+				err = H5VL_logi_unfilter (dsets[block.hdr.did].filters, dbuf, block.hdr.fsize,
+										  (void **)&tbuf, &csize);
+				CHECK_ERR
+
+				memcpy (dbuf, tbuf, csize);
+				free (tbuf);
+			}
+		}
+
 		std::cout << std::string (indent, ' ') << "Metadata entry at " << (off_t) (bufp - buf)
 				  << ": " << std::endl;
 		indent += 4;
-		;
 
 		std::cout << std::string (indent, ' ') << "Dataset ID: " << hdr->did
 				  << "; Entry size: " << hdr->meta_size << std::endl;
@@ -153,25 +262,32 @@ herr_t h5ldump_mdsec (uint8_t *buf,
 		std::cout << std::string (indent, ' ') << "Selections: " << block.sels.size () << " blocks"
 				  << std::endl;
 		indent += 4;
-		;
 		for (auto &s : block.sels) {
 			std::cout << std::string (indent, ' ') << s.doff << ": ( ";
 			for (i = 0; i < (int)(dsets[hdr->did].ndim); i++) { std::cout << s.start[i] << ", "; }
 			std::cout << ") : ( ";
-			for (i = 0; i < (int)(dsets[hdr->did].ndim); i++) { std::cout << s.count[i] << ", "; }
+			bsize = 1;
+			for (i = 0; i < (int)(dsets[hdr->did].ndim); i++) {
+				std::cout << s.count[i] << ", ";
+				bsize *= s.count[i];
+			}
 			std::cout << ")" << std::endl;
+
+			if (fh != MPI_FILE_NULL) {
+				h5ldump_print_data (dbuf + s.doff, bsize, dsets[block.hdr.did].esize,
+									dsets[block.hdr.did].dtype, indent + 4);
+			}
 		}
 		indent -= 4;
-		;
 
 		indent -= 4;
-		;
 		// std::cout << std::string (indent, ' ') << "End metadata entry : " << (off_t) (bufp - buf)
 		// << std::endl;
 
 		bufp += hdr->meta_size;
 	}
 
-	// err_out:;
+err_out:;
+	if (dbuf) { free (dbuf); }
 	return err;
 }

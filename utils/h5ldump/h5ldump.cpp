@@ -10,8 +10,8 @@
 #include <vector>
 //
 #include <hdf5.h>
-#include <unistd.h>
 #include <mpi.h>
+#include <unistd.h>
 //
 #include "H5VL_log_filei.hpp"
 #include "H5VL_logi_nb.hpp"
@@ -21,8 +21,9 @@ int main (int argc, char *argv[]) {
 	herr_t err = 0;
 	int rank, np;
 	int opt;
-	std::string inpath;
-	std::vector<H5VL_log_dset_info_t> dsets;
+	bool dumpdata = false;					  // Dump data along with metadata
+	std::string inpath;						  // Input file path
+	std::vector<H5VL_log_dset_info_t> dsets;  // Dataset info
 
 	MPI_Init (&argc, &argv);
 	MPI_Comm_size (MPI_COMM_WORLD, &np);
@@ -34,8 +35,11 @@ int main (int argc, char *argv[]) {
 	}
 
 	// Parse input
-	while ((opt = getopt (argc, argv, "hi:o:")) != -1) {
+	while ((opt = getopt (argc, argv, "hi:o:d")) != -1) {
 		switch (opt) {
+			case 'd':
+				dumpdata = true;
+				break;
 			case 'h':
 			default:
 				if (rank == 0) { std::cout << "Usage: h5ldump <input file path>" << std::endl; }
@@ -54,29 +58,45 @@ int main (int argc, char *argv[]) {
 	CHECK_ERR
 
 	// Dump the logs
-	err = h5ldump_file (inpath, dsets, 0);
+	err = h5ldump_file (inpath, dsets, dumpdata, 0);
 	CHECK_ERR
 
+	// Cleanup dataset contec
+	for (auto &d:dsets){
+		if(d.dtype!=-1){H5Tclose(d.dtype);}
+	}
+	
 err_out:;
 	return 0;
 }
 
-herr_t h5ldump_file (std::string path, std::vector<H5VL_log_dset_info_t> &dsets, int indent) {
+herr_t h5ldump_file (std::string path,
+					 std::vector<H5VL_log_dset_info_t> &dsets,
+					 bool dumpdata,
+					 int indent) {
 	herr_t err = 0;
+	int mpierr;
 	int i;
-	hid_t fid  = -1;  // File ID
-	hid_t lgid = -1;  // Log group ID
-	hid_t aid  = -1;  // File attribute ID
-	int ndset;		  // Number of user datasets
-	int nldset;		  // Number of data datasets
-	int nmdset;		  // Number of metadata datasets
-	int nsubfile;	  // Number of subfiles
-	int config;		  // File config flags
-	int att_buf[5];	  // attirbute buffer
+	MPI_File fh = MPI_FILE_NULL;
+	hid_t fid	= -1;  // File ID
+	hid_t lgid	= -1;  // Log group ID
+	hid_t aid	= -1;  // File attribute ID
+	int ndset;		   // Number of user datasets
+	int nldset;		   // Number of data datasets
+	int nmdset;		   // Number of metadata datasets
+	int nsubfile;	   // Number of subfiles
+	int config;		   // File config flags
+	int att_buf[5];	   // attirbute buffer
 
 	// Open the input file
 	fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, H5P_DEFAULT);
 	CHECK_ID (fid)
+
+	if (dumpdata) {
+		mpierr =
+			MPI_File_open (MPI_COMM_SELF, path.c_str (), MPI_MODE_RDONLY, MPI_INFO_NULL, &(fh));
+		CHECK_MPIERR
+	}
 
 	// Read file metadata
 	aid = H5Aopen (fid, "_int_att", H5P_DEFAULT);
@@ -90,7 +110,8 @@ herr_t h5ldump_file (std::string path, std::vector<H5VL_log_dset_info_t> &dsets,
 	nsubfile = att_buf[4];
 
 	std::cout << std::string (indent, ' ') << "File: " << path << std::endl;
-	indent += 4;;
+	indent += 4;
+	;
 
 	std::cout << std::string (indent, ' ') << "Configuration: ";
 	if (config & H5VL_FILEI_CONFIG_METADATA_MERGE) { std::cout << "metadata merging, "; }
@@ -112,8 +133,8 @@ herr_t h5ldump_file (std::string path, std::vector<H5VL_log_dset_info_t> &dsets,
 	if (config & H5VL_FILEI_CONFIG_SUBFILING) {
 		for (i = 0; i < nsubfile; i++) {
 			std::cout << std::string (indent, ' ') << "Subfile " << i << std::endl;
-			err =
-				h5ldump_file (path + ".subfiles/" + std::to_string (i) + ".h5", dsets, indent + 4);
+			err = h5ldump_file (path + ".subfiles/" + std::to_string (i) + ".h5", dsets, dumpdata,
+								indent + 4);
 			CHECK_ERR
 			// std::cout << std::string (indent, ' ') << "End subfile " << i << std::endl;
 		}
@@ -124,15 +145,17 @@ herr_t h5ldump_file (std::string path, std::vector<H5VL_log_dset_info_t> &dsets,
 		// Iterate through metadata datasets
 		for (i = 0; i < nmdset; i++) {
 			std::cout << std::string (indent, ' ') << "Metadata dataset " << i << std::endl;
-			err = h5ldump_mdset (lgid, "_md_" + std::to_string (i), dsets, indent + 4);
+			err = h5ldump_mdset (lgid, "_md_" + std::to_string (i), dsets, fh, indent + 4);
 			CHECK_ERR
 			// std::cout << std::string (indent, ' ') << "End metadata dataset " << i << std::endl;
 		}
 	}
-	indent -= 4;;
+	indent -= 4;
+	;
 	// std::cout << std::string (indent, ' ') << "End file: " << path << std::endl;
 
 err_out:;
+	if (fh != MPI_FILE_NULL) { MPI_File_close (&fh); }
 	if (aid >= 0) { H5Aclose (aid); }
 	if (lgid >= 0) { H5Gclose (lgid); }
 	if (fid >= 0) { H5Fclose (fid); }
