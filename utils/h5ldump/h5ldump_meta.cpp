@@ -251,9 +251,9 @@ herr_t h5ldump_mdsec (
 		std::cout << std::endl;
 		if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
 			// Get referenced selections
-			// auto roff = *((MPI_Offset *)(hdr + 1) + (block.hdr.flag & H5VL_LOGI_META_FLAG_REC));
-			std::cout << std::string (indent, ' ') << "Referenced entry offset: " << (off_t)bufp
-					  << std::endl;
+			auto roff = *((MPI_Offset *)(hdr + 1) + (block.hdr.flag & H5VL_LOGI_META_FLAG_REC));
+			std::cout << std::string (indent, ' ')
+					  << "Referenced entry offset: " << (off_t) (bufp - buf + roff) << std::endl;
 		}
 		if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
 			std::cout << std::string (indent, ' ') << "Encoding slice size: (";
