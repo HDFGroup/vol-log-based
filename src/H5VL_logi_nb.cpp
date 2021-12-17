@@ -570,6 +570,9 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 			// Close previous subfile
 			err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
 			CHECK_ERR
+			// Erase the index table of previous subfile
+			for (auto &t : fp->idx) { t.clear (); }
+			fp->idxvalid = false;
 
 			// Open the current subfile
 			fp->group_id = (group_id + i) % fp->ngroup;
@@ -588,9 +591,6 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 
 			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS_SWITCH_SUBFILE);
 		}
-
-		// Erase the index table of previous subfile
-		for (auto &t : fp->idx) { t.clear (); }
 
 		err = H5VL_log_nb_perform_read (fp, reqs, dxplid);
 		CHECK_ERR
