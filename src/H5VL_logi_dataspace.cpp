@@ -305,8 +305,8 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 			this->alloc (1);
 
 			for (j = 0; j < ndim; j++) {
-				starts[0][j] = (MPI_Offset)dims[j];
-				counts[0][j] = 1;
+				starts[0][j] = 0;
+				counts[0][j] = (MPI_Offset)dims[j];
 			}
 
 		} break;
