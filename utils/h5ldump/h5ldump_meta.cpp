@@ -201,12 +201,15 @@ herr_t h5ldump_mdsec (
 		}
 
 		if (fh != MPI_FILE_NULL) {
-			// Total selection size = size of last block + off of last block
-			bsize = 1;
-			for (i = 0; i < dsets[block.hdr.did].ndim; i++) {
-				bsize *= block.sels.back ().count[i];
+			// Calculate total size of the selection block
+			bsize = 1;	// Size is 1 for scalar
+			if (block.sels.size ()) {
+				// Total selection size = size of last block + off of last block
+				for (i = 0; i < dsets[block.hdr.did].ndim; i++) {
+					bsize *= block.sels.back ().count[i];
+				}
+				bsize += block.sels.back ().doff;
 			}
-			bsize += block.sels.back ().doff;
 			bsize *= dsets[block.hdr.did].esize;
 
 			if (dbsize < bsize) {
