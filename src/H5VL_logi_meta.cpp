@@ -50,7 +50,7 @@ herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 	H5VL_logi_llreverse ((uint64_t *)bufp);
 #endif
 	roff	   = *((MPI_Offset *)bufp);
-	block.sels = bcache[bufp + roff];
+	block.sels = bcache[(char *)ent + roff];
 
 	// Overwrite first dim if it is rec entry
 	if (block.hdr.flag & H5VL_LOGI_META_FLAG_REC) {
