@@ -459,30 +459,35 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 #endif
 		// Deduplication
 		H5VL_LOGI_PROFILING_TIMER_START;
-		if (selsize > sizeof (MPI_Offset)) {  // If selection larger than reference
-			auto ret = dp->fp->wreq_hash.find (*r);
-			if (ret == dp->fp->wreq_hash.end ()) {
-				dp->fp->wreq_hash[*r] = r;
-			} else {
-				r->hdr->flag |= H5VL_LOGI_META_FLAG_SEL_REF;
-				r->hdr->flag &= ~(H5VL_LOGI_META_FLAG_SEL_DEFLATE);	 // Remove compression flag
-				if (r->hdr->flag & H5VL_LOGI_META_FLAG_REC) {
-					// If same record, we can remove the record field and make it a full reference
-					if (*((MPI_Offset *)(r->hdr + 1)) == *((MPI_Offset *)(ret->second->hdr + 1))) {
-						r->sel_buf -= sizeof (MPI_Offset);
+		if (dp->fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
+			if (selsize > sizeof (MPI_Offset)) {  // If selection larger than reference
+				auto ret = dp->fp->wreq_hash.find (*r);
+				if (ret == dp->fp->wreq_hash.end ()) {
+					dp->fp->wreq_hash[*r] = r;
+				} else {
+					r->hdr->flag |= H5VL_LOGI_META_FLAG_SEL_REF;
+					r->hdr->flag &= ~(H5VL_LOGI_META_FLAG_SEL_DEFLATE);	 // Remove compression flag
+					if (r->hdr->flag & H5VL_LOGI_META_FLAG_REC) {
+						// If same record, we can remove the record field and make it a full
+						// reference
+						if (*((MPI_Offset *)(r->hdr + 1)) ==
+							*((MPI_Offset *)(ret->second->hdr + 1))) {
+							r->sel_buf -= sizeof (MPI_Offset);
+						}
 					}
-				}
-				*((MPI_Offset *)(r->sel_buf)) =
-					ret->second->meta_off - dp->fp->mdsize;	 // Record the relative offset
+					*((MPI_Offset *)(r->sel_buf)) =
+						ret->second->meta_off - dp->fp->mdsize;	 // Record the relative offset
 #ifdef WORDS_BIGENDIAN
-				H5VL_logi_llreverse ((uint64_t *)(r->sel_buf));
+					H5VL_logi_llreverse ((uint64_t *)(r->sel_buf));
 #endif
-				selsize = sizeof (MPI_Offset);	// New metadata size
+					selsize = sizeof (MPI_Offset);	// New metadata size
 #ifdef LOGVOL_PROFILING
-				// Count size saved by duplication
-				H5VL_log_profile_add_time (dp->fp, TIMER_H5VL_LOG_FILEI_METASIZE_DEDUP,
-										   (double)(r->sel_buf - r->meta_buf + selsize) / 1048576);
+					// Count size saved by duplication
+					H5VL_log_profile_add_time (
+						dp->fp, TIMER_H5VL_LOG_FILEI_METASIZE_DEDUP,
+						(double)(r->sel_buf - r->meta_buf + selsize) / 1048576);
 #endif
+				}
 			}
 		}
 		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_META_DEDUP);
