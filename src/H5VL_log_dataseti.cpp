@@ -517,7 +517,7 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 #endif
 			} else {
 				// Compressed size larger, abort compression
-				r->hdr->flag &= ~(H5VL_FILEI_CONFIG_SEL_DEFLATE);
+				r->hdr->flag &= ~(H5VL_LOGI_META_FLAG_SEL_DEFLATE);
 			}
 		}
 		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_META_ZIP);
