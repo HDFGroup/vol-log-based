@@ -35,7 +35,7 @@ class H5VL_log_selections {
 				 int dimoff = 0);  // Encode the selection according to logvol metadata format
 
    private:
-	hsize_t *sels_arr = NULL;  // Allocated starts and counts array, if present, need free
+	hsize_t **sels_arr = NULL;	// Allocated starts and counts pointer array, if present, need free
 
 	void alloc (int nsel);	  // Allocate space for nsel blocks
 	void convert_to_deep ();  // Coverts a shallow copy to deep copy

@@ -329,9 +329,10 @@ err_out:;
 }
 
 H5VL_log_selections::~H5VL_log_selections () {
-	if (starts) {
+	if (sels_arr) {
+		if (starts[0]) { free (starts[0]); }
 		free (starts);
-		if (sels_arr) { free (sels_arr); }
+		sels_arr = NULL;
 	}
 }
 
@@ -340,8 +341,9 @@ H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
 
 	// Deallocate existing start and count array
 	if (sels_arr) {
-		free (sels_arr);
+		if (starts[0]) { free (starts[0]); }
 		free (starts);
+		sels_arr = NULL;
 	}
 
 	this->nsel = rhs.nsel;
@@ -351,9 +353,6 @@ H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
 		this->alloc (nsel);
 
 		// Copy the data
-		memcpy (starts, rhs.starts, sizeof (hsize_t *) * nsel);
-		memcpy (counts, rhs.counts, sizeof (hsize_t *) * nsel);
-
 		for (i = 0; i < nsel; i++) {
 			memcpy (starts[i], rhs.starts[i], sizeof (hsize_t) * ndim);
 			memcpy (counts[i], rhs.counts[i], sizeof (hsize_t) * ndim);
@@ -389,14 +388,15 @@ void H5VL_log_selections::alloc (int nsel) {
 	int i;
 
 	if (nsel) {
-		this->starts = (hsize_t **)malloc (sizeof (hsize_t *) * nsel * 2);
-		CHECK_PTR (starts)
+		this->starts = sels_arr = (hsize_t **)malloc (sizeof (hsize_t *) * nsel * 2);
+		CHECK_PTR (sels_arr)
 		this->counts = this->starts + nsel;
 		if (ndim) {
-			sels_arr = (hsize_t *)malloc (sizeof (hsize_t) * nsel * ndim * 2);
-			CHECK_PTR (sels_arr)
+			this->starts[0] = (hsize_t *)malloc (sizeof (hsize_t) * nsel * ndim * 2);
+			CHECK_PTR (this->starts[0])
+		} else {
+			this->starts[0] = NULL;
 		}
-		this->starts[0] = sels_arr;
 		this->counts[0] = this->starts[0] + nsel * ndim;
 		for (i = 1; i < nsel; i++) {
 			starts[i] = starts[i - 1] + ndim;
@@ -425,9 +425,6 @@ void H5VL_log_selections::convert_to_deep () {
 		this->alloc (nsel);
 
 		// Copy the data
-		memcpy (starts, starts_tmp, sizeof (hsize_t *) * nsel);
-		memcpy (counts, counts_tmp, sizeof (hsize_t *) * nsel);
-
 		for (i = 0; i < nsel; i++) {
 			memcpy (starts[i], starts_tmp[i], sizeof (hsize_t) * ndim);
 			memcpy (counts[i], counts_tmp[i], sizeof (hsize_t) * ndim);
