@@ -101,7 +101,7 @@ void *H5VL_log_file_create (
 	// Make sure we have mpi enabled
 	err = H5Pget_fapl_mpio (fapl_id, &comm, &mpiinfo);
 	if (err != 0) {	 // No MPI, use MPI_COMM_WORLD
-		comm	= MPI_COMM_WORLD;
+		comm	= MPI_COMM_SELF;
 		mpiinfo = MPI_INFO_NULL;
 	}
 
@@ -237,7 +237,7 @@ err_out:;
 	if (fp) { delete fp; }
 	fp = NULL;
 fn_exit:;
-	if (comm != MPI_COMM_WORLD) { MPI_Comm_free (&comm); }
+	if (comm != MPI_COMM_SELF) { MPI_Comm_free (&comm); }
 	if (mpiinfo != MPI_INFO_NULL) { MPI_Info_free (&mpiinfo); }
 	if (info) { free (info); }
 
@@ -308,7 +308,7 @@ void *H5VL_log_file_open (
 	// Make sure we have mpi enabled
 	err = H5Pget_fapl_mpio (fapl_id, &comm, &mpiinfo);
 	if (err != 0) {	 // No MPI, use MPI_COMM_WORLD
-		comm	= MPI_COMM_WORLD;
+		comm	= MPI_COMM_SELF;
 		mpiinfo = MPI_INFO_NULL;
 	}
 
@@ -365,7 +365,7 @@ err_out:;
 	if (fp) { delete fp; }
 	fp = NULL;
 fn_exit:;
-	if (comm != MPI_COMM_WORLD) { MPI_Comm_free (&comm); }
+	if (comm != MPI_COMM_SELF) { MPI_Comm_free (&comm); }
 	if (mpiinfo != MPI_INFO_NULL) { MPI_Info_free (&mpiinfo); }
 	if (info) { free (info); }
 	return (void *)fp;
