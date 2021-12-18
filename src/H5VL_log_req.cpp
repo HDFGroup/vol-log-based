@@ -167,7 +167,7 @@ herr_t H5VL_log_request_specific (void *obj, H5VL_request_specific_args_t *args)
 		case H5VL_REQUEST_GET_EXEC_TIME:
 		// break;
 		default:
-			RET_ERR ("specific_type not supported")
+			RET_ERR ("args->op_type not supported")
 	}
 
 err_out:;

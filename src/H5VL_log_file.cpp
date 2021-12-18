@@ -391,7 +391,7 @@ herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id,
 		char vname[2][128];
 		ssize_t nsize;
 
-		nsize = H5Iget_name (args->get_type, vname[0], 128);
+		nsize = H5Iget_name (args->op_type, vname[0], 128);
 		if (nsize == 0) {
 			sprintf (vname[0], "Unnamed_Object");
 		} else if (nsize < 0) {
@@ -443,7 +443,7 @@ herr_t H5VL_log_file_specific (void *file,
 		char vname[2][128];
 		ssize_t nsize;
 
-		nsize = H5Iget_name (specific_type, vname[0], 128);
+		nsize = H5Iget_name (args->op_type, vname[0], 128);
 		if (nsize == 0) {
 			sprintf (vname[0], "Unnamed_Object");
 		} else if (nsize < 0) {
@@ -510,7 +510,7 @@ herr_t H5VL_log_file_specific (void *file,
 			break;
 		} break;
 		default:
-			ERR_OUT ("Unsupported specific_type")
+			ERR_OUT ("Unsupported args->op_type")
 	} /* end select */
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_SPECIFIC);
@@ -538,7 +538,7 @@ herr_t H5VL_log_file_optional (void *file, H5VL_optional_args_t *args, hid_t dxp
 		char vname[2][128];
 		ssize_t nsize;
 
-		nsize = H5Iget_name (opt_type, vname[0], 128);
+		nsize = H5Iget_name (args->op_type, vname[0], 128);
 		if (nsize == 0) {
 			sprintf (vname[0], "Unnamed_Object");
 		} else if (nsize < 0) {

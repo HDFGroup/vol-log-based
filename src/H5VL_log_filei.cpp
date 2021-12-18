@@ -517,19 +517,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 #ifdef LOGVOL_VERBOSE_DEBUG
-	{
-		char vname[1][128];
-		ssize_t nsize;
-
-		nsize = H5Iget_name (dxpl_id, vname[0], 128);
-		if (nsize == 0) {
-			sprintf (vname[0], "Unnamed_Object");
-		} else if (nsize < 0) {
-			sprintf (vname[0], "Unknown_Object");
-		}
-
-		printf ("H5VL_log_file_close(%p, %s, %p, ...)\n", file, vname[0], req);
-	}
+	{ printf ("H5VL_log_filei_close(%p, ...)\n", fp); }
 #endif
 
 	if (fp->flag != H5F_ACC_RDONLY) {

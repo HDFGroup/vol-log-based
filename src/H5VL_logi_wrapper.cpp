@@ -43,7 +43,7 @@ herr_t H5VL_logi_dataset_specific_wrapper(void *obj, hid_t connector_id,
 H5VL_dataset_specific_args_t *args, hid_t dxpl_id, void **req, ...) { herr_t err = 0; va_list args;
 
 	va_start(args, req);
-	err = H5VLdataset_specific(obj, connector_id, specific_type, dxpl_id, req, args);
+	err = H5VLdataset_specific(obj, connector_id, args->op_type, dxpl_id, req, args);
 	va_end(args);
 
 	return err;
@@ -64,7 +64,7 @@ connector_id, H5VL_link_specific_args_t *args, hid_t dxpl_id, void **req, ...) {
 	va_list args;
 
 	va_start(args, req);
-	err = H5VLlink_specific(obj, loc_params, connector_id, specific_type, dxpl_id, req, args);
+	err = H5VLlink_specific(obj, loc_params, connector_id, args->op_type, dxpl_id, req, args);
 	va_end(args);
 
 	return err;

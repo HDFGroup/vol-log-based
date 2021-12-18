@@ -182,7 +182,7 @@ herr_t H5VL_log_optional (void *obj, H5VL_optional_args_t *args, hid_t dxpl_id, 
 		} else if (nsize < 0) {
 			sprintf (vname, "Unknown_Object");
 		}
-		printf ("H5VL_log_optional(%p,%d,%s,%p,...\n", obj, op_type, vname, req);
+		printf ("H5VL_log_optional(%p,%d,%s,%p,...\n", obj, args->op_type, vname, req);
 	}
 #endif
 

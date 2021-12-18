@@ -146,7 +146,7 @@ herr_t H5VL_log_object_get (void *obj,
 		char vname[2][128];
 		ssize_t nsize;
 
-		nsize = H5Iget_name (args->get_type, vname[0], 128);
+		nsize = H5Iget_name (args->op_type, vname[0], 128);
 		if (nsize == 0) {
 			sprintf (vname[0], "Unnamed_Object");
 		} else if (nsize < 0) {
@@ -187,7 +187,7 @@ herr_t H5VL_log_object_specific (void *obj,
 		char vname[2][128];
 		ssize_t nsize;
 
-		nsize = H5Iget_name (specific_type, vname[0], 128);
+		nsize = H5Iget_name (args->op_type, vname[0], 128);
 		if (nsize == 0) {
 			sprintf (vname[0], "Unnamed_Object");
 		} else if (nsize < 0) {
@@ -228,7 +228,7 @@ herr_t H5VL_log_object_optional (void *obj,
 		char vname[2][128];
 		ssize_t nsize;
 
-		nsize = H5Iget_name (opt_type, vname[0], 128);
+		nsize = H5Iget_name (args->op_type, vname[0], 128);
 		if (nsize == 0) {
 			sprintf (vname[0], "Unnamed_Object");
 		} else if (nsize < 0) {
