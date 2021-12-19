@@ -493,20 +493,7 @@ herr_t H5VL_log_file_specific (void *file,
 			H5Pclose (under_fapl_id);
 		} break;
 		case H5VL_FILE_FLUSH: {
-			// Flush all merged requests
-			for (i = 0; i < (int)(fp->mreqs.size ()); i++) {
-				if (fp->mreqs[i] && (fp->mreqs[i]->nsel > 0)) {
-					fp->wreqs.push_back (fp->mreqs[i]);
-					// Update total metadata size in wreqs
-					fp->mdsize += fp->mreqs[i]->hdr->meta_size;
-					fp->mreqs[i] = new H5VL_log_merged_wreq_t (fp, i, 1);
-				}
-			}
-			if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
-				err = H5VL_log_nb_flush_write_reqs_align (fp, dxpl_id);
-			} else {
-				err = H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
-			}
+			err = H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
 			break;
 		} break;
 		default:

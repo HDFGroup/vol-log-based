@@ -636,6 +636,16 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
+	// Flush all merged requests
+	for (i = 0; i < (int)(fp->mreqs.size ()); i++) {
+		if (fp->mreqs[i] && (fp->mreqs[i]->nsel > 0)) {
+			fp->wreqs.push_back (fp->mreqs[i]);
+			// Update total metadata size in wreqs
+			fp->mdsize += fp->mreqs[i]->hdr->meta_size;
+			fp->mreqs[i] = new H5VL_log_merged_wreq_t (fp, i, 1);
+		}
+	}
+
 	// Calculate number of blocks in mtype
 	cnt = 0;
 	for (i = fp->nflushed; i < (int)(fp->wreqs.size ()); i++) {
