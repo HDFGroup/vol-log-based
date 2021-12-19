@@ -16,8 +16,8 @@
 /*******************/
 
 /* PNC VOL connector class struct */
-const H5VL_class_t H5VL_log_g = {H5VL_log_VERSION,					 /* version      */
-								 (H5VL_class_value_t)H5VL_log_VALUE, /* value        */
+const H5VL_class_t H5VL_log_g = {H5VL_log_APIVER,					 /* version      */
+								 (H5VL_class_value_t)H5VL_log_REGID, /* value        */
 								 H5VL_log_NAME,						 /* name         */
 								 0,					/* Version # of connector                   */
 								 0,					/* capability flags */
@@ -68,7 +68,7 @@ herr_t H5VL_log_init (hid_t vipl_id) {
 	herr_t err = 0;
 	int mpierr;
 	// H5VL_log_req_type_t blocking = H5VL_LOG_REQ_BLOCKING;
-	//ssize_t infty = LOG_VOL_BSIZE_UNLIMITED;
+	// ssize_t infty = LOG_VOL_BSIZE_UNLIMITED;
 	// htri_t exist;
 
 	mpierr = MPI_Initialized (&mpi_inited);
