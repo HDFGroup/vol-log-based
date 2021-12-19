@@ -491,6 +491,7 @@ AC_CONFIG_FILES(Makefile \
                 test/Makefile \
                 test/basic/Makefile \
                 test/dynamic/Makefile \
+                test/testcases/Makefile \
                 utils/Makefile \
                 utils/h5ldump/Makefile \
                 utils/h5lreplay/Makefile \

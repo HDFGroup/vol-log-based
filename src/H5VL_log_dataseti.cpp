@@ -123,6 +123,7 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 		if (blocks[i].zbuf) {
 			newgroup[i] = true;
 		} else if ((blocks[i].foff == blocks[i + 1].foff) &&
+				   (blocks[i].doff == blocks[i + 1].doff) &&
 				   interleve (blocks[i].info->ndim, blocks[i].dstart, blocks[i].count,
 							  blocks[i + 1].dstart)) {
 			newgroup[i] = false;
@@ -230,8 +231,12 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 
 					memset (ctr, 0, sizeof (MPI_Offset) * blocks[i].info->ndim);
 					while (ctr[0] < blocks[j].count[0]) {  // Foreach row
-						lens[nt] =
-							blocks[j].count[blocks[i].info->ndim - 1] * blocks[j].info->esize;
+						if (blocks[i].info->ndim) {
+							lens[nt] =
+								blocks[j].count[blocks[i].info->ndim - 1] * blocks[j].info->esize;
+						} else {
+							lens[nt] = blocks[j].info->esize;
+						}
 						foffs[nt] = blocks[j].foff + blocks[j].doff;
 						moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
 						for (k = 0; k < (int32_t) (blocks[i].info->ndim);
@@ -243,7 +248,8 @@ herr_t H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t>
 						mtypes[nt] = MPI_BYTE;
 						nt++;
 
-						ctr[blocks[i].info->ndim - 2]++;  // Move to next position
+						if (blocks[i].info->ndim < 2) break;  // Special case for < 2-D
+						ctr[blocks[i].info->ndim - 2]++;	  // Move to next position
 						for (k = blocks[i].info->ndim - 2; k > 0; k--) {
 							if (ctr[k] >= blocks[j].count[k]) {
 								ctr[k] = 0;

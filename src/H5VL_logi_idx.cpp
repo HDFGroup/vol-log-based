@@ -10,9 +10,9 @@
 bool H5VL_log_idx_search_ret_t::operator< (const H5VL_log_idx_search_ret_t &rhs) const {
 	int i;
 
-	if (foff < rhs.foff)
+	if (foff + doff < rhs.foff + rhs.doff)
 		return true;
-	else if (foff > rhs.foff)
+	else if (foff + doff > rhs.foff + rhs.doff)
 		return false;
 
 	for (i = 0; i < (int)(info->ndim); i++) {
