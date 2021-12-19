@@ -839,7 +839,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 		*/
 
 		// Mark the metadata flag to dirty (unflushed metadata)
-		if (fsize_group) { fp->metadirty = true; }
+		if (fsize_all) { fp->metadirty = true; }
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS);
