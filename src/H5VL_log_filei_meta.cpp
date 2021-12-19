@@ -225,7 +225,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		H5VL_LOGI_PROFILING_TIMER_START;
 		// This barrier is required to ensure no process read metadata before everyone finishes
 		// writing
-		MPI_Barrier (MPI_COMM_WORLD);
+		MPI_Barrier (fp->comm);
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_BARRIER);
 	}
 
