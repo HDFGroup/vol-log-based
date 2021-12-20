@@ -99,6 +99,33 @@ APIs not listed below is assumed to be unsupported.
 ### Group APIs (H5G*)
 * All group APIs are Highy supported (Full).
 
+### Link APIs (H5L*)
+
+| API                 | Level of Support | Notes |
+|---------------------|------------------|-------|
+| H5Lcreate_hard      | None             |       |
+| H5Lcreate_soft      | None             |       |
+| H5Lcreate_external  | None             |       |
+| H5Lexists           | High             |       |
+| H5Lmove             | None             |       |
+| H5Lcopy             | None             |       |
+| H5Ldelete           | None             |       |
+| H5Lget_info         | Full             |       |
+| H5Lget_val          | Full             |       |
+| H5Lunpack_elink_val | None             |       |
+| H5Lcreate_ud        | None             |       |
+| H5Lregister         | None             |       |
+| H5Lunregister       | None             |       |
+| H5Lis_registered    | None             |       |
+| H5Literate          | None             |       |
+| H5Literate_by_name  | None             |       |
+| H5Lvisit            | None             |       |
+| H5Lvisit_by_name    | None             |       |
+| H5Lget_info_by_idx  | Full             |       |
+| H5Lget_name_by_idx  | Full             |       |
+| H5Lget_val_by_idx   | Full             |       |
+| H5Ldelete_by_idx    | None             |       |
+
 ### Object APIs (H5O*)
 
 | API                         | Level of Support | Notes                                                                          |
@@ -109,6 +136,7 @@ APIs not listed below is assumed to be unsupported.
 | H5Olink                     | None             |                                                                                |
 | H5Oclose                    | High             | If the object is a file, H5Fclose limitations apply.                           |
 | H5Ocopy                     | None             |                                                                                |
+| H5Oexists_by_name           | Full             |                                                                                |
 | H5Ovisit                    | None             |                                                                                |
 | H5Ovisit_by_name            | None             |                                                                                |
 | H5Oset_comment *            | None             |                                                                                |
