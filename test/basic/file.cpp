@@ -1,7 +1,7 @@
 #include <hdf5.h>
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 
 #include "H5VL_log.h"
 #include "testutils.hpp"
@@ -46,11 +46,14 @@ int main (int argc, char **argv) {
 	CHECK_ERR (fid)
 	err = H5Fclose (fid);
 	CHECK_ERR (err)
-    fid=-1;
-    
+	fid = -1;
+
 	// Open file
-	// fid = H5Fopen(file_name, H5F_ACC_RDONLY, faplid);    CHECK_ERR(fid)
-	// err = H5Fclose(fid); CHECK_ERR(err)
+	fid = H5Fopen (file_name, H5F_ACC_RDONLY, faplid);
+	CHECK_ERR (fid)
+	err = H5Fclose (fid);
+	CHECK_ERR (err)
+	fid = -1;
 
 err_out:
 	if (fid >= 0) H5Fclose (fid);
