@@ -93,8 +93,8 @@ herr_t H5VL_log_info_free (void *_info) {
 	H5VL_log_info_t *info = (H5VL_log_info_t *)_info;
 	hid_t err_id;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("H5VL_log_info_free(%p)\n", _info);
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_info_free(%p)\n", _info); }
 #endif
 
 	/* Release MPI_Info */
@@ -130,8 +130,8 @@ herr_t H5VL_log_info_to_str (const void *_info, char **str) {
 	char *under_vol_string		   = NULL;
 	size_t under_vol_str_len	   = 0;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("H5VL_log_info_to_str(%p, %p)\n", _info, str);
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_info_to_str(%p, %p)\n", _info, str); }
 #endif
 
 	/* Get value and string for underlying VOL connector */
@@ -173,8 +173,8 @@ herr_t H5VL_log_str_to_info (const char *str, void **_info) {
 	hid_t uvlid;
 	void *under_vol_info = NULL;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("H5VL_log_str_to_info(%s, %p)\n", str, _info);
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_str_to_info(%s, %p)\n", str, _info); }
 #endif
 
 	/* Retrieve the underlying VOL connector value and info */

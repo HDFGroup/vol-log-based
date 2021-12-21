@@ -516,7 +516,8 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
+#ifdef LOGVOL_DEBUG
+if (H5VL_logi_debug_verbose ())
 	{ printf ("H5VL_log_filei_close(%p, ...)\n", fp); }
 #endif
 

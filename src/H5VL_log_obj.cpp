@@ -37,8 +37,8 @@ void *H5VL_log_object_open (void *obj,
 	// herr_t err = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	void *uo;
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[128];
 		ssize_t nsize;
 
@@ -89,8 +89,8 @@ herr_t H5VL_log_object_copy (void *src_obj,
 	H5VL_log_obj_t *o_src = (H5VL_log_obj_t *)src_obj;
 	H5VL_log_obj_t *o_dst = (H5VL_log_obj_t *)dst_obj;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[3][128];
 		ssize_t nsize;
 
@@ -141,8 +141,8 @@ herr_t H5VL_log_object_get (void *obj,
 							hid_t dxpl_id,
 							void **req) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[2][128];
 		ssize_t nsize;
 
@@ -182,8 +182,8 @@ herr_t H5VL_log_object_specific (void *obj,
 								 hid_t dxpl_id,
 								 void **req) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[2][128];
 		ssize_t nsize;
 
@@ -223,8 +223,8 @@ herr_t H5VL_log_object_optional (void *obj,
 								 hid_t dxpl_id,
 								 void **req) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[2][128];
 		ssize_t nsize;
 

@@ -35,8 +35,10 @@ herr_t H5VL_log_token_cmp (void *obj,
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	herr_t ret_value;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("H5VL_log_token_cmp(%p, %p, %p, %p)\n", obj, token1, token2, cmp_value);
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
+		printf ("H5VL_log_token_cmp(%p, %p, %p, %p)\n", obj, token1, token2, cmp_value);
+	}
 #endif
 
 	/* Sanity checks */
@@ -67,8 +69,8 @@ herr_t H5VL_log_token_to_str (void *obj,
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	herr_t ret_value;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char objname[128];
 		ssize_t nsize;
 
@@ -110,8 +112,8 @@ herr_t H5VL_log_token_from_str (void *obj,
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	herr_t ret_value;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char objname[128];
 		ssize_t nsize;
 

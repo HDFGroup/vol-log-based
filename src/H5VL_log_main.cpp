@@ -171,8 +171,8 @@ herr_t H5VL_log_optional (void *obj, H5VL_optional_args_t *args, hid_t dxpl_id, 
 	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
 	herr_t ret_value;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[128];
 		ssize_t nsize;
 

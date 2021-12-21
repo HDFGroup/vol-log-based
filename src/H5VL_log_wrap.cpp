@@ -31,8 +31,8 @@ const H5VL_wrap_class_t H5VL_log_wrap_g {
  */
 void *H5VL_log_get_object (const void *obj) {
 	const H5VL_log_obj_t *op = (const H5VL_log_obj_t *)obj;
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("H5VL_log_get_object(%p)\n", obj);
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_get_object(%p)\n", obj); }
 #endif
 	return H5VLget_object (op->uo, op->uvlid);
 } /* end H5VL_log_get_object() */
@@ -52,8 +52,8 @@ herr_t H5VL_log_get_wrap_ctx (const void *obj, void **wrap_ctx) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	H5VL_log_obj_t *ctx;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("H5VL_log_get_wrap_ctx(%p,%p)\n", obj, wrap_ctx);
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_get_wrap_ctx(%p,%p)\n", obj, wrap_ctx); }
 #endif
 
 	/* Allocate new VOL object wrapping context for the pass through connector */
@@ -87,8 +87,8 @@ void *H5VL_log_wrap_object (void *obj, H5I_type_t type, void *_wrap_ctx) {
 	H5VL_log_obj_t *wop = NULL;
 	void *uo;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[128];
 		ssize_t nsize;
 
@@ -133,8 +133,8 @@ void *H5VL_log_unwrap_object (void *obj) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	void *uo;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("H5VL_log_unwrap_object(%p)\n", obj);
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_unwrap_object(%p)\n", obj); }
 #endif
 
 	/* Unrap the object with the underlying VOL */
@@ -167,8 +167,8 @@ herr_t H5VL_log_free_wrap_ctx (void *_wrap_ctx) {
 	herr_t err			= 0;
 	H5VL_log_obj_t *ctx = (H5VL_log_obj_t *)_wrap_ctx;
 	hid_t err_id;
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("H5VL_log_free_wrap_ctx(%p)\n", _wrap_ctx);
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_free_wrap_ctx(%p)\n", _wrap_ctx); }
 #endif
 	err_id = H5Eget_current_stack ();
 

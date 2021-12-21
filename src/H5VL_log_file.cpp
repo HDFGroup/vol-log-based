@@ -53,8 +53,8 @@ void *H5VL_log_file_create (
 	int attbuf[5];
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[3][128];
 		ssize_t nsize;
 
@@ -267,8 +267,8 @@ void *H5VL_log_file_open (
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[3][128];
 		ssize_t nsize;
 
@@ -386,8 +386,8 @@ herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id,
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[2][128];
 		ssize_t nsize;
 
@@ -438,8 +438,8 @@ herr_t H5VL_log_file_specific (void *file,
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[2][128];
 		ssize_t nsize;
 
@@ -520,8 +520,8 @@ herr_t H5VL_log_file_optional (void *file, H5VL_optional_args_t *args, hid_t dxp
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	{
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
 		char vname[2][128];
 		ssize_t nsize;
 

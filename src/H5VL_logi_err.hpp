@@ -3,15 +3,15 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
+#include <cstdlib>
+#include <cstring>
+//
 #include <H5Epublic.h>
-
+//
 #ifdef LOGVOL_DEBUG
 #include <mpi.h>
 
 #include <cassert>
-#include <cstdlib>
-#include <cstring>
 #define LOG_VOL_ASSERT(A) assert (A);
 #else
 #define LOG_VOL_ASSERT(A) \
@@ -26,6 +26,11 @@ inline void H5VL_logi_print_err (int line, char *file, char *msg) {
 		printf ("Error at line %d in %s:\n", line, file);
 	}
 #endif
+}
+
+inline bool H5VL_logi_debug_verbose () {
+	char *val = getenv ("LOGVOL_VERBOSE_DEBUG");
+	return strcmp (val, "1") == 0;
 }
 
 #define CHECK_ERR                                                   \

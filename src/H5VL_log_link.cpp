@@ -74,8 +74,8 @@ herr_t H5VL_log_link_create (H5VL_link_create_args_t *args,
 	hid_t uvlid		  = -1;
 	herr_t err		  = 0;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("------- LOG VOL LINK Create\n");
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Create\n"); }
 #endif
 
 	/* Try to retrieve the "under" VOL id */
@@ -140,8 +140,8 @@ herr_t H5VL_log_link_copy (void *src_obj,
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("------- LOG VOL LINK Copy\n");
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Copy\n"); }
 #endif
 
 	if (req) {
@@ -201,8 +201,8 @@ herr_t H5VL_log_link_move (void *src_obj,
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("------- LOG VOL LINK Move\n");
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Move\n"); }
 #endif
 
 	if (req) {
@@ -252,8 +252,8 @@ herr_t H5VL_log_link_get (void *obj,
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("------- LOG VOL LINK Get\n");
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Get\n"); }
 #endif
 
 	if (req) {
@@ -294,8 +294,8 @@ herr_t H5VL_log_link_specific (void *obj,
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("------- LOG VOL LINK Specific\n");
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Specific\n"); }
 #endif
 
 	if (req) {
@@ -336,8 +336,8 @@ herr_t H5VL_log_link_optional (void *obj,
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("------- LOG VOL LINK Optional\n");
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Optional\n"); }
 #endif
 
 	if (req) {

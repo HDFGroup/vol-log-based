@@ -25,9 +25,11 @@ const H5VL_blob_class_t H5VL_log_blob_g {
  */
 herr_t H5VL_log_blob_put (void *obj, const void *buf, size_t size, void *blob_id, void *ctx) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("H5VL_log_blob_put(%p, %p, %llu, %p, %p)\n", obj, buf, ((long long unsigned int)size),
-			blob_id, ctx);
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
+		printf ("H5VL_log_blob_put(%p, %p, %llu, %p, %p)\n", obj, buf,
+				((long long unsigned int)size), blob_id, ctx);
+	}
 #endif
 	return H5VLblob_put (op->uo, op->uvlid, buf, size, blob_id, ctx);
 } /* end H5VL_log_blob_put() */
@@ -43,9 +45,11 @@ herr_t H5VL_log_blob_put (void *obj, const void *buf, size_t size, void *blob_id
  */
 herr_t H5VL_log_blob_get (void *obj, const void *blob_id, void *buf, size_t size, void *ctx) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("H5VL_log_blob_get(%p, %p, %p, %llu, %p)\n", obj, blob_id, buf,
-			((long long unsigned int)size), ctx);
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
+		printf ("H5VL_log_blob_get(%p, %p, %p, %llu, %p)\n", obj, blob_id, buf,
+				((long long unsigned int)size), ctx);
+	}
 #endif
 	return H5VLblob_get (op->uo, op->uvlid, blob_id, buf, size, ctx);
 } /* end H5VL_log_blob_get() */
@@ -61,20 +65,22 @@ herr_t H5VL_log_blob_get (void *obj, const void *blob_id, void *buf, size_t size
  */
 herr_t H5VL_log_blob_specific (void *obj, void *blob_id, H5VL_blob_specific_args_t *args) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-#ifdef LOGVOL_VERBOSE_DEBUG
-	char sname[32];
-	switch (args->op_type) {
-		case H5VL_BLOB_DELETE:
-			sprintf (sname, "H5VL_BLOB_DELETE");
-			break;
-		case H5VL_BLOB_ISNULL:
-			sprintf (sname, "H5VL_BLOB_ISNULL");
-			break;
-		case H5VL_BLOB_SETNULL:
-			sprintf (sname, "H5VL_BLOB_SETNULL");
-			break;
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
+		char sname[32];
+		switch (args->op_type) {
+			case H5VL_BLOB_DELETE:
+				sprintf (sname, "H5VL_BLOB_DELETE");
+				break;
+			case H5VL_BLOB_ISNULL:
+				sprintf (sname, "H5VL_BLOB_ISNULL");
+				break;
+			case H5VL_BLOB_SETNULL:
+				sprintf (sname, "H5VL_BLOB_SETNULL");
+				break;
+		}
+		printf ("H5VL_log_blob_specific(%p, %p, %s, ...)\n", obj, blob_id, sname);
 	}
-	printf ("H5VL_log_blob_specific(%p, %p, %s, ...)\n", obj, blob_id, sname);
 #endif
 	return H5VLblob_specific (op->uo, op->uvlid, blob_id, args);
 } /* end H5VL_log_blob_specific() */
@@ -90,8 +96,10 @@ herr_t H5VL_log_blob_specific (void *obj, void *blob_id, H5VL_blob_specific_args
  */
 herr_t H5VL_log_blob_optional (void *obj, void *blob_id, H5VL_optional_args_t *args) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-#ifdef LOGVOL_VERBOSE_DEBUG
-	printf ("H5VL_log_blob_optional(%p, %p, %d, ...)\n", obj, blob_id, args->op_type);
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
+		printf ("H5VL_log_blob_optional(%p, %p, %d, ...)\n", obj, blob_id, args->op_type);
+	}
 #endif
 	return H5VLblob_optional (op->uo, op->uvlid, blob_id, args);
 } /* end H5VL_log_blob_optional() */
