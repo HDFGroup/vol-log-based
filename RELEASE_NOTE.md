@@ -6,6 +6,7 @@
     + run make ptest to run test programs in parallel.
   + Support data dump in h5ldump.
     + add -d command-line option to dump data of each selection block.
+  + Add utility script to set HDF5 environment to use log-based VOL.
 * New test programs.
   + Scalar.
     + Read/write scalar datasets.

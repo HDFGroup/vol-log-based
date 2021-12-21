@@ -463,6 +463,8 @@ else
 fi
 UD_MSG_DEBUG([CONFIG_DATE=$CONFIG_DATE])
 
+AC_SUBST(HDF5_LIB_PATH,${hdf5_lib})
+
 AC_SUBST(INSTALL_PREFIX,${prefix})
 AC_SUBST(INSTALL_EXEC_PREFIX,${exec_prefix})
 AC_SUBST(PACKAGE_NAME)
@@ -494,6 +496,8 @@ AC_CONFIG_FILES(Makefile \
                 test/testcases/Makefile \
                 utils/Makefile \
                 utils/h5ldump/Makefile \
+                utils/h5lenv.bash \
+                utils/h5lenv.csh \
                 utils/h5lreplay/Makefile \
                 utils/h5lconfig \
                 examples/Makefile \

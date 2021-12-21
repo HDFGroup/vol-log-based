@@ -1,0 +1,4 @@
+#!/bin/csh
+setenv HDF5_PLUGIN_PATH "@INSTALL_PREFIX@/lib"
+setenv HDF5_VOL_CONNECTOR "LOG under_vol=0;under_info={}"
+setenv LD_LIBRARY_PATH "@HDF5_LIB_PATH@":"${HDF5_PLUGIN_PATH}":${LD_LIBRARY_PATH}
