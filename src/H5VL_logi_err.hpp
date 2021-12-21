@@ -7,75 +7,70 @@
 #include <H5Epublic.h>
 
 #ifdef LOGVOL_DEBUG
+#include <mpi.h>
+
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include <cassert>
-#include <mpi.h>
-#define DEBUG_ABORT                                        \
-	{                                                      \
-		char *val = getenv ("LOGVOL_DEBUG_ABORT_ON_ERR");  \
-		if (val && (strcmp (val, "1") == 0)) { abort (); } \
-	}
-//#define LOGVOL_VERBOSE_DEBUG 1
-#else
-#define DEBUG_ABORT
-#endif
-
-#ifdef LOGVOL_DEBUG
 #define LOG_VOL_ASSERT(A) assert (A);
 #else
 #define LOG_VOL_ASSERT(A) \
 	{}
 #endif
 
-#define CHECK_ERR                                                     \
+inline void H5VL_logi_print_err (int line, char *file, char *msg) {
+#ifdef LOGVOL_DEBUG
+	if (msg) {
+		printf ("Error at line %d in %s: %s\n", line, file, msg);
+	} else {
+		printf ("Error at line %d in %s:\n", line, file);
+	}
+#endif
+}
+
+#define CHECK_ERR                                                   \
+	{                                                               \
+		if (err < 0) {                                              \
+			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL); \
+			H5Eprint1 (stdout);                                     \
+			goto err_out;                                           \
+		}                                                           \
+	}
+
+#define CHECK_MPIERR                                                  \
 	{                                                                 \
-		if (err < 0) {                                                \
-			printf ("Error at line %d in %s:\n", __LINE__, __FILE__); \
-			H5Eprint1 (stdout);                                       \
-			DEBUG_ABORT                                               \
+		if (mpierr != MPI_SUCCESS) {                                  \
+			int el = 256;                                             \
+			char errstr[256];                                         \
+			MPI_Error_string (mpierr, errstr, &el);                   \
+			H5VL_logi_print_err (__LINE__, (char *)__FILE__, errstr); \
+			err = -1;                                                 \
 			goto err_out;                                             \
 		}                                                             \
 	}
 
-#define CHECK_MPIERR                                                             \
-	{                                                                            \
-		if (mpierr != MPI_SUCCESS) {                                             \
-			int el = 256;                                                        \
-			char errstr[256];                                                    \
-			MPI_Error_string (mpierr, errstr, &el);                              \
-			printf ("Error at line %d in %s: %s\n", __LINE__, __FILE__, errstr); \
-			err = -1;                                                            \
-			DEBUG_ABORT                                                          \
-			goto err_out;                                                        \
-		}                                                                        \
+#define CHECK_ID(A)                                                 \
+	{                                                               \
+		if (A < 0) {                                                \
+			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL); \
+			H5Eprint1 (stdout);                                     \
+			goto err_out;                                           \
+		}                                                           \
 	}
 
-#define CHECK_ID(A)                                                   \
-	{                                                                 \
-		if (A < 0) {                                                  \
-			printf ("Error at line %d in %s:\n", __LINE__, __FILE__); \
-			H5Eprint1 (stdout);                                       \
-			DEBUG_ABORT                                               \
-			goto err_out;                                             \
-		}                                                             \
+#define CHECK_PTR(A)                                                \
+	{                                                               \
+		if (A == NULL) {                                            \
+			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL); \
+			H5Eprint1 (stdout);                                     \
+			goto err_out;                                           \
+		}                                                           \
 	}
 
-#define CHECK_PTR(A)                                                  \
-	{                                                                 \
-		if (A == NULL) {                                              \
-			printf ("Error at line %d in %s:\n", __LINE__, __FILE__); \
-			H5Eprint1 (stdout);                                       \
-			DEBUG_ABORT                                               \
-			goto err_out;                                             \
-		}                                                             \
-	}
-
-#define ERR_OUT(A)                                                      \
-	{                                                                   \
-		printf ("Error at line %d in %s: %s\n", __LINE__, __FILE__, A); \
-		DEBUG_ABORT                                                     \
-		goto err_out;                                                   \
+#define ERR_OUT(A)                                                   \
+	{                                                                \
+		H5VL_logi_print_err (__LINE__, (char *)__FILE__, (char *)A); \
+		goto err_out;                                                \
 	}
 
 #define RET_ERR(A)  \
