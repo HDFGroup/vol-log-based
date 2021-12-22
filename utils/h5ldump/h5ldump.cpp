@@ -62,10 +62,10 @@ int main (int argc, char *argv[]) {
 	CHECK_ERR
 
 	// Cleanup dataset contec
-	for (auto &d:dsets){
-		if(d.dtype!=-1){H5Tclose(d.dtype);}
+	for (auto &d : dsets) {
+		if (d.dtype != -1) { H5Tclose (d.dtype); }
 	}
-	
+
 err_out:;
 	return 0;
 }
@@ -77,19 +77,26 @@ herr_t h5ldump_file (std::string path,
 	herr_t err = 0;
 	int mpierr;
 	int i;
-	MPI_File fh = MPI_FILE_NULL;
-	hid_t fid	= -1;  // File ID
-	hid_t lgid	= -1;  // Log group ID
-	hid_t aid	= -1;  // File attribute ID
-	int ndset;		   // Number of user datasets
-	int nldset;		   // Number of data datasets
-	int nmdset;		   // Number of metadata datasets
-	int nsubfile;	   // Number of subfiles
-	int config;		   // File config flags
-	int att_buf[5];	   // attirbute buffer
+	MPI_File fh		 = MPI_FILE_NULL;
+	hid_t fid		 = -1;	// File ID
+	hid_t faplid	 = -1;	// File access property ID
+	hid_t nativevlid = -1;	// Native VOL ID
+	hid_t lgid		 = -1;	// Log group ID
+	hid_t aid		 = -1;	// File attribute ID
+	int ndset;				// Number of user datasets
+	int nldset;				// Number of data datasets
+	int nmdset;				// Number of metadata datasets
+	int nsubfile;			// Number of subfiles
+	int config;				// File config flags
+	int att_buf[5];			// attirbute buffer
+
+	// Always use native VOL
+	nativevlid = H5VLpeek_connector_id_by_name ("native");
+	faplid	   = H5Pcreate (H5P_FILE_ACCESS);
+	H5Pset_vol (faplid, nativevlid, NULL);
 
 	// Open the input file
-	fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, H5P_DEFAULT);
+	fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, faplid);
 	CHECK_ID (fid)
 
 	if (dumpdata) {
@@ -159,5 +166,6 @@ err_out:;
 	if (aid >= 0) { H5Aclose (aid); }
 	if (lgid >= 0) { H5Gclose (lgid); }
 	if (fid >= 0) { H5Fclose (fid); }
+	if (faplid >= 0) { H5Pclose (faplid); }
 	return err;
 }

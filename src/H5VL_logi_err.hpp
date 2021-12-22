@@ -30,7 +30,8 @@ inline void H5VL_logi_print_err (int line, char *file, char *msg) {
 
 inline bool H5VL_logi_debug_verbose () {
 	char *val = getenv ("LOGVOL_VERBOSE_DEBUG");
-	return strcmp (val, "1") == 0;
+	if (val) return strcmp (val, "1") == 0;
+	return false;
 }
 
 #define CHECK_ERR                                                   \
