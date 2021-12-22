@@ -32,15 +32,18 @@ herr_t H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf) {
 
 	if (fp->bsize != LOG_VOL_BSIZE_UNLIMITED) {
 		if (fp->bused + size > (size_t) (fp->bsize)) {
-			err = -1;
+			err	 = -1;
+			*buf = NULL;
 			ERR_OUT ("Out of buffer")
 		}
 	}
 
+	// The first sizeof (size_t) bytes are used to store the size of the buffer allocated so we can
+	// keep track of the total amount of buffer allocated
 	bp = (size_t *)malloc (size + sizeof (size_t));
 	if (bp == NULL) {
-		err = -1;
-
+		err	 = -1;
+		*buf = NULL;
 		ERR_OUT ("OOM")
 	}
 	*bp	 = size;
@@ -161,11 +164,16 @@ err_out:;
 herr_t H5VL_log_filei_bfree (H5VL_log_file_t *fp, void *buf) {
 	size_t *bp;
 
-	bp = ((size_t *)buf) - 1;
-	fp->bused -= bp[0];
-	free (bp);
+	if (buf) {
+		// The first sizeof (size_t) bytes are used to store the size of the buffer allocated, so
+		// the real buffer to free is sizeof (size_t) bytes before buf
+		bp = ((size_t *)buf) - 1;
+		fp->bused -= bp[0];
+		free (bp);
+		return 0;
+	}
 
-	return 0;
+	return -1;
 }
 
 herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
@@ -517,8 +525,7 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 #ifdef LOGVOL_DEBUG
-if (H5VL_logi_debug_verbose ())
-	{ printf ("H5VL_log_filei_close(%p, ...)\n", fp); }
+	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_filei_close(%p, ...)\n", fp); }
 #endif
 
 	if (fp->flag != H5F_ACC_RDONLY) {
