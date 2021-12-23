@@ -6,7 +6,6 @@
 #include <cstring>
 #include <string>
 
-#include "H5VL_log.h"
 #include "testutils.hpp"
 
 #define N 10
