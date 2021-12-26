@@ -48,6 +48,9 @@ void *H5VL_log_attr_create (void *obj,
 	void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
+	/* Check arguments */
+	H5VL_LOGI_CHECK_NAME (name);
+
 	ap = new H5VL_log_obj_t (op, H5I_ATTR);
 
 	if (req) {
@@ -98,6 +101,9 @@ void *H5VL_log_attr_open (void *obj,
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;
+
+	/* Check arguments */
+	H5VL_LOGI_CHECK_NAME (name);
 
 	ap = new H5VL_log_obj_t (op, H5I_ATTR);
 

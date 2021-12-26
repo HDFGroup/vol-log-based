@@ -68,6 +68,9 @@ void *H5VL_log_dataset_create (void *obj,
 	// char lname[1024];
 	H5VL_LOGI_PROFILING_TIMER_START;
 
+	/* Check arguments */
+	H5VL_LOGI_CHECK_NAME (name);
+
 	sid = H5Screate (H5S_SCALAR);
 	CHECK_ID (sid);
 	err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
@@ -189,6 +192,9 @@ void *H5VL_log_dataset_open (void *obj,
 	// herr_t err		   = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	void *uo		   = NULL;
+
+	/* Check arguments */
+	H5VL_LOGI_CHECK_NAME (name);
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 	uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);

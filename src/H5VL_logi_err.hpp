@@ -84,3 +84,8 @@ inline bool H5VL_logi_debug_verbose () {
 		err = -1;   \
 		ERR_OUT (A) \
 	}
+
+#define H5VL_LOGI_CHECK_NAME(name)                                \
+	{                                                             \
+		if (!name || name[0] == '_') { ERR_OUT ("Invalid name") } \
+	}

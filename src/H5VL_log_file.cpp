@@ -82,6 +82,9 @@ void *H5VL_log_file_create (
 	}
 #endif
 
+	/* Check arguments */
+	H5VL_LOGI_CHECK_NAME (name);
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 	// Try get info about under VOL
 	H5Pget_vol_info (fapl_id, (void **)&info);
@@ -288,6 +291,9 @@ void *H5VL_log_file_open (
 		printf ("H5VL_log_file_open(%s, %u, %s, %s, %p)\n", name, flags, vname[0], vname[1], req);
 	}
 #endif
+
+	/* Check arguments */
+	H5VL_LOGI_CHECK_NAME (name);
 
 	// Try get info about under VOL
 	H5Pget_vol_info (fapl_id, (void **)&info);

@@ -37,10 +37,13 @@ void *H5VL_log_datatype_commit (void *obj,
 								hid_t tapl_id,
 								hid_t dxpl_id,
 								void **req) {
-	H5VL_log_obj_t *tp;
+	H5VL_log_obj_t *tp = NULL;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
+
+	/* Check arguments */
+	H5VL_LOGI_CHECK_NAME (name);
 
 	tp = new H5VL_log_obj_t (op, H5I_DATATYPE);
 
@@ -62,7 +65,7 @@ void *H5VL_log_datatype_commit (void *obj,
 
 	return (void *)tp;
 err_out:;
-	delete tp;
+	if (tp) { delete tp; }
 	return NULL;
 } /* end H5VL_log_datatype_commit() */
 
@@ -83,9 +86,12 @@ void *H5VL_log_datatype_open (void *obj,
 							  hid_t dxpl_id,
 							  void **req) {
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-	H5VL_log_obj_t *tp;
+	H5VL_log_obj_t *tp = NULL;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
+
+	/* Check arguments */
+	H5VL_LOGI_CHECK_NAME (name);
 
 	tp = new H5VL_log_obj_t (op, H5I_DATATYPE);
 
@@ -107,7 +113,7 @@ void *H5VL_log_datatype_open (void *obj,
 	return (void *)tp;
 
 err_out:;
-	delete tp;
+	if (tp) { delete tp; }
 
 	return NULL;
 } /* end H5VL_log_datatype_open() */

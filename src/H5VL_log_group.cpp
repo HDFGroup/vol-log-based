@@ -48,6 +48,7 @@ void *H5VL_log_group_create (void *obj,
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	/* Check arguments */
+	H5VL_LOGI_CHECK_NAME (name);
 	if (loc_params->type != H5VL_OBJECT_BY_SELF)
 		ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
 
@@ -104,6 +105,7 @@ void *H5VL_log_group_open (void *obj,
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	/* Check arguments */
+	H5VL_LOGI_CHECK_NAME (name);
 	if (loc_params->type != H5VL_OBJECT_BY_SELF)
 		ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
 
