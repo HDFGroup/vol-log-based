@@ -522,11 +522,6 @@ herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
-	// Flush merged request
-	if (dp->fp->mreqs[dp->id] && (dp->fp->mreqs[dp->id]->nsel > 0)) {
-		dp->fp->wreqs.push_back (dp->fp->mreqs[dp->id]);
-	}
-
 	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VLdataset_close (dp->uo, dp->uvlid, dxpl_id, NULL);
 	CHECK_ERR

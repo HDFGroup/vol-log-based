@@ -118,15 +118,20 @@ herr_t h5ldump_file (std::string path,
 
 	std::cout << std::string (indent, ' ') << "File: " << path << std::endl;
 	indent += 4;
-	;
-
-	std::cout << std::string (indent, ' ') << "Configuration: ";
-	if (config & H5VL_FILEI_CONFIG_METADATA_MERGE) { std::cout << "metadata merging, "; }
-	if (config & H5VL_FILEI_CONFIG_SEL_ENCODE) { std::cout << "metadata encoding, "; }
-	if (config & H5VL_FILEI_CONFIG_SEL_ENCODE) { std::cout << "metadata compression, "; }
-	if (config & H5VL_FILEI_CONFIG_METADATA_SHARE) { std::cout << "metadata deduplication, "; }
-	if (config & H5VL_FILEI_CONFIG_SUBFILING) { std::cout << "subfiling, "; }
-	std::cout << std::endl;
+	std::cout << std::string (indent, ' ') << "File properties: " << std::endl;
+	indent += 4;
+	std::cout << std::string (indent, ' ') << "Automatic write reqeusts merging: "
+			  << ((config & H5VL_FILEI_CONFIG_METADATA_MERGE) ? "on" : "off") << std::endl;
+	std::cout << std::string (indent, ' ')
+			  << "Metadata encoding: " << ((config & H5VL_FILEI_CONFIG_SEL_ENCODE) ? "on" : "off")
+			  << std::endl;
+	std::cout << std::string (indent, ' ') << "Metadata compression: "
+			  << ((config & H5VL_FILEI_CONFIG_SEL_DEFLATE) ? "on" : "off") << std::endl;
+	std::cout << std::string (indent, ' ') << "Metadata deduplication: "
+			  << ((config & H5VL_FILEI_CONFIG_METADATA_SHARE) ? "on" : "off") << std::endl;
+	std::cout << std::string (indent, ' ')
+			  << "Subfiling: " << ((config & H5VL_FILEI_CONFIG_SUBFILING) ? "on" : "off")
+			  << std::endl;
 	std::cout << std::string (indent, ' ') << "Number of user datasets: " << ndset << std::endl;
 	std::cout << std::string (indent, ' ') << "Number of data datasets: " << nldset << std::endl;
 	std::cout << std::string (indent, ' ') << "Number of metadata datasets: " << nmdset
@@ -136,6 +141,7 @@ herr_t h5ldump_file (std::string path,
 	if (config & H5VL_FILEI_CONFIG_SUBFILING) {
 		std::cout << std::string (indent, ' ') << "Number of subfiles: " << nsubfile << std::endl;
 	}
+	indent -= 4;
 
 	if (config & H5VL_FILEI_CONFIG_SUBFILING) {
 		for (i = 0; i < nsubfile; i++) {
