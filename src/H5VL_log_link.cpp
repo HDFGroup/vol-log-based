@@ -6,6 +6,7 @@
 
 #include "H5VL_log.h"
 #include "H5VL_log_link.hpp"
+#include "H5VL_log_linki.hpp"
 #include "H5VL_log_obj.hpp"
 #include "H5VL_log_req.hpp"
 #include "H5VL_logi.hpp"
@@ -212,6 +213,32 @@ herr_t H5VL_log_link_move (void *src_obj,
 		ureqp = NULL;
 	}
 
+	// Block access to internal objects
+	switch (loc_params1->type) {
+		case H5VL_OBJECT_BY_NAME:
+			if (!(loc_params1->loc_data.loc_by_name.name) ||
+				loc_params1->loc_data.loc_by_name.name[0] == '_') {
+				RET_ERR ("Access to internal objects denied")
+			}
+			break;
+		case H5VL_OBJECT_BY_IDX:
+		case H5VL_OBJECT_BY_TOKEN:
+			RET_ERR ("Access by idx annd token is not supported")
+			break;
+	}
+	switch (loc_params2->type) {
+		case H5VL_OBJECT_BY_NAME:
+			if (!(loc_params2->loc_data.loc_by_name.name) ||
+				loc_params2->loc_data.loc_by_name.name[0] == '_') {
+				RET_ERR ("Access to internal objects denied")
+			}
+			break;
+		case H5VL_OBJECT_BY_IDX:
+		case H5VL_OBJECT_BY_TOKEN:
+			RET_ERR ("Access by idx annd token is not supported")
+			break;
+	}
+
 	/* Retrieve the "under" VOL id */
 	if (o_src)
 		uvlid = o_src->uvlid;
@@ -263,6 +290,20 @@ herr_t H5VL_log_link_get (void *obj,
 		ureqp = NULL;
 	}
 
+	// Block access to internal objects
+	switch (loc_params->type) {
+		case H5VL_OBJECT_BY_NAME:
+			if (!(loc_params->loc_data.loc_by_name.name) ||
+				loc_params->loc_data.loc_by_name.name[0] == '_') {
+				RET_ERR ("Access to internal objects denied")
+			}
+			break;
+		case H5VL_OBJECT_BY_IDX:
+		case H5VL_OBJECT_BY_TOKEN:
+			RET_ERR ("Access by idx annd token is not supported")
+			break;
+	}
+
 	err = H5VLlink_get (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
 	CHECK_ERR
 
@@ -305,6 +346,25 @@ herr_t H5VL_log_link_specific (void *obj,
 		ureqp = NULL;
 	}
 
+	// Block access to internal objects
+	switch (loc_params->type) {
+		case H5VL_OBJECT_BY_NAME:
+			if (!(loc_params->loc_data.loc_by_name.name) ||
+				loc_params->loc_data.loc_by_name.name[0] == '_') {
+				if (args->op_type == H5VL_LINK_EXISTS) {
+					*args->args.exists.exists = false;
+					goto err_out;
+				} else {
+					RET_ERR ("Access to internal objects denied")
+				}
+			}
+			break;
+		case H5VL_OBJECT_BY_IDX:
+		case H5VL_OBJECT_BY_TOKEN:
+			RET_ERR ("Access by idx annd token is not supported")
+			break;
+	}
+
 	err = H5VLlink_specific (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
 	CHECK_ERR
 
@@ -345,6 +405,20 @@ herr_t H5VL_log_link_optional (void *obj,
 		ureqp = &ureq;
 	} else {
 		ureqp = NULL;
+	}
+
+	// Block access to internal objects
+	switch (loc_params->type) {
+		case H5VL_OBJECT_BY_NAME:
+			if (!(loc_params->loc_data.loc_by_name.name) ||
+				loc_params->loc_data.loc_by_name.name[0] == '_') {
+				RET_ERR ("Access to internal objects denied")
+			}
+			break;
+		case H5VL_OBJECT_BY_IDX:
+		case H5VL_OBJECT_BY_TOKEN:
+			RET_ERR ("Access by idx annd token is not supported")
+			break;
 	}
 
 	err = H5VLlink_optional (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);

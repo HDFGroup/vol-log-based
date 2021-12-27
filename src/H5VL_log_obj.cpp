@@ -140,6 +140,7 @@ herr_t H5VL_log_object_get (void *obj,
 							H5VL_object_get_args_t *args,
 							hid_t dxpl_id,
 							void **req) {
+	herr_t err		   = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 #ifdef LOGVOL_DEBUG
 	if (H5VL_logi_debug_verbose ()) {
@@ -163,7 +164,26 @@ herr_t H5VL_log_object_get (void *obj,
 				vname[1], req);
 	}
 #endif
-	return H5VLobject_get (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
+
+	// Block access to internal objects
+	switch (loc_params->type) {
+		case H5VL_OBJECT_BY_NAME:
+			if (!(loc_params->loc_data.loc_by_name.name) ||
+				loc_params->loc_data.loc_by_name.name[0] == '_') {
+				RET_ERR ("Access to internal objects denied")
+			}
+			break;
+		case H5VL_OBJECT_BY_IDX:
+		case H5VL_OBJECT_BY_TOKEN:
+			RET_ERR ("Access by idx annd token is not supported")
+			break;
+	}
+
+	err = H5VLobject_get (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
+	CHECK_ERR
+
+err_out:;
+	return err;
 } /* end H5VL_log_object_get() */
 
 /*-------------------------------------------------------------------------
@@ -181,6 +201,7 @@ herr_t H5VL_log_object_specific (void *obj,
 								 H5VL_object_specific_args_t *args,
 								 hid_t dxpl_id,
 								 void **req) {
+	herr_t err		   = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 #ifdef LOGVOL_DEBUG
 	if (H5VL_logi_debug_verbose ()) {
@@ -204,7 +225,31 @@ herr_t H5VL_log_object_specific (void *obj,
 				vname[1], req);
 	}
 #endif
-	return H5VLobject_specific (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
+
+	// Block access to internal objects
+	switch (loc_params->type) {
+		case H5VL_OBJECT_BY_NAME:
+			if (!(loc_params->loc_data.loc_by_name.name) ||
+				loc_params->loc_data.loc_by_name.name[0] == '_') {
+				if (args->op_type == H5VL_OBJECT_EXISTS) {
+					*args->args.exists.exists = false;
+					goto err_out;
+				} else {
+					RET_ERR ("Access to internal objects denied")
+				}
+			}
+			break;
+		case H5VL_OBJECT_BY_IDX:
+		case H5VL_OBJECT_BY_TOKEN:
+			RET_ERR ("Access by idx annd token is not supported")
+			break;
+	}
+
+	err = H5VLobject_specific (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
+	CHECK_ERR
+
+err_out:;
+	return err;
 } /* end H5VL_log_object_specific() */
 
 /*-------------------------------------------------------------------------
@@ -222,6 +267,7 @@ herr_t H5VL_log_object_optional (void *obj,
 								 H5VL_optional_args_t *args,
 								 hid_t dxpl_id,
 								 void **req) {
+	herr_t err		   = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 #ifdef LOGVOL_DEBUG
 	if (H5VL_logi_debug_verbose ()) {
@@ -244,5 +290,24 @@ herr_t H5VL_log_object_optional (void *obj,
 		printf ("H5VL_log_object_optional(%p, %s, %s,%p, ...)\n", obj, vname[0], vname[1], req);
 	}
 #endif
-	return H5VLobject_optional (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
+
+	// Block access to internal objects
+	switch (loc_params->type) {
+		case H5VL_OBJECT_BY_NAME:
+			if (!(loc_params->loc_data.loc_by_name.name) ||
+				loc_params->loc_data.loc_by_name.name[0] == '_') {
+				RET_ERR ("Access to internal objects denied")
+			}
+			break;
+		case H5VL_OBJECT_BY_IDX:
+		case H5VL_OBJECT_BY_TOKEN:
+			RET_ERR ("Access by idx annd token is not supported")
+			break;
+	}
+
+	err = H5VLobject_optional (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
+	CHECK_ERR
+
+err_out:;
+	return err;
 } /* end H5VL_log_object_optional() */
