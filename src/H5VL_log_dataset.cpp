@@ -66,6 +66,7 @@ void *H5VL_log_dataset_create (void *obj,
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 	// char lname[1024];
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	/* Check arguments */
@@ -163,6 +164,12 @@ void *H5VL_log_dataset_create (void *obj,
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CREATE);
 
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) {
+		printf ("H5VL_log_dataset_create(%p, %s, %ld)\n", obj, name, dp->ndim);
+	}
+#endif
+
 	goto fn_exit;
 err_out:;
 	if (dp) {
@@ -192,6 +199,10 @@ void *H5VL_log_dataset_open (void *obj,
 	// herr_t err		   = 0;
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	void *uo		   = NULL;
+
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_dataset_open(%p, %s)\n", obj, name); }
+#endif
 
 	/* Check arguments */
 	H5VL_LOGI_CHECK_NAME (name);
@@ -504,6 +515,11 @@ err_out:;
 herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 	herr_t err			= 0;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
+
+#ifdef LOGVOL_DEBUG
+	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_dataset_close(%p)\n", dset); }
+#endif
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Flush merged request
