@@ -117,10 +117,10 @@ APIs not listed below is assumed to be unsupported.
 | H5Lregister         | None             |       |
 | H5Lunregister       | None             |       |
 | H5Lis_registered    | None             |       |
-| H5Literate          | None             |       |
-| H5Literate_by_name  | None             |       |
-| H5Lvisit            | None             |       |
-| H5Lvisit_by_name    | None             |       |
+| H5Literate          | High             |       |
+| H5Literate_by_name  | High             |       |
+| H5Lvisit            | High             |       |
+| H5Lvisit_by_name    | High             |       |
 | H5Lget_info_by_idx  | Full             |       |
 | H5Lget_name_by_idx  | Full             |       |
 | H5Lget_val_by_idx   | Full             |       |
@@ -137,8 +137,8 @@ APIs not listed below is assumed to be unsupported.
 | H5Oclose                    | High             | If the object is a file, H5Fclose limitations apply.                           |
 | H5Ocopy                     | None             |                                                                                |
 | H5Oexists_by_name           | Full             |                                                                                |
-| H5Ovisit                    | None             |                                                                                |
-| H5Ovisit_by_name            | None             |                                                                                |
+| H5Ovisit                    | High             |                                                                                |
+| H5Ovisit_by_name            | High             |                                                                                |
 | H5Oset_comment *            | None             |                                                                                |
 | H5Oset_comment_by_name *    | None             |                                                                                |
 | H5Oget_comment              | None             |                                                                                |

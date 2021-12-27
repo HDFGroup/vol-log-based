@@ -8,6 +8,18 @@
 #include "H5VL_log_wrap.hpp"
 #include "H5VL_logi.hpp"
 
+herr_t H5VL_log_obji_iterate_op (hid_t obj,
+								 const char *name,
+								 const H5O_info2_t *info,
+								 void *op_data) {
+	H5VL_log_obji_iterate_op_data *ctx = (H5VL_log_obji_iterate_op_data *)op_data;
+
+	// Skip internal objects
+	if (name && name[0] != '_') { return ctx->op (obj, name, info, ctx->op_data); }
+
+	return 0;
+}
+
 void *H5VL_log_obj_open_with_uo (void *obj,
 								 void *uo,
 								 H5I_type_t type,

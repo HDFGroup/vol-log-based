@@ -3,6 +3,7 @@
 #endif
 
 #include "H5VL_log_att.hpp"
+#include "H5VL_log_atti.hpp"
 #include "H5VL_log_filei.hpp"
 #include "H5VL_log_obj.hpp"
 #include "H5VL_log_req.hpp"
@@ -264,6 +265,7 @@ herr_t H5VL_log_attr_specific (void *obj,
 	herr_t err		   = 0;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
+	H5VL_log_atti_iterate_op_data *ctx = NULL;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	if (req) {
@@ -292,10 +294,24 @@ herr_t H5VL_log_attr_specific (void *obj,
 			break;
 	}
 
+	// Replace H5Aiterate callback with logvol wrpapper
+	if (args->op_type == H5VL_ATTR_ITER) {
+		ctx		= (H5VL_log_atti_iterate_op_data *)malloc (sizeof (H5VL_log_atti_iterate_op_data));
+		ctx->op = args->args.iterate.op;
+		ctx->op_data			   = args->args.iterate.op_data;
+		args->args.iterate.op	   = H5VL_log_atti_iterate_op;
+		args->args.iterate.op_data = ctx;
+	}
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VLattr_specific (op->uo, loc_params, op->uvlid, args, dxpl_id, ureqp);
 	CHECK_ERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_SPECIFIC);
+
+	if (args->op_type == H5VL_ATTR_ITER) {
+		args->args.iterate.op	   = ctx->op;
+		args->args.iterate.op_data = ctx->op_data;
+	}
 
 	if (req) {
 		rp->append (ureq);
@@ -304,6 +320,7 @@ herr_t H5VL_log_attr_specific (void *obj,
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_SPECIFIC);
 err_out:;
+	if (ctx) { free (ctx); }
 	return err;
 } /* end H5VL_log_attr_specific() */
 

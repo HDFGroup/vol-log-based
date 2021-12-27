@@ -5,6 +5,7 @@
 #include "H5VL_log_dataseti.hpp"
 #include "H5VL_log_filei.hpp"
 #include "H5VL_log_obj.hpp"
+#include "H5VL_log_obji.hpp"
 #include "H5VL_logi.hpp"
 
 /********************* */
@@ -201,8 +202,10 @@ herr_t H5VL_log_object_specific (void *obj,
 								 H5VL_object_specific_args_t *args,
 								 hid_t dxpl_id,
 								 void **req) {
-	herr_t err		   = 0;
-	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+	herr_t err						   = 0;
+	H5VL_log_obj_t *op				   = (H5VL_log_obj_t *)obj;
+	H5VL_log_obji_iterate_op_data *ctx = NULL;
+
 #ifdef LOGVOL_DEBUG
 	if (H5VL_logi_debug_verbose ()) {
 		char vname[2][128];
@@ -245,10 +248,25 @@ herr_t H5VL_log_object_specific (void *obj,
 			break;
 	}
 
+	// Replace H5Oiterate/visit callback with logvol wrpapper
+	if (args->op_type == H5VL_OBJECT_VISIT) {
+		ctx		= (H5VL_log_obji_iterate_op_data *)malloc (sizeof (H5VL_log_obji_iterate_op_data));
+		ctx->op = args->args.visit.op;
+		ctx->op_data			 = args->args.visit.op_data;
+		args->args.visit.op		 = H5VL_log_obji_iterate_op;
+		args->args.visit.op_data = ctx;
+	}
+
 	err = H5VLobject_specific (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
 	CHECK_ERR
 
+	if (args->op_type == H5VL_OBJECT_VISIT) {
+		args->args.visit.op		 = ctx->op;
+		args->args.visit.op_data = ctx->op_data;
+	}
+
 err_out:;
+	if (ctx) { free (ctx); }
 	return err;
 } /* end H5VL_log_object_specific() */
 

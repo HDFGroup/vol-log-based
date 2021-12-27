@@ -26,6 +26,7 @@ M4_SRCS =
 M4H_SRCS = H5VL_logi_profiling.m4h
 
 H_SRCS =    H5VL_log_att.hpp \
+            H5VL_log_atti.hpp \
             H5VL_log_blob.hpp \
             H5VL_log_dataset.hpp \
             H5VL_log_dataseti.hpp \
@@ -36,6 +37,7 @@ H_SRCS =    H5VL_log_att.hpp \
             H5VL_log_info.hpp \
             H5VL_log_introspect.hpp \
             H5VL_log_link.hpp \
+            H5VL_log_linki.hpp \
             H5VL_log_main.hpp \
             H5VL_log_obj.hpp \
             H5VL_log_obji.hpp \
@@ -60,6 +62,7 @@ H_SRCS =    H5VL_log_att.hpp \
 C_SRCS = 
 
 CXX_SRCS =  H5VL_log_att.cpp \
+            H5VL_log_atti.cpp \
             H5VL_log_blob.cpp \
             H5VL_log_dataset.cpp \
             H5VL_log_dataseti.cpp \
@@ -72,6 +75,7 @@ CXX_SRCS =  H5VL_log_att.cpp \
             H5VL_log_info.cpp \
             H5VL_log_introspect.cpp \
             H5VL_log_link.cpp \
+            H5VL_log_linki.cpp \
             H5VL_log_main.cpp \
             H5VL_log_obj.cpp \
             H5VL_log_obji.cpp \

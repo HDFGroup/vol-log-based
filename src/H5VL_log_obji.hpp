@@ -4,6 +4,16 @@
 
 #include "H5VL_logi.hpp"
 
+typedef struct H5VL_log_obji_iterate_op_data {
+	H5O_iterate2_t op;
+	void *op_data;
+} H5VL_log_obji_iterate_op_data;
+
+herr_t H5VL_log_obji_iterate_op (hid_t obj,
+								 const char *name,
+								 const H5O_info2_t *info,
+								 void *op_data);
+
 // Internal
 extern void *H5VL_log_obj_open_with_uo (void *obj,
 										void *uo,

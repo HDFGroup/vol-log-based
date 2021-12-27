@@ -334,6 +334,7 @@ herr_t H5VL_log_link_specific (void *obj,
 	herr_t err		  = 0;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
+	H5VL_log_linki_iterate_op_data *ctx = NULL;
 
 #ifdef LOGVOL_DEBUG
 	if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Specific\n"); }
@@ -365,14 +366,29 @@ herr_t H5VL_log_link_specific (void *obj,
 			break;
 	}
 
+	// Replace H5Literate/visit callback with logvol wrpapper
+	if (args->op_type == H5VL_LINK_ITER) {
+		ctx = (H5VL_log_linki_iterate_op_data *)malloc (sizeof (H5VL_log_linki_iterate_op_data));
+		ctx->op					   = args->args.iterate.op;
+		ctx->op_data			   = args->args.iterate.op_data;
+		args->args.iterate.op	   = H5VL_log_linki_iterate_op;
+		args->args.iterate.op_data = ctx;
+	}
+
 	err = H5VLlink_specific (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
 	CHECK_ERR
+
+	if (args->op_type == H5VL_LINK_ITER) {
+		args->args.iterate.op	   = ctx->op;
+		args->args.iterate.op_data = ctx->op_data;
+	}
 
 	if (req) {
 		rp->append (ureq);
 		*req = rp;
 	}
 err_out:;
+	if (ctx) { free (ctx); }
 	return err;
 } /* end H5VL_log_link_specific() */
 
