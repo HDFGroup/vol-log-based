@@ -107,7 +107,11 @@ herr_t h5ldump_file (std::string path,
 
 	// Read file metadata
 	aid = H5Aopen (fid, "_int_att", H5P_DEFAULT);
-	CHECK_ID (aid)
+	if (!aid) {
+		std::cout << "Error: " << path << " is not a valid log-based VOL file." << std::endl;
+		std::cout << "Use h5ldump in HDF5 utilities to read traditional HDF5 files." << std::endl;
+		ERR_OUT ("File not recognized")
+	}
 	err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
 	CHECK_ERR
 	ndset	 = att_buf[0];
@@ -155,6 +159,12 @@ herr_t h5ldump_file (std::string path,
 		// Open the log group
 		lgid = H5Gopen2 (fid, "_LOG", H5P_DEFAULT);
 		CHECK_ID (lgid)
+		if (lgid < 0) {
+			std::cout << "Error: " << path << " is not a valid log-based VOL file." << std::endl;
+			std::cout << "Use h5ldump in HDF5 utilities to read traditional HDF5 files."
+					  << std::endl;
+			ERR_OUT ("File not recognized")
+		}
 		// Iterate through metadata datasets
 		for (i = 0; i < nmdset; i++) {
 			std::cout << std::string (indent, ' ') << "Metadata dataset " << i << std::endl;
