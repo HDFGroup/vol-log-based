@@ -17,14 +17,14 @@ typedef struct H5VL_log_dset_info_t {
 	hsize_t esize;					  // Size of dtype
 	hid_t dtype = -1;				  // External data type
 	hsize_t dims[H5S_MAX_RANK];		  // Current size
+	hsize_t mdims[H5S_MAX_RANK];	  // Max size along each dimension
 	MPI_Offset dsteps[H5S_MAX_RANK];  // Number of elements in the subspace below each dimension
 	std::vector<H5VL_log_filter_t> filters;	 // Declared filters
 } H5VL_log_dset_info_t;
 
 /* The log VOL dataset object */
-typedef struct H5VL_log_dset_t : H5VL_log_obj_t, H5VL_log_dset_info_t {
-	hsize_t mdims[H5S_MAX_RANK];  // Max size along each dimension
-	int id;						  // Dataset ID
+typedef struct H5VL_log_dset_t : H5VL_log_obj_t {
+	int id;	 // Dataset ID
 	using H5VL_log_obj_t::H5VL_log_obj_t;
 } H5VL_log_dset_t;
 

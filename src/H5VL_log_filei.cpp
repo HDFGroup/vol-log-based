@@ -72,9 +72,9 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	fp->nmdset = attbuf[2];
 	fp->config = attbuf[3];
 	fp->ngroup = attbuf[3];
-	fp->idx.resize (fp->ndset);
-	fp->mreqs.resize (fp->ndset);
-	fp->dsets.resize (fp->ndset);
+	fp->idx.resize (fp->ndset);				  // Index for dataset read
+	fp->mreqs.resize (fp->ndset, NULL);		  // Merge write reqeusts
+	fp->dsets_info.resize (fp->ndset, NULL);  // Dataset info
 	fp->group_rank = fp->rank;
 	fp->group_comm = fp->comm;
 	fp->group_id   = 0;
@@ -597,6 +597,9 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 
 	// Free compression buffer
 	free (fp->zbuf);
+
+	// Free dataset info
+	for (auto info : fp->dsets_info) { delete info; }
 
 	// Close the file with under VOL
 	H5VL_LOGI_PROFILING_TIMER_START;

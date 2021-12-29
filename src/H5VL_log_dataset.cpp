@@ -59,6 +59,7 @@ void *H5VL_log_dataset_create (void *obj,
 	int i;
 	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
 	H5VL_log_dset_t *dp = NULL;
+	H5VL_log_dset_info_t *dip;	// Dataset info
 	// H5VL_link_create_args_t args;
 	// H5VL_loc_params_t loc;
 	hid_t sid = -1;
@@ -72,19 +73,22 @@ void *H5VL_log_dataset_create (void *obj,
 	/* Check arguments */
 	H5VL_LOGI_CHECK_NAME (name);
 
-	sid = H5Screate (H5S_SCALAR);
-	CHECK_ID (sid);
-	err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
-	CHECK_ERR
-
-	dp = new H5VL_log_dset_t (op, H5I_DATASET);
-
+	// Unused
+	// Create request handle
 	if (req) {
 		rp	  = new H5VL_log_req_t ();
 		ureqp = &ureq;
 	} else {
 		ureqp = NULL;
 	}
+
+	// Create anchor dataset
+	sid = H5Screate (H5S_SCALAR);
+	CHECK_ID (sid);
+	err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
+	CHECK_ERR
+
+	dp = new H5VL_log_dset_t (op, H5I_DATASET);
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 	dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid,
@@ -93,36 +97,46 @@ void *H5VL_log_dataset_create (void *obj,
 	CHECK_PTR (dp->uo)
 	if (req) { rp->append (ureq); }
 
-	dp->dtype = H5Tcopy (type_id);
-	CHECK_ID (dp->dtype)
-	dp->esize = H5Tget_size (type_id);
-	CHECK_ID (dp->esize)
+	// Construct new dataset info
+	dip = new H5VL_log_dset_info_t ();
+	CHECK_PTR (dip)
+
+	dip->dtype = H5Tcopy (type_id);
+	CHECK_ID (dip->dtype)
+	dip->esize = H5Tget_size (type_id);
+	CHECK_ID (dip->esize)
 
 	// NOTE: I don't know if it work for scalar dataset, can we create zero sized attr?
-	ndim = H5Sget_simple_extent_dims (space_id, dp->dims, dp->mdims);
+	ndim = H5Sget_simple_extent_dims (space_id, dip->dims, dip->mdims);
 	CHECK_ID (ndim)
-	dp->ndim = (hsize_t)ndim;
+	dip->ndim = (hsize_t)ndim;
 
-	dp->id = (dp->fp->ndset)++;
-
-	// Record metadata in fp
-	dp->fp->idx.resize (dp->fp->ndset);
-	dp->fp->dsets.resize (dp->fp->ndset);
-	dp->fp->dsets[dp->id] = *dp;
-	dp->fp->mreqs.resize (dp->fp->ndset);
-	dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
 	// Dstep for encoding selection
 	if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-		dp->dsteps[dp->ndim - 1] = 1;
-		for (i = dp->ndim - 2; i > -1; i--) { dp->dsteps[i] = dp->dsteps[i + 1] * dp->dims[i + 1]; }
+		dip->dsteps[dip->ndim - 1] = 1;
+		for (i = dip->ndim - 2; i > -1; i--) {
+			dip->dsteps[i] = dip->dsteps[i + 1] * dip->dims[i + 1];
+		}
 	}
 
-	// Atts
-	err = H5VL_logi_add_att (dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->dims,
+	// Filters
+	nfilter = H5Pget_nfilters (dcpl_id);
+	CHECK_ID (nfilter);
+	dip->filters.resize (nfilter);
+	for (i = 0; i < nfilter; i++) {
+		dip->filters[i].id = H5Pget_filter2 (
+			dcpl_id, (unsigned int)i, &(dip->filters[i].flags), &(dip->filters[i].cd_nelmts),
+			dip->filters[i].cd_values, LOGVOL_FILTER_NAME_MAX, dip->filters[i].name,
+			&(dip->filters[i].filter_config));
+		CHECK_ID (dip->filters[i].id);
+	}
+
+	// Record dataset metadata as attributes
+	err = H5VL_logi_add_att (dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dip->ndim, dip->dims,
 							 dxpl_id, ureqp);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
-	err = H5VL_logi_add_att (dp, "_mdims", H5T_STD_I64LE, H5T_NATIVE_INT64, dp->ndim, dp->mdims,
+	err = H5VL_logi_add_att (dp, "_mdims", H5T_STD_I64LE, H5T_NATIVE_INT64, dip->ndim, dip->mdims,
 							 dxpl_id, ureqp);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
@@ -135,20 +149,16 @@ void *H5VL_log_dataset_create (void *obj,
 		*req = rp;
 	}
 
-	// Filters
-	nfilter = H5Pget_nfilters (dcpl_id);
-	CHECK_ID (nfilter);
-	dp->filters.resize (nfilter);
-	for (i = 0; i < nfilter; i++) {
-		dp->filters[i].id = H5Pget_filter2 (dcpl_id, (unsigned int)i, &(dp->filters[i].flags),
-											&(dp->filters[i].cd_nelmts), dp->filters[i].cd_values,
-											LOGVOL_FILTER_NAME_MAX, dp->filters[i].name,
-											&(dp->filters[i].filter_config));
-		CHECK_ID (dp->filters[i].id);
-	}
+	// Append dataset to the file
+	LOG_VOL_ASSERT (dp->fp->ndset == dp->fp->dsets_info.size ())
+	LOG_VOL_ASSERT (dp->fp->ndset == dp->fp->mreqs.size ())
+	dp->id = (dp->fp->ndset)++;
+	dp->fp->dsets_info.push_back (dip);			 // Dataset info
+	dp->fp->idx.resize (dp->fp->ndset);			 // Index for H5Dread
+	dp->fp->mreqs.resize (dp->fp->ndset, NULL);	 // Merged requests
 
 	// Create soft link to aid dataset visiting on file opening
-	// Broken
+	// Broken, not used anymore
 	/*
 	sprintf (lname, "_dset%d", dp->id);
 	args.op_type					 = H5VL_LINK_CREATE_SOFT;
@@ -166,13 +176,14 @@ void *H5VL_log_dataset_create (void *obj,
 
 #ifdef LOGVOL_DEBUG
 	if (H5VL_logi_debug_verbose ()) {
-		printf ("H5VL_log_dataset_create(%p, %s, %ld)\n", obj, name, dp->ndim);
+		printf ("H5VL_log_dataset_create(%p, %s, %ld)\n", obj, name, dip->ndim);
 	}
 #endif
 
 	goto fn_exit;
 err_out:;
 	if (dp) {
+		delete dip;
 		delete dp;
 		dp = NULL;
 	}
@@ -235,14 +246,15 @@ herr_t H5VL_log_dataset_read (void *dset,
 							  hid_t plist_id,
 							  void *buf,
 							  void **req) {
-	herr_t err			= 0;
-	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
-	hid_t dsid;						   // Dataset space id
-	H5VL_log_selections *dsel = NULL;  // Selection blocks
+	herr_t err				  = 0;
+	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)dset;
+	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
+	hid_t dsid;												 // Dataset space id
+	H5VL_log_selections *dsel = NULL;						 // Selection blocks
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 	if (file_space_id == H5S_ALL) {
-		dsid = H5Screate_simple (dp->ndim, dp->dims, dp->mdims);
+		dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
 		CHECK_ID (dsid);
 	} else {
 		dsid = file_space_id;
@@ -279,14 +291,15 @@ herr_t H5VL_log_dataset_write (void *dset,
 							   hid_t plist_id,
 							   const void *buf,
 							   void **req) {
-	herr_t err			= 0;
-	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
-	hid_t dsid;						   // Dataset space id
-	H5VL_log_selections *dsel = NULL;  // Selection blocks
+	herr_t err				  = 0;
+	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)dset;
+	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
+	hid_t dsid;												 // Dataset space id
+	H5VL_log_selections *dsel = NULL;						 // Selection blocks
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 	if (file_space_id == H5S_ALL) {
-		dsid = H5Screate_simple (dp->ndim, dp->dims, dp->mdims);
+		dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
 		CHECK_ID (dsid);
 	} else {
 		dsid = file_space_id;
@@ -318,8 +331,9 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_dataset_get (void *dset, H5VL_dataset_get_args_t *args, hid_t dxpl_id, void **req) {
-	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
-	herr_t err			= 0;
+	herr_t err				  = 0;
+	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)dset;
+	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
 	// H5VL_log_req_t *rp;
 	// void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -327,7 +341,7 @@ herr_t H5VL_log_dataset_get (void *dset, H5VL_dataset_get_args_t *args, hid_t dx
 	switch (args->op_type) {
 		/* H5Dget_space */
 		case H5VL_DATASET_GET_SPACE: {
-			args->args.get_space.space_id = H5Screate_simple (dp->ndim, dp->dims, dp->mdims);
+			args->args.get_space.space_id = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
 			break;
 		}
 
@@ -379,8 +393,9 @@ herr_t H5VL_log_dataset_specific (void *obj,
 								  H5VL_dataset_specific_args_t *args,
 								  hid_t dxpl_id,
 								  void **req) {
-	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)obj;
-	herr_t err			= 0;
+	herr_t err				  = 0;
+	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)obj;
+	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
 	// H5VL_log_req_t *rp;
 	// void **ureqp, *ureq;
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -391,19 +406,19 @@ herr_t H5VL_log_dataset_specific (void *obj,
 			const hsize_t *new_sizes = args->args.set_extent.size;
 
 			// Adjust dim
-			for (i = 0; i < (int32_t) (dp->ndim); i++) {
-				if (dp->mdims[i] != H5S_UNLIMITED && new_sizes[i] > dp->mdims[i]) {
+			for (i = 0; i < (int32_t) (dip->ndim); i++) {
+				if (dip->mdims[i] != H5S_UNLIMITED && new_sizes[i] > dip->mdims[i]) {
 					err = -1;
 					ERR_OUT ("size cannot exceed max size")
 				}
-				dp->dims[i] = dp->fp->dsets[dp->id].dims[i] = new_sizes[i];
+				dip->dims[i] = dip->dims[i] = new_sizes[i];
 			}
 
 			// Recalculate dsteps if needed
 			if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-				dp->dsteps[dp->ndim - 1] = 1;
-				for (i = dp->ndim - 2; i > -1; i--) {
-					dp->dsteps[i] = dp->dsteps[i + 1] * dp->dims[i + 1];
+				dip->dsteps[dip->ndim - 1] = 1;
+				for (i = dip->ndim - 2; i > -1; i--) {
+					dip->dsteps[i] = dip->dsteps[i + 1] * dip->dims[i + 1];
 				}
 
 				// Flush merged request as dstep may be changed
@@ -411,7 +426,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
 					dp->fp->wreqs.push_back (dp->fp->mreqs[dp->id]);
 					// Update total metadata size in wreqs
 					dp->fp->mdsize += dp->fp->mreqs[dp->id]->hdr->meta_size;
-					dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
+					dp->fp->mreqs[dp->id] = NULL;
 				}
 			}
 
@@ -442,9 +457,10 @@ herr_t H5VL_log_dataset_optional (void *obj,
 								  H5VL_optional_args_t *args,
 								  hid_t dxpl_id,
 								  void **req) {
-	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
-	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)op;
-	herr_t err			= 0;
+	herr_t err				  = 0;
+	H5VL_log_obj_t *op		  = (H5VL_log_obj_t *)obj;
+	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)op;
+	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
 	// H5VL_log_req_t *rp;
 	// void **ureqp, *ureq;
 	H5VL_log_selections *dsel	  = NULL;								   // Selection blocks
@@ -454,7 +470,7 @@ herr_t H5VL_log_dataset_optional (void *obj,
 
 	if (args->op_type == H5Dwrite_n_op_val) {
 		H5VL_LOGI_PROFILING_TIMER_START;
-		dsel = new H5VL_log_selections (dp->ndim, varnarg->n, varnarg->starts, varnarg->counts);
+		dsel = new H5VL_log_selections (dip->ndim, varnarg->n, varnarg->starts, varnarg->counts);
 		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
 		CHECK_PTR (dsel)
 
@@ -463,7 +479,7 @@ herr_t H5VL_log_dataset_optional (void *obj,
 		CHECK_ERR
 	} else if (args->op_type == H5Dread_n_op_val) {
 		H5VL_LOGI_PROFILING_TIMER_START;
-		dsel = new H5VL_log_selections (dp->ndim, varnarg->n, varnarg->starts, varnarg->counts);
+		dsel = new H5VL_log_selections (dip->ndim, varnarg->n, varnarg->starts, varnarg->counts);
 		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
 		CHECK_PTR (dsel)
 
@@ -515,6 +531,7 @@ err_out:;
 herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 	herr_t err			= 0;
 	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
+	// H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
 
 #ifdef LOGVOL_DEBUG
 	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_dataset_close(%p)\n", dset); }
@@ -528,6 +545,9 @@ herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_CLOSE);
 
 	// Flush and free merged reqeusts
+	// Dataset info is shared by all dataset instances
+	// Deallocate them only at file close
+	/*
 	if (dp->fp->mreqs[dp->id]->dbufs.size ()) {
 		dp->fp->wreqs.push_back (dp->fp->mreqs[dp->id]);
 		// Update total metadata size in wreqs
@@ -536,8 +556,8 @@ herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
 		delete dp->fp->mreqs[dp->id];
 		dp->fp->mreqs[dp->id] = NULL;
 	}
-
-	H5Tclose (dp->dtype);
+	H5Tclose (dip->dtype);
+	*/
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CLOSE);
 

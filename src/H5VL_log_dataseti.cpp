@@ -331,59 +331,73 @@ void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
 	herr_t err = 0;
 	int i;
 	int nfilter;
-	hid_t dcpl_id		= -1;
-	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
-	H5VL_log_dset_t *dp = NULL;
+	hid_t dcpl_id			  = -1;
+	H5VL_log_obj_t *op		  = (H5VL_log_obj_t *)obj;
+	H5VL_log_dset_t *dp		  = NULL;
+	H5VL_log_dset_info_t *dip = NULL;  // Dataset info
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	dp = new H5VL_log_dset_t (op, H5I_DATASET, uo);
 	CHECK_PTR (dp)
 
-	dp->dtype = H5VL_logi_dataset_get_type (dp->fp, dp->uo, dp->uvlid, dxpl_id);
-	CHECK_ID (dp->dtype)
-
-	dp->esize = H5Tget_size (dp->dtype);
-	CHECK_ID (dp->esize)
-
 	// Atts
 	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), dxpl_id);
 	CHECK_ERR
-	err = H5VL_logi_get_att_ex (dp, "_dims", H5T_NATIVE_INT64, &(dp->ndim), dp->dims, dxpl_id);
-	CHECK_ERR
-	err = H5VL_logi_get_att (dp, "_mdims", H5T_NATIVE_INT64, dp->mdims, dxpl_id);
-	CHECK_ERR
 
-	// Dstep for encoding selection
-	if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-		dp->dsteps[dp->ndim - 1] = 1;
-		for (i = dp->ndim - 2; i > -1; i--) { dp->dsteps[i] = dp->dsteps[i + 1] * dp->dims[i + 1]; }
+	// Construct new dataset info if not already constructed
+	if (!(dp->fp->dsets_info[dp->id])) {
+		dip = new H5VL_log_dset_info_t ();
+		CHECK_PTR (dip)
+
+		dip->dtype = H5VL_logi_dataset_get_type (dp->fp, dp->uo, dp->uvlid, dxpl_id);
+		CHECK_ID (dip->dtype)
+
+		dip->esize = H5Tget_size (dip->dtype);
+		CHECK_ID (dip->esize)
+
+		err =
+			H5VL_logi_get_att_ex (dp, "_dims", H5T_NATIVE_INT64, &(dip->ndim), dip->dims, dxpl_id);
+		CHECK_ERR
+		err = H5VL_logi_get_att (dp, "_mdims", H5T_NATIVE_INT64, dip->mdims, dxpl_id);
+		CHECK_ERR
+
+		// Dstep for encoding selection
+		if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+			dip->dsteps[dip->ndim - 1] = 1;
+			for (i = dip->ndim - 2; i > -1; i--) {
+				dip->dsteps[i] = dip->dsteps[i + 1] * dip->dims[i + 1];
+			}
+		}
+
+		// Filters
+		dcpl_id = H5VL_logi_dataset_get_dcpl (dp->fp, dp->uo, dp->uvlid, dxpl_id);
+		CHECK_ID (dcpl_id)
+		nfilter = H5Pget_nfilters (dcpl_id);
+		CHECK_ID (nfilter);
+		dip->filters.resize (nfilter);
+		for (i = 0; i < nfilter; i++) {
+			dip->filters[i].id = H5Pget_filter2 (
+				dcpl_id, (unsigned int)i, &(dip->filters[i].flags), &(dip->filters[i].cd_nelmts),
+				dip->filters[i].cd_values, LOGVOL_FILTER_NAME_MAX, dip->filters[i].name,
+				&(dip->filters[i].filter_config));
+			CHECK_ID (dip->filters[i].id);
+		}
+
+		// Record metadata in fp
+		dp->fp->dsets_info[dp->id] = dip;
+		// dp->fp->mreqs[dp->id]	   = new H5VL_log_merged_wreq_t (dp, 1);
 	}
-
-	// Filters
-	dcpl_id = H5VL_logi_dataset_get_dcpl (dp->fp, dp->uo, dp->uvlid, dxpl_id);
-	CHECK_ID (dcpl_id)
-	nfilter = H5Pget_nfilters (dcpl_id);
-	CHECK_ID (nfilter);
-	dp->filters.resize (nfilter);
-	for (i = 0; i < nfilter; i++) {
-		dp->filters[i].id = H5Pget_filter2 (dcpl_id, (unsigned int)i, &(dp->filters[i].flags),
-											&(dp->filters[i].cd_nelmts), dp->filters[i].cd_values,
-											LOGVOL_FILTER_NAME_MAX, dp->filters[i].name,
-											&(dp->filters[i].filter_config));
-		CHECK_ID (dp->filters[i].id);
-	}
-
-	// Record metadata in fp
-	dp->fp->dsets[dp->id] = *dp;
-	dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_OPEN);
 
 	goto fn_exit;
 err_out:;
-	if (dp) delete dp;
-	dp = NULL;
+	if (dp) {
+		if (dip) { delete dip; }
+		delete dp;
+		dp = NULL;
+	}
 fn_exit:;
 	if (dcpl_id >= 0) { H5Pclose (dcpl_id); }
 	return (void *)dp;
@@ -422,7 +436,8 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 								void **req) {
 	herr_t err = 0;
 	int i;
-	size_t esize;				   // Element size of the memory type
+	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
+	size_t esize;											 // Element size of the memory type
 	size_t selsize;				   // Size of metadata selection after deduplication and compression
 	H5VL_log_wreq_t *r;			   // Request obj
 	H5VL_log_req_data_block_t db;  // Request data
@@ -540,7 +555,7 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 	CHECK_ERR
 
 	// Need convert?
-	eqtype = H5Tequal (dp->dtype, mem_type_id);
+	eqtype = H5Tequal (dip->dtype, mem_type_id);
 
 	// Can reuse user buffer
 	if (rtype == H5VL_LOG_REQ_NONBLOCKING && eqtype > 0 && mstype == H5S_SEL_ALL) {
@@ -552,10 +567,10 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 		CHECK_ID (esize)
 
 		// HDF5 type conversion is in place, allocate for whatever larger
-		err = H5VL_log_filei_balloc (dp->fp, db.size * std::max (esize, (size_t) (dp->esize)),
+		err = H5VL_log_filei_balloc (dp->fp, db.size * std::max (esize, (size_t) (dip->esize)),
 									 (void **)(&(db.xbuf)));
 		// err = H5VL_log_filei_pool_alloc (&(dp->fp->data_buf),
-		//								 db.size * std::max (esize, (size_t) (dp->esize)),
+		//								 db.size * std::max (esize, (size_t) (dip->esize)),
 		//								 (void **)(&(r->xbuf)));
 		// CHECK_ERR
 
@@ -564,7 +579,7 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 			i = 0;
 
 			H5VL_LOGI_PROFILING_TIMER_START
-			err = H5VL_log_selections (mem_space_id).get_mpi_type (dp->dims, esize, &ptype);
+			err = H5VL_log_selections (mem_space_id).get_mpi_type (dip->dims, esize, &ptype);
 			CHECK_ERR
 			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SEL_TYPE);
 
@@ -581,24 +596,24 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 		if (eqtype == 0) {
 			void *bg = NULL;
 
-			if (H5Tget_class (dp->dtype) == H5T_COMPOUND) bg = malloc (db.size * dp->esize);
+			if (H5Tget_class (dip->dtype) == H5T_COMPOUND) bg = malloc (db.size * dip->esize);
 
-			err = H5Tconvert (mem_type_id, dp->dtype, db.size, db.xbuf, bg, plist_id);
+			err = H5Tconvert (mem_type_id, dip->dtype, db.size, db.xbuf, bg, plist_id);
 			free (bg);
 		}
 		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_CONVERT);
 	}
 
 	// Convert request size to number of bytes to be used by later routines
-	db.size *= dp->esize;
+	db.size *= dip->esize;
 
 	// Filtering
 	H5VL_LOGI_PROFILING_TIMER_START;
-	if (dp->filters.size ()) {
+	if (dip->filters.size ()) {
 		char *buf = NULL;
 		int csize = 0;
 
-		err = H5VL_logi_filter (dp->filters, db.xbuf, db.size, (void **)&buf, &csize);
+		err = H5VL_logi_filter (dip->filters, db.xbuf, db.size, (void **)&buf, &csize);
 		CHECK_ERR
 
 		if (db.xbuf != db.ubuf) {
@@ -615,6 +630,10 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 
 	// Put request in queue
 	if (dp->fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
+		// Allocate merged request if not yet allocated
+		if (!(dp->fp->mreqs[dp->id])) {
+			dp->fp->mreqs[dp->id] = new H5VL_log_merged_wreq_t (dp, 1);
+		}
 		err = dp->fp->mreqs[dp->id]->append (dp, db, dsel);
 		CHECK_ERR
 	} else {
@@ -651,8 +670,9 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 							   hid_t plist_id,
 							   void *buf,
 							   void **req) {
-	herr_t err = 0;
-	size_t esize;				// Element size of mem_type_id
+	herr_t err				  = 0;
+	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
+	size_t esize;											 // Element size of mem_type_id
 	htri_t eqtype;				// Is mem_type_id same as dataset external type
 	H5VL_log_rreq_t *r;			// Request entry
 	H5S_sel_type mstype;		// Type of selection in mem_space_id
@@ -675,14 +695,14 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 
 	// Setting metadata;
 	r		   = new H5VL_log_rreq_t ();
-	r->info	   = &(dp->fp->dsets[dp->id]);
+	r->info	   = dip;
 	r->hdr.did = dp->id;
-	r->ndim	   = dp->ndim;
+	r->ndim	   = dip->ndim;
 	r->ubuf	   = (char *)buf;
 	r->ptype   = MPI_DATATYPE_NULL;
 	r->dtype   = -1;
 	r->mtype   = -1;
-	r->esize   = dp->esize;
+	r->esize   = dip->esize;
 	r->rsize   = dsel->get_sel_size ();	 // Nomber of elements in selection
 	r->sels	   = dsel;
 
@@ -691,7 +711,7 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 	CHECK_ERR
 
 	// Need convert?
-	eqtype = H5Tequal (dp->dtype, mem_type_id);
+	eqtype = H5Tequal (dip->dtype, mem_type_id);
 	CHECK_ID (eqtype);
 
 	// Can reuse user buffer
@@ -703,21 +723,21 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 		CHECK_ID (esize)
 
 		// HDF5 type conversion is in place, allocate for whatever larger
-		err = H5VL_log_filei_balloc (dp->fp, r->rsize * std::max (esize, (size_t) (dp->esize)),
+		err = H5VL_log_filei_balloc (dp->fp, r->rsize * std::max (esize, (size_t) (dip->esize)),
 									 (void **)(&(r->xbuf)));
 		CHECK_ERR
 
 		// Need packing
 		if (mstype != H5S_SEL_ALL) {
 			H5VL_LOGI_PROFILING_TIMER_START;
-			err = H5VL_log_selections (mem_space_id).get_mpi_type (dp->dims, esize, &(r->ptype));
+			err = H5VL_log_selections (mem_space_id).get_mpi_type (dip->dims, esize, &(r->ptype));
 			CHECK_ERR
 			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SEL_TYPE);
 		}
 
 		// Need convert
 		if (eqtype == 0) {
-			r->dtype = H5Tcopy (dp->dtype);
+			r->dtype = H5Tcopy (dip->dtype);
 			CHECK_ID (r->dtype)
 			r->mtype = H5Tcopy (mem_type_id);
 			CHECK_ID (r->mtype)

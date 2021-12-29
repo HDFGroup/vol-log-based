@@ -34,8 +34,9 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (const H5VL_log_wreq_t &rhs) {
 }
 
 H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
-	herr_t err			= 0;
-	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
+	herr_t err				  = 0;
+	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)dset;
+	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
 	size_t mbsize;
 	hsize_t recnum;	 // Record number
 	int i;
@@ -48,9 +49,9 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 
 	// Flags
 	flag   = 0;
-	encdim = dp->ndim;
+	encdim = dip->ndim;
 	// Check if it is a record write
-	if (dp->ndim && dp->mdims[0] == H5S_UNLIMITED) {
+	if (dip->ndim && dip->mdims[0] == H5S_UNLIMITED) {
 		if (sels->nsel > 0) {
 			recnum = sels->starts[0][0];
 			for (i = 0; i < sels->nsel; i++) {
@@ -130,12 +131,12 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 
 		// Dsteps
 		if (flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-			memcpy (bufp, dp->dsteps, sizeof (MPI_Offset) * (encdim - 1));
+			memcpy (bufp, dip->dsteps, sizeof (MPI_Offset) * (encdim - 1));
 			bufp += sizeof (MPI_Offset) * (encdim - 1);
 		}
 
 		if (flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-			sels->encode (bufp, dp->dsteps, flag & H5VL_LOGI_META_FLAG_REC ? 1 : 0);
+			sels->encode (bufp, dip->dsteps, flag & H5VL_LOGI_META_FLAG_REC ? 1 : 0);
 		} else {
 			sels->encode (bufp, NULL, flag & H5VL_LOGI_META_FLAG_REC ? 1 : 0);
 		}
@@ -224,11 +225,11 @@ herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
 	this->meta_size_alloc = sizeof (H5VL_logi_meta_hdr) + sizeof (int);
 
 	flag = H5VL_LOGI_META_FLAG_MUL_SEL;
-	if ((fp->dsets[id].ndim > 1) && (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
+	if ((fp->dsets_info[id]->ndim > 1) && (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
 		flag |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
-		this->meta_size_alloc += sizeof (MPI_Offset) * (2 * nsel + fp->dsets[id].ndim);
+		this->meta_size_alloc += sizeof (MPI_Offset) * (2 * nsel + fp->dsets_info[id]->ndim);
 	} else {
-		this->meta_size_alloc += sizeof (MPI_Offset) * fp->dsets[id].ndim * 2 * nsel;
+		this->meta_size_alloc += sizeof (MPI_Offset) * fp->dsets_info[id]->ndim * 2 * nsel;
 	}
 
 	if (fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) { flag |= H5VL_LOGI_META_FLAG_SEL_DEFLATE; }
@@ -242,8 +243,9 @@ herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
 
 	// Pack dsteps
 	if (flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-		memcpy (this->mbufp, fp->dsets[id].dsteps, sizeof (MPI_Offset) * (fp->dsets[id].ndim - 1));
-		this->mbufp += sizeof (MPI_Offset) * (fp->dsets[id].ndim - 1);
+		memcpy (this->mbufp, fp->dsets_info[id]->dsteps,
+				sizeof (MPI_Offset) * (fp->dsets_info[id]->ndim - 1));
+		this->mbufp += sizeof (MPI_Offset) * (fp->dsets_info[id]->ndim - 1);
 	}
 
 	// Fill up the header
@@ -290,7 +292,8 @@ err_out:;
 herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
 									   H5VL_log_req_data_block_t &db,
 									   H5VL_log_selections *sels) {
-	herr_t err = 0;
+	herr_t err				  = 0;
+	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
 	size_t msize;
 
 	// Init the meta buffer if not yet inited
@@ -303,13 +306,13 @@ herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
 	if (this->hdr->flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
 		msize = sels->nsel * 2 * sizeof (MPI_Offset);
 	} else {
-		msize = sels->nsel * 2 * sizeof (hsize_t) * dp->ndim;
+		msize = sels->nsel * 2 * sizeof (hsize_t) * dip->ndim;
 	}
 	this->reserve (msize);
 
 	// Pack metadata
 	if (this->hdr->flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-		sels->encode (this->mbufp, dp->dsteps);
+		sels->encode (this->mbufp, dip->dsteps);
 	} else {
 		sels->encode (this->mbufp);
 	}
@@ -642,7 +645,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 			fp->wreqs.push_back (fp->mreqs[i]);
 			// Update total metadata size in wreqs
 			fp->mdsize += fp->mreqs[i]->hdr->meta_size;
-			fp->mreqs[i] = new H5VL_log_merged_wreq_t (fp, i, 1);
+			fp->mreqs[i] = NULL;
 		}
 	}
 

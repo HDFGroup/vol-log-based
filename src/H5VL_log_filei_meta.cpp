@@ -358,11 +358,11 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 
 				// Have to parse all entries for reference purpose
 				if (hdr_tmp->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-					err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr_tmp->did], bufp, block,
-														  bcache);
+					err = H5VL_logi_metaentry_ref_decode (*(fp->dsets_info[hdr_tmp->did]), bufp,
+														  block, bcache);
 					CHECK_ERR
 				} else {
-					err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);
+					err = H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, block);
 					CHECK_ERR
 
 					// Insert to cache
@@ -382,7 +382,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 									(uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
 #endif
 
-				err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);
+				err = H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, block);
 				CHECK_ERR
 				bufp += hdr_tmp->meta_size;
 
@@ -526,10 +526,11 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 									(uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
 #endif
 
-				err = H5VL_logi_metaentry_ref_decode (fp->dsets[hdr_tmp->did], bufp, block, bcache);
+				err = H5VL_logi_metaentry_ref_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, block,
+													  bcache);
 				CHECK_ERR
 			} else {
-				err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);
+				err = H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, block);
 				CHECK_ERR
 
 				// Insert to cache
@@ -548,7 +549,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 			H5VL_logi_lreverse ((uint32_t *)bufp, (uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
 #endif
 
-			err = H5VL_logi_metaentry_decode (fp->dsets[hdr_tmp->did], bufp, block);
+			err = H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, block);
 			CHECK_ERR
 			bufp += hdr_tmp->meta_size;
 
