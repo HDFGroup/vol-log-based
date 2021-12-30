@@ -24,9 +24,9 @@ static bool interleve (int ndim, int *sa, int *ca, int *sb) {
 	int i;
 
 	for (i = 0; i < ndim; i++) {
-		if (sa[i] + ca[i] < sb[i]) {
+		if (sa[i] + ca[i] - 1 < sb[i]) {
 			return false;
-		} else if (sa[i] + ca[i] > sb[i]) {
+		} else if (sa[i] + ca[i] - 1 > sb[i]) {
 			return true;
 		}
 	}
