@@ -81,15 +81,30 @@ static void sortblocks (int ndim, int len, hsize_t **starts, hsize_t **counts) {
 	}
 }
 
-H5VL_log_selections::H5VL_log_selections () : ndim (0), nsel (0), sels_arr (NULL) {}
-H5VL_log_selections::H5VL_log_selections (int ndim, int nsel) : ndim (ndim), nsel (nsel) {
+H5VL_log_selections::H5VL_log_selections () : ndim (0), nsel (0), dims (NULL), sels_arr (NULL) {}
+H5VL_log_selections::H5VL_log_selections (int ndim, hsize_t *dims) : ndim (ndim) {
+	herr_t err = 0;
+	this->dims = (hsize_t *)malloc (sizeof (hsize_t) * ndim);
+	CHECK_PTR (this->dims)
+	memcpy (this->dims, dims, sizeof (hsize_t) * ndim);
+err_out:;
+	if (err) { throw "OOM"; }
+}
+H5VL_log_selections::H5VL_log_selections (int ndim, hsize_t *dims, int nsel)
+	: H5VL_log_selections (ndim, dims) {
+	this->nsel = nsel;
 	this->alloc (nsel);
 }
-H5VL_log_selections::H5VL_log_selections (int ndim, int nsel, hsize_t **starts, hsize_t **counts)
-	: ndim (ndim), nsel (nsel), starts (starts), counts (counts) {}
+H5VL_log_selections::H5VL_log_selections (
+	int ndim, hsize_t *dims, int nsel, hsize_t **starts, hsize_t **counts)
+	: H5VL_log_selections (ndim, dims) {
+	this->nsel	 = nsel;
+	this->starts = starts;
+	this->counts = counts;
+}
 
 H5VL_log_selections::H5VL_log_selections (H5VL_log_selections &rhs)
-	: ndim (rhs.ndim), nsel (rhs.nsel) {
+	: H5VL_log_selections (rhs.ndim, rhs.dims) {
 	int i;
 
 	if (rhs.sels_arr) {
@@ -121,8 +136,13 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 	hsize_t **hstarts = NULL, **hends;	// Output buffer of H5Sget_select_hyper_nblocks
 	int *group		  = NULL;			// blocks with the same group number are interleaved
 
+	// Get space dim
 	ndim = H5Sget_simple_extent_ndims (dsid);
 	CHECK_ID (ndim)
+	this->dims = (hsize_t *)malloc (sizeof (hsize_t) * ndim);
+	CHECK_PTR (this->dims)
+	err = H5Sget_simple_extent_dims (dsid, this->dims, NULL);
+	CHECK_ERR
 
 	// Get selection type
 	if (dsid == H5S_ALL) {
@@ -329,6 +349,7 @@ err_out:;
 }
 
 H5VL_log_selections::~H5VL_log_selections () {
+	if (dims) { free (dims); }
 	if (sels_arr) {
 		if (starts[0]) { free (starts[0]); }
 		free (starts);
@@ -432,7 +453,7 @@ void H5VL_log_selections::convert_to_deep () {
 	}
 }
 
-herr_t H5VL_log_selections::get_mpi_type (hsize_t *hsize, size_t esize, MPI_Datatype *type) {
+herr_t H5VL_log_selections::get_mpi_type (size_t esize, MPI_Datatype *type) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
@@ -454,7 +475,7 @@ herr_t H5VL_log_selections::get_mpi_type (hsize_t *hsize, size_t esize, MPI_Data
 		derived_etype = false;
 	}
 
-	for (i = 0; i < ndim; i++) { size[i] = (int)hsize[i]; }
+	for (i = 0; i < ndim; i++) { size[i] = (int)dims[i]; }
 
 	// No selection, return
 	if (nsel == 0) {

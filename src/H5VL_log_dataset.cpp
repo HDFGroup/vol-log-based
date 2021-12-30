@@ -470,7 +470,8 @@ herr_t H5VL_log_dataset_optional (void *obj,
 
 	if (args->op_type == H5Dwrite_n_op_val) {
 		H5VL_LOGI_PROFILING_TIMER_START;
-		dsel = new H5VL_log_selections (dip->ndim, varnarg->n, varnarg->starts, varnarg->counts);
+		dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
+										varnarg->counts);
 		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
 		CHECK_PTR (dsel)
 
@@ -479,7 +480,8 @@ herr_t H5VL_log_dataset_optional (void *obj,
 		CHECK_ERR
 	} else if (args->op_type == H5Dread_n_op_val) {
 		H5VL_LOGI_PROFILING_TIMER_START;
-		dsel = new H5VL_log_selections (dip->ndim, varnarg->n, varnarg->starts, varnarg->counts);
+		dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
+										varnarg->counts);
 		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
 		CHECK_PTR (dsel)
 

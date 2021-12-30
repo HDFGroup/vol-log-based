@@ -9,15 +9,19 @@
 #include "H5VL_logi_meta.hpp"
 
 class H5VL_log_selections {
+   private:
+	H5VL_log_selections (int ndim, hsize_t *dims);
+
    public:
-	int ndim;		   // Dimension of the data space
+	int ndim;		   // Number of dimensions of the data space
 	int nsel;		   // Size of the selection (bytes)
 	hsize_t **starts;  // Start of selection
 	hsize_t **counts;  // Count of selection
+	hsize_t *dims;	   // Dimensions length of the data space
 
 	H5VL_log_selections ();
-	H5VL_log_selections (int ndim, int nsel);
-	H5VL_log_selections (int ndim, int nsel, hsize_t **starts, hsize_t **counts);
+	H5VL_log_selections (int ndim, hsize_t *dims, int nsel);
+	H5VL_log_selections (int ndim, hsize_t *dims, int nsel, hsize_t **starts, hsize_t **counts);
 	H5VL_log_selections (hid_t dsid);
 	H5VL_log_selections (H5VL_log_selections &rhs);
 	~H5VL_log_selections ();
@@ -25,8 +29,7 @@ class H5VL_log_selections {
 	H5VL_log_selections &operator= (H5VL_log_selections &rhs);
 	bool operator== (H5VL_log_selections &rhs);
 
-	herr_t get_mpi_type (hsize_t *hsize,
-						 size_t esize,
+	herr_t get_mpi_type (size_t esize,
 						 MPI_Datatype *type);  // Calculate a MPI datatype describing the selection
 	hsize_t get_sel_size ();				   // Get number of elements in the selection
 	hsize_t get_sel_size (int i);			   // Get number of elements in the i-th selected block

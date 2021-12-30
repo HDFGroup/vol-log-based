@@ -579,7 +579,7 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 			i = 0;
 
 			H5VL_LOGI_PROFILING_TIMER_START
-			err = H5VL_log_selections (mem_space_id).get_mpi_type (dip->dims, esize, &ptype);
+			err = H5VL_log_selections (mem_space_id).get_mpi_type (esize, &ptype);
 			CHECK_ERR
 			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SEL_TYPE);
 
@@ -730,7 +730,7 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 		// Need packing
 		if (mstype != H5S_SEL_ALL) {
 			H5VL_LOGI_PROFILING_TIMER_START;
-			err = H5VL_log_selections (mem_space_id).get_mpi_type (dip->dims, esize, &(r->ptype));
+			err = H5VL_log_selections (mem_space_id).get_mpi_type (esize, &(r->ptype));
 			CHECK_ERR
 			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SEL_TYPE);
 		}
