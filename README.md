@@ -120,10 +120,10 @@ HDF5 environment variables.
   + The subfiling feature is under development.
   + Async I/O (a new feature of HDF5 in the future release) is not yet supported.
   + Virtual Datasets (VDS) feature is not supported.
-  + Multiple opened instances of the same file or dataset object are not supported.
-    + The log-based VOL caches some metadata of an opened file and datasets.
-      The cached metadata is not kept synced among opened instances.
-    + The file can be corrupted if the application open and operate multiple handles to the same object.
+  + Multiple opened instances of the same file is not supported.
+    + The log-based VOL caches some metadata of an opened file.
+      The cached metadata is not synced among opened instances.
+    + The file can be corrupted if the application open and operate multiple handles to the same file.
   + The names of (links to) objects cannot start with '_' character.
     + Names starting with '_' are reserved for the log-based VOL for its internal data and metadata.
   + The log-based VOL does not support all the HDF5 APIs.

@@ -3,10 +3,13 @@
 ### Version _VERSION_ (_RELEASE_DATE_)
 * New features.
   + Support parallel test.
-    + run make ptest to run test programs in parallel.
+    + Run make ptest to run test programs in parallel.
   + Support data dump in h5ldump.
-    + add -d command-line option to dump data of each selection block.
+    + Add -d command-line option to dump data of each selection block.
   + Add utility script to set HDF5 environment to use log-based VOL.
+  + Support multiple opened instance of the same dataset.
+    + Allow h5dump to read log-based VOL output file using log-based VOL.
+  + Support H5Ovisit, H5Literate, and H5Lvisit.
 * New test programs.
   + Scalar.
     + Read/write scalar datasets.
@@ -18,14 +21,16 @@
   + Correct mistyped variable type for file info.
   + Fix bug on metadata encoding not following the file configure flag.
   + Fix bug on generating MPI datatype for reading.
-    + check subarray interleaving only when the target falls into the same block of data.
+    + Check subarray interleaving only when the target falls into the same block of data.
     + File offset must include selection block offset.
   + Fix bug on scalar and 1-D datasets.
   + Fix referenced metadata decoding bug.
   + Fix bug on metadata flush barrier using the wrong communicator.
   + Fix metadata flag bug after metadata compression fails.
   + Fix metadata index wrongly erased bug.
-  + Fix dataset I/O bug when using H5S_ALL
+  + Fix dataset I/O bug when using H5S_ALL.
+  + Correct formula for determining file space interleaving.
+  + Fix a bug when memory space and file space have different number of dimension.
 * Other updates.
   + Registered with HDF5 with ID 514.
   + Switch from HDF5 develop branch to 1.13.0.
