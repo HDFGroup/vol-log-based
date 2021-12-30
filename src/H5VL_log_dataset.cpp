@@ -88,7 +88,8 @@ void *H5VL_log_dataset_create (void *obj,
 	err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
 	CHECK_ERR
 
-	dp = new H5VL_log_dset_t (op, H5I_DATASET);
+	dp	   = new H5VL_log_dset_t (op, H5I_DATASET);
+	dp->id = dp->fp->ndset;	 // ID nees to be set before writing to attribute
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 	dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid,
@@ -140,7 +141,6 @@ void *H5VL_log_dataset_create (void *obj,
 							 dxpl_id, ureqp);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
-
 	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id,
 							 ureqp);
 	CHECK_ERR
@@ -152,7 +152,7 @@ void *H5VL_log_dataset_create (void *obj,
 	// Append dataset to the file
 	LOG_VOL_ASSERT (dp->fp->ndset == dp->fp->dsets_info.size ())
 	LOG_VOL_ASSERT (dp->fp->ndset == dp->fp->mreqs.size ())
-	dp->id = (dp->fp->ndset)++;
+	dp->fp->ndset++;
 	dp->fp->dsets_info.push_back (dip);			 // Dataset info
 	dp->fp->idx.resize (dp->fp->ndset);			 // Index for H5Dread
 	dp->fp->mreqs.resize (dp->fp->ndset, NULL);	 // Merged requests
