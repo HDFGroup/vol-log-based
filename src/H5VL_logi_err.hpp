@@ -18,13 +18,14 @@
 	{}
 #endif
 
-inline void H5VL_logi_print_err (int line, char *file, char *msg) {
+inline void H5VL_logi_print_err (int line, char *file, char *msg, bool h5err = false) {
 #ifdef LOGVOL_DEBUG
 	if (msg) {
 		printf ("Error at line %d in %s: %s\n", line, file, msg);
 	} else {
 		printf ("Error at line %d in %s:\n", line, file);
 	}
+	if (h5err) { H5Eprint1 (stdout); }
 #endif
 }
 
@@ -34,13 +35,12 @@ inline bool H5VL_logi_debug_verbose () {
 	return false;
 }
 
-#define CHECK_ERR                                                   \
-	{                                                               \
-		if (err < 0) {                                              \
-			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL); \
-			H5Eprint1 (stdout);                                     \
-			goto err_out;                                           \
-		}                                                           \
+#define CHECK_ERR                                                         \
+	{                                                                     \
+		if (err < 0) {                                                    \
+			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL, true); \
+			goto err_out;                                                 \
+		}                                                                 \
 	}
 
 #define CHECK_MPIERR                                                  \
@@ -55,22 +55,20 @@ inline bool H5VL_logi_debug_verbose () {
 		}                                                             \
 	}
 
-#define CHECK_ID(A)                                                 \
-	{                                                               \
-		if (A < 0) {                                                \
-			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL); \
-			H5Eprint1 (stdout);                                     \
-			goto err_out;                                           \
-		}                                                           \
+#define CHECK_ID(A)                                                       \
+	{                                                                     \
+		if (A < 0) {                                                      \
+			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL), true; \
+			goto err_out;                                                 \
+		}                                                                 \
 	}
 
-#define CHECK_PTR(A)                                                \
-	{                                                               \
-		if (A == NULL) {                                            \
-			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL); \
-			H5Eprint1 (stdout);                                     \
-			goto err_out;                                           \
-		}                                                           \
+#define CHECK_PTR(A)                                                      \
+	{                                                                     \
+		if (A == NULL) {                                                  \
+			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL), true; \
+			goto err_out;                                                 \
+		}                                                                 \
 	}
 
 #define ERR_OUT(A)                                                   \
