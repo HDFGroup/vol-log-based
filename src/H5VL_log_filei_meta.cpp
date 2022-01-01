@@ -157,7 +157,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		err = H5Pset_alloc_time (dcplid, H5D_ALLOC_TIME_EARLY);
 
 		// Create dataset with under VOL
-		sprintf (mdname, "_md_%d", fp->nmdset);
+		sprintf (mdname, "__md_%d", fp->nmdset);
 		H5VL_LOGI_PROFILING_TIMER_START;
 		mdp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, mdname, H5P_LINK_CREATE_DEFAULT,
 								  H5T_STD_B8LE, mdsid, dcplid, H5P_DATASET_ACCESS_DEFAULT,
@@ -303,7 +303,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	loc.obj_type = H5I_GROUP;
 	for (i = 0; i < fp->nmdset; i++) {
 		// Open the metadata dataset
-		sprintf (mdname, "_md_%d", i);
+		sprintf (mdname, "__md_%d", i);
 		mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, mdname, H5P_DATASET_ACCESS_DEFAULT,
 								fp->dxplid, NULL);
 		CHECK_PTR (mdp)
@@ -443,7 +443,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	for (i = 0; i < fp->ndset; i++) { fp->idx[i].clear (); }
 
 	// Open the metadata dataset
-	sprintf (mdname, "_md_%d", md);
+	sprintf (mdname, "__md_%d", md);
 	mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT,
 							fp->dxplid, NULL);
 	CHECK_PTR (mdp)

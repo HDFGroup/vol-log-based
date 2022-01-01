@@ -65,7 +65,7 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Att
-	err = H5VL_logi_get_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
+	err = H5VL_logi_get_att (fp, "__int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
 	CHECK_ERR
 	fp->ndset  = attbuf[0];
 	fp->nldset = attbuf[1];
@@ -553,14 +553,14 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 		if (fp->sfp && fp->sfp != fp->uo) {
 			attbuf[3] =
 				fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
-			err = H5VL_logi_put_att (fp->sfp, fp->uvlid, H5I_FILE, "_int_att", H5T_NATIVE_INT32,
+			err = H5VL_logi_put_att (fp->sfp, fp->uvlid, H5I_FILE, "__int_att", H5T_NATIVE_INT32,
 									 attbuf, fp->dxplid);
 			attbuf[1] = 0;	// No data and metadata in the main file
 			attbuf[2] = 0;
 			attbuf[3] |= H5VL_FILEI_CONFIG_SUBFILING;  // Turn subfiling flag back on
 		}
 		// Att in the main file
-		err = H5VL_logi_put_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
+		err = H5VL_logi_put_att (fp, "__int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
 		CHECK_ERR
 	}
 
@@ -691,7 +691,7 @@ herr_t H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
 	attbuf[2] = fp->nmdset;
 	attbuf[3] = fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
 	attbuf[4] = fp->ngroup;
-	err		  = H5VL_logi_add_att (fp->sfp, fp->uvlid, H5I_FILE, "_int_att", H5T_STD_I32LE,
+	err		  = H5VL_logi_add_att (fp->sfp, fp->uvlid, H5I_FILE, "__int_att", H5T_STD_I32LE,
 							   H5T_NATIVE_INT32, 4, attbuf, dxpl_id, NULL);
 	CHECK_ERR
 
@@ -731,7 +731,7 @@ herr_t H5VL_log_filei_open_subfile (H5VL_log_file_t *fp,
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
 
 	// Att
-	err = H5VL_logi_get_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
+	err = H5VL_logi_get_att (fp, "__int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
 	CHECK_ERR
 	fp->nldset = attbuf[1];
 	fp->nmdset = attbuf[2];
@@ -852,7 +852,7 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
 
 		// Att
-		err = H5VL_logi_get_att (fp, "_int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
+		err = H5VL_logi_get_att (fp, "__int_att", H5T_NATIVE_INT32, attbuf, fp->dxplid);
 		CHECK_ERR
 		fp->ndset  = attbuf[0];
 		fp->nldset = attbuf[1];

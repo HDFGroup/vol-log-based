@@ -15,7 +15,9 @@ herr_t H5VL_log_obji_iterate_op (hid_t obj,
 	H5VL_log_obji_iterate_op_data *ctx = (H5VL_log_obji_iterate_op_data *)op_data;
 
 	// Skip internal objects
-	if (name && name[0] != '_') { return ctx->op (obj, name, info, ctx->op_data); }
+	if (name && (name[0] != '_' || name[1] != '_')) {
+		return ctx->op (obj, name, info, ctx->op_data);
+	}
 
 	return 0;
 }

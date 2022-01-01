@@ -168,7 +168,7 @@ herr_t h5ldump_file (std::string path,
 		// Iterate through metadata datasets
 		for (i = 0; i < nmdset; i++) {
 			std::cout << std::string (indent, ' ') << "Metadata dataset " << i << std::endl;
-			err = h5ldump_mdset (lgid, "_md_" + std::to_string (i), dsets, fh, indent + 4);
+			err = h5ldump_mdset (lgid, "__md_" + std::to_string (i), dsets, fh, indent + 4);
 			CHECK_ERR
 			// std::cout << std::string (indent, ' ') << "End metadata dataset " << i << std::endl;
 		}

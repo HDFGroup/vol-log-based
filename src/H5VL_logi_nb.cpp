@@ -716,7 +716,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 
 	// Write out the data
 	if (fsize_all) {
-		sprintf (dname, "_ld_%d", fp->nldset);
+		sprintf (dname, "__ld_%d", fp->nldset);
 
 		// Create log dataset
 		if (fsize_group) {
@@ -1029,7 +1029,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 
 		ldsid = H5Screate_simple (1, &dsize, &dsize);
 		CHECK_ID (ldsid)
-		sprintf (dname, "_ld_%d", fp->nldset);
+		sprintf (dname, "__ld_%d", fp->nldset);
 		loc.obj_type = H5I_GROUP;
 		loc.type	 = H5VL_OBJECT_BY_SELF;
 		ldp			 = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,

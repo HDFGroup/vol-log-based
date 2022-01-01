@@ -229,7 +229,7 @@ void *H5VL_log_file_create (
 	attbuf[2] = fp->nmdset;
 	attbuf[3] = fp->config;
 	attbuf[4] = fp->ngroup;
-	err = H5VL_logi_add_att (fp, "_int_att", H5T_STD_I32LE, H5T_NATIVE_INT32, 5, attbuf, dxpl_id,
+	err = H5VL_logi_add_att (fp, "__int_att", H5T_STD_I32LE, H5T_NATIVE_INT32, 5, attbuf, dxpl_id,
 							 NULL);
 	CHECK_ERR
 
