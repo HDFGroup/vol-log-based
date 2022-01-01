@@ -141,8 +141,8 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 	CHECK_ID (ndim)
 	this->dims = (hsize_t *)malloc (sizeof (hsize_t) * ndim);
 	CHECK_PTR (this->dims)
-	err = H5Sget_simple_extent_dims (dsid, this->dims, NULL);
-	CHECK_ERR
+	ndim = H5Sget_simple_extent_dims (dsid, this->dims, NULL);
+	LOG_VOL_ASSERT (ndim == this->ndim)
 
 	// Get selection type
 	if (dsid == H5S_ALL) {
