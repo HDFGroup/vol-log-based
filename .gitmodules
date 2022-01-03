@@ -1,0 +1,4 @@
+[submodule "test/external/qmcpack/qmcpack"]
+	path = test/external/qmcpack/qmcpack
+	url = https://github.com/QMCPACK/qmcpack.git
+	branch = main

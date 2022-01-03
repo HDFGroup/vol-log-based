@@ -6,13 +6,14 @@
 #
 # @configure_input@
 
-C_SUBDIRS = basic dynamic testcases external
+C_SUBDIRS =
 
-DIST_SUBDIRS = $(C_SUBDIRS) 
+if HAVE_QMCPACK
+    C_SUBDIRS += qmcpack
+endif
 
+DIST_SUBDIRS = qmcpack
 SUBDIRS = $(C_SUBDIRS)
-
-EXTRA_DIST = testutils.hpp
 
 ptest:
 	for d in $(SUBDIRS) ; do \

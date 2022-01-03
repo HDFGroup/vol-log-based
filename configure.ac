@@ -61,7 +61,7 @@ AC_SUBST(H5VL_LOG_RELEASE_DATE_FULL)
 AC_SUBST(PACKAGE_VERSION)
 
 AH_TEMPLATE([ENABLE_ZLIB],              [Define if to enable zlib compression method])
-AH_TEMPLATE([ENABLE_ZLIB],              [Define if to enable zlib compression method])
+AH_TEMPLATE([ENABLE_EXTERNAL_TEST],              [Define if to build external test programs])
 
 AH_TOP([#ifndef _CONFIG_H
 #define _CONFIG_H])
@@ -294,11 +294,13 @@ AC_ARG_WITH([hdf5],
      *,*)
         hdf5_inc="`echo $withval |cut -f1 -d,`"
         hdf5_lib="`echo $withval |cut -f2 -d, -s`"
+        hdf5_root="${hdf5_lib}/.."
         ;;
      *)
         if test -n "$withval"; then
           hdf5_inc="$withval/include"
           hdf5_lib="$withval/lib"
+          hdf5_root="${withval}"
         fi
         ;;
    esac
@@ -444,6 +446,23 @@ if test "x${TESTOUTDIR}" = x ; then
    TESTOUTDIR=.
 fi
 
+AC_ARG_ENABLE([external-tests],
+    [AS_HELP_STRING([--enable-external-tests],
+                    [Enable external test programs.
+                     @<:@default: disabled@:>@])],
+    [extests=${enableval}], [extests=no]
+)
+if test "x${extests}" = xyes; then
+   AC_CHECK_FILE([test/external/qmcpack/qmcpack/src/Sandbox/restart.cpp], [have_qmcpack=yes], [have_qmcpack=no])
+
+   if test "x${have_qmcpack}" = xyes; then
+      echo "configuring qmcpack..."
+      AC_CONFIG_COMMANDS(test,[cd test/external/qmcpack && chmod 755 config.sh && ./config.sh])
+   fi
+fi
+AM_CONDITIONAL(ENABLE_EXTERNAL_TESTS, [test "x${extests}" = xyes])
+AM_CONDITIONAL(HAVE_QMCPACK, [test "x${have_qmcpack}" = xyes])
+
 dnl Configuration Date
 dnl Note that command 'date' is not portable across Unix platforms
 if test "x$SOURCE_DATE_EPOCH" != x ; then
@@ -464,6 +483,7 @@ fi
 UD_MSG_DEBUG([CONFIG_DATE=$CONFIG_DATE])
 
 AC_SUBST(HDF5_LIB_PATH,${hdf5_lib})
+AC_SUBST(HDF5_ROOT_PATH,${hdf5_root})
 
 AC_SUBST(INSTALL_PREFIX,${prefix})
 AC_SUBST(INSTALL_EXEC_PREFIX,${exec_prefix})
@@ -493,6 +513,9 @@ AC_CONFIG_FILES(Makefile \
                 test/Makefile \
                 test/basic/Makefile \
                 test/dynamic/Makefile \
+                test/external/Makefile \
+                test/external/qmcpack/config.sh \
+                test/external/qmcpack/Makefile \
                 test/testcases/Makefile \
                 utils/Makefile \
                 utils/h5ldump/Makefile \
