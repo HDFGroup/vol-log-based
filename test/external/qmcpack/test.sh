@@ -7,7 +7,7 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-export LD_LIBRARY_PATH=${HDF5_LIB_PATH}:${LOGVOL_LIB_PATH}:${LD_LIBRARY_PATH}
+source ${top_builddir}/utils/h5lenv.bash
 
 EXEC="build/bin/restart"
 if test "x$#" = x0 ; then
@@ -16,5 +16,5 @@ else
     RUN="${TESTMPIRUN}"
 fi
 
-echo "${RUN} ${EXEC} -g \"8 8 8\" > restart.log"
-${RUN} ${EXEC} -g "8 8 8" > restart.log
+echo "${RUN} ${EXEC} -g \"1 1 1\" > restart.log"
+${RUN} ${EXEC} -g "1 1 1" > restart.log
