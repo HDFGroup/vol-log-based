@@ -330,7 +330,6 @@ err_out:
 void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
 	herr_t err = 0;
 	int i;
-	int nfilter;
 	hid_t dcpl_id			  = -1;
 	H5VL_log_obj_t *op		  = (H5VL_log_obj_t *)obj;
 	H5VL_log_dset_t *dp		  = NULL;
@@ -373,16 +372,8 @@ void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
 		// Filters
 		dcpl_id = H5VL_logi_dataset_get_dcpl (dp->fp, dp->uo, dp->uvlid, dxpl_id);
 		CHECK_ID (dcpl_id)
-		nfilter = H5Pget_nfilters (dcpl_id);
-		CHECK_ID (nfilter);
-		dip->filters.resize (nfilter);
-		for (i = 0; i < nfilter; i++) {
-			dip->filters[i].id = H5Pget_filter2 (
-				dcpl_id, (unsigned int)i, &(dip->filters[i].flags), &(dip->filters[i].cd_nelmts),
-				dip->filters[i].cd_values, LOGVOL_FILTER_NAME_MAX, dip->filters[i].name,
-				&(dip->filters[i].filter_config));
-			CHECK_ID (dip->filters[i].id);
-		}
+		err = H5VL_logi_get_filters (dcpl_id, dip->filters);
+		CHECK_ERR
 
 		// Record metadata in fp
 		dp->fp->dsets_info[dp->id] = dip;

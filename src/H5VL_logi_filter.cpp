@@ -123,4 +123,4 @@ err_out:;
 	H5VL_log_free (buf[0]) H5VL_log_free (buf[1]) return err;
 }
 
-H5VL_log_filter_t::H5VL_log_filter_t () { this->cd_nelmts = LOGVOL_FILTER_CD_MAX; }
+H5VL_log_filter_t::H5VL_log_filter_t () { this->cd_nelmts = 0; }

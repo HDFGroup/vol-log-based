@@ -63,7 +63,7 @@ void *H5VL_log_dataset_create (void *obj,
 	// H5VL_link_create_args_t args;
 	// H5VL_loc_params_t loc;
 	hid_t sid = -1;
-	int ndim, nfilter;
+	int ndim;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
 	// char lname[1024];
@@ -121,16 +121,8 @@ void *H5VL_log_dataset_create (void *obj,
 	}
 
 	// Filters
-	nfilter = H5Pget_nfilters (dcpl_id);
-	CHECK_ID (nfilter);
-	dip->filters.resize (nfilter);
-	for (i = 0; i < nfilter; i++) {
-		dip->filters[i].id = H5Pget_filter2 (
-			dcpl_id, (unsigned int)i, &(dip->filters[i].flags), &(dip->filters[i].cd_nelmts),
-			dip->filters[i].cd_values, LOGVOL_FILTER_NAME_MAX, dip->filters[i].name,
-			&(dip->filters[i].filter_config));
-		CHECK_ID (dip->filters[i].id);
-	}
+	err = H5VL_logi_get_filters (dcpl_id, dip->filters);
+	CHECK_ERR
 
 	// Record dataset metadata as attributes
 	err = H5VL_logi_add_att (dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dip->ndim, dip->dims,

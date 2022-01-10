@@ -25,7 +25,7 @@ check_PROGRAMS =    file \
                     dwrite \
                     dread \
 					memsel \
-                    null_req
+                    null_req 
                 #   noclose 
                 #   test
 

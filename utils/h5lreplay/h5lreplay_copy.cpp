@@ -18,7 +18,6 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 							   void *op_data) {
 	herr_t err = 0;
 	int i;
-	int nfilter;
 	hid_t src_did = -1;
 	hid_t dst_did = -1;
 	hid_t aid	  = -1;
@@ -94,16 +93,9 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 		dst_did = H5Dcreate2 (argp->fid, name, tid, sid, H5P_DEFAULT, dcplid, H5P_DEFAULT);
 		CHECK_ID (dst_did)
 
-		nfilter = H5Pget_nfilters (dcplid);
-		CHECK_ID (nfilter);
-		dset.filters.resize (nfilter);
-		for (i = 0; i < nfilter; i++) {
-			dset.filters[i].id = H5Pget_filter2 (
-				dcplid, (unsigned int)i, &(dset.filters[i].flags), &(dset.filters[i].cd_nelmts),
-				dset.filters[i].cd_values, LOGVOL_FILTER_NAME_MAX, dset.filters[i].name,
-				&(dset.filters[i].filter_config));
-			CHECK_ID (dset.filters[i].id);
-		}
+		// Filters
+		err = H5VL_logi_get_filters (dcplid, dset.filters);
+		CHECK_ERR
 
 		// Copy all attributes
 		// err = H5Aiterate2 (src_did, H5_INDEX_CRT_ORDER, H5_ITER_INC, &zero,
