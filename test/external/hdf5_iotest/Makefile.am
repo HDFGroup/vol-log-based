@@ -1,0 +1,77 @@
+#
+# Copyright (C) 2022, Northwestern University and Argonne National Laboratory
+# See COPYRIGHT notice in top-level directory.
+#
+# $Id$
+#
+# @configure_input@
+
+AM_CPPFLAGS = -I${srcdir}
+AM_CPPFLAGS += -I${top_srcdir}
+AM_CPPFLAGS += -I${top_srcdir}/src
+AM_CPPFLAGS += -I${top_srcdir}/test
+AM_CPPFLAGS += -I${top_builddir}
+AM_CPPFLAGS += -I${top_builddir}/src
+LDADD = $(top_builddir)/src/libH5VL_log.la
+
+EXTRA_DIST = test.sh config.sh.in
+
+# autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
+# For newer versions, we can use AM_TESTS_ENVIRONMENT instead
+# AM_TESTS_ENVIRONMENT  = export TESTPROGRAMS="$(TESTPROGRAMS)";
+# AM_TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";
+# AM_TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
+TESTS_ENVIRONMENT  = export SED="$(SED)";
+TESTS_ENVIRONMENT += export srcdir="$(srcdir)";
+TESTS_ENVIRONMENT += export top_builddir="$(top_builddir)";
+TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
+TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";
+TESTS_ENVIRONMENT += export TESTMPIRUN="$(TESTMPIRUN)";
+TESTS_ENVIRONMENT += export TESTPROGRAMS="$(TESTPROGRAMS)";
+TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
+TESTS_ENVIRONMENT += export M4="${M4}";
+TESTS_ENVIRONMENT += export HDF5_LIB_PATH="${HDF5_LIB_PATH}";
+
+CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.csv
+
+TESTS = test.sh
+
+hdf5_iotest:
+	cd build && make -j 64
+	cp build/src/hdf5_iotest .
+
+# build check targets but not invoke
+tests-local: all hdf5_iotest
+
+ptest ptest4: $(check_PROGRAMS)
+	@echo "==========================================================="
+	@echo "    $(subdir): Parallel testing on 4 MPI processes"
+	@echo "==========================================================="
+	$(TESTS_ENVIRONMENT) \
+	$(srcdir)/test.sh 4 || exit 1
+
+ptest2: $(check_PROGRAMS)
+	@echo "==========================================================="
+	@echo "    $(subdir): Parallel testing on 2 MPI processes"
+	@echo "==========================================================="
+	$(TESTS_ENVIRONMENT) \
+	$(srcdir)/test.sh 2 || exit 1
+
+ptest6: $(check_PROGRAMS)
+	@echo "==========================================================="
+	@echo "    $(subdir): Parallel testing on 6 MPI processes"
+	@echo "==========================================================="
+	$(TESTS_ENVIRONMENT) \
+	$(srcdir)/test.sh 6 || exit 1
+
+ptests: ptest2 ptest4 ptest6
+ptest8 ptest10:
+
+.PHONY: ptest ptests ptest2 ptest4 ptest6 ptest8 ptest10
+
+clean-local:
+	if [ -d "build" ]; then cd build && make clean ; fi
+	rm -f hdf5_iotest
+
+distclean-local:
+	rm -rf build

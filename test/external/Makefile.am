@@ -8,11 +8,16 @@
 
 C_SUBDIRS =
 
+if ENABLE_SHARED
 if HAVE_QMCPACK
     C_SUBDIRS += qmcpack
 endif
+if HAVE_HDF5_IOTEST
+    C_SUBDIRS += hdf5_iotest
+endif
+endif
 
-DIST_SUBDIRS = qmcpack
+DIST_SUBDIRS = qmcpack hdf5_iotest
 SUBDIRS = $(C_SUBDIRS)
 
 ptest:

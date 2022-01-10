@@ -2,3 +2,7 @@
 	path = test/external/qmcpack/qmcpack
 	url = https://github.com/QMCPACK/qmcpack.git
 	branch = main
+[submodule "test/external/hdf5_iotest/hdf5-iotest"]
+	path = test/external/hdf5_iotest/hdf5-iotest
+	url = https://github.com/brtnfld/hdf5-iotest
+	branch = master

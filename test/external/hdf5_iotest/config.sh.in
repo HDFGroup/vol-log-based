@@ -1,0 +1,15 @@
+#!/bin/bash
+
+export HDF5_ROOT=@HDF5_ROOT_PATH@
+
+cd hdf5-iotest
+./autogen.sh
+cd ..
+
+rm -rf build
+mkdir build
+cd build
+../hdf5-iotest/configure CC=@MPICC@ CXX=@MPICXX@ CFLAGS="@CFLAGS@" CPPFLAGS="-I${HDF5_ROOT}/include" LDFLAGS="-L${HDF5_ROOT}/lib" LIBS="-lhdf5"
+
+
+
