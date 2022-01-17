@@ -10,7 +10,7 @@
 
 class H5VL_log_selections {
    private:
-	H5VL_log_selections (int ndim, hsize_t *dims);
+	H5VL_log_selections (int ndim, hsize_t *dims, int nsel);
 
    public:
 	int ndim;		   // Number of dimensions of the data space
@@ -20,7 +20,6 @@ class H5VL_log_selections {
 	hsize_t *dims;	   // Dimensions length of the data space
 
 	H5VL_log_selections ();
-	H5VL_log_selections (int ndim, hsize_t *dims, int nsel);
 	H5VL_log_selections (int ndim, hsize_t *dims, int nsel, hsize_t **starts, hsize_t **counts);
 	H5VL_log_selections (hid_t dsid);
 	H5VL_log_selections (H5VL_log_selections &rhs);
@@ -40,7 +39,7 @@ class H5VL_log_selections {
    private:
 	hsize_t **sels_arr = NULL;	// Allocated starts and counts pointer array, if present, need free
 
-	void alloc (int nsel);	  // Allocate space for nsel blocks
+	void alloc (int nsel);	  // Allocate space for starts and counts
 	void convert_to_deep ();  // Coverts a shallow copy to deep copy
 };
 

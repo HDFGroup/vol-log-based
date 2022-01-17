@@ -82,7 +82,8 @@ static void sortblocks (int ndim, int len, hsize_t **starts, hsize_t **counts) {
 }
 
 H5VL_log_selections::H5VL_log_selections () : ndim (0), nsel (0), dims (NULL), sels_arr (NULL) {}
-H5VL_log_selections::H5VL_log_selections (int ndim, hsize_t *dims) : ndim (ndim) {
+
+H5VL_log_selections::H5VL_log_selections (int ndim, hsize_t *dims, int nsel) : ndim (ndim) {
 	herr_t err = 0;
 	if (dims) {
 		this->dims = (hsize_t *)malloc (sizeof (hsize_t) * ndim);
@@ -91,18 +92,14 @@ H5VL_log_selections::H5VL_log_selections (int ndim, hsize_t *dims) : ndim (ndim)
 	} else {
 		this->dims = NULL;
 	}
+	this->nsel = nsel;
 err_out:;
 	if (err) { throw "OOM"; }
 }
-H5VL_log_selections::H5VL_log_selections (int ndim, hsize_t *dims, int nsel)
-	: H5VL_log_selections (ndim, dims) {
-	this->nsel = nsel;
-	this->alloc (nsel);
-}
+
 H5VL_log_selections::H5VL_log_selections (
 	int ndim, hsize_t *dims, int nsel, hsize_t **starts, hsize_t **counts)
-	: H5VL_log_selections (ndim, dims) {
-	this->nsel	 = nsel;
+	: H5VL_log_selections (ndim, dims, nsel) {
 	this->starts = starts;
 	this->counts = counts;
 }
@@ -336,8 +333,8 @@ err_out:;
 }
 
 H5VL_log_selections::~H5VL_log_selections () {
+	if (dims) { free (dims); }
 	if (sels_arr) {
-		if (dims) { free (dims); }
 		if (starts[0]) { free (starts[0]); }
 		free (starts);
 		sels_arr = NULL;
@@ -355,16 +352,21 @@ H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
 		sels_arr = NULL;
 	}
 
+	// Copy dimension sizes
+	if (rhs.dims) {
+		if (this->ndim < rhs.ndim) {
+			this->dims = (hsize_t *)realloc (this->dims, sizeof (hsize_t) * rhs.ndim);
+			CHECK_PTR (this->dims)
+		}
+		memcpy (this->dims, rhs.dims, sizeof (hsize_t) * rhs.ndim);
+	} else {
+		this->dims = NULL;
+	}
+
 	this->nsel = rhs.nsel;
 	this->ndim = rhs.ndim;
 
 	if (rhs.sels_arr) {
-		if (rhs.dims) {
-			this->dims = (hsize_t *)malloc (sizeof (hsize_t) * ndim);
-			CHECK_PTR (this->dims)
-			memcpy (this->dims, rhs.dims, sizeof (hsize_t) * ndim);
-		}
-
 		this->alloc (nsel);
 
 		// Copy the data
@@ -376,7 +378,6 @@ H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
 		this->starts   = rhs.starts;
 		this->counts   = rhs.counts;
 		this->sels_arr = NULL;
-		this->dims	   = rhs.dims;
 	}
 
 err_out:;
