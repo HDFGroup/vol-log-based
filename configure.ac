@@ -464,6 +464,12 @@ if test "x${extests}" = xyes; then
       echo "configuring hdf5_iotest..."
       AC_CONFIG_COMMANDS(hdf5_iotest,[cd tests/external/hdf5_iotest && chmod 755 config.sh && ./config.sh && cd ../../..])
    fi
+
+   AC_CHECK_FILE([tests/external/openpmd/openPMD-api/examples/8a_benchmark_write_parallel.cpp], [have_openpmd=yes], [have_openpmd=no])
+   if test "x${have_openpmd}" = xyes; then
+      echo "configuring openPMD..."
+      AC_CONFIG_COMMANDS(openpmd,[cd tests/external/openpmd && chmod 755 config.sh && ./config.sh && cd ../../..])
+   fi
 fi
 AM_CONDITIONAL(ENABLE_EXTERNAL_TESTS, [test "x${extests}" = xyes])
 AM_CONDITIONAL(HAVE_QMCPACK, [test "x${have_qmcpack}" = xyes])

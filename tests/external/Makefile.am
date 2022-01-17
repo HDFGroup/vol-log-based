@@ -15,9 +15,12 @@ endif
 if HAVE_HDF5_IOTEST
     C_SUBDIRS += hdf5_iotest
 endif
+if HAVE_OPENPMD
+    C_SUBDIRS += openpmd
+endif
 endif
 
-DIST_SUBDIRS = qmcpack hdf5_iotest
+DIST_SUBDIRS = qmcpack hdf5_iotest openpmd
 SUBDIRS = $(C_SUBDIRS)
 
 ptest:

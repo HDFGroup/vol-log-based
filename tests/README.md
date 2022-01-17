@@ -63,3 +63,7 @@ External test programs are a collection of benchmarks and applications that uses
     + https://github.com/QMCPACK/qmcpack.git
     + An open-source Quantum Monte Carlo code for computing the electronic structure of atoms, molecules, 2D nanomaterials and solids.
     + The restart test program in qmcpack is used to test log-based VOL.
+  * openPMD write benchmark
+    + https://github.com/openPMD/openPMD-api
+    + An open meta-data schema
+    + The 8a_benchmark_write_parallel program in openPMD is used to test log-based VOL.

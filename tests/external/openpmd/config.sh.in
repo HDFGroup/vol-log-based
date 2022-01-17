@@ -1,0 +1,16 @@
+#!/bin/bash
+
+rm -rf build
+mkdir build
+cd build
+cmake   -DCMAKE_C_COMPILER="@MPICC@" \
+        -DCMAKE_CXX_COMPILER="@MPICXX@" \
+        -DopenPMD_USE_MPI=ON \
+        -DopenPMD_USE_ADIOS2=OFF \
+        -DopenPMD_USE_HDF5=ON \
+        -DopenPMD_USE_ADIOS1=OFF \
+        -DopenPMD_USE_PYTHON=OFF \
+        -DCMAKE_CXX_STANDARD=14 \
+        -DCMAKE_PREFIX_PATH=@HDF5_ROOT_PATH@ \
+        ../openPMD-api
+
