@@ -18,7 +18,8 @@ AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
-check_PROGRAMS =    scalar 
+check_PROGRAMS =    scalar \
+                    null_req 
 
 EXTRA_DIST = wrap_runs.sh
 
