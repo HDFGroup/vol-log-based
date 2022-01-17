@@ -9,7 +9,7 @@
 AM_CPPFLAGS = -I${srcdir}
 AM_CPPFLAGS += -I${top_srcdir}
 AM_CPPFLAGS += -I${top_srcdir}/src
-AM_CPPFLAGS += -I${top_srcdir}/test
+AM_CPPFLAGS += -I${top_srcdir}/tests
 AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
 LDADD = $(top_builddir)/src/libH5VL_log.la

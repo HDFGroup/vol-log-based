@@ -516,15 +516,15 @@ AC_CONFIG_FILES(Makefile \
                 doc/Makefile \
                 src/Makefile \
                 src/H5VL_log.h \
-                test/Makefile \
-                test/basic/Makefile \
-                test/dynamic/Makefile \
-                test/external/Makefile \
-                test/external/hdf5_iotest/config.sh \
-                test/external/hdf5_iotest/Makefile \
-                test/external/qmcpack/config.sh \
-                test/external/qmcpack/Makefile \
-                test/testcases/Makefile \
+                tests/Makefile \
+                tests/basic/Makefile \
+                tests/dynamic/Makefile \
+                tests/external/Makefile \
+                tests/external/hdf5_iotest/config.sh \
+                tests/external/hdf5_iotest/Makefile \
+                tests/external/qmcpack/config.sh \
+                tests/external/qmcpack/Makefile \
+                tests/testcases/Makefile \
                 utils/Makefile \
                 utils/h5ldump/Makefile \
                 utils/h5lenv.bash \

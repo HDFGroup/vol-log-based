@@ -13,12 +13,16 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 AM_CPPFLAGS = -I${srcdir}
 AM_CPPFLAGS += -I${top_srcdir}
 AM_CPPFLAGS += -I${top_srcdir}/src
-AM_CPPFLAGS += -I${top_srcdir}/test
+AM_CPPFLAGS += -I${top_srcdir}/tests
 AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
-check_PROGRAMS =    scalar 
+check_PROGRAMS = 
+
+if ENABLE_SHARED
+    check_PROGRAMS += dynamic 
+endif
 
 EXTRA_DIST = wrap_runs.sh
 
@@ -31,6 +35,7 @@ TESTPROGRAMS = $(check_PROGRAMS)
 # AM_TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
 TESTS_ENVIRONMENT  = export SED="$(SED)";
 TESTS_ENVIRONMENT += export srcdir="$(srcdir)";
+TESTS_ENVIRONMENT += export top_srcdir="$(top_srcdir)";
 TESTS_ENVIRONMENT += export top_builddir="$(top_builddir)";
 TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
 TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";

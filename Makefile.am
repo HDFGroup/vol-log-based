@@ -4,8 +4,8 @@
 #
 # @configure_input@
 
-SUBDIRS = src test examples utils doc
-DIST_SUBDIRS = src test examples utils doc
+SUBDIRS = src tests examples utils doc
+DIST_SUBDIRS = src tests examples utils doc
 EXTRA_DIST =    m4/foreach_idx.m4 \
                 m4/foreach.m4 \
                 m4/list_len.m4 \
@@ -14,7 +14,7 @@ EXTRA_DIST =    m4/foreach_idx.m4 \
                 COPYRIGHT \
                 RELEASE_NOTE.md
 
-PTEST_SUBDIRS = test examples
+PTEST_SUBDIRS = tests examples
 
 ptest:
 	for d in $(PTEST_SUBDIRS) ; do \
