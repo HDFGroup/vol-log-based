@@ -453,21 +453,22 @@ AC_ARG_ENABLE([external-tests],
     [extests=${enableval}], [extests=no]
 )
 if test "x${extests}" = xyes; then
-   AC_CHECK_FILE([test/external/qmcpack/qmcpack/src/Sandbox/restart.cpp], [have_qmcpack=yes], [have_qmcpack=no])
+   AC_CHECK_FILE([tests/external/qmcpack/qmcpack/src/Sandbox/restart.cpp], [have_qmcpack=yes], [have_qmcpack=no])
    if test "x${have_qmcpack}" = xyes; then
       echo "configuring qmcpack..."
-      AC_CONFIG_COMMANDS(qmcpack,[cd test/external/qmcpack && chmod 755 config.sh && ./config.sh && cd ../../..])
+      AC_CONFIG_COMMANDS(qmcpack,[cd tests/external/qmcpack && chmod 755 config.sh && ./config.sh && cd ../../..])
    fi
 
-   AC_CHECK_FILE([test/external/hdf5_iotest/hdf5-iotest/src/hdf5_iotest.c], [have_hdf5io=yes], [have_hdf5io=no])
+   AC_CHECK_FILE([tests/external/hdf5_iotest/hdf5-iotest/src/hdf5_iotest.c], [have_hdf5io=yes], [have_hdf5io=no])
    if test "x${have_hdf5io}" = xyes; then
       echo "configuring hdf5_iotest..."
-      AC_CONFIG_COMMANDS(hdf5_iotest,[cd test/external/hdf5_iotest && chmod 755 config.sh && ./config.sh && cd ../../..])
+      AC_CONFIG_COMMANDS(hdf5_iotest,[cd tests/external/hdf5_iotest && chmod 755 config.sh && ./config.sh && cd ../../..])
    fi
 fi
 AM_CONDITIONAL(ENABLE_EXTERNAL_TESTS, [test "x${extests}" = xyes])
 AM_CONDITIONAL(HAVE_QMCPACK, [test "x${have_qmcpack}" = xyes])
 AM_CONDITIONAL(HAVE_HDF5_IOTEST, [test "x${have_hdf5io}" = xyes])
+AM_CONDITIONAL(HAVE_OPENPMD, [test "x${have_openpmd}" = xyes])
 
 dnl Configuration Date
 dnl Note that command 'date' is not portable across Unix platforms
@@ -522,6 +523,8 @@ AC_CONFIG_FILES(Makefile \
                 tests/external/Makefile \
                 tests/external/hdf5_iotest/config.sh \
                 tests/external/hdf5_iotest/Makefile \
+                tests/external/openpmd/config.sh \
+                tests/external/openpmd/Makefile \
                 tests/external/qmcpack/config.sh \
                 tests/external/qmcpack/Makefile \
                 tests/testcases/Makefile \
