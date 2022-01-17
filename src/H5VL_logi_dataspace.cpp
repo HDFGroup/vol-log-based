@@ -84,9 +84,13 @@ static void sortblocks (int ndim, int len, hsize_t **starts, hsize_t **counts) {
 H5VL_log_selections::H5VL_log_selections () : ndim (0), nsel (0), dims (NULL), sels_arr (NULL) {}
 H5VL_log_selections::H5VL_log_selections (int ndim, hsize_t *dims) : ndim (ndim) {
 	herr_t err = 0;
-	this->dims = (hsize_t *)malloc (sizeof (hsize_t) * ndim);
-	CHECK_PTR (this->dims)
-	memcpy (this->dims, dims, sizeof (hsize_t) * ndim);
+	if (dims) {
+		this->dims = (hsize_t *)malloc (sizeof (hsize_t) * ndim);
+		CHECK_PTR (this->dims)
+		memcpy (this->dims, dims, sizeof (hsize_t) * ndim);
+	} else {
+		this->dims = NULL;
+	}
 err_out:;
 	if (err) { throw "OOM"; }
 }
@@ -103,26 +107,9 @@ H5VL_log_selections::H5VL_log_selections (
 	this->counts = counts;
 }
 
-H5VL_log_selections::H5VL_log_selections (H5VL_log_selections &rhs)
-	: H5VL_log_selections (rhs.ndim, rhs.dims) {
-	int i;
-
-	if (rhs.sels_arr) {
-		this->alloc (rhs.nsel);
-
-		// Copy the data
-		memcpy (starts, rhs.starts, sizeof (hsize_t *) * nsel);
-		memcpy (counts, rhs.counts, sizeof (hsize_t *) * nsel);
-
-		for (i = 0; i < nsel; i++) {
-			memcpy (starts[i], rhs.starts[i], sizeof (hsize_t) * ndim);
-			memcpy (counts[i], rhs.counts[i], sizeof (hsize_t) * ndim);
-		}
-	} else {
-		this->starts   = rhs.starts;
-		this->counts   = rhs.counts;
-		this->sels_arr = NULL;
-	}
+H5VL_log_selections::H5VL_log_selections (H5VL_log_selections &rhs) {
+	this->sels_arr = NULL;
+	*this		   = rhs;
 }
 
 H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
@@ -349,8 +336,8 @@ err_out:;
 }
 
 H5VL_log_selections::~H5VL_log_selections () {
-	if (dims) { free (dims); }
 	if (sels_arr) {
+		if (dims) { free (dims); }
 		if (starts[0]) { free (starts[0]); }
 		free (starts);
 		sels_arr = NULL;
@@ -358,6 +345,7 @@ H5VL_log_selections::~H5VL_log_selections () {
 }
 
 H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
+	herr_t err = 0;
 	int i;
 
 	// Deallocate existing start and count array
@@ -371,6 +359,12 @@ H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
 	this->ndim = rhs.ndim;
 
 	if (rhs.sels_arr) {
+		if (rhs.dims) {
+			this->dims = (hsize_t *)malloc (sizeof (hsize_t) * ndim);
+			CHECK_PTR (this->dims)
+			memcpy (this->dims, rhs.dims, sizeof (hsize_t) * ndim);
+		}
+
 		this->alloc (nsel);
 
 		// Copy the data
@@ -382,7 +376,11 @@ H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
 		this->starts   = rhs.starts;
 		this->counts   = rhs.counts;
 		this->sels_arr = NULL;
+		this->dims	   = rhs.dims;
 	}
+
+err_out:;
+	if (err) { throw "OOM"; }
 
 	return *this;
 }
@@ -463,6 +461,8 @@ herr_t H5VL_log_selections::get_mpi_type (size_t esize, MPI_Datatype *type) {
 	MPI_Datatype *types = NULL;
 	MPI_Datatype etype;
 	int size[H5S_MAX_RANK], ssize[H5S_MAX_RANK], sstart[H5S_MAX_RANK];
+
+	if (!dims) { RET_ERR ("No dataspace dimension information") }
 
 	etype = H5VL_logi_get_mpi_type_by_size (esize);
 	if (etype == MPI_DATATYPE_NULL) {
