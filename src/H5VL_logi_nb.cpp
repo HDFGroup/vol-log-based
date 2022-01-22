@@ -349,7 +349,7 @@ inline herr_t H5VL_log_read_idx_search (H5VL_log_file_t *fp,
 
 		// Search index
 		for (auto r : reqs) {
-			err = fp->idx[r->hdr.did].search (r, intersecs);
+			err = fp->idx->search (r, intersecs);
 			CHECK_ERR
 		}
 	} else {
@@ -360,7 +360,7 @@ inline herr_t H5VL_log_read_idx_search (H5VL_log_file_t *fp,
 			CHECK_ERR
 			// Search index
 			for (auto &r : reqs) {
-				err = fp->idx[r->hdr.did].search (r, intersecs);
+				err = fp->idx->search (r, intersecs);
 				CHECK_ERR
 			}
 		}
@@ -574,7 +574,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 			err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
 			CHECK_ERR
 			// Erase the index table of previous subfile
-			for (auto &t : fp->idx) { t.clear (); }
+			fp->idx->clear ();
 			fp->idxvalid = false;
 
 			// Open the current subfile

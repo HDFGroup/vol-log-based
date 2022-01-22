@@ -72,9 +72,9 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	fp->nmdset = attbuf[2];
 	fp->config = attbuf[3];
 	fp->ngroup = attbuf[3];
-	fp->idx.resize (fp->ndset);				  // Index for dataset read
-	fp->mreqs.resize (fp->ndset, NULL);		  // Merge write reqeusts
-	fp->dsets_info.resize (fp->ndset, NULL);  // Dataset info
+	fp->idx	   = new H5VL_logi_array_idx_t (fp->ndset);	 // Index for dataset read
+	fp->mreqs.resize (fp->ndset, NULL);					 // Merge write reqeusts
+	fp->dsets_info.resize (fp->ndset, NULL);			 // Dataset info
 	fp->group_rank = fp->rank;
 	fp->group_comm = fp->comm;
 	fp->group_id   = 0;
@@ -601,6 +601,9 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	// Free dataset info
 	for (auto info : fp->dsets_info) { delete info; }
 
+	// Free read index
+	delete fp->idx;
+
 	// Close the file with under VOL
 	H5VL_LOGI_PROFILING_TIMER_START;
 	err = H5VLfile_close (fp->uo, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
@@ -857,7 +860,7 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 		fp->ndset  = attbuf[0];
 		fp->nldset = attbuf[1];
 		fp->nmdset = attbuf[2];
-		fp->idx.resize (fp->ndset);
+		fp->idx = new H5VL_logi_array_idx_t(fp->ndset);// Index for dataset read
 
 		// Open the file with MPI
 		mpierr = MPI_File_open (fp->comm, fp->name.c_str (), MPI_MODE_RDWR, MPI_INFO_NULL,

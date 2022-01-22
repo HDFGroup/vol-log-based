@@ -146,7 +146,7 @@ void *H5VL_log_dataset_create (void *obj,
 	LOG_VOL_ASSERT (dp->fp->ndset == dp->fp->mreqs.size ())
 	dp->fp->ndset++;
 	dp->fp->dsets_info.push_back (dip);			 // Dataset info
-	dp->fp->idx.resize (dp->fp->ndset);			 // Index for H5Dread
+	dp->fp->idx->reserve (dp->fp->ndset);		 // Index for H5Dread
 	dp->fp->mreqs.resize (dp->fp->ndset, NULL);	 // Merged requests
 
 	// Create soft link to aid dataset visiting on file opening

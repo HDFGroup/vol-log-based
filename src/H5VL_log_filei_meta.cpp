@@ -296,7 +296,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	if (fp->metadirty) { H5VL_log_filei_metaflush (fp); }
 
 	// Remove all index entries
-	for (i = 0; i < fp->ndset; i++) { fp->idx[i].clear (); }
+	fp->idx->clear ();
 
 	// iterate through all metadata datasets
 	loc.type	 = H5VL_OBJECT_BY_SELF;
@@ -371,7 +371,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 				bufp += hdr_tmp->meta_size;
 
 				// Insert to the index
-				fp->idx[hdr_tmp->did].insert (block);
+				fp->idx->insert (block);
 			}
 		} else {
 			while (bufp < buf + count) {
@@ -387,7 +387,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 				bufp += hdr_tmp->meta_size;
 
 				// Insert to the index
-				fp->idx[hdr_tmp->did].insert (block);
+				fp->idx->insert (block);
 			}
 		}
 	}
@@ -440,7 +440,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	if (fp->metadirty) { H5VL_log_filei_metaflush (fp); }
 
 	// Remove all index entries
-	for (i = 0; i < fp->ndset; i++) { fp->idx[i].clear (); }
+	fp->idx->clear ();
 
 	// Open the metadata dataset
 	sprintf (mdname, "__md_%d", md);
@@ -539,7 +539,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 			bufp += hdr_tmp->meta_size;
 
 			// Insert to the index
-			fp->idx[hdr_tmp->did].insert (block);
+			fp->idx->insert (block);
 		}
 	} else {
 		while (bufp < buf + mdsize) {
@@ -554,7 +554,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 			bufp += hdr_tmp->meta_size;
 
 			// Insert to the index
-			fp->idx[hdr_tmp->did].insert (block);
+			fp->idx->insert (block);
 		}
 	}
 

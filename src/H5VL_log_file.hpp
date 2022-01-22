@@ -94,9 +94,9 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 	// std::vector<int> meta_ref;
 
 	// std::vector<int> lut;
-	std::vector<H5VL_logi_array_idx_t> idx;	 // Index of data, for reading
-	bool idxvalid;							 // Is index up to date
-	bool metadirty;							 // Is there pending metadata to flush
+	H5VL_logi_idx_t *idx;  // Index of data, for reading
+	bool idxvalid;		   // Is index up to date
+	bool metadirty;		   // Is there pending metadata to flush
 
 	// Configuration flag
 	int config;	 // Config flags

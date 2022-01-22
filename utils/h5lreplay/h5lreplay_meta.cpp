@@ -194,6 +194,8 @@ herr_t h5lreplay_idx_t::clear () {
 	return 0;
 }
 
+herr_t h5lreplay_idx_t::reserve (size_t size) { return 0; }
+
 herr_t h5lreplay_idx_t::insert (H5VL_logi_metablock_t &meta) {
 	meta_block block;
 

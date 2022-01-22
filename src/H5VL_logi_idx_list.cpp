@@ -12,13 +12,22 @@
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_nb.hpp"
 
+H5VL_logi_array_idx_t::H5VL_logi_array_idx_t () {}
+
+H5VL_logi_array_idx_t::H5VL_logi_array_idx_t (size_t size) { this->reserve (size); }
+
 herr_t H5VL_logi_array_idx_t::clear () {
-	this->entries.clear ();
+	for (auto &i : this->idxs) { i.clear (); }
+	return 0;
+}
+
+herr_t H5VL_logi_array_idx_t::reserve (size_t size) {
+	if (this->idxs.size () < size) { this->idxs.resize (size); }
 	return 0;
 }
 
 herr_t H5VL_logi_array_idx_t::insert (H5VL_logi_metablock_t &meta) {
-	this->entries.push_back (meta);
+	this->idxs[meta.hdr.did].push_back (meta);
 	return 0;
 }
 
@@ -46,7 +55,7 @@ herr_t H5VL_logi_array_idx_t::search (H5VL_log_rreq_t *req,
 
 	soff = 0;
 	for (i = 0; i < req->sels->nsel; i++) {
-		for (auto &ent : this->entries) {
+		for (auto &ent : this->idxs[req->hdr.did]) {
 			for (auto &msel : ent.sels) {
 				if (intersect (req->ndim, msel.start, msel.count, req->sels->starts[i],
 							   req->sels->counts[i], os, oc)) {
