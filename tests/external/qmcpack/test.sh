@@ -9,7 +9,7 @@ set -e
 
 source ${top_builddir}/utils/h5lenv.bash
 
-EXEC="build/bin/restart"
+EXEC="./restart"
 if test "x$#" = x0 ; then
     RUN=""
 else
