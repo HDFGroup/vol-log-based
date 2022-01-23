@@ -19,7 +19,7 @@
 
 herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 									   void *ent,
-									   H5VL_logi_metablock_t &block,
+									   H5VL_logi_metaentry_t &block,
 									   std::map<char *, std::vector<H5VL_logi_metasel_t>> &bcache) {
 	herr_t err = 0;
 	int i;
@@ -82,14 +82,14 @@ err_out:;
 
 herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 								   void *ent,
-								   H5VL_logi_metablock_t &block) {
+								   H5VL_logi_metaentry_t &block) {
 	MPI_Offset dsteps[H5S_MAX_RANK];  // corrdinate to offset encoding info in ent
 	return H5VL_logi_metaentry_decode (dset, ent, block, dsteps);
 }
 
 herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 								   void *ent,
-								   H5VL_logi_metablock_t &block,
+								   H5VL_logi_metaentry_t &block,
 								   MPI_Offset *dsteps) {
 	herr_t err = 0;
 	int i, j;

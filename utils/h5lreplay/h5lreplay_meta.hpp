@@ -15,7 +15,7 @@ typedef struct meta_sec {
 	char *buf;
 } meta_sec;
 
-typedef struct meta_block : H5VL_logi_metablock_t {
+typedef struct meta_block : H5VL_logi_metaentry_t {
 	std::vector<char *> bufs;
 } meta_block;
 
@@ -24,7 +24,10 @@ class h5lreplay_idx_t : public H5VL_logi_idx_t {
 	std::vector<meta_block> entries;
 	herr_t clear ();							  // Remove all entries
 	herr_t reserve (size_t size);				  // Make space for at least size datasets
-	herr_t insert (H5VL_logi_metablock_t &meta);  // Add an entry
+	herr_t insert (H5VL_logi_metaentry_t &meta);  // Add an entry
+	herr_t parse_block (H5VL_log_file_t *fp,
+						char *block,
+						size_t size);  // Parse a block of encoded metadata and insert all entries
 	herr_t search (H5VL_log_rreq_t *req,
 				   std::vector<H5VL_log_idx_search_ret_t> &ret);  // Search for matchings
 };

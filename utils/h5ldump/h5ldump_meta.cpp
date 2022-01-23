@@ -172,7 +172,7 @@ herr_t h5ldump_mdsec (
 	int i;
 	uint8_t *bufp = buf;			  // Current decoding location in buf
 	H5VL_logi_meta_hdr *hdr;		  // Header of current decoding entry
-	H5VL_logi_metablock_t block;	  // Current metadata block
+	H5VL_logi_metaentry_t block;	  // Current metadata block
 	MPI_Offset dsteps[H5S_MAX_RANK];  // corrdinate to offset encoding info in ent
 	std::map<char *, std::vector<H5VL_logi_metasel_t>>
 		bcache;			   // Cache for deduplicated metadata entry

@@ -39,7 +39,7 @@ herr_t h5lreplay_parse_meta (int rank,
 	bool zbufalloc = false;
 	char *ep;
 	char *zbuf = NULL;
-	H5VL_logi_metablock_t block;								 // Buffer of decoded metadata entry
+	H5VL_logi_metaentry_t block;								 // Buffer of decoded metadata entry
 	std::map<char *, std::vector<H5VL_logi_metasel_t> > bcache;	 // Cache for linked metadata entry
 
 	// Memory space set to contiguous
@@ -196,7 +196,7 @@ herr_t h5lreplay_idx_t::clear () {
 
 herr_t h5lreplay_idx_t::reserve (size_t size) { return 0; }
 
-herr_t h5lreplay_idx_t::insert (H5VL_logi_metablock_t &meta) {
+herr_t h5lreplay_idx_t::insert (H5VL_logi_metaentry_t &meta) {
 	meta_block block;
 
 	block.dsize = meta.dsize;
@@ -206,6 +206,8 @@ herr_t h5lreplay_idx_t::insert (H5VL_logi_metablock_t &meta) {
 
 	return 0;
 }
+
+herr_t h5lreplay_idx_t::parse_block (H5VL_log_file_t *fp, char *block, size_t size) { return 0; }
 
 herr_t h5lreplay_idx_t::search (H5VL_log_rreq_t *req, std::vector<H5VL_log_idx_search_ret_t> &ret) {
 	return 0;

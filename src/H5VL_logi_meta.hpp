@@ -33,12 +33,12 @@ typedef struct H5VL_logi_metasel_t {
 					  // there in previous blocks in the selection)
 } H5VL_logi_metasel_t;
 
-typedef struct H5VL_logi_metablock_t {
+typedef struct H5VL_logi_metaentry_t {
 	H5VL_logi_meta_hdr hdr;					// Metadata header
 	std::vector<H5VL_logi_metasel_t> sels;	// Selections
 	size_t
 		dsize;	// Unfiltered size of the data in bytes (number of elements in sels * element size)
-} H5VL_logi_metablock_t;
+} H5VL_logi_metaentry_t;
 
 inline void H5VL_logi_sel_decode (int ndim, MPI_Offset *dsteps, MPI_Offset off, hsize_t *cord) {
 	int i;
@@ -94,10 +94,10 @@ struct H5VL_logi_idx_t;
 struct H5VL_log_dset_info_t;
 herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 								   void *ent,
-								   H5VL_logi_metablock_t &block);
+								   H5VL_logi_metaentry_t &block);
 herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 								   void *ent,
-								   H5VL_logi_metablock_t &block,
+								   H5VL_logi_metaentry_t &block,
 								   MPI_Offset *dsteps);
 
 inline MPI_Offset H5VL_logi_get_metaentry_size (int ndim, H5VL_logi_meta_hdr &hdr, int nsel) {
@@ -121,5 +121,5 @@ struct H5VL_logi_meta_hdr;
 struct H5VL_log_selections;
 herr_t H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 									   void *ent,
-									   H5VL_logi_metablock_t &block,
+									   H5VL_logi_metaentry_t &block,
 									   std::map<char *, std::vector<H5VL_logi_metasel_t>> &bcache);
