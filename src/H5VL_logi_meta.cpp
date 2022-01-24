@@ -267,10 +267,10 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 	}
 
 	// Calculate the unfiltered size of the data block
-	// Data size = data offset of the last block + size of the alst block
+	// Data size = data offset of the last block + size of the last block
 	block.dsize = dset.esize;
-	for (j = 0; j < encdim; j++) { block.dsize *= block.sels[i - 1].count[j]; }
-	block.dsize += block.sels[i - 1].doff;
+	for (j = 0; j < encdim; j++) { block.dsize *= block.sels[nsel - 1].count[j]; }
+	block.dsize += block.sels[nsel - 1].doff;
 
 err_out:;
 #ifdef ENABLE_ZLIB

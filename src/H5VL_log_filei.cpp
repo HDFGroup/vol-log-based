@@ -72,9 +72,9 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	fp->nmdset = attbuf[2];
 	fp->config = attbuf[3];
 	fp->ngroup = attbuf[3];
-	fp->idx	   = new H5VL_logi_array_idx_t (fp, fp->ndset);	 // Index for dataset read
-	fp->mreqs.resize (fp->ndset, NULL);						 // Merge write reqeusts
-	fp->dsets_info.resize (fp->ndset, NULL);				 // Dataset info
+	fp->idx	   = new H5VL_logi_compact_idx_t (fp, fp->ndset);  // Index for dataset read
+	fp->mreqs.resize (fp->ndset, NULL);						   // Merge write reqeusts
+	fp->dsets_info.resize (fp->ndset, NULL);				   // Dataset info
 	fp->group_rank = fp->rank;
 	fp->group_comm = fp->comm;
 	fp->group_id   = 0;
@@ -860,7 +860,7 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 		fp->ndset  = attbuf[0];
 		fp->nldset = attbuf[1];
 		fp->nmdset = attbuf[2];
-		fp->idx = new H5VL_logi_array_idx_t(fp->ndset);// Index for dataset read
+		fp->idx = new H5VL_logi_compact_idx_t(fp->ndset);// Index for dataset read
 
 		// Open the file with MPI
 		mpierr = MPI_File_open (fp->comm, fp->name.c_str (), MPI_MODE_RDWR, MPI_INFO_NULL,
