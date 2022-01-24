@@ -188,6 +188,8 @@ err_out:;
 	return err;
 }
 
+h5lreplay_idx_t::h5lreplay_idx_t () : H5VL_logi_idx_t (NULL) {}
+
 herr_t h5lreplay_idx_t::clear () {
 	this->entries.clear ();
 
@@ -207,7 +209,7 @@ herr_t h5lreplay_idx_t::insert (H5VL_logi_metaentry_t &meta) {
 	return 0;
 }
 
-herr_t h5lreplay_idx_t::parse_block (H5VL_log_file_t *fp, char *block, size_t size) { return 0; }
+herr_t h5lreplay_idx_t::parse_block (char *block, size_t size) { return 0; }
 
 herr_t h5lreplay_idx_t::search (H5VL_log_rreq_t *req, std::vector<H5VL_log_idx_search_ret_t> &ret) {
 	return 0;

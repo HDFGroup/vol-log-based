@@ -344,7 +344,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		CHECK_ERR
 
 		// Parse metadata
-		err = fp->idx->parse_block (fp, buf, count);
+		err = fp->idx->parse_block (buf, count);
 		CHECK_ERR
 	}
 
@@ -469,50 +469,8 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	CHECK_ERR
 
 	// Parse metadata
-	bufp = buf;
-	if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {  // Need to maintina cache if file contains
-														  // referenced metadata entries
-		while (bufp < buf + mdsize) {
-			H5VL_logi_meta_hdr *hdr_tmp = (H5VL_logi_meta_hdr *)bufp;
-
-			// Have to parse all entries for reference purpose
-			if (hdr_tmp->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-#ifdef WORDS_BIGENDIAN
-				H5VL_logi_lreverse ((uint32_t *)bufp,
-									(uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
-#endif
-
-				err = H5VL_logi_metaentry_ref_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, block,
-													  bcache);
-				CHECK_ERR
-			} else {
-				err = H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, block);
-				CHECK_ERR
-
-				// Insert to cache
-				bcache[bufp] = block.sels;
-			}
-			bufp += hdr_tmp->meta_size;
-
-			// Insert to the index
-			fp->idx->insert (block);
-		}
-	} else {
-		while (bufp < buf + mdsize) {
-			H5VL_logi_meta_hdr *hdr_tmp = (H5VL_logi_meta_hdr *)bufp;
-
-#ifdef WORDS_BIGENDIAN
-			H5VL_logi_lreverse ((uint32_t *)bufp, (uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
-#endif
-
-			err = H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, block);
-			CHECK_ERR
-			bufp += hdr_tmp->meta_size;
-
-			// Insert to the index
-			fp->idx->insert (block);
-		}
-	}
+	err = fp->idx->parse_block (buf, count);
+	CHECK_ERR
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAUPDATE);
 err_out:;

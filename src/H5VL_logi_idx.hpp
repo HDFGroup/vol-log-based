@@ -33,12 +33,15 @@ typedef struct H5VL_log_metaentry_t {
 } H5VL_log_metaentry_t;
 
 class H5VL_logi_idx_t {
+   protected:
+	H5VL_log_file_t *fp;
+
    public:
+	H5VL_logi_idx_t (H5VL_log_file_t *fp);
 	virtual herr_t clear ()				 = 0;  // Remove all entries
 	virtual herr_t reserve (size_t size) = 0;  // Make space for at least size datasets
 	virtual herr_t insert (H5VL_logi_metaentry_t &meta) = 0;  // Add an entry
 	virtual herr_t parse_block (
-		H5VL_log_file_t *fp,
 		char *block,
 		size_t size) = 0;  // Parse a block of encoded metadata and insert all entries
 	virtual herr_t search (
@@ -50,13 +53,12 @@ class H5VL_logi_array_idx_t : public H5VL_logi_idx_t {
 	std::vector<std::vector<H5VL_logi_metaentry_t>> idxs;
 
    public:
-	H5VL_logi_array_idx_t ();
-	H5VL_logi_array_idx_t (size_t size);
+	H5VL_logi_array_idx_t (H5VL_log_file_t *fp);
+	H5VL_logi_array_idx_t (H5VL_log_file_t *fp, size_t size);
 	herr_t clear ();							  // Remove all entries
 	herr_t reserve (size_t size);				  // Make space for at least size datasets
 	herr_t insert (H5VL_logi_metaentry_t &meta);  // Add an entry
-	herr_t parse_block (H5VL_log_file_t *fp,
-						char *block,
+	herr_t parse_block (char *block,
 						size_t size);  // Parse a block of encoded metadata and insert all entries
 	herr_t search (H5VL_log_rreq_t *req,
 				   std::vector<H5VL_log_idx_search_ret_t> &ret);  // Search for matchings

@@ -24,3 +24,5 @@ bool H5VL_log_idx_search_ret_t::operator< (const H5VL_log_idx_search_ret_t &rhs)
 
 	return false;
 }
+
+H5VL_logi_idx_t::H5VL_logi_idx_t (H5VL_log_file_t *fp) : fp (fp) {}

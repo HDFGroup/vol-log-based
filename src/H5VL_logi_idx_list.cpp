@@ -13,9 +13,12 @@
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_nb.hpp"
 
-H5VL_logi_array_idx_t::H5VL_logi_array_idx_t () {}
+H5VL_logi_array_idx_t::H5VL_logi_array_idx_t (H5VL_log_file_t *fp) : H5VL_logi_idx_t (fp) {}
 
-H5VL_logi_array_idx_t::H5VL_logi_array_idx_t (size_t size) { this->reserve (size); }
+H5VL_logi_array_idx_t::H5VL_logi_array_idx_t (H5VL_log_file_t *fp, size_t size)
+	: H5VL_logi_idx_t (fp) {
+	this->reserve (size);
+}
 
 herr_t H5VL_logi_array_idx_t::clear () {
 	for (auto &i : this->idxs) { i.clear (); }
@@ -32,7 +35,7 @@ herr_t H5VL_logi_array_idx_t::insert (H5VL_logi_metaentry_t &meta) {
 	return 0;
 }
 
-herr_t H5VL_logi_array_idx_t::parse_block (H5VL_log_file_t *fp, char *block, size_t size) {
+herr_t H5VL_logi_array_idx_t::parse_block (char *block, size_t size) {
 	herr_t err = 0;
 	char *bufp = block;											// Buffer for raw metadata
 	H5VL_logi_metaentry_t entry;								// Buffer of decoded metadata entry
