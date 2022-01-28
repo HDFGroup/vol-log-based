@@ -67,3 +67,8 @@ External test programs are a collection of benchmarks and applications that uses
     + https://github.com/openPMD/openPMD-api
     + An open meta-data schema
     + The 8a_benchmark_write_parallel program in openPMD is used to test log-based VOL.
+  * E3SM I/O benchmark
+    + https://github.com/Parallel-NetCDF/E3SM-IO
+    + Mimic parallel I/O kernel from the E3SM climate simulation model.
+    + Use the I/O pattern recorded by the PIO library.
+  
