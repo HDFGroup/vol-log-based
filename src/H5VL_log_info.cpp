@@ -201,6 +201,7 @@ herr_t H5VL_log_str_to_info (const char *str, void **_info) {
 	info				 = (H5VL_log_info_t *)calloc (1, sizeof (H5VL_log_info_t));
 	info->uvlid			 = uvlid;
 	info->under_vol_info = under_vol_info;
+	H5VL_logi_inc_ref (info->uvlid);
 
 	/* Set return value */
 	*_info = info;
