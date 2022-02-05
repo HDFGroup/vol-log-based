@@ -82,7 +82,7 @@ class H5VL_logi_compact_idx_t : public H5VL_logi_idx_t {
 		H5VL_logi_compact_idx_entry_t (int ndim, H5VL_logi_metaentry_t &meta);
 		~H5VL_logi_compact_idx_entry_t ();
 	};
-
+	
 	std::vector<std::vector<H5VL_logi_compact_idx_entry_t *>> idxs;
 
    public:

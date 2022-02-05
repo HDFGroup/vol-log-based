@@ -81,6 +81,54 @@ static void sortblocks (int ndim, int len, hsize_t **starts, hsize_t **counts) {
 	}
 }
 
+template <bool use_end, typename T>
+static void merge_blocks (int ndim, T &len, hsize_t **starts, hsize_t **counts) {
+	int d, i, j, k;
+	hsize_t *tmp1, *tmp2;
+	std::vector<int> idx (len);
+
+	for (d = ndim - 1; d > -1; d--) {
+		j = 0;
+		for (i = 1; i < len; i++) {
+			for (k = 0; k < ndim; k++) {
+				if (k == d) {
+					if (use_end) {
+						if (counts[j][k] + 1 !=
+							starts[i][k]) {	 // start of next block must follow end of prev block
+							break;			 // Cannot merge
+						}
+					} else {
+						if (starts[j][k] + counts[j][k] !=
+							starts[i][k]) {	 // start + count of prev block must match start of next
+											 // block
+							break;			 // Cannot merge
+						}
+					}
+				} else {
+					if (starts[i][k] != starts[j][k] ||
+						counts[i][k] != counts[j][k]) {	 // size and position must align on
+														 // non-merging dimensions
+						break;							 // Cannot merge
+					}
+				}
+			}
+			if (k == ndim) {  // Merge
+				if (use_end) {
+					counts[j][d] = counts[i][d];
+				} else {
+					counts[j][d] += counts[i][d];
+				}
+
+			} else {
+				j++;  // Can't merge
+				starts[j] = starts[i];
+				counts[j] = counts[i];
+			}
+		}
+		len = j + 1;
+	}
+}
+
 H5VL_log_selections::H5VL_log_selections () : ndim (0), nsel (0), dims (NULL), sels_arr (NULL) {}
 
 H5VL_log_selections::H5VL_log_selections (int ndim, hsize_t *dims, int nsel) : ndim (ndim) {
@@ -169,6 +217,8 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 				err = H5Sget_select_hyper_blocklist (dsid, 0, nblock, hstarts[0]);
 
 				sortblocks (ndim, nblock, hstarts, hends);
+
+				merge_blocks<true> (ndim, nblock, hstarts, hends);
 
 				// Check for interleving
 				group = (int *)malloc (sizeof (int) * (nblock + 1));
@@ -270,7 +320,11 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 							sortblocks (ndim, nreq - old_nreq, starts + old_nreq,
 										counts + old_nreq);
 
-							// HDF5 selection guarantees no interleving, no need to merge
+							// HDF5 selection guarantees no interleving, still merge coaleasable
+							// blocks
+							k = nreq - old_nreq;
+							merge_blocks<false> (ndim, k, starts + old_nreq, counts + old_nreq);
+							nreq = old_nreq + k;
 						}
 					}
 				}
@@ -297,6 +351,13 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 						counts[i][j] = 1;
 					}
 				}
+
+				// Merge blocks
+				auto comp = [this] (hsize_t *l, hsize_t *r) -> bool {
+					return lessthan (this->ndim, l, r);
+				};
+				std::sort (starts, starts + nblock, comp);
+				merge_blocks<false> (ndim, nblock, starts, counts);
 			}
 		} break;
 		case H5S_SEL_ALL: {
