@@ -23,8 +23,6 @@
     % wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz
     % tar -zxf hdf5-1_13_0.tar.gz
     % cd hdf5-1_13_0.tar.gz
-    % export HDF5_LIBTOOL=/usr/bin/libtoolize
-    % ./autogen.sh
     % ./configure --prefix=${HOME}/HDF5 --enable-parallel CC=mpicc
     % make -j4 install
     ```
