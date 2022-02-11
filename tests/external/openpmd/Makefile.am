@@ -75,7 +75,7 @@ clean-local:
 	if [ -d "build" ]; then cd build && make clean ; fi
 	rm -f  8a_benchmark_write_parallel 
 	rm -f  8b_benchmark_read_parallel
-	rm -f  ../samples
+	rm -rf  ../samples
 
 distclean-local:
 	rm -rf build

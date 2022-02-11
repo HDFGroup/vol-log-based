@@ -21,7 +21,8 @@ typedef struct meta_block : H5VL_logi_metaentry_t {
 
 class h5lreplay_idx_t : public H5VL_logi_idx_t {
    public:
-   	h5lreplay_idx_t();
+	h5lreplay_idx_t ();
+	~h5lreplay_idx_t () = default;
 	std::vector<meta_block> entries;
 	herr_t clear ();							  // Remove all entries
 	herr_t reserve (size_t size);				  // Make space for at least size datasets

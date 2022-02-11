@@ -27,12 +27,11 @@ err_out:;
 
 H5VL_logi_compact_idx_t::H5VL_logi_compact_idx_entry_t::H5VL_logi_compact_idx_entry_t (
 	MPI_Offset foff, size_t fsize, H5VL_logi_compact_idx_entry_t *ref)
-	: foff (foff), fsize (fsize), nsel (-1), blocks (ref), dsize (0) {}
+	: blocks (ref), nsel (-1), foff (foff), fsize (fsize), dsize (0) {}
 
 H5VL_logi_compact_idx_t::H5VL_logi_compact_idx_entry_t::H5VL_logi_compact_idx_entry_t (
 	int ndim, H5VL_logi_metaentry_t &meta)
-	: foff (meta.hdr.foff), fsize (meta.hdr.fsize), nsel (meta.sels.size ()), dsize (meta.dsize) {
-	herr_t err = 0;
+	: nsel (meta.sels.size ()), foff (meta.hdr.foff), fsize (meta.hdr.fsize), dsize (meta.dsize) {
 	int encndim;
 	hsize_t *start, *count;
 
@@ -83,7 +82,6 @@ herr_t H5VL_logi_compact_idx_t::reserve (size_t size) {
 }
 
 herr_t H5VL_logi_compact_idx_t::insert (H5VL_logi_metaentry_t &meta) {
-	herr_t err = 0;
 	H5VL_logi_compact_idx_entry_t *entry;
 
 	entry = new H5VL_logi_compact_idx_entry_t (fp->dsets_info[meta.hdr.did]->ndim, meta);
@@ -95,8 +93,6 @@ herr_t H5VL_logi_compact_idx_t::insert (H5VL_logi_metaentry_t &meta) {
 
 herr_t H5VL_logi_compact_idx_t::parse_block (char *block, size_t size) {
 	herr_t err = 0;
-	int ndim;
-	int rec;
 	char *bufp = block;										   // Buffer for raw metadata
 	H5VL_logi_compact_idx_entry_t *centry;					   // Buffer of decoded metadata entry
 	H5VL_logi_metaentry_t entry;							   // Buffer of decoded metadata entry
@@ -186,7 +182,7 @@ herr_t H5VL_logi_compact_idx_t::search (H5VL_log_rreq_t *req,
 										std::vector<H5VL_log_idx_search_ret_t> &ret) {
 	herr_t err = 0;
 	int i, j, k;
-	int nsel, encdim;
+	int nsel;
 	MPI_Offset doff = 0;
 	hsize_t bsize;
 	size_t soff;

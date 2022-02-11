@@ -279,7 +279,6 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	hsize_t mdsize;		 // Size of metadata dataset
 	hsize_t start, count, one = 1;
 	char *buf = NULL;			  // Buffer for raw metadata
-	char *bufp;					  // Buffer for raw metadata
 	int ndim;					  // metadata dataset dimensions (should be 1)
 	MPI_Offset nsec;			  // Number of sections in current metadata dataset
 	H5VL_logi_metaentry_t block;  // Buffer of decoded metadata entry
@@ -378,7 +377,6 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	hsize_t mdsize;		 // Size of metadata dataset
 	hsize_t start, count, one = 1;
 	char *buf = NULL;			  // Buffer for raw metadata
-	char *bufp;					  // Buffer for raw metadata
 	int ndim;					  // metadata dataset dimensions (should be 1)
 	MPI_Offset nsec;			  // Number of sections in current metadata dataset
 	MPI_Offset *offs;			  // Section end offset array

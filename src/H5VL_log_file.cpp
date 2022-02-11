@@ -441,7 +441,6 @@ herr_t H5VL_log_file_specific (void *file,
 							   hid_t dxpl_id,
 							   void **req) {
 	herr_t err = 0;
-	int i;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
 

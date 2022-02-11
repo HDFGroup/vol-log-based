@@ -288,6 +288,8 @@ herr_t H5VL_log_attr_specific (void *obj,
 				}
 			}
 			break;
+		case H5VL_OBJECT_BY_SELF:
+			break;
 		case H5VL_OBJECT_BY_IDX:
 		case H5VL_OBJECT_BY_TOKEN:
 			RET_ERR ("Access by idx annd token is not supported")

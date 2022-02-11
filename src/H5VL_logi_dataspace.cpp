@@ -84,7 +84,6 @@ static void sortblocks (int ndim, int len, hsize_t **starts, hsize_t **counts) {
 template <bool use_end, typename T>
 static void merge_blocks (int ndim, T &len, hsize_t **starts, hsize_t **counts) {
 	int d, i, j, k;
-	hsize_t *tmp1, *tmp2;
 	std::vector<int> idx (len);
 
 	for (d = ndim - 1; d > -1; d--) {

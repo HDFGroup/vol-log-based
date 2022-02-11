@@ -16,8 +16,7 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 							   const char *name,
 							   const H5O_info_t *object_info,
 							   void *op_data) {
-	herr_t err = 0;
-	int i;
+	herr_t err	  = 0;
 	hid_t src_did = -1;
 	hid_t dst_did = -1;
 	hid_t aid	  = -1;

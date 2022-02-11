@@ -97,13 +97,13 @@ template <typename T>
 inline void h5ldump_print_data_core (T *buf, size_t nelem, int indent) {
 	int i;
 	std::cout << std::string (indent, ' ');
-	for (i = 0; i < nelem; i++) { std::cout << buf[i] << ", "; }
+	for (i = 0; i < (int)nelem; i++) { std::cout << buf[i] << ", "; }
 	std::cout << std::endl;
 }
 inline void h5ldump_print_data_core (void *buf, size_t nelem, int indent) {
 	int i;
 	std::cout << std::string (indent, ' ');
-	for (i = 0; i < nelem; i++) { std::cout << std::hex << ((uint8_t *)buf)[i] << ", "; }
+	for (i = 0; i < (int)nelem; i++) { std::cout << std::hex << ((uint8_t *)buf)[i] << ", "; }
 	std::cout << std::endl;
 }
 inline void h5ldump_print_data (uint8_t *buf, size_t nelem, size_t esize, hid_t etype, int indent) {
@@ -205,7 +205,7 @@ herr_t h5ldump_mdsec (
 			bsize = 1;	// Size is 1 for scalar
 			if (block.sels.size ()) {
 				// Total selection size = size of last block + off of last block
-				for (i = 0; i < dsets[block.hdr.did].ndim; i++) {
+				for (i = 0; i < (int)(dsets[block.hdr.did].ndim); i++) {
 					bsize *= block.sels.back ().count[i];
 				}
 				bsize += block.sels.back ().doff;

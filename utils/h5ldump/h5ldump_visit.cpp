@@ -49,13 +49,11 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 							  const char *name,
 							  const H5O_info_t *object_info,
 							  void *op_data) {
-	herr_t err = 0;
-	int i;
+	herr_t err	 = 0;
 	hid_t did	 = -1;			// Current dataset ID
 	hid_t dcplid = -1;			// Current dataset creation property list ID
 	hid_t aid	 = -1;			// Dataset attribute ID
 	hid_t sid	 = -1;			// Dataset attribute space ID
-	hid_t tid	 = -1;			// Dataset type ID
 	int id;						// Log VOL dataset ID
 	H5VL_log_dset_info_t dset;	// Current dataset info
 	std::vector<H5VL_log_dset_info_t> *dsets = (std::vector<H5VL_log_dset_info_t> *)op_data;
@@ -106,7 +104,8 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 		err = H5VL_logi_get_filters (dcplid, dset.filters);
 		CHECK_ERR
 
-		((*dsets)[id]) = dset;
+			((*dsets)[id])
+		= dset;
 	}
 err_out:;
 	if (sid >= 0) { H5Sclose (sid); }

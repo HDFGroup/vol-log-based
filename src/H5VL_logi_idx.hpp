@@ -38,6 +38,7 @@ class H5VL_logi_idx_t {
 
    public:
 	H5VL_logi_idx_t (H5VL_log_file_t *fp);
+	virtual ~H5VL_logi_idx_t ()			 = default;
 	virtual herr_t clear ()				 = 0;  // Remove all entries
 	virtual herr_t reserve (size_t size) = 0;  // Make space for at least size datasets
 	virtual herr_t insert (H5VL_logi_metaentry_t &meta) = 0;  // Add an entry
@@ -55,6 +56,7 @@ class H5VL_logi_array_idx_t : public H5VL_logi_idx_t {
    public:
 	H5VL_logi_array_idx_t (H5VL_log_file_t *fp);
 	H5VL_logi_array_idx_t (H5VL_log_file_t *fp, size_t size);
+	~H5VL_logi_array_idx_t () = default;
 	herr_t clear ();							  // Remove all entries
 	herr_t reserve (size_t size);				  // Make space for at least size datasets
 	herr_t insert (H5VL_logi_metaentry_t &meta);  // Add an entry
@@ -82,7 +84,7 @@ class H5VL_logi_compact_idx_t : public H5VL_logi_idx_t {
 		H5VL_logi_compact_idx_entry_t (int ndim, H5VL_logi_metaentry_t &meta);
 		~H5VL_logi_compact_idx_entry_t ();
 	};
-	
+
 	std::vector<std::vector<H5VL_logi_compact_idx_entry_t *>> idxs;
 
    public:

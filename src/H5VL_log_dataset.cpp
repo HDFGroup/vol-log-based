@@ -142,8 +142,8 @@ void *H5VL_log_dataset_create (void *obj,
 	}
 
 	// Append dataset to the file
-	LOG_VOL_ASSERT (dp->fp->ndset == dp->fp->dsets_info.size ())
-	LOG_VOL_ASSERT (dp->fp->ndset == dp->fp->mreqs.size ())
+	LOG_VOL_ASSERT (dp->fp->ndset == (int)(dp->fp->dsets_info.size ()))
+	LOG_VOL_ASSERT (dp->fp->ndset == (int)(dp->fp->mreqs.size ()))
 	dp->fp->ndset++;
 	dp->fp->dsets_info.push_back (dip);			 // Dataset info
 	dp->fp->idx->reserve (dp->fp->ndset);		 // Index for H5Dread
@@ -403,7 +403,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
 					err = -1;
 					ERR_OUT ("size cannot exceed max size")
 				}
-				dip->dims[i] = dip->dims[i] = new_sizes[i];
+				dip->dims[i] = new_sizes[i];
 			}
 
 			// Recalculate dsteps if needed

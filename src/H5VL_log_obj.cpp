@@ -174,6 +174,8 @@ herr_t H5VL_log_object_get (void *obj,
 				RET_ERR ("Access to internal objects denied")
 			}
 			break;
+		case H5VL_OBJECT_BY_SELF:
+			break;
 		case H5VL_OBJECT_BY_IDX:
 		case H5VL_OBJECT_BY_TOKEN:
 			RET_ERR ("Access by idx annd token is not supported")
@@ -241,6 +243,8 @@ herr_t H5VL_log_object_specific (void *obj,
 					RET_ERR ("Access to internal objects denied")
 				}
 			}
+			break;
+		case H5VL_OBJECT_BY_SELF:
 			break;
 		case H5VL_OBJECT_BY_IDX:
 		case H5VL_OBJECT_BY_TOKEN:
@@ -316,6 +320,8 @@ herr_t H5VL_log_object_optional (void *obj,
 				loc_params->loc_data.loc_by_name.name[0] == '_') {
 				RET_ERR ("Access to internal objects denied")
 			}
+			break;
+		case H5VL_OBJECT_BY_SELF:
 			break;
 		case H5VL_OBJECT_BY_IDX:
 		case H5VL_OBJECT_BY_TOKEN:
