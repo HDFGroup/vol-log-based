@@ -58,7 +58,7 @@ inline bool H5VL_logi_debug_verbose () {
 #define CHECK_ID(A)                                                       \
 	{                                                                     \
 		if (A < 0) {                                                      \
-			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL), true; \
+			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL, true); \
 			goto err_out;                                                 \
 		}                                                                 \
 	}
@@ -66,7 +66,7 @@ inline bool H5VL_logi_debug_verbose () {
 #define CHECK_PTR(A)                                                      \
 	{                                                                     \
 		if (A == NULL) {                                                  \
-			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL), true; \
+			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL, true); \
 			goto err_out;                                                 \
 		}                                                                 \
 	}
