@@ -7,7 +7,8 @@ This is essentially a placeholder for the next release note ...
   + Support multiple opened instance of the same dataset.
 
 * New optimization
-  + none
+  + Coalesce hyper-slab and points selections to reduce metadata size and index searching time on reading.
+  + Improve indexing memory consumption on dataset read with a redesigned compact index data structure.
 
 * New Limitations
   + none
@@ -52,6 +53,8 @@ This is essentially a placeholder for the next release note ...
   + Add command-line option "-d" to utility program "h5ldump" for dumping data
     of each selection block.
   + h5dump can now read a log-based VOL output file using log-based VOL.
+  + Add utility script to set HDF5 environment to use log-based VOL.
+    + h5lenv.bash, h5lenv.csh
 
 * Other updates:
   + Add utility scripts ("utils/h5lenv.bash.in" and "utils/h5lenv.csh.in") to
@@ -83,7 +86,7 @@ This is essentially a placeholder for the next release note ...
   + Fix dataset I/O bug when using "H5S_ALL".
   + Fix calculation for determining whether the file space is interleaving.
   + Fix a bug when memory space and file space have different number of dimensions.
-
+  + Fix a reference count bug when VOL info is created from a string.
 * New example programs
   + none
 
@@ -95,7 +98,12 @@ This is essentially a placeholder for the next release note ...
     in parallel using 4 MPI processes.
   + A new test program 'tests/testcases/scalar.cpp'  to read/write test scalar
     datasets.
-
+  + An external test program qmcpack restart 
+    + https://github.com/QMCPACK/qmcpack.git
+  + An external test program hdf5-iotest   
+    + https://github.com/brtnfld/hdf5-iotest
+  + An external test program openPMD-api benhmark
+    + https://github.com/openPMD/openPMD-api
 * Conformity with HDF5 library
   + none
 
