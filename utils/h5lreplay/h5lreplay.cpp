@@ -68,8 +68,8 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 	hid_t lgid	 = -1;	// ID of the log group
 	hid_t aid	 = -1;	// ID of file attribute
 	hid_t dxplid = -1;
-	int ndset;		 // # dataset in the input file
-	//int nldset;		 // # data dataset in the current file (main file| subfile)
+	int ndset;	// # dataset in the input file
+	// int nldset;		 // # data dataset in the current file (main file| subfile)
 	int nmdset;		 // # metadata dataset in the current file (main file| subfile)
 	int config;		 // Config flags of the input file
 	int att_buf[4];	 // Temporary buffer for reading file attributes
@@ -108,8 +108,8 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 	CHECK_ERR
 	err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
 	CHECK_ERR
-	ndset  = att_buf[0];
-	//nldset = att_buf[1];
+	ndset = att_buf[0];
+	// nldset = att_buf[1];
 	nmdset = att_buf[2];
 	config = att_buf[3];
 
@@ -151,7 +151,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 					CHECK_ID (aid)
 					err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
 					CHECK_ERR
-					//nldset = att_buf[1];
+					// nldset = att_buf[1];
 					nmdset = att_buf[2];
 
 					// Open the log group
@@ -171,7 +171,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 					CHECK_ERR
 
 					// Write the data
-					err = h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
+					err = h5lreplay_write_data (fout, copy_arg.dsets, reqs);
 					CHECK_ERR
 
 					// Close the subfile
@@ -205,7 +205,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 		CHECK_ERR
 
 		// Write the data
-		err = h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
+		err = h5lreplay_write_data (fout, copy_arg.dsets, reqs);
 		CHECK_ERR
 	}
 
@@ -216,7 +216,7 @@ err_out:;
 	if (lgid >= 0) { H5Gclose (lgid); }
 	if (finid >= 0) { H5Fclose (finid); }
 	if (fsubid >= 0) { H5Fclose (fsubid); }
-	for (auto &dset : copy_arg.dsets) { H5Dclose (dset.id); }
+	for (auto &dset : copy_arg.dsets) { H5Dclose (dset.did); }
 	if (foutid >= 0) { H5Fclose (foutid); }
 	if (fin != MPI_FILE_NULL) { MPI_File_close (&fin); }
 	if (fout != MPI_FILE_NULL) { MPI_File_close (&fout); }

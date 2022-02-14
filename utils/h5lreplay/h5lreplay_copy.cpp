@@ -16,7 +16,8 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 							   const char *name,
 							   const H5O_info_t *object_info,
 							   void *op_data) {
-	herr_t err	  = 0;
+	herr_t err = 0;
+	int i;
 	hid_t src_did = -1;
 	hid_t dst_did = -1;
 	hid_t aid	  = -1;
@@ -41,7 +42,6 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 		int id;
 		int ndim;
 		hsize_t hndim;
-		hsize_t dims[H5S_MAX_RANK], mdims[H5S_MAX_RANK];
 
 #ifdef LOGVOL_DEBUG
 		std::cout << "Reconstructing user dataset " << name << std::endl;
@@ -62,14 +62,14 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 		ndim = (int)hndim;
 		H5Sclose (sid);
 		sid = -1;
-		err = H5Aread (aid, H5T_NATIVE_INT64, dims);
+		err = H5Aread (aid, H5T_NATIVE_INT64, dset.dims);
 		CHECK_ERR
 		H5Aclose (aid);
 		aid = -1;
 		// Read max dims
 		aid = H5Aopen (src_did, "_mdims", H5P_DEFAULT);
 		CHECK_ID (aid)
-		err = H5Aread (aid, H5T_NATIVE_INT64, mdims);
+		err = H5Aread (aid, H5T_NATIVE_INT64, dset.mdims);
 		CHECK_ERR
 		H5Aclose (aid);
 		aid = -1;
@@ -87,7 +87,7 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 		// Create dst dataset
 		err = H5Pset_layout (dcplid, H5D_CONTIGUOUS);
 		CHECK_ERR
-		sid = H5Screate_simple (ndim, dims, mdims);
+		sid = H5Screate_simple (ndim, dset.dims, dset.mdims);
 		CHECK_ID (sid)
 		dst_did = H5Dcreate2 (argp->fid, name, tid, sid, H5P_DEFAULT, dcplid, H5P_DEFAULT);
 		CHECK_ID (dst_did)
@@ -101,7 +101,22 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 		//				   h5lreplay_attr_copy_handler, &dst_did);
 		// CHECK_ERR
 
-		dset.id	   = dst_did;
+		// File offset
+		err = H5Dclose (dst_did);
+		CHECK_ERR
+		dst_did = -1;
+		err		= H5Fflush (argp->fid, H5F_SCOPE_LOCAL);
+		CHECK_ERR
+		dst_did = H5Dopen2 (argp->fid, name, H5P_DEFAULT);
+		CHECK_ID (dst_did)
+		dset.foff = H5Dget_offset (dst_did);
+		CHECK_ID (dset.foff)
+
+		dset.dsteps[dset.ndim - 1] = 1;
+		for (i = dset.ndim - 2; i > -1; i--) {
+			dset.dsteps[i] = dset.dsteps[i + 1] * dset.dims[i + 1];
+		}
+		dset.did   = dst_did;
 		dset.dtype = tid;
 		dset.esize = H5Tget_size (tid);
 		dset.ndim  = ndim;
