@@ -4,7 +4,7 @@
 	branch = main
 [submodule "test/external/hdf5_iotest/hdf5-iotest"]
 	path = tests/external/hdf5_iotest/hdf5-iotest
-	url = https://github.com/brtnfld/hdf5-iotest
+	url = https://github.com/HDFGroup/hdf5-iotest.git
 	branch = master
 [submodule "tests/external/openpmd/openPMD-api"]
 	path = tests/external/openpmd/openPMD-api
