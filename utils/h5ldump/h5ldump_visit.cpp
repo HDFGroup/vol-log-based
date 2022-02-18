@@ -59,7 +59,8 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 	std::vector<H5VL_log_dset_info_t> *dsets = (std::vector<H5VL_log_dset_info_t> *)op_data;
 
 	// Skip unnamed and hidden object
-	if ((name == NULL) || (name[0] == '_' && name[1] == '_') || (name[0] == '/' || (name[0] == '.'))) {
+	if ((name == NULL) || (name[0] == '_' && name[1] == '_') ||
+		(name[0] == '/' || (name[0] == '.'))) {
 		goto err_out;
 	}
 
@@ -101,6 +102,8 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 		dset.esize = H5Tget_size (dset.dtype);
 
 		// Filters
+		dcplid = H5Dget_create_plist (did);
+		CHECK_ID (dcplid)
 		err = H5VL_logi_get_filters (dcplid, dset.filters);
 		CHECK_ERR
 
@@ -111,5 +114,6 @@ err_out:;
 	if (sid >= 0) { H5Sclose (sid); }
 	if (aid >= 0) { H5Aclose (aid); }
 	if (did >= 0) { H5Dclose (did); }
+	if (dcplid >= 0) { H5Pclose (dcplid); }
 	return err;
 }
