@@ -99,7 +99,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 	CHECK_MPIERR
 
 	// Read file metadata
-	aid = H5Aopen (finid, "_int_att", H5P_DEFAULT);
+	aid = H5Aopen (finid, "__int_att", H5P_DEFAULT);
 	CHECK_ID (aid)
 
 	dxplid = H5Pcreate (H5P_DATASET_XFER);
@@ -147,7 +147,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 					CHECK_MPIERR
 
 					// Read file metadata
-					aid = H5Aopen (fsubid, "_int_att", H5P_DEFAULT);  // Open attr in subfile
+					aid = H5Aopen (fsubid, "__int_att", H5P_DEFAULT);  // Open attr in subfile
 					CHECK_ID (aid)
 					err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
 					CHECK_ERR

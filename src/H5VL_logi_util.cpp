@@ -39,7 +39,6 @@ herr_t H5VL_logi_add_att (void *uo,
 	CHECK_ERR;
 	err = H5VLattr_close (ap, uvlid, dxpl_id, NULL);
 	CHECK_ERR
-
 	H5Sclose (asid);
 
 err_out:;

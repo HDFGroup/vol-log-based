@@ -28,7 +28,7 @@ herr_t h5ldump_visit (std::string path, std::vector<H5VL_log_dset_info_t> &dsets
 	CHECK_ID (fid)
 
 	// Read file metadata
-	aid = H5Aopen (fid, "_int_att", H5P_DEFAULT);
+	aid = H5Aopen (fid, "__int_att", H5P_DEFAULT);
 	CHECK_ID (aid)
 
 	err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
@@ -59,7 +59,7 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 	std::vector<H5VL_log_dset_info_t> *dsets = (std::vector<H5VL_log_dset_info_t> *)op_data;
 
 	// Skip unnamed and hidden object
-	if ((name == NULL) || (name[0] == '_') || (name[0] == '/' || (name[0] == '.'))) {
+	if ((name == NULL) || (name[0] == '_' && name[1] == '_') || (name[0] == '/' || (name[0] == '.'))) {
 		goto err_out;
 	}
 
