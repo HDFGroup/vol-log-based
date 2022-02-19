@@ -18,13 +18,20 @@
 #include "h5ldump.hpp"
 
 herr_t h5ldump_visit (std::string path, std::vector<H5VL_log_dset_info_t> &dsets) {
-	herr_t err = 0;
-	hid_t fid  = -1;  // File ID
-	hid_t aid  = -1;  // ID of file attribute
-	int att_buf[5];	  // Temporary buffer for reading file attributes
+	herr_t err		 = 0;
+	hid_t fid		 = -1;	// File ID
+	hid_t aid		 = -1;	// ID of file attribute
+	hid_t faplid	 = -1;	// File access property ID
+	hid_t nativevlid = -1;	// Native VOL ID
+	int att_buf[5];			// Temporary buffer for reading file attributes
+
+	// Always use native VOL
+	nativevlid = H5VLpeek_connector_id_by_name ("native");
+	faplid	   = H5Pcreate (H5P_FILE_ACCESS);
+	H5Pset_vol (faplid, nativevlid, NULL);
 
 	// Open the input file
-	fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, H5P_DEFAULT);
+	fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, faplid);
 	CHECK_ID (fid)
 
 	// Read file metadata
@@ -42,6 +49,7 @@ herr_t h5ldump_visit (std::string path, std::vector<H5VL_log_dset_info_t> &dsets
 err_out:;
 	if (aid >= 0) { H5Aclose (aid); }
 	if (fid >= 0) { H5Fclose (fid); }
+	if (faplid >= 0) { H5Pclose (faplid); }
 	return err;
 }
 
