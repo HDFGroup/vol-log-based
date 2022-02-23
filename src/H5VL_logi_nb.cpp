@@ -339,6 +339,12 @@ inline herr_t H5VL_log_read_idx_search (H5VL_log_file_t *fp,
 	herr_t err = 0;
 	int md, sec;  // Current metadata dataset and vurrent section
 
+	// Flush metadata if dirty
+	if (fp->metadirty) {
+		err = H5VL_log_filei_metaflush (fp);
+		CHECK_ERR
+	}
+
 	// If there is no metadata size limit, we load all the metadata at once
 	if (fp->mbuf_size == LOG_VOL_BSIZE_UNLIMITED) {
 		// Load metadata
