@@ -13,6 +13,7 @@
 #include <hdf5.h>
 //
 #include "H5VL_log_filei.hpp"
+#include "H5VL_log_dataseti.hpp"
 #include "H5VL_logi_err.hpp"
 #include "H5VL_logi_nb.hpp"
 #include "h5ldump.hpp"
@@ -35,7 +36,7 @@ herr_t h5ldump_visit (std::string path, std::vector<H5VL_log_dset_info_t> &dsets
 	CHECK_ID (fid)
 
 	// Read file metadata
-	aid = H5Aopen (fid, "__int_att", H5P_DEFAULT);
+	aid = H5Aopen (fid, H5VL_LOG_FILEI_ATTR_INT, H5P_DEFAULT);
 	CHECK_ID (aid)
 
 	err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
@@ -82,7 +83,7 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 		CHECK_ID (did)
 
 		// Read ndim and dims
-		aid = H5Aopen (did, "_dims", H5P_DEFAULT);
+		aid = H5Aopen (did, H5VL_LOG_DATASETI_ATTR_DIMS, H5P_DEFAULT);
 		CHECK_ID (aid)
 		sid = H5Aget_space (aid);
 		CHECK_ID (sid)
@@ -97,7 +98,7 @@ herr_t h5ldump_visit_handler (hid_t o_id,
 		aid = -1;
 
 		// Read dataset ID
-		aid = H5Aopen (did, "_ID", H5P_DEFAULT);
+		aid = H5Aopen (did, H5VL_LOG_DATASETI_ATTR_ID, H5P_DEFAULT);
 		CHECK_ID (aid)
 		err = H5Aread (aid, H5T_NATIVE_INT, &id);
 		CHECK_ERR

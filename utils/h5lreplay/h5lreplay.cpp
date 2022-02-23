@@ -99,7 +99,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 	CHECK_MPIERR
 
 	// Read file metadata
-	aid = H5Aopen (finid, "__int_att", H5P_DEFAULT);
+	aid = H5Aopen (finid, H5VL_LOG_FILEI_ATTR_INT, H5P_DEFAULT);
 	CHECK_ID (aid)
 
 	dxplid = H5Pcreate (H5P_DATASET_XFER);
@@ -147,7 +147,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 					CHECK_MPIERR
 
 					// Read file metadata
-					aid = H5Aopen (fsubid, "__int_att", H5P_DEFAULT);  // Open attr in subfile
+					aid = H5Aopen (fsubid, H5VL_LOG_FILEI_ATTR_INT, H5P_DEFAULT);  // Open attr in subfile
 					CHECK_ID (aid)
 					err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
 					CHECK_ERR
@@ -155,7 +155,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 					nmdset = att_buf[2];
 
 					// Open the log group
-					lgid = H5Gopen2 (fsubid, LOG_GROUP_NAME, H5P_DEFAULT);
+					lgid = H5Gopen2 (fsubid, H5VL_LOG_FILEI_GROUP_LOG, H5P_DEFAULT);
 					CHECK_ID (lgid)
 
 					// Clean up the index
@@ -193,7 +193,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 		}
 	} else {
 		// Open the log group
-		lgid = H5Gopen2 (finid, LOG_GROUP_NAME, H5P_DEFAULT);
+		lgid = H5Gopen2 (finid, H5VL_LOG_FILEI_GROUP_LOG, H5P_DEFAULT);
 		CHECK_ID (lgid)
 
 		// Read the metadata

@@ -341,7 +341,7 @@ void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
 	CHECK_PTR (dp)
 
 	// Atts
-	err = H5VL_logi_get_att (dp, "_ID", H5T_NATIVE_INT32, &(dp->id), dxpl_id);
+	err = H5VL_logi_get_att (dp, H5VL_LOG_DATASETI_ATTR_ID, H5T_NATIVE_INT32, &(dp->id), dxpl_id);
 	CHECK_ERR
 
 	// Construct new dataset info if not already constructed
@@ -356,9 +356,9 @@ void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
 		CHECK_ID (dip->esize)
 
 		err =
-			H5VL_logi_get_att_ex (dp, "_dims", H5T_NATIVE_INT64, &(dip->ndim), dip->dims, dxpl_id);
+			H5VL_logi_get_att_ex (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_NATIVE_INT64, &(dip->ndim), dip->dims, dxpl_id);
 		CHECK_ERR
-		err = H5VL_logi_get_att (dp, "_mdims", H5T_NATIVE_INT64, dip->mdims, dxpl_id);
+		err = H5VL_logi_get_att (dp, H5VL_LOG_DATASETI_ATTR_MDIMS, H5T_NATIVE_INT64, dip->mdims, dxpl_id);
 		CHECK_ERR
 
 		// Dstep for encoding selection

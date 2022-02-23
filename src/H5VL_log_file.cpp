@@ -205,7 +205,7 @@ void *H5VL_log_file_create (
 	H5VL_LOGI_PROFILING_TIMER_START;
 	loc.obj_type = H5I_FILE;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
-	fp->lgp = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, LOG_GROUP_NAME, H5P_LINK_CREATE_DEFAULT,
+	fp->lgp = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG, H5P_LINK_CREATE_DEFAULT,
 								H5P_GROUP_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
 	CHECK_PTR (fp->lgp)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
@@ -230,7 +230,7 @@ void *H5VL_log_file_create (
 	attbuf[2] = fp->nmdset;
 	attbuf[3] = fp->config;
 	attbuf[4] = fp->ngroup;
-	err = H5VL_logi_add_att (fp, "__int_att", H5T_STD_I32LE, H5T_NATIVE_INT32, 5, attbuf, dxpl_id,
+	err = H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32, 5, attbuf, dxpl_id,
 							 NULL);
 	CHECK_ERR
 

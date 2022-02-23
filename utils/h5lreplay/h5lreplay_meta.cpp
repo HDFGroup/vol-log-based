@@ -50,7 +50,7 @@ herr_t h5lreplay_parse_meta (int rank,
 	for (i = 0; i < nmdset; i++) {
 		char mdname[16];
 
-		sprintf (mdname, "__md_%d", i);
+		sprintf (mdname, "%s_%d", H5VL_LOG_FILEI_DSET_META, i);
 		did = H5Dopen2 (lgid, mdname, H5P_DEFAULT);
 		CHECK_ID (did)
 

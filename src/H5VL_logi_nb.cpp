@@ -584,7 +584,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 			// Open the LOG group
 			loc.obj_type = H5I_FILE;
 			loc.type	 = H5VL_OBJECT_BY_SELF;
-			fp->lgp		 = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, LOG_GROUP_NAME,
+			fp->lgp		 = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
 									   H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
 			CHECK_PTR (fp->lgp)
 			// Open the file with MPI
@@ -716,7 +716,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 
 	// Write out the data
 	if (fsize_all) {
-		sprintf (dname, "__ld_%d", fp->nldset);
+		sprintf (dname, "%s_%d", H5VL_LOG_FILEI_DSET_DATA, fp->nldset);
 
 		// Create log dataset
 		if (fsize_group) {
@@ -1029,7 +1029,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 
 		ldsid = H5Screate_simple (1, &dsize, &dsize);
 		CHECK_ID (ldsid)
-		sprintf (dname, "__ld_%d", fp->nldset);
+		sprintf (dname, "%s_%d", H5VL_LOG_FILEI_DSET_DATA, fp->nldset);
 		loc.obj_type = H5I_GROUP;
 		loc.type	 = H5VL_OBJECT_BY_SELF;
 		ldp			 = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,

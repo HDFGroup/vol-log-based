@@ -17,8 +17,6 @@
 #include "H5VL_logi_idx.hpp"
 #include "H5VL_logi_nb.hpp"
 
-#define LOG_GROUP_NAME "__LOG"
-
 typedef struct H5VL_log_contig_buffer_t {
 	char *begin, *end;
 	char *cur;

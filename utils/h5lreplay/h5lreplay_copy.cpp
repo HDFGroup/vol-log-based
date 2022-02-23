@@ -9,6 +9,7 @@
 #include <hdf5.h>
 //
 #include "H5VL_log_dataset.hpp"
+#include "H5VL_log_dataseti.hpp"
 #include "h5lreplay.hpp"
 #include "h5lreplay_copy.hpp"
 
@@ -53,7 +54,7 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 		dcplid = H5Dget_create_plist (src_did);
 
 		// Read ndim and dims
-		aid = H5Aopen (src_did, "_dims", H5P_DEFAULT);
+		aid = H5Aopen (src_did, H5VL_LOG_DATASETI_ATTR_DIMS, H5P_DEFAULT);
 		CHECK_ID (aid)
 		sid = H5Aget_space (aid);
 		CHECK_ID (sid)
@@ -67,14 +68,14 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 		H5Aclose (aid);
 		aid = -1;
 		// Read max dims
-		aid = H5Aopen (src_did, "_mdims", H5P_DEFAULT);
+		aid = H5Aopen (src_did, H5VL_LOG_DATASETI_ATTR_MDIMS, H5P_DEFAULT);
 		CHECK_ID (aid)
 		err = H5Aread (aid, H5T_NATIVE_INT64, mdims);
 		CHECK_ERR
 		H5Aclose (aid);
 		aid = -1;
 		// Read dataset ID
-		aid = H5Aopen (src_did, "_ID", H5P_DEFAULT);
+		aid = H5Aopen (src_did, H5VL_LOG_DATASETI_ATTR_ID, H5P_DEFAULT);
 		CHECK_ID (aid)
 		err = H5Aread (aid, H5T_NATIVE_INT, &id);
 		CHECK_ERR

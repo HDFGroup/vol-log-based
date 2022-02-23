@@ -7,6 +7,10 @@
 #include "H5VL_log_wrap.hpp"
 #include "H5VL_logi_idx.hpp"
 
+#define H5VL_LOG_DATASETI_ATTR_DIMS "__dims"
+#define H5VL_LOG_DATASETI_ATTR_MDIMS "__mdims"
+#define H5VL_LOG_DATASETI_ATTR_ID "__ID"
+
 typedef struct H5VL_log_copy_ctx {
 	char *src;	  // Copy from
 	char *dst;	  // Copy to

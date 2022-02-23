@@ -125,15 +125,15 @@ void *H5VL_log_dataset_create (void *obj,
 	CHECK_ERR
 
 	// Record dataset metadata as attributes
-	err = H5VL_logi_add_att (dp, "_dims", H5T_STD_I64LE, H5T_NATIVE_INT64, dip->ndim, dip->dims,
+	err = H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_STD_I64LE, H5T_NATIVE_INT64, dip->ndim, dip->dims,
 							 dxpl_id, ureqp);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
-	err = H5VL_logi_add_att (dp, "_mdims", H5T_STD_I64LE, H5T_NATIVE_INT64, dip->ndim, dip->mdims,
+	err = H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_MDIMS, H5T_STD_I64LE, H5T_NATIVE_INT64, dip->ndim, dip->mdims,
 							 dxpl_id, ureqp);
 	CHECK_ERR
 	if (req) { rp->append (ureq); }
-	err = H5VL_logi_add_att (dp, "_ID", H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id,
+	err = H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_ID, H5T_STD_I32LE, H5T_NATIVE_INT32, 1, &(dp->id), dxpl_id,
 							 ureqp);
 	CHECK_ERR
 	if (req) {
@@ -407,7 +407,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
 			}
 
 			// Record new size
-			err = H5VL_logi_put_att (dp, "_dims", H5T_NATIVE_INT64, dip->dims, dxpl_id);
+			err = H5VL_logi_put_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_NATIVE_INT64, dip->dims, dxpl_id);
 			CHECK_ERR
 
 			// Recalculate dsteps if needed

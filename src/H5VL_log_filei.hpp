@@ -11,6 +11,11 @@
 #define H5VL_FILEI_CONFIG_DATA_ALIGN 0x100
 #define H5VL_FILEI_CONFIG_SUBFILING	 0x200
 
+#define H5VL_LOG_FILEI_GROUP_LOG "__LOG"
+#define H5VL_LOG_FILEI_ATTR_INT "__int_att"
+#define H5VL_LOG_FILEI_DSET_META "__md"
+#define H5VL_LOG_FILEI_DSET_DATA "__ld"
+
 // File internals
 extern herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_dset_visit (hid_t o_id,

@@ -10,6 +10,7 @@
 #ifndef REPLAY_BUILD
 #include "H5VL_logi_profiling.hpp"
 #endif
+
 // APIs
 extern const H5VL_dataset_class_t H5VL_log_dataset_g;
 extern const H5VL_attr_class_t H5VL_log_attr_g;

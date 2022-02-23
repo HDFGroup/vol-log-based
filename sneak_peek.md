@@ -55,7 +55,9 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Bug fixes
-  + none
+  + h5ldump always use the native VOL regardless of HDF5_VOL_CONNECTOR. 
+  + h5lreplay must query dcplid before extracting filters.
+  + h5lreplay prefix internal objects by double '_'.
 
 * New example programs
   + none
