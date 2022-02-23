@@ -12,11 +12,31 @@
 #define H5VL_FILEI_CONFIG_SUBFILING	 0x200
 
 #define H5VL_LOG_FILEI_GROUP_LOG "__LOG"
-#define H5VL_LOG_FILEI_ATTR_INT "__int_att"
+#define H5VL_LOG_FILEI_ATTR_INT	 "__int_att"
 #define H5VL_LOG_FILEI_DSET_META "__md"
 #define H5VL_LOG_FILEI_DSET_DATA "__ld"
 
 // File internals
+
+inline herr_t H5VL_log_filei_init_idx (H5VL_log_file_t *fp) {
+	herr_t err = 0;
+	switch (fp->index_type) {
+		case list:
+			fp->idx = new H5VL_logi_array_idx_t (fp);  // Array index
+			break;
+		case compact:
+			fp->idx = new H5VL_logi_compact_idx_t (fp);	 // Compact index
+			break;
+		default:
+			fp->idx = NULL;
+			break;
+	}
+	CHECK_PTR (fp->idx)
+
+err_out:;
+	return err;
+}
+
 extern herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_dset_visit (hid_t o_id,
 										 const char *name,

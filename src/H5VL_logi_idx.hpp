@@ -5,6 +5,8 @@
 
 #include "H5VL_logi_nb.hpp"
 
+enum H5VL_log_idx_type_t { list = 0, compact = 1 };
+
 struct H5VL_log_dset_info_t;
 typedef struct H5VL_log_idx_search_ret_t {
 	H5VL_log_dset_info_t *info;

@@ -98,6 +98,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
 	// Configuration flag
 	int config;	 // Config flags
+	H5VL_log_idx_type_t index_type;	 // What index to use for metadata entries (only used to handle read operations)
 
 #ifdef ENABLE_PROFILING
 #ifndef REPLAY_BUILD

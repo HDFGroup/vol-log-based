@@ -118,7 +118,6 @@ void *H5VL_log_file_create (
 	fp->mdsize = 0;
 	fp->zbsize = 0;
 	fp->zbuf   = NULL;
-	fp->idx	   = new H5VL_logi_compact_idx_t (fp);	// Index for dataset read
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR
 	if (mpiinfo != MPI_INFO_NULL) {
@@ -138,6 +137,8 @@ void *H5VL_log_file_create (
 	err = H5VL_log_filei_parse_fapl (fp, fapl_id);
 	CHECK_ERR
 	err = H5VL_log_filei_parse_fcpl (fp, fcpl_id);
+	CHECK_ERR
+	err = H5VL_log_filei_init_idx (fp);
 	CHECK_ERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_INIT);
 

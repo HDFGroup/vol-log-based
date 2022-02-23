@@ -72,12 +72,13 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	fp->nmdset = attbuf[2];
 	fp->config = attbuf[3];
 	fp->ngroup = attbuf[3];
-	fp->idx	   = new H5VL_logi_compact_idx_t (fp, fp->ndset);  // Index for dataset read
-	fp->mreqs.resize (fp->ndset, NULL);						   // Merge write reqeusts
-	fp->dsets_info.resize (fp->ndset, NULL);				   // Dataset info
+	fp->mreqs.resize (fp->ndset, NULL);		  // Merge write reqeusts
+	fp->dsets_info.resize (fp->ndset, NULL);  // Dataset info
 	fp->group_rank = fp->rank;
 	fp->group_comm = fp->comm;
 	fp->group_id   = 0;
+	err			   = H5VL_log_filei_init_idx (fp);
+	CHECK_ERR
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
@@ -109,8 +110,8 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	loc.obj_type = H5I_FILE;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
 	H5VL_LOGI_PROFILING_TIMER_START
-	fp->lgp = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG, H5P_GROUP_ACCESS_DEFAULT,
-							  fp->dxplid, NULL);
+	fp->lgp = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
+							  H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
 	CHECK_PTR (fp->lgp)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
 
@@ -234,6 +235,21 @@ herr_t H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 	CHECK_ERR
 	env = getenv ("H5VL_LOG_IDX_BSIZE");
 	if (env) { fp->mbuf_size = (MPI_Offset) (atoll (env)); }
+
+	/*
+	err = H5Pget_sel_encoding (faplid, &encoding);
+	CHECK_ERR
+	if (encoding == H5VL_LOG_ENCODING_OFFSET) { fp->config |= H5VL_FILEI_CONFIG_SEL_ENCODE; }
+	*/
+	fp->index_type = list;
+	env			   = getenv ("H5VL_LOG_INDEX_TYPE");
+	if (env) {
+		if (strcmp (env, "compact") == 0) {
+			fp->index_type = compact;
+		} else {
+			fp->index_type = list;
+		}
+	}
 
 err_out:;
 	return err;
@@ -553,8 +569,8 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 		if (fp->sfp && fp->sfp != fp->uo) {
 			attbuf[3] =
 				fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
-			err = H5VL_logi_put_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR_INT, H5T_NATIVE_INT32,
-									 attbuf, fp->dxplid);
+			err		  = H5VL_logi_put_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR_INT,
+									   H5T_NATIVE_INT32, attbuf, fp->dxplid);
 			attbuf[1] = 0;	// No data and metadata in the main file
 			attbuf[2] = 0;
 			attbuf[3] |= H5VL_FILEI_CONFIG_SUBFILING;  // Turn subfiling flag back on
@@ -694,8 +710,8 @@ herr_t H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
 	attbuf[2] = fp->nmdset;
 	attbuf[3] = fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
 	attbuf[4] = fp->ngroup;
-	err		  = H5VL_logi_add_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE,
-							   H5T_NATIVE_INT32, 4, attbuf, dxpl_id, NULL);
+	err = H5VL_logi_add_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE,
+							 H5T_NATIVE_INT32, 4, attbuf, dxpl_id, NULL);
 	CHECK_ERR
 
 err_out:;
@@ -849,9 +865,8 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 		loc.obj_type = H5I_FILE;
 		loc.type	 = H5VL_OBJECT_BY_SELF;
 		H5VL_LOGI_PROFILING_TIMER_START
-		fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG, H5P_GROUP_ACCESS_DEFAULT,
-								  fp->dxplid, NULL);
-		CHECK_PTR (fp->lgp)
+		fp->lgp = H5VLgroup_open (fp->uo, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
+	   H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL); CHECK_PTR (fp->lgp)
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
 
 		// Att
@@ -860,7 +875,8 @@ void *H5VL_log_filei_wrap (void *uo, H5VL_log_obj_t *cp) {
 		fp->ndset  = attbuf[0];
 		fp->nldset = attbuf[1];
 		fp->nmdset = attbuf[2];
-		fp->idx = new H5VL_logi_compact_idx_t(fp->ndset);// Index for dataset read
+		err = H5VL_log_filei_init_idx (fp);
+		CHECK_ERR
 
 		// Open the file with MPI
 		mpierr = MPI_File_open (fp->comm, fp->name.c_str (), MPI_MODE_RDWR, MPI_INFO_NULL,
