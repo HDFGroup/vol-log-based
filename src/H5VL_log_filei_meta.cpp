@@ -245,6 +245,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	// Delete requests
 	for (auto &rp : fp->wreqs) { delete rp; }
 	fp->wreqs.clear ();
+	fp->nflushed = 0;
+	
 	// Recore metadata size
 #ifdef LOGVOL_PROFILING
 	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METASIZE, (double)(fp->mdsize) / 1048576);
