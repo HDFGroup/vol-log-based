@@ -555,6 +555,9 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 	H5VL_loc_params_t loc;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
+	err = H5VL_log_nb_flush_write_reqs (fp, dxplid);
+	CHECK_ERR
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Iterate through all subfiles
