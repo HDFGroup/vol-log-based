@@ -406,6 +406,10 @@ herr_t H5VL_log_dataset_specific (void *obj,
 				dip->dims[i] = new_sizes[i];
 			}
 
+			// Record new size
+			err = H5VL_logi_put_att (dp, "_dims", H5T_NATIVE_INT64, dip->dims, dxpl_id);
+			CHECK_ERR
+
 			// Recalculate dsteps if needed
 			if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
 				dip->dsteps[dip->ndim - 1] = 1;
