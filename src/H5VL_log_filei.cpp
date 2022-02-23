@@ -79,6 +79,8 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	fp->group_id   = 0;
 	err			   = H5VL_log_filei_init_idx (fp);
 	CHECK_ERR
+	err = fp->idx->reserve (fp->ndset);
+	CHECK_ERR
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 	if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
