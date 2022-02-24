@@ -215,11 +215,12 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		// Write metadata
 		H5VL_LOGI_PROFILING_TIMER_START;  // TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE
 		if (nentry) {
-			err = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 1, mmtype, &stat);
+			mpierr = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 1, mmtype, &stat);
 		} else {
-			err = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 0, MPI_INT, &stat);
+			mpierr = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 0, MPI_INT, &stat);
 		}
 		CHECK_MPIERR
+
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
 
 		H5VL_LOGI_PROFILING_TIMER_START;
@@ -246,7 +247,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	for (auto &rp : fp->wreqs) { delete rp; }
 	fp->wreqs.clear ();
 	fp->nflushed = 0;
-	
+
 	// Recore metadata size
 #ifdef LOGVOL_PROFILING
 	H5VL_log_profile_add_time (fp, TIMER_H5VL_LOG_FILEI_METASIZE, (double)(fp->mdsize) / 1048576);
