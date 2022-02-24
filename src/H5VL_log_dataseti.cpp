@@ -608,7 +608,7 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 		CHECK_ERR
 
 		if (db.xbuf != db.ubuf) {
-			err = H5VL_log_filei_bfree (dp->fp, &(db.xbuf));
+			err = H5VL_log_filei_bfree (dp->fp, db.xbuf);
 			CHECK_ERR
 		}
 
