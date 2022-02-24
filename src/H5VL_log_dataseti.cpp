@@ -355,10 +355,11 @@ void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
 		dip->esize = H5Tget_size (dip->dtype);
 		CHECK_ID (dip->esize)
 
-		err =
-			H5VL_logi_get_att_ex (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_NATIVE_INT64, &(dip->ndim), dip->dims, dxpl_id);
+		err = H5VL_logi_get_att_ex (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_NATIVE_INT64, &(dip->ndim),
+									dip->dims, dxpl_id);
 		CHECK_ERR
-		err = H5VL_logi_get_att (dp, H5VL_LOG_DATASETI_ATTR_MDIMS, H5T_NATIVE_INT64, dip->mdims, dxpl_id);
+		err = H5VL_logi_get_att (dp, H5VL_LOG_DATASETI_ATTR_MDIMS, H5T_NATIVE_INT64, dip->mdims,
+								 dxpl_id);
 		CHECK_ERR
 
 		// Dstep for encoding selection
@@ -612,7 +613,12 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 			CHECK_ERR
 		}
 
-		db.xbuf = buf;
+		// Copy to xbuf
+		// xbuf is managed buffer, buf is not, can't assign directly
+		err = H5VL_log_filei_balloc (dp->fp, csize, (void **)(&(db.xbuf)));
+		CHECK_ERR
+		memcpy (db.xbuf, buf, csize);
+		free (buf);
 		db.size = csize;
 	}
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_FILTER);
