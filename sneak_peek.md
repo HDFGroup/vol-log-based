@@ -4,7 +4,7 @@ This is essentially a placeholder for the next release note ...
 (Copy the contents below to RELEASE_NOTE.md when making an official release.)
 
 * New features
-  + none
+  + Flush write requests before handling any read requests.
 
 * New optimization
   + none
@@ -52,12 +52,15 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Other updates:
-  + none
+  + Supports NetCDF4 applications.
 
 * Bug fixes
   + h5ldump always use the native VOL regardless of HDF5_VOL_CONNECTOR. 
   + h5lreplay must query dcplid before extracting filters.
   + h5lreplay prefix internal objects by double '_'.
+  + Fix metadata flush after read operations corrupts the file.
+  + Fix write reqeust not flushed properly after the first metadata flush.
+  + Fix memory error when writing filtered datasets.
 
 * New example programs
   + none

@@ -83,6 +83,7 @@ void *H5VL_log_dataset_create (void *obj,
 	}
 
 	// Create anchor dataset
+	// TODO: native VOL will not save filter information when layout is contiguous
 	sid = H5Screate (H5S_SCALAR);
 	CHECK_ID (sid);
 	err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
