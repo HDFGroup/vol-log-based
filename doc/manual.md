@@ -4,18 +4,24 @@ This file explains new features and APIs introduced by the log-based VOL.
 
 ## APIs
 ### Dataset APIs (H5D*)
-* H5Dread_n
+* H5Dread_n (did, mtype, n, starts, counts, dxplid, buf)
   + Read multiple blocks from a dataset.
-    + n - number of blocks.
-    + starts - starting coordinate of the blocks to read in the dataset dataspace.
-      + starts[i] - starting coordinate of the i-th block to read in the dataset dataspace.
-    + counts - the size of the blocks to read.
-      + counts[i] - size of the i-th block to read.
-  + The data in buf is ordered according to the order of blocks.
-    + Data for block i followed immediately by data for block i + 1.
   + Analogous to the ncmpi_get_varn* APIs in PnetCDF.
   + Equivalent to calling H5Dread n times with dataspace selection set to starts[i] and counts[i] on i-th call.
-  + Signature
+  + Syntax
+    + H5Dread_n (did, mtype, n, starts, counts, dxplid, buf)
+      + IN did initial address of send buffer (choice)
+      + IN mtype number of elements in send buffer (non-negative integer)
+      + IN n number of blocks to read
+      + IN starts starting coordinate of the blocks to read in the dataset dataspace.
+        + starts[i] - starting coordinate of the i-th block to read in the dataset dataspace.
+      + IN counts the size of the blocks to read.
+        + counts[i] - size of the i-th block to read.
+      + IN dxplid dataset transfer property list ID.
+      + OUT buf data read.
+        + The data in buf is ordered according to the order of blocks.
+        + Data for block i followed immediately by data for block i + 1.
+  + C binding
     ```
         herr_t H5Dread_n (hid_t did,
                         hid_t mem_type_id,
@@ -27,16 +33,22 @@ This file explains new features and APIs introduced by the log-based VOL.
     ```
 * H5Dwrite_n
   + Write multiple blocks to a dataset.
-    + n - number of blocks.
-    + starts - starting coordinate of the blocks to write in the dataset dataspace.
-      + starts[i] - starting coordinate of the i-th block to write in the dataset dataspace.
-    + counts - the size of the blocks to write.
-      + counts[i] - size of the i-th block to write.
-  + The data in buf is ordered according to the order of blocks.
-    + Data for block i followed immediately by data for block i + 1.
   + Analogous to the ncmpi_put_varn* APIs in PnetCDF.
   + Equivalent to calling H5Dwrite n times with dataspace selection set to starts[i] and counts[i] on i-th call.
-  + Signature
+  + Syntax
+    + H5Dwrite_n (did, mtype, n, starts, counts, dxplid, buf)
+      + IN did initial address of send buffer (choice)
+      + IN mtype number of elements in send buffer (non-negative integer)
+      + IN n number of blocks to write
+      + IN starts starting coordinate of the blocks to write in the dataset dataspace.
+        + starts[i] - starting coordinate of the i-th block to write in the dataset dataspace.
+      + IN counts the size of the blocks to write.
+        + counts[i] - size of the i-th block to write.
+      + IN dxplid dataset transfer property list ID.
+      + IN buf data to write.
+        + The data in buf is ordered according to the order of blocks.
+        + Data for block i followed immediately by data for block i + 1.
+  + C binding
     ```
         herr_t H5Dwrite_n (hid_t did,
                         hid_t mem_type_id,
@@ -48,36 +60,73 @@ This file explains new features and APIs introduced by the log-based VOL.
     ```
 
 ### Properties APIs (H5P*)
-* H5Pset_nonblocking / H5Pget_nonblocking 
-  + Get or set whether an H5Dwrite or H5Dread call is blocking or non-blocking in a dataset transfer property list
-    + H5VL_LOG_REQ_BLOCKING (default)
-      + The user buffer can be modified after H5Dwrite returns
-      + The data is available in the user buffer after H5Dread returns
-    + H5VL_LOG_REQ_NONBLOCKING
-      + The user buffer shall not be modified before H5Fflush returns
-      + The data is not available in the user buffer before H5Fflush returns
-  + Signature
+* H5Pset_nonblocking
+  + Set whether an H5Dwrite or H5Dread call is blocking or non-blocking in a dataset transfer property list
+  + Syntax
+    + H5Pset_nonblocking (plist, nonblocking)
+      + IN plist ID of the dataset transfer property list to attach the setting
+      + IN nonblocking Whether to perform blocking or non-blocking I/O
+        + H5VL_LOG_REQ_BLOCKING (default)
+          + The user buffer can be modified after H5Dwrite returns
+          + The data is available in the user buffer after H5Dread returns
+        + H5VL_LOG_REQ_NONBLOCKING
+          + The user buffer shall not be modified before H5Fflush returns
+          + The data is not available in the user buffer before H5Fflush returns
+  + C binding
     ```
         herr_t H5Pset_nonblocking (hid_t plist, H5VL_log_req_type_t nonblocking);
+    ```
+* H5Pget_nonblocking
+  + Get whether an H5Dwrite or H5Dread call is blocking or non-blocking in a dataset transfer property list
+  + Syntax
+    + H5Pget_nonblocking (plist, nonblocking)
+      + IN plist ID of the dataset transfer property list to retrieve the setting
+      + OUT whether the current setting in the dataset transfer property list is blocking or non-blocking
+        + H5VL_LOG_REQ_BLOCKING
+          + The user buffer can be modified after H5Dwrite returns
+          + The data is available in the user buffer after H5Dread returns
+        + H5VL_LOG_REQ_NONBLOCKING
+          + The user buffer shall not be modified before H5Fflush returns
+          + The data is not available in the user buffer before H5Fflush returns
+  + C binding
+    ```
         herr_t H5Pget_nonblocking (hid_t plist, H5VL_log_req_type_t *nonblocking);
     ```
-* H5Pset_idx_buffer_size / H5Pget_idx_buffer_size 
-  + Get or set the amount of memory the log-based VOL can use to cache metadata for handling read requests
-    + size is in bytes
-    + LOG_VOL_BSIZE_UNLIMITED - no limit (default)
+* H5Pset_idx_buffer_size
+  + Set the amount of memory the log-based VOL can use to index metadata for handling read requests
   + If the size metadata does not fit into the limit, H5Dread will be carried out in multiple rounds, and the performance can degrade significantly.
   + The size must be enough to contain the largest metadata section in the file, or H5Dread will return an error.
     + A metadata section is the metadata written by one process in a file (open to close) session.
-  + Signature
+  + Syntax
+    + H5Pset_idx_buffer_size (plist, size)
+      + IN plist ID of the dataset transfer property list to attach the setting
+      + IN size maximum amount of memory in bytes allowed to use on metadata indexing
+        + Use LOG_VOL_BSIZE_UNLIMITED to indicate no limit (default)
+  + C binding
     ```
         herr_t H5Pset_idx_buffer_size (hid_t plist, size_t size);
+    ```
+* H5Pget_idx_buffer_size 
+  + Get the amount of memory the log-based VOL can use to cache metadata for handling read requests
+  + If the size metadata does not fit into the limit, H5Dread will be carried out in multiple rounds, and the performance can degrade significantly.
+  + The size must be enough to contain the largest metadata section in the file, or H5Dread will return an error.
+    + A metadata section is the metadata written by one process in a file (open to close) session.
+  + Syntax
+    + H5Pset_idx_buffer_size (plist, size)
+      + IN plist ID of the dataset transfer property list to retrieve the setting
+      + OUT size maximum amount of memory in bytes allowed to use on metadata indexing
+        + LOG_VOL_BSIZE_UNLIMITED indicates no limit
+  + C binding
+    ```
         herr_t H5Pget_idx_buffer_size (hid_t plist, ssize_t *size);
     ```
 ### Misc
 * H5VL_log_register
   + Register the log-based VOL and return its ID
   + The returned ID must be closed by calling H5VLclose
-  + Signature
+  + Syntax
+    + H5VL_log_register ()
+  + C binding
     ```
         hid_t H5VL_log_register (void);
     ```
