@@ -5,8 +5,8 @@ This software repository contains source codes implementing an [HDF5](https://ww
 ### HDF5 VOL Connector ID
 * This log-based VOL has been registered with the HDF group with [Connector Identifier 514](https://portal.hdfgroup.org/display/support/Registered+VOL+Connectors).
  
-### Build Instructions
-* See [doc/INSTALL.md](doc/INSTALL.md)
+### Getting start
+* See [doc/userguide.md](doc/userguide.md) for instruction on building and using the log-based VOL
 
 ### Current limitations
   + It does not support NetCDF4 programs that write in the HDF5 file format.
@@ -27,7 +27,6 @@ This software repository contains source codes implementing an [HDF5](https://ww
     See [doc/compatibility.md](doc/compatibility.md) for a full list of supported and unsupported APIs.
   + All opened objects of a file must be closed before the file is closed.
   
-
 ### References
 * [HDF5 VOL application developer manual](https://github.com/HDFGroup/hdf5doc/raw/vol_docs/RFCs/HDF5/VOL/user_guide/vol_user_guide.pdf)
 * [HDF5 VOL plug-in developer manual](https://github.com/HDFGroup/hdf5doc/raw/vol_docs/RFCs/HDF5/VOL/connector_author_guide/vol_connector_author_guide.pdf)
