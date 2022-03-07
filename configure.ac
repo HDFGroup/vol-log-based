@@ -364,26 +364,26 @@ fi
 
 # Check for NETCDF4
 have_netcdf4=no
-AC_ARG_WITH([netcdf4],
-   [AS_HELP_STRING([--with-netcdf4@<:@=INC,LIB | =DIR@:>@],
-                   [Enable ADIOS-2 feature and provide the ADIOS-2 installation path(s):
-    --with-netcdf4=INC,LIB for include and lib paths separated by a comma.
-    --with-netcdf4=DIR for the path containing include/ and lib/ subdirectories.
+AC_ARG_ENABLE([test-netcdf4],
+   [AS_HELP_STRING([--enable-test-netcdf4@<:@=INC,LIB | =DIR@:>@],
+                   [Enable NetCDF4 tests and provide the NetCDF installation path(s):
+    --enable-test-netcdf4=INC,LIB for include and lib paths separated by a comma.
+    --enable-test-netcdf4=DIR for the path containing include/ and lib/ subdirectories.
     @<:@default: disabled@:>@
    ])], [
-   if test "x${withval}" != xyes && test "x${withval}" != xno ; then
-      NETCDF4_INSTALL=${withval}
+   if test "x${enableval}" != xyes && test "x${enableval}" != xno ; then
+      NETCDF4_INSTALL=${enableval}
    fi
-   case $withval in
+   case $enableval in
      *,*)
-        netcdf4_inc="`echo $withval |cut -f1 -d,`"
-        netcdf4_lib="`echo $withval |cut -f2 -d, -s`"
+        netcdf4_inc="`echo $enableval |cut -f1 -d,`"
+        netcdf4_lib="`echo $enableval |cut -f2 -d, -s`"
         netcdf4_bindir="$netcdf4_inc/../bin"
         ;;
      *)
-        if test -n "$withval"; then
-          netcdf4_inc="$withval/include"
-          netcdf4_lib="$withval/lib"
+        if test -n "$enableval"; then
+          netcdf4_inc="$enableval/include"
+          netcdf4_lib="$enableval/lib"
           netcdf4_bindir="$NETCDF4_INSTALL/bin"
         fi
         ;;
@@ -422,9 +422,10 @@ AC_ARG_WITH([netcdf4],
    if test "x$have_netcdf4" = xno ; then
       AC_MSG_WARN([
       -----------------------------------------------------------------------
-      Missing NetCDF-header files 'netcdf4_c.h' required to build E3SM_IO. Use
-      configure command-line option --with-netcdf4=/path/to/implementation
-      to specify the location of NetCDF installation. Disable NetCDF 4 support.
+      Missing NetCDF-header files 'netcdf4_c.h' required to build NetCDF4 test 
+      programs. Use configure command-line option 
+      --enable-test-netcdf4=/path/to/implementation to specify the location 
+      of NetCDF installation. Disable NetCDF4 tests.
       -----------------------------------------------------------------------])
    else
       dnl Check if NetCDF version is 4.8.1 or later
@@ -441,10 +442,11 @@ AC_ARG_WITH([netcdf4],
       if test "x${netcdf_ge_4_8_1}" = xno; then
          AC_MSG_WARN([
          ------------------------------------------------------------
-         Missing NetCDF-4 header file 'netcdf_par.h' required by E3SM-IO.
-         The NetCDF-4 library must be built with parallel I/O and
+         Missing NetCDF-4 header file 'netcdf_par.h' required to 
+         build NetCDF4 test programs.
+         The NetCDF library must be built with parallel I/O and
          NETCDF-4 support. Check 'config.log' for more information.
-         Disable NetCDF4. 
+         Disable NetCDF4 tests. 
          ------------------------------------------------------------])
          have_netcdf4 = no
       else
@@ -455,7 +457,7 @@ AC_ARG_WITH([netcdf4],
                AC_MSG_WARN([
                ------------------------------------------------------------
                NetCDF was not built with parallel NetCDF 4 support.
-               Disable NetCDF4. 
+               Disable NetCDF4 tests. 
                ------------------------------------------------------------])
                have_netcdf4 = no
             fi
