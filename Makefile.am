@@ -4,6 +4,8 @@
 #
 # @configure_input@
 
+ACLOCAL_AMFLAGS = -I m4
+
 SUBDIRS = src tests examples utils doc
 DIST_SUBDIRS = src tests examples utils doc
 EXTRA_DIST =    m4/foreach_idx.m4 \
