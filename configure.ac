@@ -553,7 +553,7 @@ fi
 
 have_qmcpack=no
 AC_ARG_ENABLE([test-qmcpack],
-    [AS_HELP_STRING([--enable-test-qmcpack ],
+    [AS_HELP_STRING([--enable-test-qmcpack],
                     [Enable qmcpack external test.
                      @<:@default: disabled@:>@])],
     [have_qmcpack=${enableval}], [have_qmcpack=no]
@@ -564,7 +564,7 @@ if test "x${have_qmcpack}" = xyes; then
    cd tests/external/qmcpack
    rm -rf ./qmcpack
    rm -f v3.13.0.tar.gz
-   wget https://github.com/QMCPACK/qmcpack/archive/refs/tags/v3.13.0.tar.gz
+   wget -q https://github.com/QMCPACK/qmcpack/archive/refs/tags/v3.13.0.tar.gz
    mkdir qmcpack
    tar -zxf v3.13.0.tar.gz -C qmcpack --strip-components=1
    cd ../../..
@@ -621,7 +621,7 @@ if test "x${have_openpmd}" = xyes; then
    cd tests/external/openpmd
    rm -rf ./openPMD-api
    rm -f 0.14.4.tar.gz
-   wget https://github.com/openPMD/openPMD-api/archive/refs/tags/0.14.4.tar.gz
+   wget -q https://github.com/openPMD/openPMD-api/archive/refs/tags/0.14.4.tar.gz
    mkdir openPMD-api
    tar -zxf 0.14.4.tar.gz -C openPMD-api --strip-components=1
    cd ../../..
