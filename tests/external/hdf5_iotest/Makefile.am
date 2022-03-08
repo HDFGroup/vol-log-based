@@ -14,7 +14,7 @@ AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
-EXTRA_DIST = test.sh config.sh.in
+EXTRA_DIST = test.sh config.sh.in hdf5_iotest.m4
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead
