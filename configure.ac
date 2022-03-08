@@ -551,35 +551,88 @@ if test "x${TESTOUTDIR}" = x ; then
    TESTOUTDIR=.
 fi
 
-extests=no
-AC_ARG_ENABLE([external-tests],
-    [AS_HELP_STRING([--enable-external-tests],
-                    [Enable external test programs.
+have_qmcpack=no
+AC_ARG_ENABLE([test-qmcpack],
+    [AS_HELP_STRING([--enable-test-qmcpack ],
+                    [Enable qmcpack external test.
                      @<:@default: disabled@:>@])],
-    [extests=${enableval}], [extests=no]
+    [have_qmcpack=${enableval}], [have_qmcpack=no]
 )
-if test "x${extests}" = xyes; then
+if test "x${have_qmcpack}" = xyes; then
+   echo "downloading qmcpack..."
+   cd tests/external/qmcpack
+   rm -rf ./qmcpack
+   rm -f v3.13.0.tar.gz
+   wget https://github.com/QMCPACK/qmcpack/archive/refs/tags/v3.13.0.tar.gz
+   mkdir qmcpack
+   tar -zxf v3.13.0.tar.gz -C qmcpack --strip-components=1
+   cd ../../..
    AC_CHECK_FILE([tests/external/qmcpack/qmcpack/src/Sandbox/restart.cpp], [have_qmcpack=yes], [have_qmcpack=no])
    if test "x${have_qmcpack}" = xyes; then
       echo "configuring qmcpack..."
       AC_CONFIG_COMMANDS(qmcpack,[cd tests/external/qmcpack && chmod 755 config.sh && ./config.sh && cd ../../..])
-   fi
-
-   AC_CHECK_FILE([tests/external/hdf5_iotest/hdf5-iotest/src/hdf5_iotest.c], [have_hdf5io=yes], [have_hdf5io=no])
-   if test "x${have_hdf5io}" = xyes; then
-      echo "configuring hdf5_iotest..."
-      AC_CONFIG_COMMANDS(hdf5_iotest,[cd tests/external/hdf5_iotest && chmod 755 config.sh && ./config.sh && cd ../../..])
-   fi
-
-   AC_CHECK_FILE([tests/external/openpmd/openPMD-api/examples/8a_benchmark_write_parallel.cpp], [have_openpmd=yes], [have_openpmd=no])
-   if test "x${have_openpmd}" = xyes; then
-      echo "configuring openPMD..."
-      AC_CONFIG_COMMANDS(openpmd,[cd tests/external/openpmd && chmod 755 config.sh && ./config.sh && cd ../../..])
+   else
+      AC_MSG_WARN([
+         ------------------------------------------------------------
+         Test program source file not found. Disable qmcpack test.
+         ------------------------------------------------------------])
    fi
 fi
-AM_CONDITIONAL(ENABLE_EXTERNAL_TESTS, [test "x${extests}" = xyes])
 AM_CONDITIONAL(HAVE_QMCPACK, [test "x${have_qmcpack}" = xyes])
+
+have_hdf5io=no
+AC_ARG_ENABLE([test-hdf5-iotest],
+    [AS_HELP_STRING([--enable-test-hdf5-iotest],
+                    [Enable hdf5-iotest external test.
+                     @<:@default: disabled@:>@])],
+    [have_hdf5io=${enableval}], [have_hdf5io=no]
+)
+if test "x${have_hdf5io}" = xyes; then
+   echo "downloading hdf5-iotest..."
+   cd tests/external/hdf5_iotest
+   rm -rf ./hdf5-iotest
+   git clone https://github.com/HDFGroup/hdf5-iotest.git hdf5-iotest
+   cd ../../..
+   AC_CHECK_FILE([tests/external/hdf5_iotest/hdf5-iotest/src/hdf5_iotest.c], [have_hdf5io=yes], [have_hdf5io=no])
+   if test "x${have_hdf5io}" = xyes; then
+      echo "configuring hdf5-iotest..."
+      AC_CONFIG_COMMANDS(hdf5_iotest,[cd tests/external/hdf5_iotest && chmod 755 config.sh && ./config.sh && cd ../../..])
+   else
+      AC_MSG_WARN([
+         ------------------------------------------------------------
+         Test program source file not found. Disable hdf5-iotest test.
+         ------------------------------------------------------------])
+   fi
+fi
 AM_CONDITIONAL(HAVE_HDF5_IOTEST, [test "x${have_hdf5io}" = xyes])
+
+have_openpmd=no
+AC_ARG_ENABLE([test-openpmd],
+    [AS_HELP_STRING([--enable-test-openpmd],
+                    [Enable openpmd external test.
+                     @<:@default: disabled@:>@])],
+    [have_openpmd=${enableval}], [have_openpmd=no]
+)
+if test "x${have_openpmd}" = xyes; then
+   echo "downloading openpmd..."
+   cd tests/external/openpmd
+   rm -rf ./openPMD-api
+   rm -f 0.14.4.tar.gz
+   wget https://github.com/openPMD/openPMD-api/archive/refs/tags/0.14.4.tar.gz
+   mkdir openPMD-api
+   tar -zxf 0.14.4.tar.gz -C openPMD-api --strip-components=1
+   cd ../../..
+   AC_CHECK_FILE([tests/external/openpmd/openPMD-api/examples/8a_benchmark_write_parallel.cpp], [have_openpmd=yes], [have_openpmd=no])
+   if test "x${have_openpmd}" = xyes; then
+      echo "configuring openpmd..."
+      AC_CONFIG_COMMANDS(openpmd,[cd tests/external/openpmd && chmod 755 config.sh && ./config.sh && cd ../../..])
+   else
+      AC_MSG_WARN([
+         ------------------------------------------------------------
+         Test program source file not found. Disable openpmd test.
+         ------------------------------------------------------------])
+   fi
+fi
 AM_CONDITIONAL(HAVE_OPENPMD, [test "x${have_openpmd}" = xyes])
 
 dnl Configuration Date
