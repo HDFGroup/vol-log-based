@@ -13,7 +13,7 @@ export LD_LIBRARY_PATH="./build/lib":${LD_LIBRARY_PATH}
 if test "x$#" = x0 ; then
     RUN=""
 else
-    RUN="${TESTMPIRUN}"
+    RUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 fi
 
 echo "${RUN} ./8a_benchmark_write_parallel > 8a_benchmark_write_parallel.log"

@@ -13,7 +13,7 @@ EXEC="./restart"
 if test "x$#" = x0 ; then
     RUN=""
 else
-    RUN="${TESTMPIRUN}"
+    RUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 fi
 
 echo "${RUN} ${EXEC} -g \"1 1 1\" > restart.log"
