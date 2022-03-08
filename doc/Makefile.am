@@ -4,8 +4,14 @@
 #
 # @configure_input@
 
-EXTRA_DIST = compatibility.md \
-             manual.md
+EXTRA_DIST =    api.md \
+                compatibility.md \
+                design.md \
+                INSTALL.md \
+                intro.md \
+                usage.md \
+                userguide.md \
+                util.md
 
 dist-hook:
 #	$(SED_I) -e "1,10s|_RELEASE_DATE_|@H5VL_LOG_RELEASE_DATE@|" $(distdir)/compatibility.md
