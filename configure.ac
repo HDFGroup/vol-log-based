@@ -394,7 +394,6 @@ AC_ARG_ENABLE([test-netcdf4],
       dnl Check netcdf4-config under $PATH
       AC_PATH_PROG([netcdf4_config],[nc-config])
    fi
-   echo ${netcdf4_config}
    if test "x$netcdf4_config" != x ; then
       netcdf4_cflags=`$netcdf4_config --cflags`
       netcdf4_lflags=`$netcdf4_config --libs`
