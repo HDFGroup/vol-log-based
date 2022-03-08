@@ -560,6 +560,7 @@ AC_ARG_ENABLE([test-qmcpack],
 )
 if test "x${have_qmcpack}" = xyes; then
    echo "downloading qmcpack..."
+   mkdir -p tests/external/qmcpack
    cd tests/external/qmcpack
    rm -rf ./qmcpack
    rm -f v3.13.0.tar.gz
@@ -589,6 +590,7 @@ AC_ARG_ENABLE([test-hdf5-iotest],
 )
 if test "x${have_hdf5io}" = xyes; then
    echo "downloading hdf5-iotest..."
+   mkdir -p tests/external/hdf5_iotest
    cd tests/external/hdf5_iotest
    rm -rf ./hdf5-iotest
    git clone https://github.com/HDFGroup/hdf5-iotest.git hdf5-iotest
@@ -615,6 +617,7 @@ AC_ARG_ENABLE([test-openpmd],
 )
 if test "x${have_openpmd}" = xyes; then
    echo "downloading openpmd..."
+   mkdir -p tests/external/openpmd
    cd tests/external/openpmd
    rm -rf ./openPMD-api
    rm -f 0.14.4.tar.gz
