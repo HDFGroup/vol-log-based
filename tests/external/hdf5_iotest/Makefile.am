@@ -32,7 +32,8 @@ TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
 TESTS_ENVIRONMENT += export M4="${M4}";
 TESTS_ENVIRONMENT += export HDF5_LIB_PATH="${HDF5_LIB_PATH}";
 
-CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.csv
+CLEANFILES = hdf5_iotest hdf5_iotest.ini hdf5_iotest.log \
+             core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.csv
 
 check_PROGRAMS = hdf5_iotest
 
@@ -73,9 +74,6 @@ ptest8 ptest10:
 
 clean-local:
 	if [ -d "build" ]; then cd build && make clean ; fi
-	rm -f hdf5_iotest
 
 distclean-local:
-	rm -f hdf5_iotest
-	rm -rf build
-	rm -rf hdf5-iotest
+	-rm -rf build hdf5-iotest

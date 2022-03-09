@@ -30,7 +30,8 @@ TESTS_ENVIRONMENT += export TESTMPIRUN="$(TESTMPIRUN)";
 TESTS_ENVIRONMENT += export TESTPROGRAMS="$(TESTPROGRAMS)";
 TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
 
-CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.log
+CLEANFILES = restart restart.log \
+             core core.* *.gcda *.gcno *.gcov gmon.out *.h5
 
 check_PROGRAMS = restart
 
@@ -71,10 +72,8 @@ ptest8 ptest10:
 
 clean-local:
 	if [ -d "build" ]; then cd build && make clean ; fi
-	rm -f restart
+
+DISTCLEANFILES = qmcpack.tar.gz
 
 distclean-local:
-	rm -f restart
-	rm -rf build
-	rm -rf qmcpack
-	rm -rf *.tar.gz
+	-rm -rf build qmcpack

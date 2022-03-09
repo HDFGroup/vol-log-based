@@ -30,7 +30,9 @@ TESTS_ENVIRONMENT += export TESTMPIRUN="$(TESTMPIRUN)";
 TESTS_ENVIRONMENT += export TESTPROGRAMS="$(TESTPROGRAMS)";
 TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
 
-CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out *.h5
+CLEANFILES = 8a_benchmark_write_parallel 8b_benchmark_read_parallel \
+             8a_benchmark_write_parallel.log \
+             core core.* *.gcda *.gcno *.gcov gmon.out *.h5
 
 check_PROGRAMS = 8a_benchmark_write_parallel 8b_benchmark_read_parallel
 
@@ -75,15 +77,10 @@ ptest8 ptest10:
 
 clean-local:
 	if [ -d "build" ]; then cd build && make clean ; fi
-	rm -f  8a_benchmark_write_parallel 
-	rm -f  8b_benchmark_read_parallel
-	rm -rf  ../samples
+	-rm -rf  ../samples
+
+DISTCLEANFILES = openPMD-api.tar.gz
 
 distclean-local:
-	rm -f  8a_benchmark_write_parallel 
-	rm -f  8b_benchmark_read_parallel
-	rm -rf  ../samples
-	rm -rf build
-	rm -rf openpmd
-	rm -rf openPMD-api
-	rm -rf *.tar.gz
+	-rm -rf build openPMD-api
+
