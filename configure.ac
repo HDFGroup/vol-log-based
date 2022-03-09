@@ -598,6 +598,7 @@ if test "x${have_hdf5io}" = xyes; then
    if test "x${have_hdf5io}" = xyes; then
       echo "configuring hdf5-iotest..."
       AC_CONFIG_COMMANDS(hdf5_iotest,[cd tests/external/hdf5_iotest && chmod 755 config.sh && ./config.sh && cd ../../..])
+      AC_CONFIG_LINKS([tests/external/hdf5_iotest/hdf5_iotest.m4:tests/external/hdf5_iotest/hdf5_iotest.m4])
    else
       AC_MSG_WARN([
          ------------------------------------------------------------

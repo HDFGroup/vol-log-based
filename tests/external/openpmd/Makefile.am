@@ -32,18 +32,20 @@ TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
 
 CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out *.h5
 
+check_PROGRAMS = 8a_benchmark_write_parallel 8b_benchmark_read_parallel
+
 TESTS = test.sh
 
-8a_benchmark_write_parallel:
+8a_benchmark_write_parallel$(EXEEXT):
 	cd build && make -j 4
 	cp build/bin/8a_benchmark_write_parallel .
 
-8b_benchmark_read_parallel:
+8b_benchmark_read_parallel$(EXEEXT):
 	cd build && make -j 4
 	cp build/bin/8b_benchmark_read_parallel .
 
 # build check targets but not invoke
-tests-local: all 8a_benchmark_write_parallel 8b_benchmark_read_parallel
+tests-local: all $(check_PROGRAMS)
 
 ptest ptest4: $(check_PROGRAMS)
 	@echo "==========================================================="

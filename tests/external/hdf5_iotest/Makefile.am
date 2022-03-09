@@ -34,14 +34,16 @@ TESTS_ENVIRONMENT += export HDF5_LIB_PATH="${HDF5_LIB_PATH}";
 
 CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.csv
 
+check_PROGRAMS = hdf5_iotest
+
 TESTS = test.sh
 
-hdf5_iotest:
+hdf5_iotest$(EXEEXT):
 	cd build && make -j 64
 	cp build/src/hdf5_iotest .
 
 # build check targets but not invoke
-tests-local: all hdf5_iotest
+tests-local: all $(check_PROGRAMS)
 
 ptest ptest4: $(check_PROGRAMS)
 	@echo "==========================================================="
