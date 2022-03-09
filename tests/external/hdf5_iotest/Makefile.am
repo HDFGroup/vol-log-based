@@ -76,4 +76,6 @@ clean-local:
 	rm -f hdf5_iotest
 
 distclean-local:
+	rm -f hdf5_iotest
 	rm -rf build
+	rm -rf hdf5-iotest

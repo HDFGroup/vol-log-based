@@ -80,4 +80,10 @@ clean-local:
 	rm -rf  ../samples
 
 distclean-local:
+	rm -f  8a_benchmark_write_parallel 
+	rm -f  8b_benchmark_read_parallel
+	rm -rf  ../samples
 	rm -rf build
+	rm -rf openpmd
+	rm -rf openPMD-api
+	rm -rf *.tar.gz
