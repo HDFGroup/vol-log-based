@@ -44,7 +44,7 @@ check_PROGRAMS += 	t_type \
 endif
 endif
 
-EXTRA_DIST = wrap_runs.sh parallel_run.sh
+EXTRA_DIST = wrap_runs.sh parallel_run.sh nc_include
 
 TESTPROGRAMS = $(check_PROGRAMS)
 
