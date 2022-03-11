@@ -275,34 +275,36 @@ herr_t H5VL_log_attr_specific (void *obj,
 		ureqp = NULL;
 	}
 
-	// Block access to internal objects
-	switch (loc_params->type) {
-		case H5VL_OBJECT_BY_NAME:
-			if (!(loc_params->loc_data.loc_by_name.name) ||
-				loc_params->loc_data.loc_by_name.name[0] == '_') {
-				if (args->op_type == H5VL_ATTR_EXISTS) {
-					*args->args.exists.exists = false;
-					goto err_out;
-				} else {
-					RET_ERR ("Access to internal objects denied")
+	if (op->fp->islog) {
+		// Block access to internal objects
+		switch (loc_params->type) {
+			case H5VL_OBJECT_BY_NAME:
+				if (!(loc_params->loc_data.loc_by_name.name) ||
+					loc_params->loc_data.loc_by_name.name[0] == '_') {
+					if (args->op_type == H5VL_ATTR_EXISTS) {
+						*args->args.exists.exists = false;
+						goto err_out;
+					} else {
+						RET_ERR ("Access to internal objects denied")
+					}
 				}
-			}
-			break;
-		case H5VL_OBJECT_BY_SELF:
-			break;
-		case H5VL_OBJECT_BY_IDX:
-		case H5VL_OBJECT_BY_TOKEN:
-			RET_ERR ("Access by idx annd token is not supported")
-			break;
-	}
+				break;
+			case H5VL_OBJECT_BY_SELF:
+				break;
+			case H5VL_OBJECT_BY_IDX:
+			case H5VL_OBJECT_BY_TOKEN:
+				RET_ERR ("Access by idx annd token is not supported")
+				break;
+		}
 
-	// Replace H5Aiterate callback with logvol wrpapper
-	if (args->op_type == H5VL_ATTR_ITER) {
-		ctx		= (H5VL_log_atti_iterate_op_data *)malloc (sizeof (H5VL_log_atti_iterate_op_data));
-		ctx->op = args->args.iterate.op;
-		ctx->op_data			   = args->args.iterate.op_data;
-		args->args.iterate.op	   = H5VL_log_atti_iterate_op;
-		args->args.iterate.op_data = ctx;
+		// Replace H5Aiterate callback with logvol wrpapper
+		if (args->op_type == H5VL_ATTR_ITER) {
+			ctx = (H5VL_log_atti_iterate_op_data *)malloc (sizeof (H5VL_log_atti_iterate_op_data));
+			ctx->op					   = args->args.iterate.op;
+			ctx->op_data			   = args->args.iterate.op_data;
+			args->args.iterate.op	   = H5VL_log_atti_iterate_op;
+			args->args.iterate.op_data = ctx;
+		}
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -310,9 +312,11 @@ herr_t H5VL_log_attr_specific (void *obj,
 	CHECK_ERR
 	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_SPECIFIC);
 
-	if (args->op_type == H5VL_ATTR_ITER) {
-		args->args.iterate.op	   = ctx->op;
-		args->args.iterate.op_data = ctx->op_data;
+	if (op->fp->islog) {
+		if (args->op_type == H5VL_ATTR_ITER) {
+			args->args.iterate.op	   = ctx->op;
+			args->args.iterate.op_data = ctx->op_data;
+		}
 	}
 
 	if (req) {
@@ -320,8 +324,8 @@ herr_t H5VL_log_attr_specific (void *obj,
 		*req = rp;
 	}
 
-	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_SPECIFIC);
 err_out:;
+	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_SPECIFIC);
 	if (ctx) { free (ctx); }
 	return err;
 } /* end H5VL_log_attr_specific() */

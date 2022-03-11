@@ -83,7 +83,7 @@ void *H5VL_log_file_create (
 #endif
 
 	/* Check arguments */
-	H5VL_LOGI_CHECK_NAME (name);
+	// H5VL_LOGI_CHECK_NAME (name);
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 	// Try get info about under VOL
@@ -118,6 +118,7 @@ void *H5VL_log_file_create (
 	fp->mdsize = 0;
 	fp->zbsize = 0;
 	fp->zbuf   = NULL;
+	fp->islog  = true;
 	mpierr	   = MPI_Comm_dup (comm, &(fp->comm));
 	CHECK_MPIERR
 	if (mpiinfo != MPI_INFO_NULL) {
@@ -206,8 +207,9 @@ void *H5VL_log_file_create (
 	H5VL_LOGI_PROFILING_TIMER_START;
 	loc.obj_type = H5I_FILE;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
-	fp->lgp = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG, H5P_LINK_CREATE_DEFAULT,
-								H5P_GROUP_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
+	fp->lgp		 = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
+								 H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,
+								 H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
 	CHECK_PTR (fp->lgp)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
 
@@ -231,8 +233,8 @@ void *H5VL_log_file_create (
 	attbuf[2] = fp->nmdset;
 	attbuf[3] = fp->config;
 	attbuf[4] = fp->ngroup;
-	err = H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32, 5, attbuf, dxpl_id,
-							 NULL);
+	err		  = H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32, 5,
+							   attbuf, dxpl_id, NULL);
 	CHECK_ERR
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE);
@@ -295,7 +297,7 @@ void *H5VL_log_file_open (
 #endif
 
 	/* Check arguments */
-	H5VL_LOGI_CHECK_NAME (name);
+	// H5VL_LOGI_CHECK_NAME (name);
 
 	// Try get info about under VOL
 	H5Pget_vol_info (fapl_id, (void **)&info);
@@ -347,7 +349,7 @@ void *H5VL_log_file_open (
 	err		   = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
 	CHECK_ERR
 
-	// Create the file with underlying VOL
+	// Open the file with underlying VOL
 	fp->ufaplid = H5Pcopy (fapl_id);
 	err			= H5Pset_vol (fp->ufaplid, uvlid, under_vol_info);
 	CHECK_ERR
@@ -441,7 +443,7 @@ herr_t H5VL_log_file_specific (void *file,
 							   H5VL_file_specific_args_t *args,
 							   hid_t dxpl_id,
 							   void **req) {
-	herr_t err = 0;
+	herr_t err			= 0;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -466,9 +468,8 @@ herr_t H5VL_log_file_specific (void *file,
 		printf ("H5VL_log_file_specific(%p, %s, %s, %p, ...)\n", file, vname[0], vname[1], req);
 	}
 #endif
-
 	switch (args->op_type) {
-		case H5VL_FILE_IS_ACCESSIBLE:
+		// case H5VL_FILE_IS_ACCESSIBLE:
 		case H5VL_FILE_DELETE: {
 			hid_t uvlid, under_fapl_id, fapl_id;
 			void *under_vol_info;
@@ -500,15 +501,22 @@ herr_t H5VL_log_file_specific (void *file,
 			H5Pclose (under_fapl_id);
 		} break;
 		case H5VL_FILE_FLUSH: {
-			err = H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
+			if (fp->islog) {
+				err = H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
+			} else {
+				H5VL_LOGI_PROFILING_TIMER_START;
+				err = H5VLfile_specific (fp->uo, fp->uvlid, args, dxpl_id, req);
+				CHECK_ERR
+				H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_SPECIFIC);
+			}
 			break;
 		} break;
 		default:
 			ERR_OUT ("Unsupported args->op_type")
 	} /* end select */
 
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_SPECIFIC);
 err_out:;
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_SPECIFIC);
 	return err;
 } /* end H5VL_log_file_specific() */
 
@@ -555,7 +563,7 @@ herr_t H5VL_log_file_optional (void *file, H5VL_optional_args_t *args, hid_t dxp
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_OPTIONAL);
 
 	// Open the log group and read file attributes
-	if (args->op_type == H5VL_NATIVE_FILE_POST_OPEN) {
+	if ((args->op_type == H5VL_NATIVE_FILE_POST_OPEN) && (fp->islog)) {
 		if (!(fp->lgp)) {  // Log group is already set for file create
 			err = H5VL_log_filei_post_open (fp);
 			CHECK_ERR

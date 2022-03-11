@@ -60,9 +60,24 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	int mpierr;
 	H5VL_loc_params_t loc;
 	H5VL_object_specific_args_t args;
+	H5VL_attr_specific_args_t aargs;
 	int attbuf[5];
 
 	H5VL_LOGI_PROFILING_TIMER_START;
+
+	// Check if is logvol file
+	loc.obj_type		   = H5I_FILE;
+	loc.type			   = H5VL_OBJECT_BY_SELF;
+	aargs.args.exists.name = H5VL_LOG_FILEI_ATTR_INT;
+	aargs.op_type		   = H5VL_ATTR_EXISTS;
+	err					   = H5VLattr_specific (fp->uo, &loc, fp->uvlid, &aargs, fp->dxplid, NULL);
+	CHECK_ERR
+	if (aargs.args.exists.exists) {
+		fp->islog = true;
+	} else {
+		fp->islog = false;
+		goto err_out;
+	}
 
 	// Att
 	err = H5VL_logi_get_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_NATIVE_INT32, attbuf, fp->dxplid);
@@ -135,9 +150,8 @@ herr_t H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 	err = H5VLobject_specific (fp->uo, &loc, fp->uvlid, &args, fp->dxplid, NULL);
 	CHECK_ERR
 
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
-
 err_out:;
+	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
 	return err;
 }
 
@@ -546,81 +560,84 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 	if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_filei_close(%p, ...)\n", fp); }
 #endif
 
-	if (fp->flag != H5F_ACC_RDONLY) {
-		// Flush write requests
-		if ((int)(fp->wreqs.size ()) > fp->nflushed) {
-			if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
-				err = H5VL_log_nb_flush_write_reqs_align (fp, fp->dxplid);
-			} else {
-				err = H5VL_log_nb_flush_write_reqs (fp, fp->dxplid);
+	if (fp->islog) {
+		if (fp->flag != H5F_ACC_RDONLY) {
+			// Flush write requests
+			if ((int)(fp->wreqs.size ()) > fp->nflushed) {
+				if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
+					err = H5VL_log_nb_flush_write_reqs_align (fp, fp->dxplid);
+				} else {
+					err = H5VL_log_nb_flush_write_reqs (fp, fp->dxplid);
+				}
+				CHECK_ERR
 			}
+
+			// Generate metadata table
+			err = H5VL_log_filei_metaflush (fp);
+			CHECK_ERR
+
+			// Update file attr
+			attbuf[0] = fp->ndset;
+			attbuf[1] = fp->nldset;
+			attbuf[2] = fp->nmdset;
+			attbuf[3] = fp->config;
+			attbuf[4] = fp->ngroup;
+			// Att in the subfile
+			if (fp->sfp && fp->sfp != fp->uo) {
+				attbuf[3] =
+					fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
+				err = H5VL_logi_put_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR_INT,
+										 H5T_NATIVE_INT32, attbuf, fp->dxplid);
+				attbuf[1] = 0;	// No data and metadata in the main file
+				attbuf[2] = 0;
+				attbuf[3] |= H5VL_FILEI_CONFIG_SUBFILING;  // Turn subfiling flag back on
+			}
+			// Att in the main file
+			err = H5VL_logi_put_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_NATIVE_INT32, attbuf,
+									 fp->dxplid);
 			CHECK_ERR
 		}
 
-		// Generate metadata table
-		err = H5VL_log_filei_metaflush (fp);
+		// Close the log group
+		H5VL_LOGI_PROFILING_TIMER_START
+		err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
 		CHECK_ERR
-
-		// Update file attr
-		attbuf[0] = fp->ndset;
-		attbuf[1] = fp->nldset;
-		attbuf[2] = fp->nmdset;
-		attbuf[3] = fp->config;
-		attbuf[4] = fp->ngroup;
-		// Att in the subfile
-		if (fp->sfp && fp->sfp != fp->uo) {
-			attbuf[3] =
-				fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
-			err		  = H5VL_logi_put_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR_INT,
-									   H5T_NATIVE_INT32, attbuf, fp->dxplid);
-			attbuf[1] = 0;	// No data and metadata in the main file
-			attbuf[2] = 0;
-			attbuf[3] |= H5VL_FILEI_CONFIG_SUBFILING;  // Turn subfiling flag back on
-		}
-		// Att in the main file
-		err = H5VL_logi_put_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_NATIVE_INT32, attbuf, fp->dxplid);
-		CHECK_ERR
-	}
-
-	// Close the log group
-	H5VL_LOGI_PROFILING_TIMER_START
-	err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
-	CHECK_ERR
-	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_CLOSE);
+		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_CLOSE);
 
 #ifdef LOGVOL_PROFILING
-	{
-		MPI_Info info;
-		char *_env_str = getenv ("H5VL_LOG_PRINT_MPI_INFO");
-		if (_env_str != NULL && *_env_str != '0') {
-			if (fp->rank == 0) {
-				MPI_File_get_info (fp->fh, &info);
-				print_info (&info);
-				MPI_Info_free (&info);
+		{
+			MPI_Info info;
+			char *_env_str = getenv ("H5VL_LOG_PRINT_MPI_INFO");
+			if (_env_str != NULL && *_env_str != '0') {
+				if (fp->rank == 0) {
+					MPI_File_get_info (fp->fh, &info);
+					print_info (&info);
+					MPI_Info_free (&info);
+				}
 			}
 		}
-	}
 #endif
 
-	// Close the file with MPI
-	mpierr = MPI_File_close (&(fp->fh));
-	CHECK_MPIERR
+		// Close the file with MPI
+		mpierr = MPI_File_close (&(fp->fh));
+		CHECK_MPIERR
 
-	// Close the file with posix
-	if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) { close (fp->fd); }
+		// Close the file with posix
+		if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) { close (fp->fd); }
 
-	// Close contig dataspacce ID
-	H5VL_log_dataspace_contig_ref--;
-	if (H5VL_log_dataspace_contig_ref == 0) { H5Sclose (H5VL_log_dataspace_contig); }
+		// Close contig dataspacce ID
+		H5VL_log_dataspace_contig_ref--;
+		if (H5VL_log_dataspace_contig_ref == 0) { H5Sclose (H5VL_log_dataspace_contig); }
 
-	// Free compression buffer
-	free (fp->zbuf);
+		// Free compression buffer
+		free (fp->zbuf);
 
-	// Free dataset info
-	for (auto info : fp->dsets_info) { delete info; }
+		// Free dataset info
+		for (auto info : fp->dsets_info) { delete info; }
 
-	// Free read index
-	delete fp->idx;
+		// Free read index
+		delete fp->idx;
+	}
 
 	// Close the file with under VOL
 	H5VL_LOGI_PROFILING_TIMER_START;

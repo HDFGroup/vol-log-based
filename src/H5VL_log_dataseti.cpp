@@ -340,45 +340,48 @@ void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
 	dp = new H5VL_log_dset_t (op, H5I_DATASET, uo);
 	CHECK_PTR (dp)
 
-	// Atts
-	err = H5VL_logi_get_att (dp, H5VL_LOG_DATASETI_ATTR_ID, H5T_NATIVE_INT32, &(dp->id), dxpl_id);
-	CHECK_ERR
-
-	// Construct new dataset info if not already constructed
-	if (!(dp->fp->dsets_info[dp->id])) {
-		dip = new H5VL_log_dset_info_t ();
-		CHECK_PTR (dip)
-
-		dip->dtype = H5VL_logi_dataset_get_type (dp->fp, dp->uo, dp->uvlid, dxpl_id);
-		CHECK_ID (dip->dtype)
-
-		dip->esize = H5Tget_size (dip->dtype);
-		CHECK_ID (dip->esize)
-
-		err = H5VL_logi_get_att_ex (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_NATIVE_INT64, &(dip->ndim),
-									dip->dims, dxpl_id);
-		CHECK_ERR
-		err = H5VL_logi_get_att (dp, H5VL_LOG_DATASETI_ATTR_MDIMS, H5T_NATIVE_INT64, dip->mdims,
-								 dxpl_id);
+	if (op->fp->islog) {
+		// Atts
+		err =
+			H5VL_logi_get_att (dp, H5VL_LOG_DATASETI_ATTR_ID, H5T_NATIVE_INT32, &(dp->id), dxpl_id);
 		CHECK_ERR
 
-		// Dstep for encoding selection
-		if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-			dip->dsteps[dip->ndim - 1] = 1;
-			for (i = dip->ndim - 2; i > -1; i--) {
-				dip->dsteps[i] = dip->dsteps[i + 1] * dip->dims[i + 1];
+		// Construct new dataset info if not already constructed
+		if (!(dp->fp->dsets_info[dp->id])) {
+			dip = new H5VL_log_dset_info_t ();
+			CHECK_PTR (dip)
+
+			dip->dtype = H5VL_logi_dataset_get_type (dp->fp, dp->uo, dp->uvlid, dxpl_id);
+			CHECK_ID (dip->dtype)
+
+			dip->esize = H5Tget_size (dip->dtype);
+			CHECK_ID (dip->esize)
+
+			err = H5VL_logi_get_att_ex (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_NATIVE_INT64,
+										&(dip->ndim), dip->dims, dxpl_id);
+			CHECK_ERR
+			err = H5VL_logi_get_att (dp, H5VL_LOG_DATASETI_ATTR_MDIMS, H5T_NATIVE_INT64, dip->mdims,
+									 dxpl_id);
+			CHECK_ERR
+
+			// Dstep for encoding selection
+			if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+				dip->dsteps[dip->ndim - 1] = 1;
+				for (i = dip->ndim - 2; i > -1; i--) {
+					dip->dsteps[i] = dip->dsteps[i + 1] * dip->dims[i + 1];
+				}
 			}
+
+			// Filters
+			dcpl_id = H5VL_logi_dataset_get_dcpl (dp->fp, dp->uo, dp->uvlid, dxpl_id);
+			CHECK_ID (dcpl_id)
+			err = H5VL_logi_get_filters (dcpl_id, dip->filters);
+			CHECK_ERR
+
+			// Record metadata in fp
+			dp->fp->dsets_info[dp->id] = dip;
+			// dp->fp->mreqs[dp->id]	   = new H5VL_log_merged_wreq_t (dp, 1);
 		}
-
-		// Filters
-		dcpl_id = H5VL_logi_dataset_get_dcpl (dp->fp, dp->uo, dp->uvlid, dxpl_id);
-		CHECK_ID (dcpl_id)
-		err = H5VL_logi_get_filters (dcpl_id, dip->filters);
-		CHECK_ERR
-
-		// Record metadata in fp
-		dp->fp->dsets_info[dp->id] = dip;
-		// dp->fp->mreqs[dp->id]	   = new H5VL_log_merged_wreq_t (dp, 1);
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_OPEN);

@@ -48,6 +48,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
 	int refcnt;		// Number of VOL objects holding reference to the file
 	bool closing;	// If we are closing the file
+	bool islog;	// Is a logvol file
 	unsigned flag;	// HDF5 file creation/opening flag
 
 	hid_t dxplid;	// Copy of dxpl passed from the application
