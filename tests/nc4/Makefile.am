@@ -108,7 +108,7 @@ TESTS_ENVIRONMENT += export PAR_TESTS="$(PAR_TESTS)";
 
 H5_FILES = $(check_PROGRAMS:%=$(TESTOUTDIR)/%.h5)
 
-CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.nc
+CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.nc  *.log
 
 DISTCLEANFILES = $(SEQ_SRCS) nc4internal.h err_macros.h \
                  hdf5internal.h ref_tst_dims.nc

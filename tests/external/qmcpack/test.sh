@@ -18,3 +18,6 @@ fi
 
 echo "${RUN} ${EXEC} -g \"1 1 1\" > restart.log"
 ${RUN} ${EXEC} -g "1 1 1" > restart.log
+
+${top_builddir}/utils/h5ldump/h5ldump restart.config.h5
+${top_builddir}/utils/h5ldump/h5ldump restart.random.h5

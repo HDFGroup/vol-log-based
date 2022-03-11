@@ -33,7 +33,7 @@ TESTS_ENVIRONMENT += export M4="${M4}";
 TESTS_ENVIRONMENT += export HDF5_LIB_PATH="${HDF5_LIB_PATH}";
 
 CLEANFILES = hdf5_iotest hdf5_iotest.ini hdf5_iotest.log \
-             core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.csv
+             core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.csv *.log *.ini
 
 check_PROGRAMS = hdf5_iotest
 

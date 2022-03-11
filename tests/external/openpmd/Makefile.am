@@ -32,7 +32,7 @@ TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
 
 CLEANFILES = 8a_benchmark_write_parallel 8b_benchmark_read_parallel \
              8a_benchmark_write_parallel.log \
-             core core.* *.gcda *.gcno *.gcov gmon.out *.h5
+             core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.log
 
 check_PROGRAMS = 8a_benchmark_write_parallel 8b_benchmark_read_parallel
 

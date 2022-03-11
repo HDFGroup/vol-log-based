@@ -22,3 +22,5 @@ export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
 export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
 
 ${TESTSEQRUN} ./$1 ${TESTOUTDIR}/$outfile.h5
+
+${top_builddir}/utils/h5ldump/h5ldump $outfile.h5 
