@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2019, Northwestern University and Fermi National Accelerator Laboratory
+# Copyright (C) 2019, Northwestern University and Argonne National Laboratory
 # See COPYRIGHT notice in top-level directory.
 #
 # @configure_input@
