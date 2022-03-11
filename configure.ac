@@ -240,6 +240,9 @@ fi
 LT_PREREQ([2.4.2])
 LT_INIT()
 
+AC_TYPE_SIZE_T
+AC_CHECK_SIZEOF(size_t)
+
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],
                     [Enable H5VL_log internal debug mode.
@@ -427,6 +430,31 @@ AC_ARG_ENABLE([test-netcdf4],
       of NetCDF installation. Disable NetCDF4 tests.
       -----------------------------------------------------------------------])
    else
+      AC_MSG_CHECKING([NetCDF-C version])
+      # MACRO_FLAG is the CPP flag to show macro definitions. For GCC, Intel, and
+      # PGI, it is -dM and prints to stdout. For Oracle Solaris Studio compiler,
+      # it is -xdumpmacros=defs and prints to stderr
+      MACRO_FLAG="-dM"
+      if test "x$ax_cv_c_compiler_vendor" = xibm ; then
+         MACRO_FLAG="-qshowmacros"
+      fi
+      saved_CPPFLAGS=$CPPFLAGS
+      CPPFLAGS="$CPPFLAGS $MACRO_FLAG"
+      AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[#include <netcdf_meta.h>]], [])],
+                        [`cp conftest.i saved_conftest.i`])
+      CPPFLAGS=$saved_CPPFLAGS
+      unset MACRO_FLAG
+      nc_version=`${GREP} 'NC_VERSION[[ \t]]' saved_conftest.i | cut -d' ' -d'"' -f2`
+      if test "x$nc_version" = x ; then
+         AC_MSG_RESULT([unknown])
+         netcdf_version=main
+      else
+         AC_MSG_RESULT($nc_version)
+         netcdf_version="v$nc_version"
+      fi
+      AC_SUBST(NETCDF_VERSION, [$netcdf_version])
+      rm -f saved_conftest.i
+
       dnl Check if NetCDF version is 4.8.1 or later
       AC_MSG_CHECKING([whether NetCDF version is 4.8.1 or later])
       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
