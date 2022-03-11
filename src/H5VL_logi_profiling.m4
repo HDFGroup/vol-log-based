@@ -12,7 +12,6 @@ dnl
 include(`foreach.m4')`'dnl
 include(`foreach_idx.m4')`'dnl
 include(`list_len.m4')`'dnl
-include(`utils.m4')`'dnl
 include(`H5VL_logi_profiling_timers.m4')`'dnl
 define(`upcase', `translit(`$*', `a-z', `A-Z')')`'dnl
 define(`CONCATE',`$1$2')`'dnl
