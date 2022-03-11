@@ -2,8 +2,6 @@
 # Copyright (C) 2022, Northwestern University and Argonne National Laboratory
 # See COPYRIGHT notice in top-level directory.
 #
-# $Id$
-#
 # @configure_input@
 
 SUFFIXES = .o .c
@@ -29,16 +27,19 @@ SEQ_SRCS = t_type.c \
            tst_atts1.c \
            tst_atts2.c \
            tst_atts3.c \
-           tst_dims.c \
            tst_dims2.c \
-           tst_dims3.c \
            tst_types.c \
-           tst_vars.c \
            tst_vars3.c
+
+# These 3 need patched to disable fill and filter modes that log-based VOL
+# has not supported yet.
+SEQ_SRCS_PATCH = tst_dims.c \
+                 tst_dims3.c \
+                 tst_vars.c
 
 PAR_SRCS =
 
-SEQ_TESTS = $(SEQ_SRCS:.c=)
+SEQ_TESTS = $(SEQ_SRCS:.c=) $(SEQ_SRCS_PATCH:.c=)
 PAR_TESTS = $(PAR_SRCS:.c=)
 
 TESTPROGRAMS =
@@ -48,6 +49,7 @@ if ENABLE_NETCDF4
 TESTPROGRAMS += $(SEQ_TESTS) $(PAR_TESTS)
 
 BUILT_SOURCES = $(SEQ_SRCS) \
+                $(SEQ_SRCS_PATCH) \
                 nc4internal.h \
                 hdf5internal.h \
                 err_macros.h \
@@ -71,26 +73,39 @@ nodist_tst_vars3_SOURCES = tst_vars3.c
 endif
 endif
 
-NETCDF4_URL = https://raw.githubusercontent.com/Unidata/netcdf-c/@NETCDF_VERSION@
+NETCDF4_URL = https://raw.githubusercontent.com/Unidata/netcdf-c/v4.8.1
 
-nc4internal.h: Makefile
+nc4internal.h:
 	touch nc4internal.h
 
-hdf5internal.h: Makefile
+hdf5internal.h:
 	touch hdf5internal.h
 
-$(SEQ_SRCS): Makefile
+$(SEQ_SRCS):
 	wget -cq $(NETCDF4_URL)/nc_test4/$@
 
-err_macros.h: Makefile
+tst_dims.c: tst_dims.patch
+	wget -cq $(NETCDF4_URL)/nc_test4/$@
+	patch $@ < $<
+
+tst_dims3.c: tst_dims3.patch
+	wget -cq $(NETCDF4_URL)/nc_test4/$@
+	patch $@ < $<
+
+tst_vars.c: tst_vars.patch
+	wget -cq $(NETCDF4_URL)/nc_test4/$@
+	patch $@ < $<
+
+err_macros.h:
 	wget -cq $(NETCDF4_URL)/include/$@
 
-ref_tst_dims.nc: Makefile
+ref_tst_dims.nc:
 	wget -cq $(NETCDF4_URL)/nc_test4/$@
 
 check_PROGRAMS = $(TESTPROGRAMS)
 
-EXTRA_DIST = wrap_runs.sh parallel_run.sh nc_tests.h
+EXTRA_DIST = wrap_runs.sh parallel_run.sh nc_tests.h \
+             tst_dims.patch tst_dims3.patch tst_vars.patch
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead
@@ -110,7 +125,7 @@ H5_FILES = $(check_PROGRAMS:%=$(TESTOUTDIR)/%.h5)
 
 CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.nc  *.log
 
-DISTCLEANFILES = $(SEQ_SRCS) nc4internal.h err_macros.h \
+DISTCLEANFILES = $(SEQ_SRCS) $(SEQ_SRCS_PATCH) nc4internal.h err_macros.h \
                  hdf5internal.h ref_tst_dims.nc
 
 TEST_EXTENSIONS = .sh

@@ -1,0 +1,19 @@
+--- tst_vars.c	2022-03-11 15:03:12.378820907 -0600
++++ logvol_tst_vars.c	2022-03-11 15:01:22.588363586 -0600
+@@ -604,7 +604,7 @@
+       if (nc_close(ncid)) ERR;
+    }
+    SUMMARIZE_ERR;
+-
++#if 0
+ #define DEFLATE_LEVEL_4 4
+ 
+    printf("*** testing simple variables with deflation...");
+@@ -1260,6 +1260,7 @@
+    }
+ 
+    SUMMARIZE_ERR;
++#endif
+    printf("*** testing lots of variables...");
+ #define DIM_A_NAME "x"
+ #define DIM_A_LEN 10

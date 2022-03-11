@@ -1,0 +1,27 @@
+--- tst_dims3.c	2022-03-11 15:03:12.248820370 -0600
++++ logvol_tst_dims3.c	2022-03-11 14:58:44.479706696 -0600
+@@ -354,10 +354,12 @@
+                {
+                    if (data_in != data) ERR;
+                }
++#if 0
+                else
+                {
+                    if (data_in != NC_FILL_INT) ERR;
+                }
++#endif
+            }
+        }
+ 
+@@ -374,7 +376,11 @@
+            {
+                /* This row has data. */
+                for (x = 0; x < NX; x++)
++#if 0
+                    if (data_in[x] != (x == start2[1] ? TEST_VAL_42 : NC_FILL_INT)) ERR;
++#else
++                   if (x == start2[1] && data_in[x] != TEST_VAL_42) ERR;
++#endif
+            }
+            else
+            {

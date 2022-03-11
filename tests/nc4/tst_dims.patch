@@ -1,0 +1,17 @@
+--- tst_dims.c	2022-03-11 15:03:12.060819578 -0600
++++ logvol_tst_dims.c	2022-03-11 14:53:09.385315711 -0600
+@@ -1312,6 +1312,7 @@
+       }
+    }
+    SUMMARIZE_ERR;
++#if 0
+    printf("*** Testing reference file with just one very long dimension...");
+    {
+ #define REF_FILE_NAME "ref_tst_dims.nc"
+@@ -1356,5 +1357,6 @@
+       if (nc_close(ncid)) ERR;
+    }
+    SUMMARIZE_ERR;
++#endif
+    FINAL_RESULTS;
+ }
