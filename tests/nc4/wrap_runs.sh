@@ -7,6 +7,9 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
+# overwrite srcdir, as some netcdf4 test program use it
+export srcdir=.
+
 outfile=`basename $1`
 
 # ensure these 2 environment variables are not set
