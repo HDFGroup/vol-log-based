@@ -1,240 +1,187 @@
 dnl
-dnl This utilities file contains common m4 macros used by C/Fortran program
+dnl Check how sed command handling in-place option -i and define SED_I
 dnl
+AC_DEFUN([UD_PROG_SED_I], [
+   AC_REQUIRE([AC_PROG_SED])
+   AC_CACHE_CHECK([for sed handling option -i ], ac_cv_SED_I,[
+   cat > conftest.sed_i <<EOF
+   test str1
+EOF
+   ac_cv_err=`$SED -i '' -e 's|str1|str2|g' conftest.sed_i 2>&1`
+   if test "x$ac_cv_err" = x ; then
+      ac_cv_SED_I="$SED -i ''"
+   else
+      ac_cv_err=`sed -i'' -e 's|str1|str2|g' conftest.sed_i 2>&1`
+      if test "x$ac_cv_err" = x ; then
+         ac_cv_SED_I="$SED -i''"
+      else
+         AC_MSG_ERROR("No proper sed -i option found")
+      fi
+   fi
+   AS_UNSET(ac_cv_err)])
+   SED_I="$ac_cv_SED_I"
+   AC_SUBST(SED_I)
+   rm -f conftest.sed_i
+])
+
 dnl
-define(`_CAT', `$1$2')dnl  concatenate two strings
+dnl Check for an m4(1) preprocessor utility.
 dnl
+AC_DEFUN([UD_PROG_M4],[
+   dnl AS_MESSAGE([checking for m4 preprocessor...])
+   case "${M4-unset}" in
+      unset) AC_CHECK_PROGS(M4, m4 gm4, []) ;;
+      *) AC_CHECK_PROGS(M4, $M4 m4 gm4, []) ;;
+   esac
+   if test -z "$M4" ; then
+      AC_MSG_ERROR("m4 utility program is required by PnetCDF")
+   fi
+   AC_MSG_CHECKING(m4 additional flags)
+   case "${M4FLAGS-unset}" in
+       unset) dnl test if M4 runs fine without option -B10000
+              `${M4} /dev/null > conftest.err 2>&1`
+              ac_cv_m4_stdout=`cat conftest.err`
+              if test "x$ac_cv_m4_stdout" != x; then
+                 M4FLAGS=-B10000
+              fi
+              rm -f conftest.err
+              ;;
+   esac
+   if test "x$M4FLAGS" = x; then
+      AC_MSG_RESULT(none needed)
+   else
+      AC_MSG_RESULT($M4FLAGS)
+   fi
+   M4FFLAGS=`echo $M4FLAGS | sed 's/-s *//g'`
+   dnl AC_MSG_NOTICE(M4FFLAGS=$M4FFLAGS)
+   AC_SUBST(M4FLAGS)
+   AC_SUBST(M4FFLAGS)
+])
+
 dnl
-define(`NULL_CHAR', changequote([,])[changequote([,])'\0'changequote(`,')]changequote(`,'))
+dnl check the availability of one MPI executable in $2
 dnl
-dnl dnl dnl
+dnl $2 can be a single command, This is the case when user set the environment.
+dnl The variable may contain the executable name followed by zeor or more
+dnl command-line options. In the latter case, we check the first string token,
+dnl the command name, and ignore the rest command-line options. For example,
+dnl UD_MPI_PATH_PROG([MPICC], [mpicc -O2])
 dnl
-define(`NC2ITYPE', `ifelse(`$1', `text',      `char',
-                           `$1', `schar',     `schar',
-                           `$1', `uchar',     `uchar',
-                           `$1', `short',     `short',
-                           `$1', `ushort',    `ushort',
-                           `$1', `int',       `int',
-                           `$1', `uint',      `uint',
-                           `$1', `long',      `long',
-                           `$1', `float',     `float',
-                           `$1', `double',    `double',
-                           `$1', `longlong',  `long long',
-                           `$1', `ulonglong', `unsigned long long')')dnl
+dnl In addition, the first token of $2 may contain the full path of
+dnl the command. For example, UD_MPI_PATH_PROG([MPICC], [/usr/bin/mpicc -O2])
 dnl
-dnl dnl dnl
+AC_DEFUN([UD_MPI_PATH_PROG], [
+   if test "x$2" = x ; then
+      AC_MSG_ERROR("2nd argument cannot be NULL")
+   fi
+
+   dnl 1st token in $2 must be the program name, rests are command-line options
+   ac_first_token=`echo $2 | cut -d" " -f1`
+   ac_rest_tokens=`echo $2 | cut -d" " -s -f2-`
+   UD_MSG_DEBUG(ac_first_token=$ac_first_token) dnl executable name
+   UD_MSG_DEBUG(ac_rest_tokens=$ac_rest_tokens) dnl command-line option
+
+   dnl First check if ac_first_token contain a full path
+   dnl If yes, check, check if the file exists. Need not check MPI_INSTALL.
+   ac_mpi_prog_path=`AS_DIRNAME(["$ac_first_token"])`
+   if test "x$ac_mpi_prog_path" != "x." ; then
+      AC_MSG_CHECKING([whether $ac_first_token exists and is executable])
+      if test -x "$ac_first_token" ; then
+         AC_MSG_RESULT([yes])
+         $1="$2"
+      else
+         AC_MSG_RESULT([no])
+         $1=
+      fi
+   else
+      dnl ac_first_token does not contain a full path
+      ac_mpi_prog_$1=
+      if test "x$MPI_INSTALL" != x ; then
+         dnl First, check if it can be found under $MPI_INSTALL, i.e.
+         dnl --with-mpi is used on configure command line
+         if test -d "${MPI_INSTALL}/bin" ; then
+            AC_MSG_CHECKING([$ac_first_token under ${MPI_INSTALL}/bin])
+            if test -x "$MPI_INSTALL/bin/$ac_first_token" ; then
+               AC_MSG_RESULT([yes])
+               ac_mpi_prog_$1=$MPI_INSTALL/bin/$ac_first_token
+            else
+               AC_MSG_RESULT([no])
+            fi
+         else
+            dnl ${MPI_INSTALL}/bin does not exist, search $MPI_INSTALL
+            AC_MSG_CHECKING([$ac_first_token under ${MPI_INSTALL}])
+            if test -x "$MPI_INSTALL/$ac_first_token" ; then
+               AC_MSG_RESULT([yes])
+               ac_mpi_prog_$1=$MPI_INSTALL/$ac_first_token
+            else
+               AC_MSG_RESULT([no])
+            fi
+         fi
+         if test "x$ac_mpi_prog_$1" != x ; then
+            if test "x$ac_rest_tokens" != x ; then
+               $1="${ac_mpi_prog_$1} $ac_rest_tokens"
+            else
+               $1=${ac_mpi_prog_$1}
+            fi
+         else
+            $1=
+         fi
+      else
+         dnl MPI_INSTALL is not set, i.e. --with-mpi is not used
+         AC_PATH_PROG([ac_mpi_prog_$1], [$ac_first_token])
+         if test "x$ac_mpi_prog_$1" != x ; then
+            if test "x$ac_rest_tokens" != x ; then
+               $1="${ac_mpi_prog_$1} $ac_rest_tokens"
+            else
+               $1=${ac_mpi_prog_$1}
+            fi
+         else
+            $1=
+         fi
+      fi
+   fi
+])
+
 dnl
-define(`SIZEOFITYPE', `ifelse(`$1', `text',      `SIZEOF_CHAR',
-                              `$1', `schar',     `SIZEOF_SIGNED_CHAR',
-                              `$1', `uchar',     `SIZEOF_UNSIGNED_CHAR',
-                              `$1', `short',     `SIZEOF_SHORT',
-                              `$1', `ushort',    `SIZEOF_UNSIGNED_SHORT',
-                              `$1', `int',       `SIZEOF_INT',
-                              `$1', `uint',      `SIZEOF_UNSIGNED_INT',
-                              `$1', `long',      `SIZEOF_LONG',
-                              `$1', `float',     `SIZEOF_FLOAT',
-                              `$1', `double',    `SIZEOF_DOUBLE',
-                              `$1', `longlong',  `SIZEOF_LONG_LONG',
-                              `$1', `ulonglong', `SIZEOF_UNSIGNED_LONG_LONG')')dnl
+dnl check the availability of a list of MPI executables
 dnl
-dnl size of external NC data type is defined in CDF format specifications
+dnl Note $2 can be a list of executable commands to be searched with each
+dnl command being the executable file name without command-line option. This is
+dnl the case when user does not set the environment variable, for example
+dnl MPICC, and we must search one from the candidate list. For example,
+dnl UD_MPI_PATH_PROGS([MPICC], [mpicc mpixlc mpifccpx mpipgcc])
 dnl
-define(`SIZEOFXTYPE', `ifelse(`$1', `NC_CHAR',   `1',
-                              `$1', `NC_BYTE',   `1',
-                              `$1', `NC_UBYTE',  `1',
-                              `$1', `NC_SHORT',  `2',
-                              `$1', `NC_USHORT', `2',
-                              `$1', `NC_INT',    `4',
-                              `$1', `NC_UINT',   `4',
-                              `$1', `NC_LONG',   `4',
-                              `$1', `NC_FLOAT',  `4',
-                              `$1', `NC_DOUBLE', `8',
-                              `$1', `NC_INT64',  `8',
-                              `$1', `NC_UINT64', `8')')dnl
-dnl
-dnl dnl dnl
-dnl
-define(`ITYPE2MPI',  `ifelse(`$1', `text',      `MPI_CHAR',
-                             `$1', `schar',     `MPI_SIGNED_CHAR',
-                             `$1', `uchar',     `MPI_UNSIGNED_CHAR',
-                             `$1', `short',     `MPI_SHORT',
-                             `$1', `ushort',    `MPI_UNSIGNED_SHORT',
-                             `$1', `int',       `MPI_INT',
-                             `$1', `uint',      `MPI_UNSIGNED',
-                             `$1', `long',      `MPI_LONG',
-                             `$1', `float',     `MPI_FLOAT',
-                             `$1', `double',    `MPI_DOUBLE',
-                             `$1', `longlong',  `MPI_LONG_LONG_INT',
-                             `$1', `ulonglong', `MPI_UNSIGNED_LONG_LONG',
-                             `MPI_DATATYPE_NULL')')dnl
-dnl
-dnl dnl dnl
-dnl
-define(`NCTYPE2MPI', `ifelse(`$1', `NC_CHAR',   `MPI_CHAR',
-                             `$1', `NC_BYTE',   `MPI_SIGNED_CHAR',
-                             `$1', `NC_UBYTE',  `MPI_UNSIGNED_CHAR',
-                             `$1', `NC_SHORT',  `MPI_SHORT',
-                             `$1', `NC_USHORT', `MPI_UNSIGNED_SHORT',
-                             `$1', `NC_INT',    `MPI_INT',
-                             `$1', `NC_UINT',   `MPI_UNSIGNED',
-                             `$1', `NC_LONG',   `MPI_LONG',
-                             `$1', `NC_FLOAT',  `MPI_FLOAT',
-                             `$1', `NC_DOUBLE', `MPI_DOUBLE',
-                             `$1', `NC_INT64',  `MPI_LONG_LONG_INT',
-                             `$1', `NC_UINT64', `MPI_UNSIGNED_LONG_LONG',
-                             `MPI_DATATYPE_NULL')')dnl
-dnl
-dnl dnl dnl
-dnl
-define(`MPI2ITYPE',  `ifelse(`$1', `MPI_CHAR',               `text',
-                             `$1', `MPI_SIGNED_CHAR',        `schar',
-                             `$1', `MPI_UNSIGNED_CHAR',      `uchar',
-                             `$1', `MPI_SHORT',              `short',
-                             `$1', `MPI_UNSIGNED_SHORT',     `ushort',
-                             `$1', `MPI_INT',                `int',
-                             `$1', `MPI_UNSIGNED',           `uint',
-                             `$1', `MPI_LONG',               `long',
-                             `$1', `MPI_FLOAT',              `float',
-                             `$1', `MPI_DOUBLE',             `double',
-                             `$1', `MPI_LONG_LONG_INT',      `longlong',
-                             `$1', `MPI_UNSIGNED_LONG_LONG', `ulonglong')')dnl
-dnl
-dnl dnl dnl
-dnl
-define(`ITYPE_LIST', `text, schar, uchar, short, ushort, int, uint, long, float, double, longlong, ulonglong')dnl
-dnl
-dnl
-dnl dnl dnl
-dnl
-define(`CDF2_ITYPE_LIST', `text, schar, short, int, long, float, double')dnl
-dnl
-dnl
-define(`CollIndep', `ifelse(`$1', `_all', `NC_REQ_COLL', `NC_REQ_INDEP')')dnl
-define(`ReadWrite', `ifelse(`$1',  `get', `NC_REQ_WR',
-                            `$1', `iget', `NC_REQ_RD',
-                                          `NC_REQ_WR')')dnl
-define(`BufArgs',   `ifelse(`$2', `',
-                            `ifelse($1, `get', `void *buf,', `const void *buf,')
-                             MPI_Offset bufcount, MPI_Datatype buftype',
-                            `ifelse($1, `get',       `NC2ITYPE($2) *buf',
-                                               `const NC2ITYPE($2) *buf')')')
-dnl
-dnl index arguments for APIs of different kinds
-dnl
-define(`ArgKind', `ifelse(
-       `$1', `1', `const MPI_Offset *start,',
-       `$1', `a', `const MPI_Offset *start,
-                   const MPI_Offset *count,',
-       `$1', `s', `const MPI_Offset *start,
-                   const MPI_Offset *count,
-                   const MPI_Offset *stride,',
-       `$1', `m', `const MPI_Offset *start,
-                   const MPI_Offset *count,
-                   const MPI_Offset *stride,
-                   const MPI_Offset *imap,')')dnl
-dnl
-dnl arguments passed to a function for APIs of different kinds
-dnl
-define(`ArgStartCountStrideMap', `ifelse(
-       `$1', `',  `NULL,  NULL,  NULL,   NULL',
-       `$1', `1', `start, NULL,  NULL,   NULL',
-       `$1', `a', `start, count, NULL,   NULL',
-       `$1', `s', `start, count, stride, NULL',
-       `$1', `m', `start, count, stride, imap')')dnl
-dnl
-define(`ArgStartCountStride', `ifelse(
-       `$1', `',  `NULL,  NULL,  NULL',
-       `$1', `1', `start, NULL,  NULL',
-       `$1', `a', `start, count, NULL',
-                  `start, count, stride')')dnl
-dnl
-define(`ArgStrideMap', `ifelse(
-       `$1', `s', `stride, NULL',
-       `$1', `m', `stride, imap',
-                  `NULL, NULL')')dnl
-dnl
-define(`API_KIND', `ifelse(
-       `$1', `1', `API_VAR1',
-       `$1', `a', `API_VARA',
-       `$1', `s', `API_VARS',
-       `$1', `m', `API_VARM',
-       `$1', `d', `API_VARD',
-       `$1', `n', `API_VARN',
-       `$1', `',  `API_VAR')')dnl
-dnl
-define(`NC_TYPE',`ifelse(
-`$1', `text',      `NC_CHAR',
-`$1', `schar',     `NC_BYTE',
-`$1', `uchar',     `NC_UBYTE',
-`$1', `short',     `NC_SHORT',
-`$1', `ushort',    `NC_USHORT',
-`$1', `int',       `NC_INT',
-`$1', `long',      `NC_LONG',
-`$1', `uint',      `NC_UINT',
-`$1', `float',     `NC_FLOAT',
-`$1', `double',    `NC_DOUBLE',
-`$1', `longlong',  `NC_INT64',
-`$1', `ulonglong', `NC_UINT64')')dnl
-dnl
-define(`NC_FILL_VALUE',`ifelse(
-`$1', `text',      `NC_FILL_CHAR',
-`$1', `schar',     `NC_FILL_BYTE',
-`$1', `uchar',     `NC_FILL_UBYTE',
-`$1', `short',     `NC_FILL_SHORT',
-`$1', `ushort',    `NC_FILL_USHORT',
-`$1', `int',       `NC_FILL_INT',
-`$1', `long',      `NC_FILL_INT',
-`$1', `uint',      `NC_FILL_UINT',
-`$1', `float',     `NC_FILL_FLOAT',
-`$1', `double',    `NC_FILL_DOUBLE',
-`$1', `longlong',  `NC_FILL_INT64',
-`$1', `ulonglong', `NC_FILL_UINT64')')dnl
-dnl
-define(`IFMT',`ifelse(
-`$1', `text',      `%c',
-`$1', `schar',     `%hhd',
-`$1', `uchar',     `%hhu',
-`$1', `short',     `%hd',
-`$1', `ushort',    `%hu',
-`$1', `int',       `%d',
-`$1', `long',      `%ld',
-`$1', `uint',      `%u',
-`$1', `float',     `%g',
-`$1', `double',    `%g',
-`$1', `longlong',  `%lld',
-`$1', `ulonglong', `%llu')')dnl
-dnl
-define(`PUT_VAR',`ifdef(`PNETCDF',`ncmpi_put_var_$1_all',`nc_put_var_$1')')dnl
-dnl
-define(`GET_VAR',`ifdef(`PNETCDF',`ncmpi_get_var_$1_all',`nc_get_var_$1')')dnl
-dnl
-define(`PUT_VAR1',`ifdef(`PNETCDF',`ncmpi_put_var1_$1_all',`nc_put_var1_$1')')dnl
-dnl
-define(`GET_VAR1',`ifdef(`PNETCDF',`ncmpi_get_var1_$1_all',`nc_get_var1_$1')')dnl
-dnl
-define(`PUT_VARA',`ifdef(`PNETCDF',`ncmpi_put_vara_$1_all',`nc_put_vara_$1')')dnl
-dnl
-define(`GET_VARA',`ifdef(`PNETCDF',`ncmpi_get_vara_$1_all',`nc_get_vara_$1')')dnl
-dnl
-define(`PUT_VARS',`ifdef(`PNETCDF',`ncmpi_put_vars_$1_all',`nc_put_vars_$1')')dnl
-dnl
-define(`GET_VARS',`ifdef(`PNETCDF',`ncmpi_get_vars_$1_all',`nc_get_vars_$1')')dnl
-dnl
-define(`PUT_VARM',`ifdef(`PNETCDF',`ncmpi_put_varm_$1_all',`nc_put_varm_$1')')dnl
-dnl
-define(`GET_VARM',`ifdef(`PNETCDF',`ncmpi_get_varm_$1_all',`nc_get_varm_$1')')dnl
-dnl
-define(`XTYPE_MAX',`ifelse(
-`$1', `text',      `127',
-`$1', `schar',     `127',
-`$1', `uchar',     `255',
-`$1', `short',     `32767',
-`$1', `ushort',    `65535U',
-`$1', `int',       `2147483647',
-`$1', `long',      `2147483647',
-`$1', `uint',      `4294967295U',
-`$1', `float',     `3.402823466e+38f',
-`$1', `double',    `1.79769313486230e+308',
-`$1', `longlong',  `9223372036854775807LL',
-`$1', `ulonglong', `18446744073709551615ULL')')dnl
-dnl
+AC_DEFUN([UD_MPI_PATH_PROGS], [
+   ac_mpi_prog_$1=
+   if test "x$MPI_INSTALL" != x ; then
+      UD_MSG_DEBUG(--with-mpi=$MPI_INSTALL is used)
+      if test -d "${MPI_INSTALL}/bin" ; then
+         UD_MSG_DEBUG(search $2 under $MPI_INSTALL/bin)
+         AC_PATH_PROGS([ac_mpi_prog_$1], [$2], [], [$MPI_INSTALL/bin])
+      else
+         dnl ${MPI_INSTALL}/bin does not exist, search $MPI_INSTALL
+         UD_MSG_DEBUG(search $2 under $MPI_INSTALL)
+         AC_PATH_PROGS([ac_mpi_prog_$1], [$2], [], [$MPI_INSTALL])
+      fi
+   else
+      UD_MSG_DEBUG(--with-mpi=$MPI_INSTALL is NOT used)
+      UD_MSG_DEBUG(search $2 under $PATH)
+      AC_PATH_PROGS([ac_mpi_prog_$1], [$2])
+   fi
+   UD_MSG_DEBUG([ac_mpi_prog_$1=${ac_mpi_prog_$1}])
+   if test "x${ac_mpi_prog_$1}" = x ; then
+      dnl AC_CHECK_FILES fails when $2 is not found in cross compile
+      dnl AC_CHECK_FILES([$2], [ac_mpi_prog_$1=$2])
+      AC_PATH_PROGS([ac_mpi_prog_$1], [$2])
+      dnl AC_CHECK_PROGS([ac_mpi_prog_$1], [$2])
+      dnl AC_CHECK_PROGS([ac_mpi_prog_$1], [$2], [], [/])
+      dnl ac_first_token=`echo $2 | cut -d" " -f1`
+      dnl UD_MSG_DEBUG(check first token $ac_first_token of $2)
+      dnl if test -f $ac_first_token ; then
+         dnl UD_MSG_DEBUG(use file $ac_first_token as it exits)
+         dnl ac_mpi_prog_$1=$2
+      dnl fi
+   fi
+   $1=${ac_mpi_prog_$1}
+])
+
