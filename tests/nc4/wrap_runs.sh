@@ -16,14 +16,14 @@ outfile=`basename $1`
 unset HDF5_VOL_CONNECTOR
 unset HDF5_PLUGIN_PATH
 
-${TESTSEQRUN} ./$1 ${TESTOUTDIR}/$outfile.h5
+${TESTSEQRUN} $1
 
 export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}" 
 export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
 
-${TESTSEQRUN} ./$1 ${TESTOUTDIR}/$outfile.nc
+${TESTSEQRUN} $1
 
 # ./t_type does not create a new file
 if test "$1" != "./t_type" ; then
-   ${top_builddir}/utils/h5ldump/h5ldump ${TESTOUTDIR}/$outfile.nc
+   ${top_builddir}/utils/h5ldump/h5ldump $1.nc
 fi
