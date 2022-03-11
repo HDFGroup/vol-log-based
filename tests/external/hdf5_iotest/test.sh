@@ -22,3 +22,5 @@ ${M4} -D NP=${NP} hdf5_iotest.m4 > hdf5_iotest.ini
 
 echo "${RUN} ${EXEC} > hdf5_iotest.log"
 ${RUN} ${EXEC} > hdf5_iotest.log
+
+${top_builddir}/utils/h5ldump/h5ldump hdf5_iotest.h5

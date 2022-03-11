@@ -69,7 +69,7 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * New test program
-  + none
+  + nc4/* - NetCDF 4 test programs ported from NetCDF
 
 * Conformity with HDF5 library
   + none

@@ -240,6 +240,9 @@ fi
 LT_PREREQ([2.4.2])
 LT_INIT()
 
+AC_TYPE_SIZE_T
+AC_CHECK_SIZEOF(size_t)
+
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],
                     [Enable H5VL_log internal debug mode.
@@ -362,6 +365,135 @@ if test "x$hdf5_parallel_io" = xno ; then
    -----------------------------------------------------------------------])
 fi
 
+# Check for NETCDF4
+have_netcdf4=no
+AC_ARG_ENABLE([test-netcdf4],
+   [AS_HELP_STRING([--enable-test-netcdf4@<:@=INC,LIB | =DIR@:>@],
+                   [Enable NetCDF4 tests and provide the NetCDF installation path(s):
+    --enable-test-netcdf4=INC,LIB for include and lib paths separated by a comma.
+    --enable-test-netcdf4=DIR for the path containing include/ and lib/ subdirectories.
+    @<:@default: disabled@:>@
+   ])], [
+   if test "x${enableval}" != xyes && test "x${enableval}" != xno ; then
+      NETCDF4_INSTALL=${enableval}
+   fi
+   case $enableval in
+     *,*)
+        netcdf4_inc="`echo $enableval |cut -f1 -d,`"
+        netcdf4_lib="`echo $enableval |cut -f2 -d, -s`"
+        netcdf4_bindir="$netcdf4_inc/../bin"
+        ;;
+     *)
+        if test -n "$enableval"; then
+          netcdf4_inc="$enableval/include"
+          netcdf4_lib="$enableval/lib"
+          netcdf4_bindir="$NETCDF4_INSTALL/bin"
+        fi
+        ;;
+   esac
+   if test "x$NETCDF4_INSTALL" != x ; then
+      AC_PATH_PROG([netcdf4_config],[nc-config],,[$netcdf4_bindir])
+   else
+      dnl Check netcdf4-config under $PATH
+      AC_PATH_PROG([netcdf4_config],[nc-config])
+   fi
+   if test "x$netcdf4_config" != x ; then
+      netcdf4_cflags=`$netcdf4_config --cflags`
+      netcdf4_lflags=`$netcdf4_config --libs`
+   else
+      netcdf4_cflags="-I$netcdf4_inc"
+      netcdf4_lflags="-L$netcdf4_lib"
+   fi
+   if test "x$netcdf4_cflags" != x ; then
+      if test "x$CPPFLAGS" = x ; then
+         CPPFLAGS="${netcdf4_cflags}"
+      elif ! echo "${CPPFLAGS}" | ${EGREP} -q -w -- "${netcdf4_cflags}" ; then
+         # append only if not already appear in CPPFLAGS
+         CPPFLAGS="$CPPFLAGS ${netcdf4_cflags}"
+      fi
+   fi
+   if test "x$netcdf4_lflags" != x ; then
+      if test "x$LDFLAGS" = x ; then
+         LDFLAGS="$netcdf4_lflags"
+      elif ! echo "${LDFLAGS}" | ${EGREP} -q -w -- "${netcdf4_lflags}" ; then
+         # append only if not already appear in LDFLAGS
+         LDFLAGS="$LDFLAGS $netcdf4_lflags"
+      fi
+   fi
+   AC_CHECK_HEADER([netcdf.h], [have_netcdf4=yes], [have_netcdf4=no])
+   if test "x$have_netcdf4" = xno ; then
+      AC_MSG_WARN([
+      -----------------------------------------------------------------------
+      Missing NetCDF-header files 'netcdf4_c.h' required to build NetCDF4 test 
+      programs. Use configure command-line option 
+      --enable-test-netcdf4=/path/to/implementation to specify the location 
+      of NetCDF installation. Disable NetCDF4 tests.
+      -----------------------------------------------------------------------])
+   else
+      AC_MSG_CHECKING([NetCDF-C version])
+      # MACRO_FLAG is the CPP flag to show macro definitions. For GCC, Intel, and
+      # PGI, it is -dM and prints to stdout. For Oracle Solaris Studio compiler,
+      # it is -xdumpmacros=defs and prints to stderr
+      MACRO_FLAG="-dM"
+      if test "x$ax_cv_c_compiler_vendor" = xibm ; then
+         MACRO_FLAG="-qshowmacros"
+      fi
+      saved_CPPFLAGS=$CPPFLAGS
+      CPPFLAGS="$CPPFLAGS $MACRO_FLAG"
+      AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[#include <netcdf_meta.h>]], [])],
+                        [`cp conftest.i saved_conftest.i`])
+      CPPFLAGS=$saved_CPPFLAGS
+      unset MACRO_FLAG
+      nc_version=`${GREP} 'NC_VERSION[[ \t]]' saved_conftest.i | cut -d' ' -d'"' -f2`
+      if test "x$nc_version" = x ; then
+         AC_MSG_RESULT([unknown])
+         netcdf_version=main
+      else
+         AC_MSG_RESULT($nc_version)
+         netcdf_version="v$nc_version"
+      fi
+      AC_SUBST(NETCDF_VERSION, [$netcdf_version])
+      rm -f saved_conftest.i
+
+      dnl Check if NetCDF version is 4.8.1 or later
+      AC_MSG_CHECKING([whether NetCDF version is 4.8.1 or later])
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <netcdf_meta.h>
+#define VER_NUM (NC_VERSION_MAJOR*1000000 + NC_VERSION_MINOR*1000 + NC_VERSION_PATCH)
+#if (VER_NUM < 4008001)
+#error NetCDF version is older than 4.8.1
+#endif
+      ]])], [netcdf_ge_4_8_1=yes], [netcdf_ge_4_8_1=no])
+      AC_MSG_RESULT([$netcdf_ge_4_8_1])
+
+      if test "x${netcdf_ge_4_8_1}" = xno; then
+         AC_MSG_WARN([
+         ------------------------------------------------------------
+         Missing NetCDF-4 header file 'netcdf_par.h' required to 
+         build NetCDF4 test programs.
+         The NetCDF library must be built with parallel I/O and
+         NETCDF-4 support. Check 'config.log' for more information.
+         Disable NetCDF4 tests. 
+         ------------------------------------------------------------])
+         have_netcdf4 = no
+      else
+         dnl Check if NetCDF support NetCDF 4 parallel
+         if test "x$netcdf4_has_par" != x ; then
+            netcdf4_has_par=`$netcdf4_config --has-parallel4`
+            if test "x${netcdf_ge_4_8_1}" != xyes; then
+               AC_MSG_WARN([
+               ------------------------------------------------------------
+               NetCDF was not built with parallel NetCDF 4 support.
+               Disable NetCDF4 tests. 
+               ------------------------------------------------------------])
+               have_netcdf4 = no
+            fi
+         fi
+      fi
+   fi
+])
+AM_CONDITIONAL(ENABLE_NETCDF4, [test "x$have_netcdf4" = xyes])
+
 AC_ARG_ENABLE([zlib],
    [AS_HELP_STRING([--enable-zlib],
                    [Enable zlib compression method support. @<:@default: disabled@:>@])],
@@ -446,34 +578,97 @@ if test "x${TESTOUTDIR}" = x ; then
    TESTOUTDIR=.
 fi
 
-AC_ARG_ENABLE([external-tests],
-    [AS_HELP_STRING([--enable-external-tests],
-                    [Enable external test programs.
+have_qmcpack=no
+AC_ARG_ENABLE([test-qmcpack],
+    [AS_HELP_STRING([--enable-test-qmcpack],
+                    [Enable qmcpack external test.
                      @<:@default: disabled@:>@])],
-    [extests=${enableval}], [extests=no]
+    [have_qmcpack=${enableval}], [have_qmcpack=no]
 )
-if test "x${extests}" = xyes; then
+if test "x${have_qmcpack}" = xyes; then
+   AC_MSG_CHECKING([downloading qmcpack])
+   mkdir -p tests/external/qmcpack
+   cd tests/external/qmcpack
+   rm -rf ./qmcpack
+   qmcpack_version=v3.13.0
+   rm -f qmcpack.tar.gz
+   wget -q https://github.com/QMCPACK/qmcpack/archive/refs/tags/${qmcpack_version}.tar.gz -O qmcpack.tar.gz
+   AC_MSG_RESULT([${qmcpack_version}.tar.gz])
+   mkdir qmcpack
+   tar -zxf qmcpack.tar.gz -C qmcpack --strip-components=1
+   cd ../../..
    AC_CHECK_FILE([tests/external/qmcpack/qmcpack/src/Sandbox/restart.cpp], [have_qmcpack=yes], [have_qmcpack=no])
    if test "x${have_qmcpack}" = xyes; then
-      echo "configuring qmcpack..."
+      AC_MSG_NOTICE([configuring qmcpack])
       AC_CONFIG_COMMANDS(qmcpack,[cd tests/external/qmcpack && chmod 755 config.sh && ./config.sh && cd ../../..])
-   fi
-
-   AC_CHECK_FILE([tests/external/hdf5_iotest/hdf5-iotest/src/hdf5_iotest.c], [have_hdf5io=yes], [have_hdf5io=no])
-   if test "x${have_hdf5io}" = xyes; then
-      echo "configuring hdf5_iotest..."
-      AC_CONFIG_COMMANDS(hdf5_iotest,[cd tests/external/hdf5_iotest && chmod 755 config.sh && ./config.sh && cd ../../..])
-   fi
-
-   AC_CHECK_FILE([tests/external/openpmd/openPMD-api/examples/8a_benchmark_write_parallel.cpp], [have_openpmd=yes], [have_openpmd=no])
-   if test "x${have_openpmd}" = xyes; then
-      echo "configuring openPMD..."
-      AC_CONFIG_COMMANDS(openpmd,[cd tests/external/openpmd && chmod 755 config.sh && ./config.sh && cd ../../..])
+   else
+      AC_MSG_WARN([
+         ------------------------------------------------------------
+         Test program source file not found. Disable qmcpack test.
+         ------------------------------------------------------------])
    fi
 fi
-AM_CONDITIONAL(ENABLE_EXTERNAL_TESTS, [test "x${extests}" = xyes])
 AM_CONDITIONAL(HAVE_QMCPACK, [test "x${have_qmcpack}" = xyes])
+
+have_hdf5io=no
+AC_ARG_ENABLE([test-hdf5-iotest],
+    [AS_HELP_STRING([--enable-test-hdf5-iotest],
+                    [Enable hdf5-iotest external test.
+                     @<:@default: disabled@:>@])],
+    [have_hdf5io=${enableval}], [have_hdf5io=no]
+)
+if test "x${have_hdf5io}" = xyes; then
+   AC_MSG_CHECKING([downloading hdf5-iotest])
+   mkdir -p tests/external/hdf5_iotest
+   cd tests/external/hdf5_iotest
+   rm -rf ./hdf5-iotest
+   git clone -q https://github.com/HDFGroup/hdf5-iotest.git hdf5-iotest
+   AC_MSG_RESULT([github main branch])
+   cd ../../..
+   AC_CHECK_FILE([tests/external/hdf5_iotest/hdf5-iotest/src/hdf5_iotest.c], [have_hdf5io=yes], [have_hdf5io=no])
+   if test "x${have_hdf5io}" = xyes; then
+      AC_MSG_NOTICE([configuring hdf5-iotest])
+      AC_CONFIG_COMMANDS(hdf5_iotest,[cd tests/external/hdf5_iotest && chmod 755 config.sh && ./config.sh && cd ../../..])
+      AC_CONFIG_LINKS([tests/external/hdf5_iotest/hdf5_iotest.m4:tests/external/hdf5_iotest/hdf5_iotest.m4])
+   else
+      AC_MSG_WARN([
+         ------------------------------------------------------------
+         Test program source file not found. Disable hdf5-iotest test.
+         ------------------------------------------------------------])
+   fi
+fi
 AM_CONDITIONAL(HAVE_HDF5_IOTEST, [test "x${have_hdf5io}" = xyes])
+
+have_openpmd=no
+AC_ARG_ENABLE([test-openpmd],
+    [AS_HELP_STRING([--enable-test-openpmd],
+                    [Enable openpmd external test.
+                     @<:@default: disabled@:>@])],
+    [have_openpmd=${enableval}], [have_openpmd=no]
+)
+if test "x${have_openpmd}" = xyes; then
+   AC_MSG_CHECKING([downloading openpmd])
+   mkdir -p tests/external/openpmd
+   cd tests/external/openpmd
+   rm -rf ./openPMD-api
+   openpmd_version=0.14.4
+   rm -f openPMD-api.tar.gz
+   wget -q https://github.com/openPMD/openPMD-api/archive/refs/tags/${openpmd_version}.tar.gz -O openPMD-api.tar.gz
+   AC_MSG_RESULT([${openpmd_version}.tar.gz])
+   mkdir openPMD-api
+   tar -zxf openPMD-api.tar.gz -C openPMD-api --strip-components=1
+   cd ../../..
+   AC_CHECK_FILE([tests/external/openpmd/openPMD-api/examples/8a_benchmark_write_parallel.cpp], [have_openpmd=yes], [have_openpmd=no])
+   if test "x${have_openpmd}" = xyes; then
+      AC_MSG_NOTICE([configuring openpmd])
+      AC_CONFIG_COMMANDS(openpmd,[cd tests/external/openpmd && chmod 755 config.sh && ./config.sh && cd ../../..])
+   else
+      AC_MSG_WARN([
+         ------------------------------------------------------------
+         Test program source file not found. Disable openpmd test.
+         ------------------------------------------------------------])
+   fi
+fi
 AM_CONDITIONAL(HAVE_OPENPMD, [test "x${have_openpmd}" = xyes])
 
 dnl Configuration Date
@@ -533,6 +728,7 @@ AC_CONFIG_FILES(Makefile \
                 tests/external/openpmd/Makefile \
                 tests/external/qmcpack/config.sh \
                 tests/external/qmcpack/Makefile \
+                tests/nc4/Makefile \
                 tests/testcases/Makefile \
                 utils/Makefile \
                 utils/h5ldump/Makefile \

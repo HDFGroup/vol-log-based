@@ -30,20 +30,24 @@ TESTS_ENVIRONMENT += export TESTMPIRUN="$(TESTMPIRUN)";
 TESTS_ENVIRONMENT += export TESTPROGRAMS="$(TESTPROGRAMS)";
 TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
 
-CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out *.h5
+CLEANFILES = 8a_benchmark_write_parallel 8b_benchmark_read_parallel \
+             8a_benchmark_write_parallel.log \
+             core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.log
+
+check_PROGRAMS = 8a_benchmark_write_parallel 8b_benchmark_read_parallel
 
 TESTS = test.sh
 
-8a_benchmark_write_parallel:
+8a_benchmark_write_parallel$(EXEEXT):
 	cd build && make -j 4
 	cp build/bin/8a_benchmark_write_parallel .
 
-8b_benchmark_read_parallel:
+8b_benchmark_read_parallel$(EXEEXT):
 	cd build && make -j 4
 	cp build/bin/8b_benchmark_read_parallel .
 
 # build check targets but not invoke
-tests-local: all 8a_benchmark_write_parallel 8b_benchmark_read_parallel
+tests-local: all $(check_PROGRAMS)
 
 ptest ptest4: $(check_PROGRAMS)
 	@echo "==========================================================="
@@ -73,9 +77,10 @@ ptest8 ptest10:
 
 clean-local:
 	if [ -d "build" ]; then cd build && make clean ; fi
-	rm -f  8a_benchmark_write_parallel 
-	rm -f  8b_benchmark_read_parallel
-	rm -rf  ../samples
+	-rm -rf  ../samples
+
+DISTCLEANFILES = openPMD-api.tar.gz
 
 distclean-local:
-	rm -rf build
+	-rm -rf build openPMD-api
+

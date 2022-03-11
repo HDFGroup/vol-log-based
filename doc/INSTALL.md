@@ -11,10 +11,9 @@
   + [libtool](https://www.gnu.org/software/libtool/) 2.4.6
   + [m4](https://www.gnu.org/software/m4/) 1.4.18
 
-### Build and install HDF5 library
+### Building dependencies
 * Build HDF5 with VOL and parallel I/O support
   + Download and extract HDF5 1.13.0 source package
-  + Run command "./autogen.sh"
   + Configure HDF5 with parallel I/O enabled
   + Run "make install"
   + Example commands are given below. This example will install
@@ -26,6 +25,20 @@
     % ./configure --prefix=${HOME}/HDF5 --enable-parallel CC=mpicc
     % make -j4 install
     ```
+* Build NetCDF with parallel NetCDF4 support (optional)
+  + Download and extract NetCDF source package
+  + Configure NetCDF with parallel NetCDF4 enabled
+  + Run "make install"
+  + Example commands are given below. This example will install
+    the NetCDF library under the folder `${HOME}/NetCDF`.
+    ```
+    % wget https://downloads.unidata.ucar.edu/netcdf-c/4.8.1/netcdf-c-4.8.1.tar.gz
+    % tar -zxf netcdf-c-4.8.1.tar.gz
+    % cd netcdf-c-4.8.1.tar.gz
+    % ./configure --prefix=${HOME}/NetCDF --disable-dap -I${HOME}/HDF5/include--enable-netcdf4 LDFLAGS=-L${HOME}/HDF5/lib LIBS=-lhdf5 CC=mpicc CXX=mpicxx
+    % make -j4 install
+    ```
+### Building log-based VOL
 * Build and install this VOL plugin, `log-based vol`.
   + Clone this VOL plugin repository
   + Run command "autoreconf -i"
@@ -33,74 +46,23 @@
     + Shared library (--enable-shared) is required when using the log-based VOL
       through setting the HDF5 environment variables. See below for details.
     + Compile with zlib library (--enable-zlib) to enable metadata compression.
+    + Compile with NetCDF4 library (--with-netcdf4) to enable NetCDF4 tests.
   + Example build commands are given below.
     ```
     % git clone https://github.com/DataLib-ECP/vol-log-based.git
     % cd log_io_vol
     % autoreconf -i
-    % ./configure --prefix=${HOME}/Log_IO_VOL --with-hdf5=${HOME}/HDF5 --enable-shared --enable-zlib
+    % ./configure --prefix=${HOME}/Log_IO_VOL --with-hdf5=${HOME}/HDF5 --with-netcdf4=${HOME}/NetCDF --enable-shared --enable-zlib
     % make -j 4 install
     ```
     The VOL plugin library is now installed under the folder `${HOME}/Log_IO_VOL.`
-
-### Compile user programs to use this VOL plugin
-There are two ways to use the log-based VOL plugin. One is by modifying the
-application source codes to add a few function calls. The other is by setting
-HDF5 environment variables.
-
-* Modify the user's application source codes, particularly if you would like to
-  use the new APIs, such as `H5Dwrite_n()`, created by this VOL.
-  * Include header file.
-    + Add the following line to include the log-based VOL header file in your
-      C/C++ source codes.
-      ```
-      #include <H5VL_log.h>
-      ```
-    + Header file `H5VL_log.h` is located in folder `${HOME}/Log_IO_VOL/include`
-    + Add `-I${HOME}/Log_IO_VOL/include` to your compile command line. For example,
-      ```
-      % mpicc prog.c -o prog.o -I${HOME}/Log_IO_VOL/include
-      ```
-  * Library file.
-    + The library file, `libH5VL_log.a`, is located under folder `${HOME}/Log_IO_VOL/lib`.
-    + Add `-L${HOME}/Log_IO_VOL/lib -lH5VL_log` to your compile/link command line. For example,
-      ```
-      % mpicc prog.o -o prog -L${HOME}/Log_IO_VOL/lib -lH5VL_log \
-                             -L${HOME}/HDF5/lib -lhdf5
-      ```
-  * Edit the source code to use log-based VOL when creating or opening an HDF5 file.
-    + Register VOL callback structure through a call to `H5VLregister_connector()`
-    + Callback structure is named `H5VL_log_g`
-    + Set a file creation property list to use log-based vol
-    + Below shows an example code fragment.
-        ```
-        fapl_id = H5Pcreate(H5P_FILE_ACCESS);
-        H5Pset_fapl_mpio(fapl_id, comm, info);
-        H5Pset_all_coll_metadata_ops(fapl_id, true);
-        H5Pset_coll_metadata_write(fapl_id, true);
-        log_vol_id = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT);
-        H5Pset_vol(fapl_id, log_vol_id, NULL);
-        ```
-    + See a full example program in `examples/create_open.c`
-
-* Use HDF5 environment variables, without modifying the user's application
-  source codes.
-  + The log-based VOL can be enabled at the run time through setting the
-    environment variables below. No source code changes of existing user
-    programs is required. (Note this is an HDF5 feature, applicable to all VOL
-    plugins.)
-  + Append log-based VOL library directory to shared object search path,
-    `LD_LIBRARY_PATH`.
+* Verify log-based VOL build
+  + Run command "make tests" to compile the test programs
+  + Run command "make check" to run test programs on a single process
+  + Run command "make ptests" to run test programs in parallel
+  + Example commands are given below.
     ```
-    % export LD_LIBRARY_PATH=${HOME}/Log_IO_VOL/lib
+    % make tests
+    % make check
+    % make ptests
     ```
-  + Set or add the log-based VOL library directory to HDF5 VOL search path,
-    `HDF5_PLUGIN_PATH`.
-    ```
-    % export HDF5_PLUGIN_PATH=${HOME}/Log_IO_VOL/lib
-    ```
-  + Set the HDF5's default VOL, `HDF5_VOL_CONNECTOR`.
-    ```
-    % export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
-    ```
-

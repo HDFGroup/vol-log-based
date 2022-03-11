@@ -24,6 +24,7 @@ check_PROGRAMS =    create_open \
                     non_blocking
 
 EXTRA_DIST = wrap_runs.sh \
+			 parallel_run.sh \
              README.md
 
 TESTPROGRAMS = $(check_PROGRAMS)

@@ -59,9 +59,14 @@ External test programs are a collection of benchmarks and applications that uses
   * hdf5_io-test
     + https://github.com/brtnfld/hdf5-iotest
     + A simple HDF5 I/O performance tester developed by the HDF5 team.
+  * HDFGroup vol-tests
+    + https://github.com/HDFGroup/vol-tests
+    + A test suit from HDFGroup to test VOLs' support to each HDF5 API.
+    + A VOL is not expected to pass all tests.
+    + The log-based VOL currently passes around 87% of the test.
   * qmcpack restart
     + https://github.com/QMCPACK/qmcpack.git
-    + An open-source Quantum Monte Carlo code for computing the electronic structure of atoms, molecules, 2D nanomaterials and solids.
+    + An open-source Quantum Monte Carlo code for computing the electronic structure of atoms, molecules, 2D nanomaterials, and solids.
     + The restart test program in qmcpack is used to test log-based VOL.
   * openPMD write benchmark
     + https://github.com/openPMD/openPMD-api
@@ -71,4 +76,5 @@ External test programs are a collection of benchmarks and applications that uses
     + https://github.com/Parallel-NetCDF/E3SM-IO
     + Mimic parallel I/O kernel from the E3SM climate simulation model.
     + Use the I/O pattern recorded by the PIO library.
+  
   

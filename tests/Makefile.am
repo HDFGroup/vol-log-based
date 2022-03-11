@@ -6,7 +6,7 @@
 #
 # @configure_input@
 
-C_SUBDIRS = basic dynamic testcases external
+C_SUBDIRS = basic dynamic testcases external nc4
 
 DIST_SUBDIRS = $(C_SUBDIRS) 
 

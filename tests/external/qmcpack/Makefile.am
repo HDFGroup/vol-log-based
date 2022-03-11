@@ -30,16 +30,19 @@ TESTS_ENVIRONMENT += export TESTMPIRUN="$(TESTMPIRUN)";
 TESTS_ENVIRONMENT += export TESTPROGRAMS="$(TESTPROGRAMS)";
 TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
 
-CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out *.h5
+CLEANFILES = restart restart.log \
+             core core.* *.gcda *.gcno *.gcov gmon.out *.h5
+
+check_PROGRAMS = restart
 
 TESTS = test.sh
 
-restart:
+restart$(EXEEXT):
 	cd build && make -j 64 restart
 	cp build/bin/restart .
 
 # build check targets but not invoke
-tests-local: all restart
+tests-local: all $(check_PROGRAMS)
 
 ptest ptest4: $(check_PROGRAMS)
 	@echo "==========================================================="
@@ -69,7 +72,8 @@ ptest8 ptest10:
 
 clean-local:
 	if [ -d "build" ]; then cd build && make clean ; fi
-	rm -f restart
+
+DISTCLEANFILES = qmcpack.tar.gz
 
 distclean-local:
-	rm -rf build
+	-rm -rf build qmcpack

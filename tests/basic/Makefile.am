@@ -28,7 +28,7 @@ check_PROGRAMS =    file \
                 #   noclose 
                 #   test
 
-EXTRA_DIST = wrap_runs.sh
+EXTRA_DIST = wrap_runs.sh parallel_run.sh
 
 TESTPROGRAMS = $(check_PROGRAMS)
 
