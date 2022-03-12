@@ -2,8 +2,6 @@
 # Copyright (C) 2022, Northwestern University and Argonne National Laboratory
 # See COPYRIGHT notice in top-level directory.
 #
-# $Id$
-#
 # @configure_input@
 
 AM_CPPFLAGS = -I${srcdir}
@@ -34,6 +32,8 @@ CLEANFILES = restart restart.log \
              core core.* *.gcda *.gcno *.gcov gmon.out *.h5
 
 check_PROGRAMS = restart
+
+restart_SOURCES =
 
 TESTS = test.sh
 

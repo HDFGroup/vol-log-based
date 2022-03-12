@@ -37,6 +37,8 @@ CLEANFILES = hdf5_iotest hdf5_iotest.ini hdf5_iotest.log \
 
 check_PROGRAMS = hdf5_iotest
 
+hdf5_iotest_SOURCES =
+
 TESTS = test.sh
 
 hdf5_iotest$(EXEEXT):

@@ -36,6 +36,9 @@ CLEANFILES = 8a_benchmark_write_parallel 8b_benchmark_read_parallel \
 
 check_PROGRAMS = 8a_benchmark_write_parallel 8b_benchmark_read_parallel
 
+8a_benchmark_write_parallel_SOURCES =
+8b_benchmark_read_parallel_SOURCES =
+
 TESTS = test.sh
 
 8a_benchmark_write_parallel$(EXEEXT):
