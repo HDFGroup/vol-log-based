@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -22,11 +23,16 @@
 #include "h5lreplay_data.hpp"
 #include "h5lreplay_meta.hpp"
 
+const char hdf5sig[] = {(char)0x89, (char)0x48, (char)0x44, (char)0x46,
+						(char)0x0d, (char)0x0a, (char)0x1a, (char)0x0a};
+
 int main (int argc, char *argv[]) {
 	herr_t err = 0;
 	int rank, np;
 	int opt;
 	std::string inpath, outpath;
+	std::ifstream fin;	// File stream for reading file signature
+	char sig[8];		// File signature
 
 	MPI_Init (&argc, &argv);
 	MPI_Comm_size (MPI_COMM_WORLD, &np);
@@ -51,6 +57,24 @@ int main (int argc, char *argv[]) {
 		}
 	}
 
+	// Make sure input file is HDF5 file
+	if (!rank) {
+		fin.open (inpath, std::ios_base::in);
+		if (fin.is_open ()) {
+			memset (sig, 0, sizeof (sig));
+			fin.read (sig, 8);
+			if (memcmp (hdf5sig, sig, 8)) {
+				std::cout << "Error: " << inpath << " is not a valid HDF5 file." << std::endl;
+				err = -1;
+			}
+		} else {
+			std::cout << "Error: cannot open " << inpath << std::endl;
+			err = -1;
+		}
+	}
+	MPI_Bcast (&err, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	CHECK_ERR
+
 	err = h5lreplay_core (inpath, outpath, rank, np);
 	CHECK_ERR
 
@@ -68,8 +92,8 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 	hid_t lgid	 = -1;	// ID of the log group
 	hid_t aid	 = -1;	// ID of file attribute
 	hid_t dxplid = -1;
-	int ndset;		 // # dataset in the input file
-	//int nldset;		 // # data dataset in the current file (main file| subfile)
+	int ndset;	// # dataset in the input file
+	// int nldset;		 // # data dataset in the current file (main file| subfile)
 	int nmdset;		 // # metadata dataset in the current file (main file| subfile)
 	int config;		 // Config flags of the input file
 	int att_buf[4];	 // Temporary buffer for reading file attributes
@@ -108,8 +132,8 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 	CHECK_ERR
 	err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
 	CHECK_ERR
-	ndset  = att_buf[0];
-	//nldset = att_buf[1];
+	ndset = att_buf[0];
+	// nldset = att_buf[1];
 	nmdset = att_buf[2];
 	config = att_buf[3];
 
@@ -147,11 +171,12 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 					CHECK_MPIERR
 
 					// Read file metadata
-					aid = H5Aopen (fsubid, H5VL_LOG_FILEI_ATTR_INT, H5P_DEFAULT);  // Open attr in subfile
+					aid = H5Aopen (fsubid, H5VL_LOG_FILEI_ATTR_INT,
+								   H5P_DEFAULT);  // Open attr in subfile
 					CHECK_ID (aid)
 					err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
 					CHECK_ERR
-					//nldset = att_buf[1];
+					// nldset = att_buf[1];
 					nmdset = att_buf[2];
 
 					// Open the log group
