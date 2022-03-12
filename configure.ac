@@ -455,40 +455,20 @@ AC_ARG_ENABLE([test-netcdf4],
       AC_SUBST(NETCDF_VERSION, [$netcdf_version])
       rm -f saved_conftest.i
 
-      dnl Check if NetCDF version is 4.8.1 or later
-      AC_MSG_CHECKING([whether NetCDF version is 4.8.1 or later])
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <netcdf_meta.h>
-#define VER_NUM (NC_VERSION_MAJOR*1000000 + NC_VERSION_MINOR*1000 + NC_VERSION_PATCH)
-#if (VER_NUM < 4008001)
-#error NetCDF version is older than 4.8.1
-#endif
-      ]])], [netcdf_ge_4_8_1=yes], [netcdf_ge_4_8_1=no])
-      AC_MSG_RESULT([$netcdf_ge_4_8_1])
-
-      if test "x${netcdf_ge_4_8_1}" = xno; then
+      AC_MSG_CHECKING([if NetCDF $netcdf_version is configured with parallel I/O enabled])
+      if test "x$netcdf4_config" != x ; then
+         netcdf4_has_par=`$netcdf4_config --has-parallel4`
+      else
+         AC_CHECK_HEADERS([netcdf_par.h], [netcdf4_has_par=yes], [netcdf4_has_par=no], [[#include <netcdf.h>]])
+      fi
+      AC_MSG_RESULT($netcdf4_has_par)
+      if test "x${netcdf4_has_par}" != xyes; then
          AC_MSG_WARN([
          ------------------------------------------------------------
-         Missing NetCDF-4 header file 'netcdf_par.h' required to 
-         build NetCDF4 test programs.
-         The NetCDF library must be built with parallel I/O and
-         NETCDF-4 support. Check 'config.log' for more information.
+         NetCDF was not built with parallel NetCDF 4 support.
          Disable NetCDF4 tests. 
          ------------------------------------------------------------])
          have_netcdf4 = no
-      else
-         dnl Check if NetCDF support NetCDF 4 parallel
-         if test "x$netcdf4_has_par" != x ; then
-            netcdf4_has_par=`$netcdf4_config --has-parallel4`
-            if test "x${netcdf_ge_4_8_1}" != xyes; then
-               AC_MSG_WARN([
-               ------------------------------------------------------------
-               NetCDF was not built with parallel NetCDF 4 support.
-               Disable NetCDF4 tests. 
-               ------------------------------------------------------------])
-               have_netcdf4 = no
-            fi
-         fi
       fi
    fi
 ])
