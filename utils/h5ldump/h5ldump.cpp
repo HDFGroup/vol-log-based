@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -17,13 +18,19 @@
 #include "H5VL_logi_nb.hpp"
 #include "h5ldump.hpp"
 
+const char hdf5sig[] = {(char)0x89, (char)0x48, (char)0x44, (char)0x46,
+						(char)0x0d, (char)0x0a, (char)0x1a, (char)0x0a};
+const char ncsig[]	 = {'C', 'D', 'F'};
+
 int main (int argc, char *argv[]) {
 	herr_t err = 0;
 	int rank, np;
 	int opt;
 	bool dumpdata = false;					  // Dump data along with metadata
 	std::string inpath;						  // Input file path
-	std::vector<H5VL_log_dset_info_t> dsets;  // Dataset info
+	std::vector<H5VL_log_dset_info_t> dsets;  // Dataset infos
+	std::ifstream fin;						  // File stream for reading file signature
+	char sig[8];							  // File signature
 
 	MPI_Init (&argc, &argv);
 	MPI_Comm_size (MPI_COMM_WORLD, &np);
@@ -43,15 +50,42 @@ int main (int argc, char *argv[]) {
 			case 'h':
 			default:
 				if (rank == 0) { std::cout << "Usage: h5ldump <input file path>" << std::endl; }
-				return 0;
+				err = -1;
+				goto err_out;
 		}
 	}
 
 	if (optind >= argc || argv[optind] == NULL) { /* input file is mandatory */
 		if (rank == 0) { std::cout << "Usage: h5ldump <input file path>" << std::endl; }
-		return 0;
+		err = -1;
+		goto err_out;
 	}
 	inpath = std::string (argv[optind]);
+
+	// Make sure input file is HDF5 file
+	if (!rank) {
+		fin.open (inpath, std::ios_base::in);
+		if (fin.is_open ()) {
+			memset (sig, 0, sizeof (sig));
+			fin.read (sig, 8);
+			if (memcmp (hdf5sig, sig, 8)) {
+				std::cout << "Error: " << inpath << " is not a valid HDF5 file." << std::endl;
+				err = -1;
+
+				if (!memcmp (ncsig, sig, 3)) {
+					std::cout << "Error: " << inpath << " is not a classic NetCDF file."
+							  << std::endl;
+					std::cout << "Use ncdump in NetCDF utilities to read classic NetCDF files."
+							  << std::endl;
+				}
+			}
+		} else {
+			std::cout << "Error: cannot open " << inpath << std::endl;
+			err = -1;
+		}
+	}
+	MPI_Bcast (&err, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	CHECK_ERR
 
 	// Get dataaset metadata
 	err = h5ldump_visit (inpath, dsets);
@@ -67,7 +101,7 @@ int main (int argc, char *argv[]) {
 	}
 
 err_out:;
-	return 0;
+	return err == 0 ? 0 : -1;
 }
 
 herr_t h5ldump_file (std::string path,
@@ -109,7 +143,7 @@ herr_t h5ldump_file (std::string path,
 	aid = H5Aopen (fid, H5VL_LOG_FILEI_ATTR_INT, H5P_DEFAULT);
 	if (!aid) {
 		std::cout << "Error: " << path << " is not a valid log-based VOL file." << std::endl;
-		std::cout << "Use h5ldump in HDF5 utilities to read traditional HDF5 files." << std::endl;
+		std::cout << "Use h5dump in HDF5 utilities to read traditional HDF5 files." << std::endl;
 		ERR_OUT ("File not recognized")
 	}
 	err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
