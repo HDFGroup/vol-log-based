@@ -1,4 +1,16 @@
-#!/bin/csh
+#! /bin/sh
+#
+# Copyright (C) 2022, Northwestern University and Argonne National Laboratory
+# See COPYRIGHT notice in top-level directory.
+#
+# This forms the basis for the log-based VOL-config utility, which tells you
+# various things about the log-based VOL installation. This code was based on
+# file nc-config.in from netCDF distribution.
+#
+# $Id$
+#
+# @configure_input@
+
 setenv HDF5_PLUGIN_PATH "@INSTALL_PREFIX@/lib"
 setenv HDF5_VOL_CONNECTOR "LOG under_vol=0;under_info={}"
 setenv LD_LIBRARY_PATH "@HDF5_LIB_PATH@":"${HDF5_PLUGIN_PATH}":${LD_LIBRARY_PATH}

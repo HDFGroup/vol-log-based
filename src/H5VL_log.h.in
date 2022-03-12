@@ -1,3 +1,9 @@
+/*
+ *  Copyright (C) 2022, Northwestern University and Argonne National Laboratory
+ *  See COPYRIGHT notice in top-level directory.
+ */
+/* $Id$ */
+
 #ifndef _logVOL_H_
 #define _logVOL_H_
 

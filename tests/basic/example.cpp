@@ -1,3 +1,9 @@
+/*
+ *  Copyright (C) 2022, Northwestern University and Argonne National Laboratory
+ *  See COPYRIGHT notice in top-level directory.
+ */
+/* $Id$ */
+
 int main(int argc, char **argv) {
     const char file_name[]="large_dataset.h5";
     const char group_name[]="/Group";
