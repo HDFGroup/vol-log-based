@@ -13,7 +13,21 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Update configure options
-  + none
+  + `--enable-test-qmcpack` to enable tests using QMCPACK [default: disabled].
+    This option first downloads and builds QMCPACK. Its test program
+    `restart.c` will be tested during `make check`.
+  + `--enable-test-hdf5-iotest` to enable tests using hdf5-iotest [default:
+    disabled]. This option first downloads and builds hdf5-iotest. Its test
+    program `hdf5_iotest.c` will be tested during `make check`.
+  + `--enable-test-openpmd` to enable tests using OpenPMD [default: disabled].
+    This option first downloads and builds OpenPMD. Its test program
+    `hdf5_iotest.c` will be tested during `make check`.
+  + `--enable-test-netcdf4[=INC,LIB | =DIR]` to enable tests using NetCDF4
+    [default: disabled], and provide the NetCDF installation path(s):
+    `--enable-test-netcdf4=INC,LIB` for include and lib paths separated by a
+    comma. `--enable-test-netcdf4=DIR` for the path containing include/ and
+    lib/ subdirectories.  This option first downloads a few test programs from
+    NetCDF-C, which will be tested during `make check`.
 
 * New constants
   + none
@@ -52,14 +66,17 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Other updates:
-  + Supports NetCDF4 applications.
+  + Supports NetCDF4 applications. See PR #15
 
 * Bug fixes
-  + h5ldump always use the native VOL regardless of HDF5_VOL_CONNECTOR. 
-  + h5lreplay must query dcplid before extracting filters.
-  + h5lreplay prefix internal objects by double '_'.
-  + Fix metadata flush after read operations corrupts the file.
-  + Fix write reqeust not flushed properly after the first metadata flush.
+  + `h5ldump` now can use either the native or log-based VOL depending on the
+    environment variable HDF5_VOL_CONNECTOR. 
+  + `h5lreplay` now queries the dataset create property list `dcplid` before
+    extracting filters.
+  + `h5lreplay` now recognizes the internal objects of names prefixed with
+    double '_'.
+  + Fix metadata flush-after-read operations that corrupts the file.
+  + Fix write request not flushed properly after the first metadata flush.
   + Fix memory error when writing filtered datasets.
 
 * New example programs
@@ -69,7 +86,7 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * New test program
-  + nc4/* - NetCDF 4 test programs ported from NetCDF
+  + none
 
 * Conformity with HDF5 library
   + none
