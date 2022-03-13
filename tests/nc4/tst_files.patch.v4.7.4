@@ -1,0 +1,18 @@
+--- tst_files.c	2022-03-13 00:43:20.286145097 -0600
++++ tst_files_logvol.c	2022-03-13 01:29:50.646159318 -0600
+@@ -268,6 +268,7 @@
+    SUMMARIZE_ERR;
+ #endif /* ENABLE_CDF5 */
+ 
++#if 0
+    printf("*** testing different formats...");
+    {
+       int ncid;
+@@ -310,6 +311,7 @@
+       if (nc_close(ncid)) ERR;
+    }
+    SUMMARIZE_ERR;
++#endif
+    printf("*** testing multiple open files...");
+    {
+ #define VAR_NAME "Captain_Kirk"
