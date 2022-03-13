@@ -79,8 +79,7 @@ int main (int argc, char *argv[]) {
 				err = -1;
 
 				if (!memcmp (ncsig, sig, 3)) {
-					std::cout << "Error: " << inpath << " is not a classic NetCDF file."
-							  << std::endl;
+					std::cout << "Error: " << inpath << " is a classic NetCDF file." << std::endl;
 					std::cout << "Use ncdump in NetCDF utilities to read classic NetCDF files."
 							  << std::endl;
 				}
