@@ -1,0 +1,18 @@
+--- tst_grps.c	2022-03-13 13:48:11.177972137 -0500
++++ tst_grps_logvol.c	2022-03-13 13:50:50.817972950 -0500
+@@ -33,6 +33,7 @@
+ int
+ main(int argc, char **argv)
+ {
++#if 0
+    printf("\n*** Testing netcdf-4 group functions.\n");
+    printf("*** testing simple group create...");
+    {
+@@ -104,6 +105,7 @@
+       if (nc_close(ncid)) ERR;
+    }
+    SUMMARIZE_ERR;
++#endif
+    printf("*** testing simple group rename...");
+    {
+       int ncid, ncid2;

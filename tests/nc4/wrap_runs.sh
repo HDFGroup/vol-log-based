@@ -23,4 +23,6 @@ export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
 
 ${TESTSEQRUN} $1
 
-${top_builddir}/utils/h5ldump/h5ldump $1.nc
+for f in ./$1*.nc; do
+    ${top_builddir}/utils/h5ldump/h5ldump $f
+done

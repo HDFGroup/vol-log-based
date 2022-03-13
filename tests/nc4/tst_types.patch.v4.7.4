@@ -1,0 +1,53 @@
+--- tst_types.c	2022-03-13 14:41:41.297988497 -0500
++++ tst_types_logvol.c	2022-03-13 14:41:21.537988396 -0500
+@@ -1,4 +1,5 @@
+ /* This is part of the netCDF package.
++/* This is part of the netCDF package.
+    Copyright 2018 University Corporation for Atmospheric Research/Unidata
+    See COPYRIGHT file for conditions of use.
+ 
+@@ -140,7 +141,7 @@
+       if (nc_create(FILENAME2, NC_NETCDF4, &ncid2)) ERR;
+ 
+       /* Create a netcdf-3 classic file. */
+-      if (nc_create(FILENAME3, 0, &ncid3)) ERR;
++      /*if (nc_create(FILENAME3, 0, &ncid3)) ERR;*/
+ 
+       /* Create a netcdf-4 classic model file. */
+       if (nc_create(FILENAME4, NC_NETCDF4|NC_CLASSIC_MODEL, &ncid4)) ERR;
+@@ -153,7 +154,7 @@
+       if (nc_def_enum(ncid2, NC_INT, ENUM_TYPE_NAME, &typeid3) != NC_ENAMEINUSE) ERR;
+       if (nc_def_enum(ncid2 + TEST_VAL_42, NC_INT, ENUM_UNEQUAL_TYPE_NAME_3, &typeid3) != NC_EBADID) ERR;
+       if (nc_def_enum(ncid2, NC_INT, NULL, &typeid3) != NC_EINVAL) ERR;
+-      if (nc_def_enum(ncid3, NC_SHORT, ENUM_UNEQUAL_TYPE_NAME_3, &typeid3) != NC_ENOTNC4) ERR;
++      /*if (nc_def_enum(ncid3, NC_SHORT, ENUM_UNEQUAL_TYPE_NAME_3, &typeid3) != NC_ENOTNC4) ERR;*/
+       if (nc_def_enum(ncid4, NC_SHORT, ENUM_UNEQUAL_TYPE_NAME_3, &typeid3) != NC_ESTRICTNC3) ERR;
+       if (nc_def_opaque(ncid4, TEST_VAL_42, A_NAME, &typeid3) != NC_ESTRICTNC3) ERR;
+       if (nc_def_compound(ncid4, TEST_VAL_42, A_NAME, &typeid3) != NC_ESTRICTNC3) ERR;
+@@ -191,6 +192,7 @@
+       if (nc_inq_type_equal(ncid1, typeid1, ncid2, typeid3, &equal)) ERR;
+       if (equal) ERR;
+ 
++#if 0
+       /* Atomic types are not equal to user-defined types, but are
+        * equal to themselves. */
+       for (t = 0; t < NUM_CLASSIC_TYPES; t++)
+@@ -200,7 +202,8 @@
+          if (nc_inq_type_equal(ncid1, classic_type[t], ncid3, classic_type[t], &equal)) ERR;
+          if (!equal) ERR;
+       }
+-      
++#endif
++
+       for (t = 0; t < NUM_ENHANCED_TYPES; t++)
+       {
+          if (nc_inq_type_equal(ncid1, typeid1, ncid2, enhanced_type[t], &equal)) ERR;
+@@ -212,7 +215,7 @@
+       /* Close the files. */
+       nc_close(ncid1);
+       nc_close(ncid2);
+-      nc_close(ncid3);
++      /*nc_close(ncid3);*/
+       nc_close(ncid4);
+    }
+    SUMMARIZE_ERR;
