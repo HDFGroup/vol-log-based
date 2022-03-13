@@ -23,7 +23,4 @@ export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
 
 ${TESTSEQRUN} $1
 
-# ./t_type does not create a new file
-if test "$1" != "./t_type" ; then
-   ${top_builddir}/utils/h5ldump/h5ldump $1.nc
-fi
+${top_builddir}/utils/h5ldump/h5ldump $1.nc

@@ -19,8 +19,7 @@ AM_CPPFLAGS += -DHDF5_PARALLEL
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
 # The following files will be downloaded from NetCDF4 library
-SEQ_SRCS = t_type.c \
-           tst_files.c \
+SEQ_SRCS = tst_files.c \
            tst_grps.c \
            tst_grps2.c \
            tst_atts.c \
