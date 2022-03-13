@@ -1,0 +1,18 @@
+--- tst_atts3.c	2022-03-13 01:25:44.376158063 -0600
++++ tst_atts3_logvol.c	2022-03-13 01:27:25.786158580 -0600
+@@ -2428,6 +2428,7 @@
+ 
+    }
+    SUMMARIZE_ERR;
++#if 0
+    printf("*** testing attribute renaming for memory leak, like nc_test...");
+    {
+ #define NVARS 136
+@@ -2489,6 +2490,7 @@
+ 
+    }
+    SUMMARIZE_ERR;
++#endif
+ #ifdef TEST_PNETCDF
+    MPI_Finalize();
+ #endif
