@@ -73,7 +73,7 @@ nodist_tst_vars3_SOURCES = tst_vars3.c
 endif
 endif
 
-NETCDF4_URL = https://raw.githubusercontent.com/Unidata/netcdf-c/v4.8.1
+NETCDF4_URL = https://raw.githubusercontent.com/Unidata/netcdf-c/v4.7.4
 
 nc4internal.h:
 	touch nc4internal.h
@@ -86,15 +86,15 @@ $(SEQ_SRCS):
 
 tst_dims.c: tst_dims.patch
 	wget -cq $(NETCDF4_URL)/nc_test4/$@
-	patch $@ < $<
+	patch -s $@ < $<
 
 tst_dims3.c: tst_dims3.patch
 	wget -cq $(NETCDF4_URL)/nc_test4/$@
-	patch $@ < $<
+	patch -s $@ < $<
 
 tst_vars.c: tst_vars.patch
 	wget -cq $(NETCDF4_URL)/nc_test4/$@
-	patch $@ < $<
+	patch -s $@ < $<
 
 err_macros.h:
 	wget -cq $(NETCDF4_URL)/include/$@
