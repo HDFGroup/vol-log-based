@@ -29,17 +29,14 @@ SEQ_SRCS = t_type.c \
            tst_atts3.c \
            tst_dims2.c \
            tst_types.c \
-           tst_vars3.c
-
-# These 3 need patched to disable fill and filter modes that log-based VOL
-# has not supported yet.
-SEQ_SRCS_PATCH = tst_dims.c \
-                 tst_dims3.c \
-                 tst_vars.c
+           tst_vars3.c \
+		   tst_dims.c \
+		   tst_dims3.c \
+		   tst_vars.c
 
 PAR_SRCS =
 
-SEQ_TESTS = $(SEQ_SRCS:.c=) $(SEQ_SRCS_PATCH:.c=)
+SEQ_TESTS = $(SEQ_SRCS:.c=)
 PAR_TESTS = $(PAR_SRCS:.c=)
 
 TESTPROGRAMS =
@@ -49,7 +46,6 @@ if ENABLE_NETCDF4
 TESTPROGRAMS += $(SEQ_TESTS) $(PAR_TESTS)
 
 BUILT_SOURCES = $(SEQ_SRCS) \
-                $(SEQ_SRCS_PATCH) \
                 nc4internal.h \
                 hdf5internal.h \
                 err_macros.h \
@@ -82,20 +78,11 @@ nc4internal.h:
 hdf5internal.h:
 	touch hdf5internal.h
 
-$(SEQ_SRCS):
-	wget -cq $(NETCDF4_URL)/nc_test4/$@
+.SECONDEXPANSION:
 
-tst_dims.c: tst_dims.patch.$(NETCDF_VERSION)
+$(SEQ_SRCS): %.c : $$(wildcard %.patch.$(NETCDF_VERSION))
 	wget -cq $(NETCDF4_URL)/nc_test4/$@
-	patch -s $@ < $<
-
-tst_dims3.c: tst_dims3.patch.$(NETCDF_VERSION)
-	wget -cq $(NETCDF4_URL)/nc_test4/$@
-	patch -s $@ < $<
-
-tst_vars.c: tst_vars.patch.$(NETCDF_VERSION)
-	wget -cq $(NETCDF4_URL)/nc_test4/$@
-	patch -s $@ < $<
+	if [ -f $(basename $@).patch.$(NETCDF_VERSION) ]; then patch -s $@ < $(basename $@).patch.$(NETCDF_VERSION); fi
 
 err_macros.h:
 	wget -cq $(NETCDF4_URL)/include/$@
@@ -128,7 +115,7 @@ H5_FILES = $(check_PROGRAMS:%=$(TESTOUTDIR)/%.h5)
 
 CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.nc  *.log
 
-DISTCLEANFILES = $(SEQ_SRCS) $(SEQ_SRCS_PATCH) nc4internal.h err_macros.h \
+DISTCLEANFILES = $(SEQ_SRCS) nc4internal.h err_macros.h \
                  hdf5internal.h ref_tst_dims.nc
 
 TEST_EXTENSIONS = .sh
