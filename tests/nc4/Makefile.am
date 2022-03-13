@@ -73,7 +73,8 @@ nodist_tst_vars3_SOURCES = tst_vars3.c
 endif
 endif
 
-NETCDF4_URL = https://raw.githubusercontent.com/Unidata/netcdf-c/v4.7.4
+NETCDF_VERSION = v4.7.4
+NETCDF4_URL = https://raw.githubusercontent.com/Unidata/netcdf-c/$(NETCDF_VERSION)
 
 nc4internal.h:
 	touch nc4internal.h
@@ -84,15 +85,15 @@ hdf5internal.h:
 $(SEQ_SRCS):
 	wget -cq $(NETCDF4_URL)/nc_test4/$@
 
-tst_dims.c: tst_dims.patch
+tst_dims.c: tst_dims.patch.$(NETCDF_VERSION)
 	wget -cq $(NETCDF4_URL)/nc_test4/$@
 	patch -s $@ < $<
 
-tst_dims3.c: tst_dims3.patch
+tst_dims3.c: tst_dims3.patch.$(NETCDF_VERSION)
 	wget -cq $(NETCDF4_URL)/nc_test4/$@
 	patch -s $@ < $<
 
-tst_vars.c: tst_vars.patch
+tst_vars.c: tst_vars.patch.$(NETCDF_VERSION)
 	wget -cq $(NETCDF4_URL)/nc_test4/$@
 	patch -s $@ < $<
 
@@ -105,7 +106,9 @@ ref_tst_dims.nc:
 check_PROGRAMS = $(TESTPROGRAMS)
 
 EXTRA_DIST = wrap_runs.sh parallel_run.sh nc_tests.h \
-             tst_dims.patch tst_dims3.patch tst_vars.patch
+             tst_dims.patch.$(NETCDF_VERSION) \
+             tst_dims3.patch.$(NETCDF_VERSION) \
+             tst_vars.patch.$(NETCDF_VERSION)
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead
