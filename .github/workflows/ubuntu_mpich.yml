@@ -54,8 +54,10 @@ jobs:
           if: ${{ failure() }}
           run: |
             WORKDIR=$(pwd)
-            cat ${WORKDIR}/test/dynamic/test-suite.log
-            cat ${WORKDIR}/test/dynamic/test-suite.log
-            cat ${WORKDIR}/test/basic/test-suite.log
-            cat ${WORKDIR}/examples/hdf5/test-suite.log
+            cat ${WORKDIR}/config.log
+            cat ${WORKDIR}/tests/dynamic/test-suite.log
+            cat ${WORKDIR}/tests/nc4/test-suite.log
+            cat ${WORKDIR}/tests/basic/test-suite.log
+            cat ${WORKDIR}/tests/testcases/test-suite.log
+            cat ${WORKDIR}/examples/hdf5_examples/test-suite.log
 
