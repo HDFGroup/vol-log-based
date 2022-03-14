@@ -51,7 +51,6 @@ BUILT_SOURCES = $(SEQ_SRCS) \
                 ref_tst_dims.nc
 
 # Do not include these files in the distribution
-nodist_t_type_SOURCES = t_type.c
 nodist_tst_files_SOURCES = tst_files.c
 nodist_tst_grps_SOURCES = tst_grps.c
 nodist_tst_grps2_SOURCES = tst_grps2.c
@@ -94,7 +93,14 @@ check_PROGRAMS = $(TESTPROGRAMS)
 EXTRA_DIST = wrap_runs.sh parallel_run.sh nc_tests.h \
              tst_dims.patch.$(NETCDF_VERSION) \
              tst_dims3.patch.$(NETCDF_VERSION) \
-             tst_vars.patch.$(NETCDF_VERSION)
+             tst_vars.patch.$(NETCDF_VERSION) \
+			 tst_atts.patch.$(NETCDF_VERSION) \
+			 tst_atts3.patch.$(NETCDF_VERSION) \
+			 tst_files.patch.$(NETCDF_VERSION) \
+			 tst_grps.patch.$(NETCDF_VERSION) \
+			 tst_types.patch.$(NETCDF_VERSION)
+
+
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead
