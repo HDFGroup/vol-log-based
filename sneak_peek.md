@@ -63,7 +63,7 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Updated utility program
-  + none
+  + h5ldump and h5lenv check for file signature before parsing files.
 
 * Other updates:
   + Supports NetCDF4 applications. See PR #15
@@ -75,9 +75,11 @@ This is essentially a placeholder for the next release note ...
     extracting filters.
   + `h5lreplay` now recognizes the internal objects of names prefixed with
     double '_'.
-  + Fix metadata flush-after-read operations that corrupts the file.
+  + Fix metadata flush-after-read operations that corrupt the file.
   + Fix write request not flushed properly after the first metadata flush.
   + Fix memory error when writing filtered datasets.
+  + Fix a bug in dataspace selection when the least significant dimension of interleaving blocks contains more than one element.
+  + h5ldump and h5lenv return -1 if it fails to handle the file.
 
 * New example programs
   + none
@@ -86,7 +88,7 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * New test program
-  + none
+  + NetCDF4 test programs downloaded from NetCDF git repo at compile time
 
 * Conformity with HDF5 library
   + none
@@ -102,4 +104,3 @@ This is essentially a placeholder for the next release note ...
 
 * Clarifications
   + none
-

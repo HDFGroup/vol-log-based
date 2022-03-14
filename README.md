@@ -26,6 +26,9 @@ This software repository contains source codes implementing an [HDF5](https://ww
   + The log-based VOL does not support all the HDF5 APIs.
     See [doc/compatibility.md](doc/compatibility.md) for a full list of supported and unsupported APIs.
   + All opened objects of a file must be closed before the file is closed.
+  + Log-based VOL does not recognize files written by the native VOL.
+    + Similar to NetCDF4, log-based VOL output files are a specific type of HDF5 files with data objects for log-based storage layout.
+    + The native VOL can read log-based VOL output files, but not vice-versa.
   
 ### References
 * [HDF5 VOL application developer manual](https://github.com/HDFGroup/hdf5doc/raw/vol_docs/RFCs/HDF5/VOL/user_guide/vol_user_guide.pdf)
