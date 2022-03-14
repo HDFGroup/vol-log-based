@@ -287,7 +287,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 									starts[nreq][k] = (hsize_t)hstarts[j][k];
 									counts[nreq][k] = 1;
 								}
-								starts[nreq][ndim - 1] =
+								counts[nreq][ndim - 1] =
 									(hsize_t) (hends[j][ndim - 1] - hstarts[j][ndim - 1] + 1);
 
 								for (l = 0; l < ndim;
