@@ -25,13 +25,13 @@ For applications that produce checkpoints for restarting purposes, the overhead 
 Log-based storage layout is an effective way for applications that care less about reading performance to trade read performance for write performance.
 
 ## How does it work ?
-* For a detailed description of the design of log-based VOL, see [doc/design.md](doc/design.md)
+* For a detailed description of the design of log-based VOL, see [doc/design.md](./design.md)
 
 ## Installing log-base VOL
-* See [doc/INSTALL.md](doc/INSTALL.md)
+* See [doc/INSTALL.md](./INSTALL.md)
 
 ## Using the log-base VOL
-* See [doc/usage.md](doc/usage.md)
+* See [doc/usage.md](./usage.md)
 
 ## Misc
 ### HDF5 VOL Connector ID

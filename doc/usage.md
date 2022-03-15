@@ -91,15 +91,15 @@ HDF5 environment variables.
     + The log-based VOL caches some metadata of an opened file.
       The cached metadata is not synced among opened instances.
     + The file can be corrupted if the application opens and operates multiple handles to the same file.
-  * The names of (links to) objects cannot start with "__" prefix.
-    + Names starting with "__" are reserved for the log-based VOL for its internal data and metadata.
+  * The names of (links to) objects cannot start with prefix double underscore "_".
+    + Names starting with double underscore "_" are reserved for the log-based VOL for its internal data and metadata.
   * The log-based VOL does not support all the HDF5 APIs.
-    See [doc/compatibility.md](doc/compatibility.md) for a full list of supported and unsupported APIs.
+    See [doc/compatibility.md](./compatibility.md) for a full list of supported and unsupported APIs.
   * Lob-based VOL will crash if there are any objects left open when the program exit.
     + All opened HDF5 handles must be properly closed.
 
 ### Log-based VOL-specific APIs
-* For a list of APIs introduced in the log-based VOL, see [doc/api.md](doc/api.md)
+* For a list of APIs introduced in the log-based VOL, see [doc/api.md](./api.md)
 
 ### Log-based VOL utilities
-* For instructions related to log-based VOL utility programs, see [doc/util.md](doc/util.md)
+* For instructions related to log-based VOL utility programs, see [doc/util.md](./util.md)
