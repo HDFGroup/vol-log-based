@@ -65,7 +65,7 @@ HDF5_URL = https://raw.githubusercontent.com/HDFGroup/hdf5/${HDF5_VERSION}
 .SECONDEXPANSION:
 
 $(SEQ_SRCS): %.c : $$(wildcard %.patch.$(HDF5_VERSION))
-	wget -cq $(HDF5_URL)/examples/$@
+	@DOWNLOAD_CMD@ $(HDF5_URL)/examples/$@
 	if [ -f ${srcdir}/$(basename $@).patch.$(HDF5_VERSION) ]; then patch -st $@ < ${srcdir}/$(basename $@).patch.$(HDF5_VERSION); fi
 
 check_PROGRAMS = $(TESTPROGRAMS)
