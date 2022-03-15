@@ -9,11 +9,10 @@ This software repository contains source codes implementing an [HDF5](https://ww
 * See [doc/userguide.md](doc/userguide.md) for instruction on building and using the log-based VOL
 
 ### Current limitations
-  + It does not support NetCDF4 programs that write in the HDF5 file format.
   + Read operations:
-    + Reading is implemented by naively searching through log records to find
+    + Reading is implemented by searching through log records to find
       the log blocks intersecting with the read request.
-    + The searching requires to read the entire metadata of the file into the memory.
+    + The searching requires to read the entire log metadata into the memory.
   + The subfiling feature is under development.
   + Async I/O (a new feature of HDF5 in the future release) is not yet supported.
   + Virtual Datasets (VDS) feature is not supported.
@@ -27,7 +26,6 @@ This software repository contains source codes implementing an [HDF5](https://ww
     See [doc/compatibility.md](doc/compatibility.md) for a full list of supported and unsupported APIs.
   + All opened objects of a file must be closed before the file is closed.
   + Log-based VOL does not recognize files written by the native VOL.
-    + Similar to NetCDF4, log-based VOL output files are a specific type of HDF5 files with data objects for log-based storage layout.
     + The native VOL can read log-based VOL output files, but not vice-versa.
   
 ### References
