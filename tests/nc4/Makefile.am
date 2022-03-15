@@ -29,9 +29,9 @@ SEQ_SRCS = tst_files.c \
            tst_dims2.c \
            tst_types.c \
            tst_vars3.c \
-		   tst_dims.c \
-		   tst_dims3.c \
-		   tst_vars.c
+           tst_dims.c \
+           tst_dims3.c \
+           tst_vars.c
 
 PAR_SRCS =
 
@@ -79,14 +79,14 @@ hdf5internal.h:
 .SECONDEXPANSION:
 
 $(SEQ_SRCS): %.c : $$(wildcard %.patch.$(NETCDF_VERSION))
-	wget -cq $(NETCDF4_URL)/nc_test4/$@
+	@DOWNLOAD_CMD@ $(NETCDF4_URL)/nc_test4/$@
 	if [ -f $(basename $@).patch.$(NETCDF_VERSION) ]; then patch -st $@ < $(basename $@).patch.$(NETCDF_VERSION); fi
 
 err_macros.h:
-	wget -cq $(NETCDF4_URL)/include/$@
+	@DOWNLOAD_CMD@ $(NETCDF4_URL)/include/$@
 
 ref_tst_dims.nc:
-	wget -cq $(NETCDF4_URL)/nc_test4/$@
+	@DOWNLOAD_CMD@ $(NETCDF4_URL)/nc_test4/$@
 
 check_PROGRAMS = $(TESTPROGRAMS)
 
@@ -94,13 +94,11 @@ EXTRA_DIST = wrap_runs.sh parallel_run.sh nc_tests.h \
              tst_dims.patch.$(NETCDF_VERSION) \
              tst_dims3.patch.$(NETCDF_VERSION) \
              tst_vars.patch.$(NETCDF_VERSION) \
-			 tst_atts.patch.$(NETCDF_VERSION) \
-			 tst_atts3.patch.$(NETCDF_VERSION) \
-			 tst_files.patch.$(NETCDF_VERSION) \
-			 tst_grps.patch.$(NETCDF_VERSION) \
-			 tst_types.patch.$(NETCDF_VERSION)
-
-
+             tst_atts.patch.$(NETCDF_VERSION) \
+             tst_atts3.patch.$(NETCDF_VERSION) \
+             tst_files.patch.$(NETCDF_VERSION) \
+             tst_grps.patch.$(NETCDF_VERSION) \
+             tst_types.patch.$(NETCDF_VERSION)
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead

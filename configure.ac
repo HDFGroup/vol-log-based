@@ -558,6 +558,19 @@ if test "x${TESTOUTDIR}" = x ; then
    TESTOUTDIR=.
 fi
 
+AC_CHECK_PROGS(download_cmd, wget curl)
+if test "x$download_cmd" = x ; then
+   AC_MSG_ERROR([
+   -----------------------------------------------------------------------
+     Either wget or curl are required to download test files. Abort.
+   -----------------------------------------------------------------------])
+elif test "x$download_cmd" = xwget ; then
+   download_cmd+=" -qc"
+else # command curl
+   download_cmd+=" -sLO"
+fi
+AC_SUBST(DOWNLOAD_CMD, [$download_cmd])
+
 have_qmcpack=no
 AC_ARG_ENABLE([test-qmcpack],
     [AS_HELP_STRING([--enable-test-qmcpack],
@@ -572,7 +585,7 @@ if test "x${have_qmcpack}" = xyes; then
    rm -rf ./qmcpack
    qmcpack_version=v3.13.0
    rm -f qmcpack.tar.gz
-   wget -q https://github.com/QMCPACK/qmcpack/archive/refs/tags/${qmcpack_version}.tar.gz -O qmcpack.tar.gz
+   ${download_cmd} https://github.com/QMCPACK/qmcpack/archive/refs/tags/${qmcpack_version}.tar.gz -O qmcpack.tar.gz
    AC_MSG_RESULT([${qmcpack_version}.tar.gz])
    mkdir qmcpack
    tar -zxf qmcpack.tar.gz -C qmcpack --strip-components=1
@@ -633,7 +646,7 @@ if test "x${have_openpmd}" = xyes; then
    rm -rf ./openPMD-api
    openpmd_version=0.14.4
    rm -f openPMD-api.tar.gz
-   wget -q https://github.com/openPMD/openPMD-api/archive/refs/tags/${openpmd_version}.tar.gz -O openPMD-api.tar.gz
+   ${download_cmd} https://github.com/openPMD/openPMD-api/archive/refs/tags/${openpmd_version}.tar.gz -O openPMD-api.tar.gz
    AC_MSG_RESULT([${openpmd_version}.tar.gz])
    mkdir openPMD-api
    tar -zxf openPMD-api.tar.gz -C openPMD-api --strip-components=1
