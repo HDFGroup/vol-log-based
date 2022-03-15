@@ -88,7 +88,10 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * New test program
-  + NetCDF4 test programs downloaded from NetCDF git repo at compile time
+  + NetCDF4 test programs are now downloaded from NetCDF release at make time.
+    See PR #15.
+  + HDF5 example programs are now downloaded from HDF5 releases at make time.
+    See PR #18.
 
 * Conformity with HDF5 library
   + none
