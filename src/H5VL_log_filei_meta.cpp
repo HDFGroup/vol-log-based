@@ -354,6 +354,9 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		// Parse metadata
 		err = fp->idx->parse_block (buf, count);
 		CHECK_ERR
+
+		// Free metadata buffer
+		H5VL_log_free (buf);
 	}
 
 	// Mark index as up to date
@@ -365,7 +368,7 @@ err_out:;
 	// Cleanup
 	if (mdsid >= 0) H5Sclose (mdsid);
 	if (mmsid >= 0) H5Sclose (mmsid);
-	H5VL_log_free (buf);
+	if (buf) { H5VL_log_free (buf); }
 
 	return err;
 }
