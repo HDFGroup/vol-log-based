@@ -53,6 +53,7 @@ void *H5VL_log_file_create (
 	H5VL_log_file_t *fp	  = NULL;
 	H5VL_loc_params_t loc;
 	hid_t uvlid;
+	hid_t fdid;	 // VFL driver ID
 	void *under_vol_info;
 	MPI_Comm comm	 = MPI_COMM_WORLD;
 	MPI_Info mpiinfo = MPI_INFO_NULL;
@@ -108,7 +109,12 @@ void *H5VL_log_file_create (
 	}
 
 	// Make sure we have mpi enabled
-	err = H5Pget_fapl_mpio (fapl_id, &comm, &mpiinfo);
+	fdid = H5Pget_driver (fapl_id);
+	CHECK_ID (fdid)
+	if (fdid == H5FD_MPIO) {
+		err = H5Pget_fapl_mpio (fapl_id, &comm, &mpiinfo);
+	} else
+		err = -1;
 	if (err != 0) {	 // No MPI, use MPI_COMM_WORLD
 		comm	= MPI_COMM_SELF;
 		mpiinfo = MPI_INFO_NULL;
@@ -212,8 +218,9 @@ void *H5VL_log_file_create (
 	H5VL_LOGI_PROFILING_TIMER_START;
 	loc.obj_type = H5I_FILE;
 	loc.type	 = H5VL_OBJECT_BY_SELF;
-	fp->lgp = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG, H5P_LINK_CREATE_DEFAULT,
-								H5P_GROUP_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
+	fp->lgp		 = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
+								 H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,
+								 H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
 	CHECK_PTR (fp->lgp)
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
 
@@ -237,8 +244,8 @@ void *H5VL_log_file_create (
 	attbuf[2] = fp->nmdset;
 	attbuf[3] = fp->config;
 	attbuf[4] = fp->ngroup;
-	err = H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32, 5, attbuf, dxpl_id,
-							 NULL);
+	err		  = H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32, 5,
+							   attbuf, dxpl_id, NULL);
 	CHECK_ERR
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE);
@@ -272,6 +279,7 @@ void *H5VL_log_file_open (
 	H5VL_log_info_t *info = NULL;
 	H5VL_log_file_t *fp	  = NULL;
 	hid_t uvlid;
+	hid_t fdid;	 // VFL driver ID
 	void *under_vol_info;
 	MPI_Comm comm;
 	MPI_Info mpiinfo = MPI_INFO_NULL;
@@ -320,7 +328,12 @@ void *H5VL_log_file_open (
 	}
 
 	// Make sure we have mpi enabled
-	err = H5Pget_fapl_mpio (fapl_id, &comm, &mpiinfo);
+	fdid = H5Pget_driver (fapl_id);
+	CHECK_ID (fdid)
+	if (fdid == H5FD_MPIO) {
+		err = H5Pget_fapl_mpio (fapl_id, &comm, &mpiinfo);
+	} else
+		err = -1;
 	if (err != 0) {	 // No MPI, use MPI_COMM_WORLD
 		comm	= MPI_COMM_SELF;
 		mpiinfo = MPI_INFO_NULL;
@@ -447,7 +460,7 @@ herr_t H5VL_log_file_specific (void *file,
 							   H5VL_file_specific_args_t *args,
 							   hid_t dxpl_id,
 							   void **req) {
-	herr_t err = 0;
+	herr_t err			= 0;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 	H5VL_LOGI_PROFILING_TIMER_START;
 
