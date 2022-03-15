@@ -692,7 +692,7 @@ AC_SUBST(PACKAGE_NAME)
 
 dnl Enable creation of libtool-style versioning or no versioning
 AC_ARG_ENABLE(versioning,
-        [AC_HELP_STRING([--disable-versioning],[Disable library versioning. @<:@default: enabled@:>@])],
+        [AS_HELP_STRING([--disable-versioning],[Disable library versioning. @<:@default: enabled@:>@])],
         [enable_versioning=${enableval}], [enable_versioning=yes]
 )
 dnl For libtool ABI versioning rules see:
