@@ -30,26 +30,24 @@ jobs:
         - name: Install HDF5
           run: |
             WORKDIR=$(pwd)
-            wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz
+            rm -rf hdf5-1.13.0.tar.gz hdf5-1.13.0 ${WORKDIR}/.local/hdf5/1.13.0
+            wget -qc https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz
             tar -zxf hdf5-1.13.0.tar.gz
             cd hdf5-1.13.0
-            export HDF5_LIBTOOL=/usr/bin/libtoolize
-            ./autogen.sh
-            ./configure --prefix=${WORKDIR}/.local/hdf5/1.13.0 --disable-fortran --disable-hl --disable-tests --disable-tools \
-            --enable-parallel --enable-build-mode=production CC=mpicc
-            make -j 64
-            make -j 64 install
+            ./configure --prefix=${WORKDIR}/.local/hdf5/1.13.0 --disable-fortran \
+                        --disable-hl --disable-tests --disable-tools \
+                        --enable-parallel --enable-build-mode=production CC=mpicc
+            make -j 4 install
         - name: Test log VOL
           run: |
             WORKDIR=$(pwd)
             autoreconf -i
-            ./configure --prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared
-            make -j 64
-            make -j 64 tests
-            export LD_LIBRARY_PATH=${WORKDIR}/.local/hdf5/1.13.0:$LD_LIBRARY_PATH
+            ./configure --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared
+            make -j 4 V=1
+            make -j 4 V=1 tests
             make check
             make ptest
-            make distcheck DISTCHECK_CONFIGURE_FLAGS="--prefix=${WORKDIR}/.local/logvol --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared"
+            make distcheck DISTCHECK_CONFIGURE_FLAGS="--with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared"
         - name: Print log
           if: ${{ failure() }}
           run: |
