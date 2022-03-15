@@ -16,6 +16,8 @@
 #include <mpi.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/errno.h> /* errno */
+
 // Logvol hdrs
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
