@@ -19,8 +19,7 @@ AM_CPPFLAGS += -DHDF5_PARALLEL
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
 # The following files will be downloaded from HDF5 library
-SEQ_SRCS =  h5_attribute.c \
-            h5_crtdat.c \
+SEQ_SRCS =  h5_crtdat.c \
             h5_crtatt.c \
             h5_crtgrp.c \
             h5_crtgrpar.c \
@@ -30,7 +29,8 @@ SEQ_SRCS =  h5_attribute.c \
             h5_write.c \
             h5_read.c \
             h5_select.c \
-            h5_subset.c
+            h5_subset.c \
+            h5_attribute.c
 
 PAR_SRCS =
 
