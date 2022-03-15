@@ -62,28 +62,16 @@ endif
 HDF5_VERSION = hdf5-1_13_0
 HDF5_URL = https://raw.githubusercontent.com/HDFGroup/hdf5/${HDF5_VERSION}
 
-nc4internal.h:
-	touch nc4internal.h
-
-hdf5internal.h:
-	touch hdf5internal.h
-
 .SECONDEXPANSION:
 
 $(SEQ_SRCS): %.c : $$(wildcard %.patch.$(HDF5_VERSION))
 	wget -cq $(HDF5_URL)/examples/$@
 	if [ -f ${srcdir}/$(basename $@).patch.$(HDF5_VERSION) ]; then patch -st $@ < ${srcdir}/$(basename $@).patch.$(HDF5_VERSION); fi
 
-err_macros.h:
-	wget -cq $(NETCDF4_URL)/include/$@
-
-ref_tst_dims.nc:
-	wget -cq $(NETCDF4_URL)/nc_test4/$@
-
 check_PROGRAMS = $(TESTPROGRAMS)
 
-EXTRA_DIST = wrap_runs.sh verify.sh	\
-			 h5_attribute.patch.$(HDF5_VERSION)
+EXTRA_DIST = wrap_runs.sh verify.sh \
+             h5_attribute.patch.$(HDF5_VERSION)
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead
@@ -101,7 +89,7 @@ TESTS_ENVIRONMENT += export PAR_TESTS="$(PAR_TESTS)";
 
 H5_FILES = $(check_PROGRAMS:%=$(TESTOUTDIR)/%.h5)
 
-CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.nc  *.log
+CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.log
 
 DISTCLEANFILES = $(SEQ_SRCS)
 
