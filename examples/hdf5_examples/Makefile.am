@@ -71,7 +71,8 @@ $(SEQ_SRCS): %.c : $$(wildcard %.patch.$(HDF5_VERSION))
 check_PROGRAMS = $(TESTPROGRAMS)
 
 EXTRA_DIST = wrap_runs.sh verify.sh \
-             h5_attribute.patch.$(HDF5_VERSION)
+             h5_attribute.patch.$(HDF5_VERSION) \
+             h5_interm_group.patch.$(HDF5_VERSION)
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead

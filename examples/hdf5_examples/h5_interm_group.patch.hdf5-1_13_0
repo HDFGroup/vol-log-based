@@ -1,0 +1,16 @@
+--- h5_interm_group.c	2022-03-16 18:21:18.837044757 -0500
++++ h5_interm_group_logvol.c	2022-03-16 18:21:46.457044898 -0500
+@@ -88,10 +88,13 @@
+         status = H5Gget_info(g2_id, &g2_info);
+         printf("Group /G1/G2 has %d member(s)\n", (int)g2_info.nlinks);
+ 
++#if 0
+         for (i = 0; i < (int)g2_info.nlinks; i++) {
+             H5Lget_name_by_idx(g2_id, ".", H5_INDEX_NAME, H5_ITER_NATIVE, (hsize_t)i, name, 3, H5P_DEFAULT);
+             printf("Object's name is %s\n", name);
+         }
++#endif
++
+         H5Gclose(g2_id);
+     }
+     H5Fclose(file);
