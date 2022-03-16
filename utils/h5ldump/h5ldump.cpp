@@ -28,15 +28,64 @@ const char hdf5sig[] = {(char)0x89, (char)0x48, (char)0x44, (char)0x46,
 						(char)0x0d, (char)0x0a, (char)0x1a, (char)0x0a};
 const char ncsig[]	 = {'C', 'D', 'F'};
 
+inline std::string get_file_signature (std::string &path) {
+	hid_t fid		 = -1;	// File ID
+	hid_t faplid	 = -1;	// File access property ID
+	hid_t nativevlid = -1;	// Native VOL ID
+	std::ifstream fin;		// File stream for reading file signature
+	char sig[8];			// File signature
+	htri_t islog, isnc4;
+	std::string ret;
+
+	fin.open (path, std::ios_base::in);
+	if (fin.is_open ()) {
+		memset (sig, 0, sizeof (sig));
+		fin.read (sig, 8);
+		fin.close ();
+		if (memcmp (hdf5sig, sig, 8)) {
+			// Always use native VOL
+			nativevlid = H5VLpeek_connector_id_by_name ("native");
+			faplid	   = H5Pcreate (H5P_FILE_ACCESS);
+			H5Pset_vol (faplid, nativevlid, NULL);
+
+			// Open the input file
+			fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, faplid);
+			CHECK_ID (fid)
+
+			islog = H5Aexists (fid, H5VL_LOG_FILEI_ATTR_INT);
+			isnc4 = H5Aexists (fid, "_NCProperties");
+
+			if (islog) {
+				ret = std::string ("Logvol");
+			} else if (isnc4) {
+				ret = std::string ("NetCDF 4");
+			} else {
+				ret = std::string ("HDF5");
+			}
+		} else if (!memcmp (ncsig, sig, 3)) {
+			ret = std::string ("NetCDF");
+		} else {
+			ret = std::string ("Unknown");
+		}
+	} else {
+		ret = std::string ("Unknown");
+		std::cout << "Error: cannot open " << path << std::endl;
+	}
+err_out:;
+	if (fid >= 0) { H5Fclose (fid); }
+	if (faplid >= 0) { H5Pclose (faplid); }
+	return ret;
+}
+
 int main (int argc, char *argv[]) {
 	herr_t err = 0;
 	int rank, np;
 	int opt;
-	bool dumpdata = false;					  // Dump data along with metadata
+	bool dumpdata  = false;					  // Dump data along with metadata
+	bool showftype = false;					  // Show file type
 	std::string inpath;						  // Input file path
 	std::vector<H5VL_log_dset_info_t> dsets;  // Dataset infos
-	std::ifstream fin;						  // File stream for reading file signature
-	char sig[8];							  // File signature
+	std::string ftype;						  // File type
 
 	MPI_Init (&argc, &argv);
 	MPI_Comm_size (MPI_COMM_WORLD, &np);
@@ -52,6 +101,9 @@ int main (int argc, char *argv[]) {
 		switch (opt) {
 			case 'd':
 				dumpdata = true;
+				break;
+			case 'k':
+				showftype = true;
 				break;
 			case 'h':
 			default:
@@ -69,28 +121,30 @@ int main (int argc, char *argv[]) {
 	inpath = std::string (argv[optind]);
 
 	// Make sure input file is HDF5 file
-	if (!rank) {
-		fin.open (inpath, std::ios_base::in);
-		if (fin.is_open ()) {
-			memset (sig, 0, sizeof (sig));
-			fin.read (sig, 8);
-			if (memcmp (hdf5sig, sig, 8)) {
-				std::cout << "Error: " << inpath << " is not a valid HDF5 file." << std::endl;
-				err = -1;
-
-				if (!memcmp (ncsig, sig, 3)) {
-					std::cout << "Error: " << inpath << " is a classic NetCDF file." << std::endl;
-					std::cout << "Use ncdump in NetCDF utilities to read classic NetCDF files."
-							  << std::endl;
-				}
-			}
+	ftype = get_file_signature (inpath);
+	if (showftype) {
+		if (ftype != "unknown") {
+			std::cout << inpath << " is a " << ftype << " file." << std::endl;
 		} else {
-			std::cout << "Error: cannot open " << inpath << std::endl;
-			err = -1;
+			std::cout << "Type of " << inpath << " is unknown" << std::endl;
+		}
+		goto err_out;
+	}
+
+	if (ftype != "Logvol") {
+		std::cout << "Error: " << inpath << " is not a valid logvol file." << std::endl;
+		err = -1;
+
+		if (ftype == "HDF5") {
+			std::cout << inpath << " is a regular HDF5 file." << std::endl;
+			std::cout << "Use h5dump in HDF5 utilities to read regular HDF5 files." << std::endl;
+		} else if (ftype == "NetCDF" || ftype == "NetCDF 4") {
+			std::cout << inpath << " is a " << ftype << " file." << std::endl;
+			std::cout << "Use ncdump in NetCDF utilities to read NetCDF files." << std::endl;
+		} else {
+			std::cout << "Type of " << inpath << " is unknown" << std::endl;
 		}
 	}
-	MPI_Bcast (&err, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	CHECK_ERR
 
 	// Get dataaset metadata
 	err = h5ldump_visit (inpath, dsets);
