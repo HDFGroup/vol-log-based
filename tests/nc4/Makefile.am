@@ -82,7 +82,7 @@ hdf5internal.h:
 
 $(SEQ_SRCS): %.c : $$(wildcard %.patch.$(NETCDF_VERSION))
 	@DOWNLOAD_CMD@ $(NETCDF4_URL)/nc_test4/$@
-	if [ -f $(basename $@).patch.$(NETCDF_VERSION) ]; then patch -st $@ < $(basename $@).patch.$(NETCDF_VERSION); fi
+	if [ -f $(srcdir)/$(basename $@).patch.$(NETCDF_VERSION) ]; then patch -st $@ < $(srcdir)/$(basename $@).patch.$(NETCDF_VERSION); fi
 
 err_macros.h:
 	@DOWNLOAD_CMD@ $(NETCDF4_URL)/include/$@
