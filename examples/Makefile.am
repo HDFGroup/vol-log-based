@@ -62,12 +62,17 @@ DIST_SUBDIRS = $(C_SUBDIRS)
 
 SUBDIRS = $(C_SUBDIRS)
 
+PTEST_SUBDIRS = $(SUBDIRS)
+
 ptest ptest4: $(check_PROGRAMS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
 	@echo "==========================================================="
 	$(TESTS_ENVIRONMENT) \
 	$(srcdir)/parallel_run.sh 4 || exit 1
+	for d in $(PTEST_SUBDIRS) ; do \
+		$(MAKE) $(MFLAGS) -C $$d ptest $$* || exit 1 ; \
+	done
 
 ptest2: $(check_PROGRAMS)
 	@echo "==========================================================="
