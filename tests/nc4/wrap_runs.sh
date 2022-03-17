@@ -12,16 +12,10 @@ export srcdir=.
 
 outfile=`basename $1`
 
-# ensure these 2 environment variables are not set
-unset HDF5_VOL_CONNECTOR
-unset HDF5_PLUGIN_PATH
-
-${TESTSEQRUN} $1
-
 export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}" 
 export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
 
-${TESTSEQRUN} $1
+${TESTSEQRUN} $1 $outfile.nc
 
 for f in ./$1*.nc; do
     ${top_builddir}/utils/h5ldump/h5ldump $f
