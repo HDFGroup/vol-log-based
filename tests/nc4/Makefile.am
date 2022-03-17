@@ -33,7 +33,7 @@ SEQ_SRCS = tst_files.c \
            tst_dims3.c \
            tst_vars.c
 
-PAR_SRCS =
+PAR_SRCS = parallel_vara.c
 
 SEQ_TESTS = $(SEQ_SRCS:.c=)
 PAR_TESTS = $(PAR_SRCS:.c=)
@@ -45,6 +45,7 @@ if ENABLE_NETCDF4
 TESTPROGRAMS += $(SEQ_TESTS) $(PAR_TESTS)
 
 BUILT_SOURCES = $(SEQ_SRCS) \
+                $(PAR_SRCS) \
                 nc4internal.h \
                 hdf5internal.h \
                 err_macros.h \
@@ -64,6 +65,7 @@ nodist_tst_dims3_SOURCES = tst_dims3.c
 nodist_tst_types_SOURCES = tst_types.c
 nodist_tst_vars_SOURCES = tst_vars.c
 nodist_tst_vars3_SOURCES = tst_vars3.c
+nodist_parallel_vara_SOURCES = parallel_vara.c
 endif
 endif
 
@@ -88,6 +90,10 @@ err_macros.h:
 ref_tst_dims.nc:
 	@DOWNLOAD_CMD@ $(NETCDF4_URL)/nc_test4/$@
 
+parallel_vara.c: parallel_vara.patch.v4.7.4
+	@DOWNLOAD_CMD@ $(NETCDF4_URL)/examples/C/$@
+	patch -st $@ < $<
+
 check_PROGRAMS = $(TESTPROGRAMS)
 
 EXTRA_DIST = wrap_runs.sh parallel_run.sh nc_tests.h \
@@ -98,7 +104,8 @@ EXTRA_DIST = wrap_runs.sh parallel_run.sh nc_tests.h \
              tst_atts3.patch.$(NETCDF_VERSION) \
              tst_files.patch.$(NETCDF_VERSION) \
              tst_grps.patch.$(NETCDF_VERSION) \
-             tst_types.patch.$(NETCDF_VERSION)
+             tst_types.patch.$(NETCDF_VERSION) \
+             parallel_vara.patch.$(NETCDF_VERSION)
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead
@@ -134,21 +141,21 @@ ptest ptest4: $(PAR_TESTS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
 	@echo "==========================================================="
-	$(TESTS_ENVIRONMENT) \
+	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/parallel_run.sh 4 || exit 1
 
 ptest2: $(PAR_TESTS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 2 MPI processes"
 	@echo "==========================================================="
-	$(TESTS_ENVIRONMENT) \
+	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/parallel_run.sh 2 || exit 1
 
 ptest6: $(PAR_TESTS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 6 MPI processes"
 	@echo "==========================================================="
-	$(TESTS_ENVIRONMENT) \
+	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/parallel_run.sh 6 || exit 1
 
 ptests: ptest2 ptest4 ptest6
