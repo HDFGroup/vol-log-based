@@ -90,7 +90,7 @@ err_macros.h:
 ref_tst_dims.nc:
 	@DOWNLOAD_CMD@ $(NETCDF4_URL)/nc_test4/$@
 
-parallel_vara.c: parallel_vara.patch.v4.7.4
+parallel_vara.c: parallel_vara.patch.$(NETCDF_VERSION)
 	@DOWNLOAD_CMD@ $(NETCDF4_URL)/examples/C/$@
 	patch -st $@ < $<
 
