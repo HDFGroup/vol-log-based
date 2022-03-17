@@ -550,6 +550,9 @@ if test "x${TESTMPIRUN}" = x ; then
    dnl if TESTMPIRUN has not been set by users, then
    dnl set default to "mpiexec -n NP"
    UD_MPI_PATH_PROGS([TESTMPIRUN], [mpiexec mpirun srun aprun])
+   if test "x${TESTMPIRUN}" != x ; then
+      TESTMPIRUN="$TESTMPIRUN -n NP"
+   fi
 fi
 
 AC_ARG_VAR(TESTOUTDIR, [Output file directory for "make check" and "make ptest", @<:@default: ./@:>@])
