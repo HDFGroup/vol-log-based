@@ -24,8 +24,8 @@
 #include "H5VL_logi_nb.hpp"
 #include "h5ldump.hpp"
 
-const char hdf5sig[] = {(char)0x89, (char)0x48, (char)0x44, (char)0x46,
-						(char)0x0d, (char)0x0a, (char)0x1a, (char)0x0a};
+const char *hdf5sig="\211HDF\r\n\032\n";
+
 const char ncsig[]	 = {'C', 'D', 'F'};
 
 inline std::string get_file_signature (std::string &path) {
@@ -42,7 +42,7 @@ inline std::string get_file_signature (std::string &path) {
 		memset (sig, 0, sizeof (sig));
 		fin.read (sig, 8);
 		fin.close ();
-		if (memcmp (hdf5sig, sig, 8)) {
+		if (!memcmp (hdf5sig, sig, 8)) {
 			// Always use native VOL
 			nativevlid = H5VLpeek_connector_id_by_name ("native");
 			faplid	   = H5Pcreate (H5P_FILE_ACCESS);
@@ -97,7 +97,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	// Parse input
-	while ((opt = getopt (argc, argv, "hi:o:d")) != -1) {
+	while ((opt = getopt (argc, argv, "hkd")) != -1) {
 		switch (opt) {
 			case 'd':
 				dumpdata = true;
@@ -107,14 +107,14 @@ int main (int argc, char *argv[]) {
 				break;
 			case 'h':
 			default:
-				if (rank == 0) { std::cout << "Usage: h5ldump <input file path>" << std::endl; }
+				if (rank == 0) { std::cout << "Usage: h5ldump [-h|-k|-d] <input file path>" << std::endl; }
 				err = -1;
 				goto err_out;
 		}
 	}
 
 	if (optind >= argc || argv[optind] == NULL) { /* input file is mandatory */
-		if (rank == 0) { std::cout << "Usage: h5ldump <input file path>" << std::endl; }
+		if (rank == 0) { std::cout << "Usage: h5ldump [-h|-k|-d] <input file path>" << std::endl; }
 		err = -1;
 		goto err_out;
 	}
