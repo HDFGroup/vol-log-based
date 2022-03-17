@@ -11,12 +11,9 @@ MPIRUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 # echo "MPIRUN = ${MPIRUN}"
 # echo "check_PROGRAMS=${check_PROGRAMS}"
 
+export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
+export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
+
 for p in ${PAR_TESTS} ; do
-    export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}" 
-    export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
-    ${MPIRUN} ./${p} ${TESTOUTDIR}/${p}.h5
-    
-    unset HDF5_VOL_CONNECTOR
-    unset HDF5_PLUGIN_PATH
-    ${MPIRUN} ./${p} ${TESTOUTDIR}/${p}.h5
+    ${MPIRUN} ./${p} ${TESTOUTDIR}/${p}.nc
 done
