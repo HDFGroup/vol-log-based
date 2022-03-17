@@ -18,12 +18,12 @@ EXTRA_DIST =    m4/foreach_idx.m4 \
 PTEST_SUBDIRS = tests examples
 
 ptest:
-	for d in $(PTEST_SUBDIRS) ; do \
+	@for d in $(PTEST_SUBDIRS) ; do \
 		$(MAKE) $(MFLAGS) -C $$d ptest $$* || exit 1 ; \
 	done
 
 ptests:
-	for d in $(PTEST_SUBDIRS) ; do \
+	@for d in $(PTEST_SUBDIRS) ; do \
 		$(MAKE) $(MFLAGS) -C $$d ptests $$* || exit 1 ; \
 	done
 

@@ -29,7 +29,7 @@ ptest:
 	done
 
 ptests:
-	for d in $(SUBDIRS) ; do \
+	@for d in $(SUBDIRS) ; do \
 		$(MAKE) $(MFLAGS) -C $$d ptests $$* || exit 1 ; \
 	done
 
