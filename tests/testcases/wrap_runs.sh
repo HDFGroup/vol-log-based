@@ -22,7 +22,7 @@ ${TESTSEQRUN} ./$1 $outfile
 err=0
 FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k $outfile`
 if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
-   echo "Error: Output file $outfile.nc is not Log VOL, but ${FILE_KIND}"
+   echo "Error: Output file $outfile is not Log VOL, but ${FILE_KIND}"
    err=1
 else
    echo "Success: Output file $outfile is ${FILE_KIND}"
