@@ -41,7 +41,7 @@ hdf5_iotest_SOURCES =
 
 TESTS = test.sh
 
-hdf5_iotest$(EXEEXT):
+hdf5_iotest$(EXEEXT): Makefile
 	cd build && make -j 64
 	cp build/src/hdf5_iotest .
 
@@ -52,21 +52,21 @@ ptest ptest4: $(check_PROGRAMS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
 	@echo "==========================================================="
-	$(TESTS_ENVIRONMENT) \
+	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/test.sh 4 || exit 1
 
 ptest2: $(check_PROGRAMS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 2 MPI processes"
 	@echo "==========================================================="
-	$(TESTS_ENVIRONMENT) \
+	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/test.sh 2 || exit 1
 
 ptest6: $(check_PROGRAMS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 6 MPI processes"
 	@echo "==========================================================="
-	$(TESTS_ENVIRONMENT) \
+	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/test.sh 6 || exit 1
 
 ptests: ptest2 ptest4 ptest6

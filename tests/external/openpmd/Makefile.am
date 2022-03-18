@@ -24,6 +24,7 @@ EXTRA_DIST = test.sh config.sh.in
 TESTS_ENVIRONMENT  = export SED="$(SED)";
 TESTS_ENVIRONMENT += export srcdir="$(srcdir)";
 TESTS_ENVIRONMENT += export top_builddir="$(top_builddir)";
+TESTS_ENVIRONMENT += export builddir="$(builddir)";
 TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
 TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";
 TESTS_ENVIRONMENT += export TESTMPIRUN="$(TESTMPIRUN)";
@@ -41,11 +42,11 @@ check_PROGRAMS = 8a_benchmark_write_parallel 8b_benchmark_read_parallel
 
 TESTS = test.sh
 
-8a_benchmark_write_parallel$(EXEEXT):
+8a_benchmark_write_parallel$(EXEEXT): Makefile
 	cd build && make -j 4
 	cp build/bin/8a_benchmark_write_parallel .
 
-8b_benchmark_read_parallel$(EXEEXT):
+8b_benchmark_read_parallel$(EXEEXT): Makefile
 	cd build && make -j 4
 	cp build/bin/8b_benchmark_read_parallel .
 
@@ -56,21 +57,21 @@ ptest ptest4: $(check_PROGRAMS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
 	@echo "==========================================================="
-	$(TESTS_ENVIRONMENT) \
+	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/test.sh 4 || exit 1
 
 ptest2: $(check_PROGRAMS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 2 MPI processes"
 	@echo "==========================================================="
-	$(TESTS_ENVIRONMENT) \
+	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/test.sh 2 || exit 1
 
 ptest6: $(check_PROGRAMS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 6 MPI processes"
 	@echo "==========================================================="
-	$(TESTS_ENVIRONMENT) \
+	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/test.sh 6 || exit 1
 
 ptests: ptest2 ptest4 ptest6

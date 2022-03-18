@@ -24,7 +24,7 @@ DIST_SUBDIRS = qmcpack hdf5_iotest openpmd
 SUBDIRS = $(C_SUBDIRS)
 
 ptest:
-	for d in $(SUBDIRS) ; do \
+	@for d in $(SUBDIRS) ; do \
 		$(MAKE) $(MFLAGS) -C $$d ptest $$* || exit 1 ; \
 	done
 
