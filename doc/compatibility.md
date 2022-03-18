@@ -121,9 +121,9 @@ APIs not listed below is assumed to be unsupported.
 | H5Literate_by_name  | High             |       |
 | H5Lvisit            | High             |       |
 | H5Lvisit_by_name    | High             |       |
-| H5Lget_info_by_idx  | Full             |       |
-| H5Lget_name_by_idx  | Full             |       |
-| H5Lget_val_by_idx   | Full             |       |
+| H5Lget_info_by_idx  | None             |       |
+| H5Lget_name_by_idx  | None             |       |
+| H5Lget_val_by_idx   | None             |       |
 | H5Ldelete_by_idx    | None             |       |
 
 ### Object APIs (H5O*)
@@ -145,7 +145,7 @@ APIs not listed below is assumed to be unsupported.
 | H5Oget_comment_by_name      | None             |                                                                                |
 | H5Oget_info                 | High             |                                                                                |
 | H5Oget_info_by_name         | High             |                                                                                |
-| H5Oget_info_by_idx          | High             |                                                                                |
+| H5Oget_info_by_idx          | None             |                                                                                |
 | H5Oincr_refcount            | None             |                                                                                |
 | H5Odecr_refcount            | None             |                                                                                |
 | H5Oflush                    | None             |                                                                                |
