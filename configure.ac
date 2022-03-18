@@ -60,8 +60,7 @@ H5VL_LOG_RELEASE_DATE_FULL="`date '+%Y-%m-%d'`"
 AC_SUBST(H5VL_LOG_RELEASE_DATE_FULL)
 AC_SUBST(PACKAGE_VERSION)
 
-AH_TEMPLATE([ENABLE_ZLIB],              [Define if to enable zlib compression method])
-AH_TEMPLATE([ENABLE_EXTERNAL_TEST],              [Define if to build external test programs])
+AH_TEMPLATE([ENABLE_ZLIB], [Define if to enable zlib compression method])
 
 AH_TOP([#ifndef _CONFIG_H
 #define _CONFIG_H])
@@ -768,6 +767,12 @@ if test "x${LIBS}" != x ; then
               LIBS     = ${LIBS}"
 fi
 echo "\
+
+   External test programs:
+              hdf5-iotest    - ${have_hdf5io}
+              NetCDF-4       - ${have_netcdf4}
+              QMCPACK        - ${have_qmcpack}
+              OpenPMD        - ${have_openpmd}
 
    Now run 'make' to build the executable.
 
