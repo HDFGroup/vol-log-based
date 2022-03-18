@@ -35,20 +35,35 @@ jobs:
             tar -zxf hdf5-1.13.0.tar.gz
             cd hdf5-1.13.0
             ./configure --prefix=${WORKDIR}/.local/hdf5/1.13.0 --disable-fortran \
-                        --disable-hl --disable-tests --disable-tools \
+                        --disable-tests --disable-tools \
                         --enable-parallel --enable-build-mode=production CC=mpicc
+            make -j 4 install
+        - name: Install NetCDF
+          run: |
+            WORKDIR=$(pwd)
+            rm -rf v4.7.4.tar.gz netcdf-c-4.7.4 ${WORKDIR}/.local/netcdf-c/4.7.4
+            wget -qc https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.7.4.tar.gz
+            tar -zxf v4.7.4.tar.gz
+            cd netcdf-c-4.7.4
+            ./configure --prefix=${WORKDIR}/.local/netcdf-c/4.7.4 --disable-dap \
+                        CC=mpicc CPPFLAGS="-I${WORKDIR}/.local/hdf5/1.13.0/include" \
+                        LDFLAGS="-L${WORKDIR}/.local/hdf5/1.13.0/lib" LIBS="-lhdf5"
             make -j 4 install
         - name: Test log VOL
           run: |
             WORKDIR=$(pwd)
             autoreconf -i
-            ./configure --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared \
+            ./configure --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 \
+                        --enable-test-netcdf4=${WORKDIR}/.local/netcdf-c/4.7.4 \
+                        --enable-test-openpmd \
+                        --enable-test-hdf5-iotest \
+                        --enable-test-qmcpack \
                         TESTMPIRUN="mpiexec --oversubscribe -n NP"
-            make -j 4 V=1
-            make -j 4 V=1 tests
+            make V=1 -j 4
+            make V=1 -j 4 tests
             make check
             make ptest
-            make distcheck DISTCHECK_CONFIGURE_FLAGS="--with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared"
+            make distcheck DISTCHECK_CONFIGURE_FLAGS="--with-hdf5=${WORKDIR}/.local/hdf5/1.13.0"
         - name: Print log
           if: ${{ failure() }}
           run: |
@@ -58,4 +73,7 @@ jobs:
             cat ${WORKDIR}/tests/nc4/test-suite.log
             cat ${WORKDIR}/tests/basic/test-suite.log
             cat ${WORKDIR}/tests/testcases/test-suite.log
+            cat ${WORKDIR}/tests/external/openpmd/test-suite.log
+            cat ${WORKDIR}/tests/external/hdf5_iotest/test-suite.log
+            cat ${WORKDIR}/tests/external/qmcpack/test-suite.log
             cat ${WORKDIR}/examples/hdf5_examples/test-suite.log
