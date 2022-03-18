@@ -64,6 +64,9 @@ This is essentially a placeholder for the next release note ...
 
 * Updated utility program
   + h5ldump and h5lenv check for file signature before parsing files.
+  + Revise h5ldump command-line options. Option -H is to dump file header
+    metadata only. Option -k is to print the file kind only. Option -v is to
+    enable verbose mode.
 
 * Other updates:
   + Supports NetCDF4 applications. See PR #15

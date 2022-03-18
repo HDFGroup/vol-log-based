@@ -24,6 +24,8 @@
 #include "H5VL_logi_nb.hpp"
 #include "h5ldump.hpp"
 
+static int verbose;
+
 const char *hdf5sig="\211HDF\r\n\032\n";
 
 const char ncsig[]	 = {'C', 'D', 'F'};
@@ -58,12 +60,12 @@ inline std::string get_file_signature (std::string &path) {
 			if (islog) {
 				ret = std::string ("HDF5-LogVOL");
 			} else if (isnc4) {
-				ret = std::string ("netCDF-4");
+				ret = std::string ("NetCDF-4");
 			} else {
 				ret = std::string ("HDF5");
 			}
 		} else if (!memcmp (ncsig, sig, 3)) {
-                             if (sig[3] == 5)  ret = std::string ("NetCDF-classic");
+                             if (sig[3] == 5)  ret = std::string ("NetCDF classic");
                         else if (sig[3] == 2)  ret = std::string ("NetCDF 64-bit offset");
                         else if (sig[3] == 1)  ret = std::string ("NetCDF 64-bit data");
 
@@ -80,11 +82,23 @@ err_out:;
 	return ret;
 }
 
+/*----< usage() >------------------------------------------------------------*/
+static void usage (char *argv0) {
+    char *help = (char*)"Usage: %s [OPTION] FILE\n\
+       [-h] Print this help message\n\
+       [-v] Verbose mode\n\
+       [-H] Dump header metadata only\n\
+       [-k] Print the kind of file, one of 'HDF5', 'HDF5-LogVOL', 'NetCDF-4',\n\
+            'NetCDF classic', 'NetCDF 64-bit offset', or 'NetCDF 64-bit data'\n\
+       FILE: Input file name\n";
+    fprintf (stderr, help, argv0);
+}
+
 int main (int argc, char *argv[]) {
 	herr_t err = 0;
 	int rank, np;
 	int opt;
-	bool dumpdata  = false;					  // Dump data along with metadata
+	bool dumpdata  = true;					  // Dump data along with metadata
 	bool showftype = false;					  // Show file type
 	std::string inpath;						  // Input file path
 	std::vector<H5VL_log_dset_info_t> dsets;  // Dataset infos
@@ -94,30 +108,35 @@ int main (int argc, char *argv[]) {
 	MPI_Comm_size (MPI_COMM_WORLD, &np);
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
+        verbose = 0;
+
 	if (np > 1) {
 		if (rank == 0) { std::cout << "Warning: h5ldump is sequential" << std::endl; }
 		return 0;
 	}
 
 	// Parse input
-	while ((opt = getopt (argc, argv, "hkd")) != -1) {
+	while ((opt = getopt (argc, argv, "hvkH")) != -1) {
 		switch (opt) {
-			case 'd':
-				dumpdata = true;
+			case 'H':
+				dumpdata = false;
 				break;
 			case 'k':
 				showftype = true;
 				break;
+			case 'v':
+				verbose = 1;
+				break;
 			case 'h':
 			default:
-				if (rank == 0) { std::cout << "Usage: h5ldump [-h|-k|-d] <input file path>" << std::endl; }
+				if (rank == 0) usage((char*)"h5ldump");
 				err = -1;
 				goto err_out;
 		}
 	}
 
 	if (optind >= argc || argv[optind] == NULL) { /* input file is mandatory */
-		if (rank == 0) { std::cout << "Usage: h5ldump [-h|-k|-d] <input file path>" << std::endl; }
+		if (rank == 0) usage((char*)"h5ldump");
 		err = -1;
 		goto err_out;
 	}

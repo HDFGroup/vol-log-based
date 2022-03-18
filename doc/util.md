@@ -4,7 +4,7 @@
   + Script for querying configuration and installation options used to build the log-based VOL
   + Usage
     ```
-	    % ${logvol_install_path}/bin/h5lconfig --help
+      % ${logvol_install_path}/bin/h5lconfig --help
       h5lconfig is a utility program to display the build and installation
       information of the log-based VOL library.
 
@@ -35,8 +35,14 @@
   + This utility is sequential
   + Examples
     ```
-	    % ${logvol_install_path}/bin/h5ldump -h
-      Usage: h5ldump <input file path>
+      % ${logvol_install_path}/bin/h5ldump -h
+      Usage: h5ldump [OPTION] FILE
+             [-h] Print this help message
+             [-v] Verbose mode
+             [-H] Dump header metadata only
+             [-k] Print the kind of file, one of 'HDF5', 'HDF5-LogVOL', 'NetCDF-4',
+                  'NetCDF classic', 'NetCDF 64-bit offset', or 'NetCDF 64-bit data'
+             FILE: Input file name
 
       % ${logvol_install_path}/bin/h5ldump test.h5 
       File: test.h5
@@ -73,10 +79,10 @@
   + This utility support parallel run
   + Usage
     ```
-	    % mpiexec -np ${N} ${logvol_install_path}/bin/h5lreplay -h
+      % mpiexec -np ${N} ${logvol_install_path}/bin/h5lreplay -h
       Usage: h5reply -i <input file path> -o <output file path>
 
-	    % mpiexec -np ${N} ${logvol_install_path}/bin/h5lreplay -i test.h5 -o test_out.h5
+      % mpiexec -np ${N} ${logvol_install_path}/bin/h5lreplay -i test.h5 -o test_out.h5
       Usage: h5reply -i <input file path> -o <output file path>
 
       % h5dump test_out.h5
@@ -98,8 +104,8 @@
   + Applications that do not specify a VOL will use the VOL specified in the environment variables
   + Usage
     ```
-	    % source h5lenv.bash
+    % source h5lenv.bash
     ```
     ```
-        % source h5lenv.csh
+    % source h5lenv.csh
     ```
