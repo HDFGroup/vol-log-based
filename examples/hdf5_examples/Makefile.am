@@ -75,7 +75,7 @@ $(PAR_SRCS): %.c : $$(wildcard %.patch.$(HDF5_VERSION))
 
 check_PROGRAMS = $(TESTPROGRAMS)
 
-EXTRA_DIST = wrap_runs.sh verify.sh \
+EXTRA_DIST = wrap_runs.sh \
              h5_attribute.patch.$(HDF5_VERSION) \
              h5_interm_group.patch.$(HDF5_VERSION)
 
@@ -102,7 +102,7 @@ TEST_EXTENSIONS = .sh
 LOG_COMPILER = $(srcdir)/wrap_runs.sh
 SH_LOG_COMPILER =
 
-TESTS = $(TESTPROGRAMS) verify.sh
+TESTS = $(TESTPROGRAMS)
 
 # build check targets but not invoke
 tests-local: all $(check_PROGRAMS)
