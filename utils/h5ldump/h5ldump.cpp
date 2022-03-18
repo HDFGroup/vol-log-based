@@ -56,16 +56,19 @@ inline std::string get_file_signature (std::string &path) {
 			isnc4 = H5Aexists (fid, "_NCProperties");
 
 			if (islog) {
-				ret = std::string ("Logvol");
+				ret = std::string ("HDF5-LogVOL");
 			} else if (isnc4) {
-				ret = std::string ("NetCDF 4");
+				ret = std::string ("netCDF-4");
 			} else {
 				ret = std::string ("HDF5");
 			}
 		} else if (!memcmp (ncsig, sig, 3)) {
-			ret = std::string ("NetCDF");
+                             if (sig[3] == 5)  ret = std::string ("NetCDF-classic");
+                        else if (sig[3] == 2)  ret = std::string ("NetCDF 64-bit offset");
+                        else if (sig[3] == 1)  ret = std::string ("NetCDF 64-bit data");
+
 		} else {
-			ret = std::string ("Unknown");
+			ret = std::string ("unknown");
 		}
 	} else {
 		ret = std::string ("Unknown");
@@ -123,11 +126,7 @@ int main (int argc, char *argv[]) {
 	// Make sure input file is HDF5 file
 	ftype = get_file_signature (inpath);
 	if (showftype) {
-		if (ftype != "unknown") {
-			std::cout << inpath << " is a " << ftype << " file." << std::endl;
-		} else {
-			std::cout << "Type of " << inpath << " is unknown" << std::endl;
-		}
+		std::cout << ftype << std::endl;
 		goto err_out;
 	}
 
