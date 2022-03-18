@@ -42,7 +42,8 @@ jobs:
           run: |
             WORKDIR=$(pwd)
             autoreconf -i
-            ./configure --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared
+            ./configure --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared \
+                        TESTMPIRUN="mpiexec --oversubscribe -n NP"
             make -j 4 V=1
             make -j 4 V=1 tests
             make check
