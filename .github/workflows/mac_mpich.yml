@@ -22,7 +22,7 @@ jobs:
         - name: Set up dependencies
           run: |
             brew update
-            brew instal automake autoconf libtool m4 fftw mpich zlib
+            brew instal automake autoconf libtool m4 open-mpi fftw zlib
         - name: Install HDF5
           run: |
             WORKDIR=$(pwd)
