@@ -27,8 +27,6 @@ jobs:
             sudo apt-get install openmpi-bin
             # zlib
             sudo apt-get install zlib1g-dev
-            # fftw
-            sudo apt-get install fftw3
         - name: Install HDF5
           run: |
             WORKDIR=$(pwd)
@@ -59,7 +57,6 @@ jobs:
                         --enable-test-netcdf4=${WORKDIR}/.local/netcdf-c/4.7.4 \
                         --enable-test-openpmd \
                         --enable-test-hdf5-iotest \
-                        --enable-test-qmcpack \
                         TESTMPIRUN="mpiexec --oversubscribe -n NP"
             make V=1 -j 4
             make V=1 tests
@@ -77,5 +74,4 @@ jobs:
             cat ${WORKDIR}/tests/testcases/test-suite.log
             cat ${WORKDIR}/tests/external/openpmd/test-suite.log
             cat ${WORKDIR}/tests/external/hdf5_iotest/test-suite.log
-            cat ${WORKDIR}/tests/external/qmcpack/test-suite.log
             cat ${WORKDIR}/examples/hdf5_examples/test-suite.log
