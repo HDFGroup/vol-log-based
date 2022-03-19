@@ -62,7 +62,7 @@ jobs:
                         --enable-test-qmcpack \
                         CFLAGS="-O0 -g" CXXFLAGS="-O0 -g -std=c++14" LIBS=-lstdc++
             make V=1 -j 4
-            make V=1 -j 4 tests
+            make V=1 tests
             # make check
             # make ptest
             # make distcheck DISTCHECK_CONFIGURE_FLAGS="--with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared CXXFLAGS='-O0 -g -std=c++14' LIBS=-lstdc++"
