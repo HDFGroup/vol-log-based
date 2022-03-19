@@ -59,10 +59,10 @@
 * Verify log-based VOL build
   + Run command "make tests" to compile the test programs
   + Run command "make check" to run test programs on a single process
-  + Run command "make ptests" to run test programs in parallel
+  + Run command "make ptest" to run test programs in parallel
   + Example commands are given below.
     ```
     % make tests
     % make check
-    % make ptests
+    % make ptest
     ```

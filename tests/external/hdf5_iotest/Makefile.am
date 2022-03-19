@@ -41,41 +41,24 @@ hdf5_iotest_SOURCES =
 
 TESTS = test.sh
 
-hdf5_iotest$(EXEEXT): Makefile
-	cd build && make -j 64
+hdf5_iotest$(EXEEXT):
+	cd build && $(MAKE) -j4
 	cp build/src/hdf5_iotest .
 
 # build check targets but not invoke
 tests-local: all $(check_PROGRAMS)
 
-ptest ptest4: $(check_PROGRAMS)
+ptest: $(check_PROGRAMS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
 	@echo "==========================================================="
 	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/test.sh 4 || exit 1
 
-ptest2: $(check_PROGRAMS)
-	@echo "==========================================================="
-	@echo "    $(subdir): Parallel testing on 2 MPI processes"
-	@echo "==========================================================="
-	@$(TESTS_ENVIRONMENT) \
-	$(srcdir)/test.sh 2 || exit 1
-
-ptest6: $(check_PROGRAMS)
-	@echo "==========================================================="
-	@echo "    $(subdir): Parallel testing on 6 MPI processes"
-	@echo "==========================================================="
-	@$(TESTS_ENVIRONMENT) \
-	$(srcdir)/test.sh 6 || exit 1
-
-ptests: ptest2 ptest4 ptest6
-ptest8 ptest10:
-
-.PHONY: ptest ptests ptest2 ptest4 ptest6 ptest8 ptest10
+.PHONY: ptest
 
 clean-local:
-	if [ -d "build" ]; then cd build && make clean ; fi
+	if [ -d "build" ]; then cd build && $(MAKE) clean ; fi
 
 distclean-local:
 	-rm -rf build hdf5-iotest

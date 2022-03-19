@@ -6,7 +6,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = src tests examples utils doc
+SUBDIRS = src . tests examples utils doc
 DIST_SUBDIRS = src tests examples utils doc
 EXTRA_DIST =    m4/foreach_idx.m4 \
                 m4/foreach.m4 \
@@ -19,15 +19,10 @@ PTEST_SUBDIRS = tests examples
 
 ptest:
 	@for d in $(PTEST_SUBDIRS) ; do \
-		$(MAKE) $(MFLAGS) -C $$d ptest $$* || exit 1 ; \
+		$(MAKE) -C $$d ptest $$* || exit 1 ; \
 	done
 
-ptests:
-	@for d in $(PTEST_SUBDIRS) ; do \
-		$(MAKE) $(MFLAGS) -C $$d ptests $$* || exit 1 ; \
-	done
-
-.PHONY: ptest ptests
+.PHONY: ptest
 
 dist-hook:
 #	$(SED_I) -e "1,10s|_RELEASE_DATE_|@H5VL_LOG_RELEASE_DATE@|" $(distdir)/RELEASE_NOTE.md

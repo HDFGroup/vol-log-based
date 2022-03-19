@@ -42,45 +42,28 @@ check_PROGRAMS = 8a_benchmark_write_parallel 8b_benchmark_read_parallel
 
 TESTS = test.sh
 
-8a_benchmark_write_parallel$(EXEEXT): Makefile
-	cd build && make -j 4
+8a_benchmark_write_parallel$(EXEEXT):
+	cd build && $(MAKE) -j4
 	cp build/bin/8a_benchmark_write_parallel .
 
-8b_benchmark_read_parallel$(EXEEXT): Makefile
-	cd build && make -j 4
+8b_benchmark_read_parallel$(EXEEXT):
+	cd build && $(MAKE) -j4
 	cp build/bin/8b_benchmark_read_parallel .
 
 # build check targets but not invoke
 tests-local: all $(check_PROGRAMS)
 
-ptest ptest4: $(check_PROGRAMS)
+ptest: $(check_PROGRAMS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
 	@echo "==========================================================="
 	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/test.sh 4 || exit 1
 
-ptest2: $(check_PROGRAMS)
-	@echo "==========================================================="
-	@echo "    $(subdir): Parallel testing on 2 MPI processes"
-	@echo "==========================================================="
-	@$(TESTS_ENVIRONMENT) \
-	$(srcdir)/test.sh 2 || exit 1
-
-ptest6: $(check_PROGRAMS)
-	@echo "==========================================================="
-	@echo "    $(subdir): Parallel testing on 6 MPI processes"
-	@echo "==========================================================="
-	@$(TESTS_ENVIRONMENT) \
-	$(srcdir)/test.sh 6 || exit 1
-
-ptests: ptest2 ptest4 ptest6
-ptest8 ptest10:
-
-.PHONY: ptest ptests ptest2 ptest4 ptest6 ptest8 ptest10
+.PHONY: ptest
 
 clean-local:
-	if [ -d "build" ]; then cd build && make clean ; fi
+	if [ -d "build" ]; then cd build && $(MAKE) clean ; fi
 	-rm -rf  ../samples
 
 DISTCLEANFILES = openPMD-api.tar.gz

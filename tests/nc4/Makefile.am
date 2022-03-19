@@ -125,7 +125,8 @@ H5_FILES = $(check_PROGRAMS:%=$(TESTOUTDIR)/%.h5)
 
 CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.nc  *.log
 
-DISTCLEANFILES = $(SEQ_SRCS) nc4internal.h err_macros.h \
+DISTCLEANFILES = $(SEQ_SRCS) $(PAR_SRCS) \
+                 nc4internal.h err_macros.h \
                  hdf5internal.h ref_tst_dims.nc
 
 TEST_EXTENSIONS = .sh
@@ -137,28 +138,11 @@ TESTS = $(TESTPROGRAMS)
 # build check targets but not invoke
 tests-local: all $(check_PROGRAMS)
 
-ptest ptest4: $(PAR_TESTS)
+ptest: $(PAR_TESTS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
 	@echo "==========================================================="
 	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/parallel_run.sh 4 || exit 1
 
-ptest2: $(PAR_TESTS)
-	@echo "==========================================================="
-	@echo "    $(subdir): Parallel testing on 2 MPI processes"
-	@echo "==========================================================="
-	@$(TESTS_ENVIRONMENT) \
-	$(srcdir)/parallel_run.sh 2 || exit 1
-
-ptest6: $(PAR_TESTS)
-	@echo "==========================================================="
-	@echo "    $(subdir): Parallel testing on 6 MPI processes"
-	@echo "==========================================================="
-	@$(TESTS_ENVIRONMENT) \
-	$(srcdir)/parallel_run.sh 6 || exit 1
-
-ptests: ptest2 ptest4 ptest6
-ptest8 ptest10:
-
-.PHONY: ptest ptests ptest2 ptest4 ptest6 ptest8 ptest10
+.PHONY: ptest

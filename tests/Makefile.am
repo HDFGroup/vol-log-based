@@ -20,12 +20,7 @@ EXTRA_DIST = testutils.hpp
 
 ptest:
 	@for d in $(PTEST_SUBDIRS) ; do \
-		$(MAKE) $(MFLAGS) -C $$d ptest $$* || exit 1 ; \
+		$(MAKE) -C $$d ptest $$* || exit 1 ; \
 	done
 
-ptests:
-	@for d in $(PTEST_SUBDIRS) ; do \
-		$(MAKE) $(MFLAGS) -C $$d ptests $$* || exit 1 ; \
-	done
-
-.PHONY: ptest ptests
+.PHONY: ptest
