@@ -9,6 +9,5 @@ cmake   -DCMAKE_C_COMPILER="@MPICC@" \
         -DCMAKE_CXX_COMPILER="@MPICXX@" \
         -DBUILD_LMYENGINE_INTERFACE=0 \
         -DQMC_BUILD_SANDBOX_ONLY=1 \
-        -DENABLE_SOA=0 \
         ../qmcpack
 

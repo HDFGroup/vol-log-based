@@ -22,16 +22,11 @@ jobs:
         - name: Set up dependencies
           run: |
             brew update
-            brew instal automake autoconf libtool m4
-            # ln -s /usr/local/bin/glibtoolize /usr/local/bin/libtoolize
-            # mpi
-            brew install mpich
-            # zlib
-            brew install zlib     
+            brew instal automake autoconf libtool m4 fftw mpich zlib
         - name: Install HDF5
           run: |
             WORKDIR=$(pwd)
-            rm -rf hdf5-1.13.0.tar.gz hdf5-1.13.0 ${WORKDIR}/.local/hdf5/1.13.0
+            rm -rf hdf5-1.13.0.tar.gz hdf5-1.13.0 ${WORKDIR}/.local/hdf5
             wget -qc https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz
             tar -zxf hdf5-1.13.0.tar.gz
             cd hdf5-1.13.0
@@ -43,7 +38,7 @@ jobs:
         - name: Install NetCDF
           run: |
             WORKDIR=$(pwd)
-            rm -rf v4.7.4.tar.gz netcdf-c-4.7.4 ${WORKDIR}/.local/netcdf-c/4.7.4
+            rm -rf v4.7.4.tar.gz netcdf-c-4.7.4 ${WORKDIR}/.local/netcdf-c
             wget -qc https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.7.4.tar.gz
             tar -zxf v4.7.4.tar.gz
             cd netcdf-c-4.7.4
