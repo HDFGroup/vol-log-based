@@ -1,37 +1,43 @@
-## Log-based VOL - an HDF5 VOL Plugin that stores HDF5 datasets in a log-based storage layout
+## Log-based VOL - an HDF5 VOL Plugin for storing datasets in a log-based layout
 
-This software repository contains source codes implementing an [HDF5](https://www.hdfgroup.org) Virtual Object Layer ([VOL](https://portal.hdfgroup.org/display/HDF5/Virtual+Object+Layer)) plugin that stores HDF5 datasets in a log-based storage layout. In the log-based layout, data of multiple write requests made by an MPI process are appended one after another in the file. Such I/O strategy can avoid the expensive inter-process communication and I/O serialization due to file lock contentions when storing data in the canonical order. Files created by this VOL conform with the HDF5 file format, but require this VOL to read them back. Through the log-based VOL, exist HDF5 programs can achieve a better parallel write performance with minimal changes to their codes.
+This software repository contains source codes implementing an
+[HDF5](https://www.hdfgroup.org) Virtual Object Layer
+([VOL](https://portal.hdfgroup.org/display/HDF5/Virtual+Object+Layer)) plugin
+that stores HDF5 datasets in a log-based storage layout in files. When using
+this VOL, multiple write requests from an MPI process are appended one after
+another (as logs) and stored in a contiguous block in the file. The contiguous
+blocks of multiple processes are appended one another following the processes'
+MPI rank order. Such log-based I/O strategy avoids the expensive inter-process
+communication which is required when storing data in the canonical order.
+Thus, exist HDF5 programs, through the log-based VOL, can achieve a better
+parallel write performance with no changes to their codes. Files created by
+this VOL conform with the HDF5 file format, but require this VOL to read them
+back.
+
+* Current build status:
+  [![Ubuntu_mpich](https://github.com/DataLib-ECP/vol-log-based/actions/workflows/ubuntu_mpich.yml/badge.svg)](https://github.com/DataLib-ECP/vol-log-based/actions/workflows/ubuntu_mpich.yml)
 
 ### HDF5 VOL Connector ID
-* This log-based VOL has been registered with the HDF group with [Connector Identifier 514](https://portal.hdfgroup.org/display/support/Registered+VOL+Connectors).
+* This log-based VOL has been registered with the HDF group with
+  [Connector Identifier 514](https://portal.hdfgroup.org/display/support/Registered+VOL+Connectors).
  
-### Getting start
-* See [doc/userguide.md](doc/userguide.md) for instruction on building and using the log-based VOL
+### Documents
+* [doc/userguide.md](doc/userguide.md) contains the compile and run instructions.
+* [doc/design.md](doc/design.md) outlines the design of log-based VOL.
+* [doc/api.md](doc/api.md) describes the new APIs introduced in this VOL.
 
-### Current limitations
-  + Read operations:
-    + Reading is implemented by searching through log records to find
-      the log blocks intersecting with the read request.
-    + The searching requires to read the entire log metadata into the memory.
-  + The subfiling feature is under development.
-  + Async I/O (a new feature of HDF5 in the future release) is not yet supported.
-  + Virtual Datasets (VDS) feature is not supported.
-  + Multiple opened instances of the same file is not supported.
-    + The log-based VOL caches some metadata of an opened file.
-      The cached metadata is not synced among opened instances.
-    + The file can be corrupted if the application open and operate multiple handles to the same file.
-  + The names of (links to) objects cannot start with '_' character.
-    + Names starting with '_' are reserved for the log-based VOL for its internal data and metadata.
-  + The log-based VOL does not support all the HDF5 APIs.
-    See [doc/compatibility.md](doc/compatibility.md) for a full list of supported and unsupported APIs.
-  + All opened objects of a file must be closed before the file is closed.
-  + Log-based VOL does not recognize files written by the native VOL.
-    + The native VOL can read log-based VOL output files, but not vice-versa.
-  
-### References
-* [HDF5 VOL application developer manual](https://github.com/HDFGroup/hdf5doc/raw/vol_docs/RFCs/HDF5/VOL/user_guide/vol_user_guide.pdf)
-* [HDF5 VOL plug-in developer manual](https://github.com/HDFGroup/hdf5doc/raw/vol_docs/RFCs/HDF5/VOL/connector_author_guide/vol_connector_author_guide.pdf)
-* [HDF5 VOL RFC](https://github.com/HDFGroup/hdf5doc/raw/vol_docs/RFCs/HDF5/VOL/RFC/RFC_VOL.pdf)
+### Developers
+* Wei-keng Liao <<wkliao@northwestern.edu>>
+* Kai-yuan Hou <<kai-yuanhou2020@u.northwestern.edu>>
+
+Copyright (C) 2021, Northwestern University.
+See [COPYRIGHT](COPYRIGHT) notice in top-level directory.
 
 ### Project funding supports:
-Ongoing development and maintenance of Log-based VOL are supported by the Exascale Computing Project (17-SC-20-SC), a joint project of the U.S. Department of Energy's Office of Science and National Nuclear Security Administration, responsible for delivering a capable exascale ecosystem, including software, applications, and hardware technology, to support the nation's exascale computing imperative.
+Ongoing development and maintenance of Log-based VOL are supported by the
+Exascale Computing Project (17-SC-20-SC), a joint project of the U.S.
+Department of Energy's Office of Science and National Nuclear Security
+Administration, responsible for delivering a capable exascale ecosystem,
+including software, applications, and hardware technology, to support the
+nation's exascale computing imperative.
+
