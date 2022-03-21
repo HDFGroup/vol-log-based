@@ -42,17 +42,17 @@
     % cd log_io_vol
     % autoreconf -i
     ```
-  + Example configure and make commands are given below.
-    ```
-    % ./configure --prefix=${HOME}/Log_IO_VOL --with-hdf5=${HOME}/HDF5/1.13.0
-    % make -j 4 install
-    ```
+* Example configure and make commands are given below.
+  ```
+  % ./configure --prefix=${HOME}/Log_IO_VOL --with-hdf5=${HOME}/HDF5/1.13.0
+  % make -j 4 install
+  ```
   + The above commands will install the log-vol library under the folder `${HOME}/Log_IO_VOL`.
 
 * Check log-based VOL build
-  + Run command "make tests" to compile the test programs (no run).
-  + Run command "make check" to run test programs on a single process.
-  + Run command "make ptest" to run test programs on 4 MPI processes in parallel.
+  + Command `make tests` compiles the test programs (build only, no run).
+  + Command `make check` runs test programs on a single process.
+  + Command `make ptest` runs test programs on 4 MPI processes in parallel.
 
 * Configure command-line options
   + The full list of configure command-line options can be obtained by running
