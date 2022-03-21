@@ -38,12 +38,12 @@ restarting purposes, the overhead can be totally avoided unless the program is
 actually interrupted. Log-based storage layout is an effective way for
 applications that care less about reading performance to trade read performance
 for write performance. Our design principle of log-based VOL is described in
-[doc/design.md](./design.md).
+[doc/design.md](design.md).
 
 ## Documents
-* [doc/userguide.md](doc/userguide.md) contains the compile and run instructions.
-* [doc/api.md](doc/api.md) describes the new APIs introduced in this VOL.
-* [doc/usage.md](./usage.md) shows examples of how to enable log-based VOL
+* [doc/INSTALL.md](INSTALL.md) contains the compile and run instructions.
+* [doc/api.md](api.md) describes the new APIs introduced in this VOL.
+* [doc/usage.md](usage.md) shows examples of how to enable log-based VOL
   through the two VOL environment variables without changing the applications.
   It also describes a way to explicitly use log-based VOL by editing the
   application source codes.
@@ -63,7 +63,7 @@ for write performance. Our design principle of log-based VOL is described in
   + The names of (links to) objects cannot start with '_' character.
     + Names starting with '_' are reserved for the log-based VOL for its internal data and metadata.
   + The log-based VOL does not support all the HDF5 APIs.
-    See [doc/compatibility.md](doc/compatibility.md) for a full list of supported and unsupported APIs.
+    See [doc/compatibility.md](compatibility.md) for a full list of supported and unsupported APIs.
   + All opened objects of a file must be closed before the file is closed.
   + Log-based VOL does not recognize files written by the native VOL.
     + The native VOL can read log-based VOL output files, but not vice-versa.
