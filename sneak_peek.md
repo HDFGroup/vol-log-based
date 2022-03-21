@@ -21,7 +21,8 @@ This is essentially a placeholder for the next release note ...
     program `hdf5_iotest.c` will be tested during `make check`.
   + `--enable-test-openpmd` to enable tests using OpenPMD [default: disabled].
     This option first downloads and builds OpenPMD. Its test program
-    `hdf5_iotest.c` will be tested during `make check`.
+    `8a_benchmark_write_parallel.c` and `8b_benchmark_read_parallel.c` will be
+    tested during `make check`.
   + `--enable-test-netcdf4[=INC,LIB | =DIR]` to enable tests using NetCDF4
     [default: disabled], and provide the NetCDF installation path(s):
     `--enable-test-netcdf4=INC,LIB` for include and lib paths separated by a

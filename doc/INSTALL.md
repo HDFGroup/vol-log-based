@@ -11,58 +11,79 @@
   + [libtool](https://www.gnu.org/software/libtool/) 2.4.6
   + [m4](https://www.gnu.org/software/m4/) 1.4.18
 
-### Building dependencies
-* Build HDF5 with VOL and parallel I/O support
-  + Download and extract HDF5 1.13.0 source package
-  + Configure HDF5 with parallel I/O enabled
-  + Run "make install"
-  + Example commands are given below. This example will install
-    the HD5 library under the folder `${HOME}/HDF5`.
+### Building HDF5 libraries
+* HDF5 1.13.0 and later (**required**)
+  + Download HDF5 official release version 1.13.0.
     ```
     % wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz
+    ```
+  + Configure HDF5 with parallel I/O enabled.
+    ```
     % tar -zxf hdf5-1_13_0.tar.gz
     % cd hdf5-1_13_0.tar.gz
-    % ./configure --prefix=${HOME}/HDF5 --enable-parallel CC=mpicc
+    % ./configure --prefix=${HOME}/HDF5/1.13.0 --enable-parallel CC=mpicc
     % make -j4 install
     ```
-* Build NetCDF with parallel NetCDF4 support (optional)
-  + Download and extract NetCDF source package
-  + Configure NetCDF with parallel NetCDF4 enabled
-  + Run "make install"
-  + Example commands are given below. This example will install
-    the NetCDF library under the folder `${HOME}/NetCDF`.
-    ```
-    % wget https://downloads.unidata.ucar.edu/netcdf-c/4.8.1/netcdf-c-4.8.1.tar.gz
-    % tar -zxf netcdf-c-4.8.1.tar.gz
-    % cd netcdf-c-4.8.1.tar.gz
-    % ./configure --prefix=${HOME}/NetCDF --disable-dap -I${HOME}/HDF5/include--enable-netcdf4 LDFLAGS=-L${HOME}/HDF5/lib LIBS=-lhdf5 CC=mpicc CXX=mpicxx
-    % make -j4 install
-    ```
+  + The above example commands will install the HD5 library under the folder
+    `${HOME}/HDF5/1.13.0`.
+
 ### Building log-based VOL
-* Build and install this VOL plugin, `log-based vol`.
-  + Clone this VOL plugin repository
-  + Run command "autoreconf -i"
-  + Configure log-based VOL
-    + Shared library (--enable-shared) is required when using the log-based VOL
-      through setting the HDF5 environment variables. See below for details.
-    + Compile with zlib library (--enable-zlib) to enable metadata compression.
-    + Compile with NetCDF4 library (--with-netcdf4) to enable NetCDF4 tests.
-  + Example build commands are given below.
+* Obtain the source code package by either downloading the official release or
+  cloning the github repository.
+  + Download the latest official release version 1.1.0.
+    ```
+    % wget https://github.com/DataLib-ECP/vol-log-based/archive/refs/tags/logvol.1.1.0.tar.gz
+    % tar -zxf logvol.1.1.0.tar.gz
+    % cd vol-log-based-logvol.1.1.0
+    ```
+  + Clone from the github repository.
     ```
     % git clone https://github.com/DataLib-ECP/vol-log-based.git
     % cd log_io_vol
     % autoreconf -i
-    % ./configure --prefix=${HOME}/Log_IO_VOL --with-hdf5=${HOME}/HDF5 --with-netcdf4=${HOME}/NetCDF --enable-shared --enable-zlib
+    ```
+  + Example configure and make commands are given below.
+    ```
+    % ./configure --prefix=${HOME}/Log_IO_VOL --with-hdf5=${HOME}/HDF5/1.13.0
     % make -j 4 install
     ```
-    The VOL plugin library is now installed under the folder `${HOME}/Log_IO_VOL.`
-* Verify log-based VOL build
-  + Run command "make tests" to compile the test programs
-  + Run command "make check" to run test programs on a single process
-  + Run command "make ptest" to run test programs in parallel
-  + Example commands are given below.
+  + The above commands will install the log-vol library under the folder `${HOME}/Log_IO_VOL`.
+
+* Check log-based VOL build
+  + Run command "make tests" to compile the test programs (no run).
+  + Run command "make check" to run test programs on a single process.
+  + Run command "make ptest" to run test programs on 4 MPI processes in parallel.
+
+* Configure command-line options
+  + The full list of configure command-line options can be obtained by running
+    the following command:
     ```
-    % make tests
-    % make check
-    % make ptest
+    % ./configure --help
     ```
+  + Important configure options
+    + **--enable-shared** Shared libraries are required if users intent to enable
+      the log-based VOL through setting the two HDF5 VOL environment variables,
+      `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH`. [default: enabled].
+      See [Usage Guide](usage.md) for details.
+    + **--enable-zlib**  to enable metadata compression using zlib. [default:
+      disabled].
+    + **--enable-test-qmcpack** to enable tests using
+      [QMCPACK](https://github.com/QMCPACK/qmcpack.git) [default: disabled].
+      This option first downloads and builds QMCPACK. Its test program
+      `restart.c` will be used to test log-based VOL during `make check`.
+    + **--enable-test-hdf5-iotest** to enable tests using
+      [hdf5-iotest](https://github.com/HDFGroup/hdf5-iotest) [default:
+      disabled]. This option first downloads and builds hdf5-iotest. Its test
+      program `hdf5_iotest.c` will be used to test log-based VOL during
+      `make check`.
+    + **--enable-test-openpmd** to enable tests using
+      [OpenPMD](https://github.com/openPMD/openPMD-api) [default: disabled].
+      This option first downloads and builds OpenPMD. Its test program
+      `8a_benchmark_write_parallel.c` and `8b_benchmark_read_parallel.c` will
+      be used to test log-based VOL during `make check`.
+    + **--enable-test-netcdf4[=INC,LIB | =DIR]** to enable tests using
+      [NetCDF-C](https://github.com/Unidata/netcdf-c) [default: disabled]. This
+      option can be used to provide the NetCDF installation path(s). It first
+      downloads a few test programs from NetCDF-C, which will be to test
+      log-based VOL during `make check`.
+
