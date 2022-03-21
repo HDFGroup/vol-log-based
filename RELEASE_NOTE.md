@@ -50,7 +50,7 @@
   + An external test program qmcpack restart 
     + https://github.com/QMCPACK/qmcpack.git
   + An external test program hdf5-iotest   
-    + https://github.com/brtnfld/hdf5-iotest
+    + https://github.com/HDFGroup/hdf5-iotest
   + An external test program openPMD-api benhmark
     + https://github.com/openPMD/openPMD-api
 * Updated utility program

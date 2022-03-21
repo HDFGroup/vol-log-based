@@ -57,7 +57,7 @@ External test programs are a collection of benchmarks and applications that uses
 
 ### External test programs
   * hdf5_io-test
-    + https://github.com/brtnfld/hdf5-iotest
+    + https://github.com/HDFGroup/hdf5-iotest
     + A simple HDF5 I/O performance tester developed by the HDF5 team.
   * HDFGroup vol-tests
     + https://github.com/HDFGroup/vol-tests
