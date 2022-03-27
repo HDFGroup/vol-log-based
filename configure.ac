@@ -1,5 +1,5 @@
 dnl
-dnl Copyright (C) 2019, Northwestern University and Argonne National Laboratory
+dnl Copyright (C) 2012, Northwestern University and Argonne National Laboratory
 dnl See COPYRIGHT notice in top-level directory.
 dnl
 
@@ -9,13 +9,13 @@ dnl
 
 dnl autoconf v2.69 was released in 2012-04-24
 AC_PREREQ([2.69])
-AC_INIT([H5VL_log],[1.1.0],[],[H5VL_log],[])
+AC_INIT([H5VL_log],[1.2.0],[],[H5VL_log],[])
 
 AM_EXTRA_RECURSIVE_TARGETS([tests])
 
 AC_CONFIG_HEADERS([config.h])
 AH_TOP([/*
- * Copyright (C) 2021, Northwestern University and Argonne National Laboratory
+ * Copyright (C) 2022, Northwestern University and Argonne National Laboratory
  * See COPYRIGHT notice in top-level directory.
  */
 ])
@@ -700,7 +700,7 @@ AC_ARG_ENABLE(versioning,
 dnl For libtool ABI versioning rules see:
 dnl http://www.gnu.org/software/libtool/manual/libtool.html#Updating-version-info
 dnl Update the version information only immediately before a public release.
-ABIVERSION="1:1:0"
+ABIVERSION="1:2:0"
 AC_SUBST(ABIVERSION)
 if test "$enable_versioning" = "yes" ; then
    ABIVERSIONFLAGS="-version-info \$(ABIVERSION)"

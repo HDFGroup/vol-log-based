@@ -30,7 +30,7 @@ back.
 * Wei-keng Liao <<wkliao@northwestern.edu>>
 * Kai-yuan Hou <<kai-yuanhou2020@u.northwestern.edu>>
 
-Copyright (C) 2021, Northwestern University.
+Copyright (C) 2022, Northwestern University.
 See [COPYRIGHT](COPYRIGHT) notice in top-level directory.
 
 ### Project funding supports:
