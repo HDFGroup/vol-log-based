@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     int buf = 1;
     const char *file_name;  
     hid_t fid, gid, faid, gaid, sid;
-    hid_t faplid, dxplid;
+    hid_t faplid;
     hid_t log_vlid;  
   
     MPI_Init(&argc, &argv);

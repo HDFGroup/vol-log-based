@@ -20,7 +20,6 @@ int main (int argc, char **argv) {
 	const char *file_name;
 	hid_t fid	   = -1;  // File ID
 	hid_t faplid   = -1;
-	hid_t dxplid   = -1;
 	hid_t log_vlid = -1;  // Logvol ID
 
 	MPI_Init (&argc, &argv);

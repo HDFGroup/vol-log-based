@@ -31,7 +31,6 @@ int main (int argc, char **argv) {
 	int i;
 	int rank, np;
 	const char *file_name;
-	int ndim;
 	hid_t fid;	 // File ID
 	hid_t did;	 // Dataset ID
 	hid_t sid;	 // Dataset space ID
@@ -41,7 +40,6 @@ int main (int argc, char **argv) {
 	hid_t log_vlid;								  // ID of log-based VOL
 	hsize_t dims[2] = {0, N};					  // Size of the dataset
 	hsize_t start[2], count[2], one[2] = {1, 1};  // Buffer for setting selection
-	hsize_t **starts, **counts;					  // Buffer for setting selection in H5Dwrite_n
 	int buf[N];									  // Data buffer
 
 	MPI_Init (&argc, &argv);
