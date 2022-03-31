@@ -70,4 +70,5 @@ jobs:
             cat ${WORKDIR}/tests/testcases/test-suite.log
             cat ${WORKDIR}/tests/external/openpmd/test-suite.log
             cat ${WORKDIR}/examples/hdf5_examples/test-suite.log
+            cat ${WORKDIR}/utils/h5lreplay/test.log
 
