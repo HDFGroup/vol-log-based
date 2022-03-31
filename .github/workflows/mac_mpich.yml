@@ -31,7 +31,7 @@ jobs:
             tar -zxf hdf5-1.13.0.tar.gz
             cd hdf5-1.13.0
             ./configure --prefix=${WORKDIR}/.local/hdf5/1.13.0 --disable-fortran \
-                        --disable-tests --disable-tools \
+                        --disable-tests \
                         --enable-parallel --enable-build-mode=production \
                         CC=mpicc CFLAGS="-O0 -g"
             make -j 4 install
