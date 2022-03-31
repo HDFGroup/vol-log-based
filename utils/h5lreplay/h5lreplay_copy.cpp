@@ -29,6 +29,7 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 	hid_t aid	  = -1;
 	hid_t sid	  = -1;
 	hid_t tid	  = -1;
+	hid_t gid	  = -1;	 // Group ID
 	hid_t dcplid  = -1;
 	dset_info dset;
 	h5lreplay_copy_handler_arg *argp = (h5lreplay_copy_handler_arg *)op_data;
@@ -116,6 +117,11 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 		// Record did for replaying data
 		// Do not close dst_did
 		argp->dsets[id] = dset;
+	} else if (object_info->type == H5O_TYPE_GROUP) {  // Copy a group
+		gid = H5Gcreate2 (argp->fid, name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		CHECK_ID (gid)
+		H5Gclose (gid);
+		gid = -1;
 	} else {  // Copy anything else as is
 		err = H5Ocopy (o_id, name, argp->fid, name, H5P_DEFAULT, H5P_DEFAULT);
 		CHECK_ERR
@@ -124,6 +130,7 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 err_out:;
 	if (sid >= 0) { H5Sclose (sid); }
 	if (aid >= 0) { H5Aclose (aid); }
+	if (gid >= 0) { H5Gclose (gid); }
 	if (dcplid >= 0) { H5Pclose (dcplid); }
 	if (src_did >= 0) { H5Dclose (src_did); }
 	return err;
