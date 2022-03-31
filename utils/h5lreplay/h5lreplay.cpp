@@ -91,6 +91,7 @@ err_out:;
 herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np) {
 	herr_t err = 0;
 	int mpierr;
+	hid_t nativevlid;	// Native VOL ID
 	hid_t finid	 = -1;	// ID of the input file
 	hid_t foutid = -1;	// ID of the output file
 	hid_t fsubid = -1;	// ID of the subfile
@@ -98,6 +99,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 	hid_t lgid	 = -1;	// ID of the log group
 	hid_t aid	 = -1;	// ID of file attribute
 	hid_t dxplid = -1;
+	hsize_t n;	// Attr iterate idx position
 	int ndset;	// # dataset in the input file
 	// int nldset;		 // # data dataset in the current file (main file| subfile)
 	int nmdset;		 // # metadata dataset in the current file (main file| subfile)
@@ -113,9 +115,12 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 	struct dirent *subfile;			// subfile entry in dir
 
 	// Open the input and output file
-	faplid = H5Pcreate (H5P_FILE_ACCESS);
+	nativevlid = H5VLpeek_connector_id_by_name ("native");
+	faplid	   = H5Pcreate (H5P_FILE_ACCESS);
 	CHECK_ID (faplid)
 	err = H5Pset_fapl_mpio (faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
+	CHECK_ERR
+	err = H5Pset_vol (faplid, nativevlid, NULL);
 	CHECK_ERR
 
 	finid = H5Fopen (inpath.c_str (), H5F_ACC_RDONLY, faplid);
@@ -142,6 +147,12 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 	// nldset = att_buf[1];
 	nmdset = att_buf[2];
 	config = att_buf[3];
+
+	// Copy attributes
+	n	= 0;
+	err = H5Aiterate2 (finid, H5_INDEX_NAME, H5_ITER_INC, &n, h5lreplay_attr_copy_handler,
+					   (void *)foutid);
+	CHECK_ERR
 
 	// Copy data objects
 	copy_arg.dsets.resize (ndset);
