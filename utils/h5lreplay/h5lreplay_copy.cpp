@@ -146,7 +146,13 @@ err_out:;
 	if (sid >= 0) { H5Sclose (sid); }
 	if (aid >= 0) { H5Aclose (aid); }
 	if (dcplid >= 0) { H5Pclose (dcplid); }
-	if (src_id >= 0) { H5Dclose (src_id); }
+	if (object_info->type == H5O_TYPE_DATASET) {
+		if (src_id >= 0) { H5Dclose (src_id); }
+	} else if (object_info->type == H5O_TYPE_GROUP) {
+		if (src_id >= 0) { H5Gclose (src_id); }
+		if (dst_id >= 0) { H5Gclose (dst_id); }
+	}
+
 	return err;
 }
 
