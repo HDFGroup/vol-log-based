@@ -38,7 +38,9 @@ h5lreplay_SOURCES =   h5lreplay.cpp \
                      h5lreplay_meta.cpp \
                      h5lreplay_meta.hpp 
 
-CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out
+EXTRA_DIST = test.sh
+
+CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.h5l *.h5r
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead
