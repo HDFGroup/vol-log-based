@@ -6,6 +6,10 @@
 #
 # @configure_input@
 
+SUFFIXES = .o .cpp
+
+AM_DEFAULT_SOURCE_EXT = .cpp
+
 AM_CPPFLAGS = -I${srcdir}
 AM_CPPFLAGS += -I${top_srcdir}
 AM_CPPFLAGS += -I${top_srcdir}/src
@@ -18,6 +22,8 @@ endif
 if LOGVOL_PROFILING
    AM_CPPFLAGS += -DLOGVOL_PROFILING=1
 endif
+
+check_PROGRAMS = h5lgen
 
 bin_PROGRAMS = h5lreplay
 h5lreplay_LDADD  = $(top_builddir)/src/libH5VL_log.la
@@ -32,7 +38,33 @@ h5lreplay_SOURCES =   h5lreplay.cpp \
                      h5lreplay_meta.cpp \
                      h5lreplay_meta.hpp 
 
-CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out
+EXTRA_DIST = test.sh
+
+CLEANFILES = core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.h5l *.h5r
+
+# autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
+# For newer versions, we can use AM_TESTS_ENVIRONMENT instead
+# AM_TESTS_ENVIRONMENT  = export TESTPROGRAMS="$(TESTPROGRAMS)";
+# AM_TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";
+# AM_TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
+TESTS_ENVIRONMENT  = export SED="$(SED)";
+TESTS_ENVIRONMENT += export srcdir="$(srcdir)";
+TESTS_ENVIRONMENT += export top_builddir="$(top_builddir)";
+TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
+TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";
+TESTS_ENVIRONMENT += export TESTMPIRUN="$(TESTMPIRUN)";
+TESTS_ENVIRONMENT += export TESTPROGRAMS="$(TESTPROGRAMS)";
+TESTS_ENVIRONMENT += export H5DIFF="@H5DIFF_PATH@";
+TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
+
+TEST_EXTENSIONS = .sh
+LOG_COMPILER = $(srcdir)/wrap_runs.sh
+SH_LOG_COMPILER =
+
+TESTS = test.sh
+
+# build check targets but not invoke
+tests-local: all $(check_PROGRAMS)
 
 dist-hook:
 #	$(SED_I) -e "s|RELEASE_DATE|@LOGVOL_RELEASE_DATE@|g" $(distdir)/main.cpp

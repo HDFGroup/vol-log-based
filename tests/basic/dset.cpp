@@ -27,7 +27,6 @@ int main (int argc, char **argv) {
 	hid_t sid		= -1;  // Dataset space ID
 	hid_t msid		= -1;  // Memory space ID
 	hid_t faplid	= -1;
-	hid_t dxplid	= -1;
 	hid_t log_vlid	= -1;  // Logvol ID
 	hsize_t dims[2] = {N, M};
 	hsize_t mdims[2];

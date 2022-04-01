@@ -21,13 +21,11 @@ int main (int argc, char **argv) {
 	int i;
 	int rank, np;
 	const char *file_name;
-	int ndim;
 	hid_t fid		= -1;  // File ID
 	hid_t did		= -1;  // Dataset ID
 	hid_t sid		= -1;  // Dataset space ID
 	hid_t msid		= -1;  // Memory space ID
 	hid_t faplid	= -1;
-	hid_t dxplid	= -1;
 	hid_t log_vlid	= -1;  // Logvol ID
 	hsize_t dims[2] = {0, N};
 	hsize_t start[2], count[2];

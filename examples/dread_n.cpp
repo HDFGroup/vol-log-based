@@ -31,7 +31,6 @@ int main (int argc, char **argv) {
 	int i;
 	int rank, np;
 	const char *file_name;
-	int ndim;
 	hid_t fid;	 // File ID
 	hid_t did;	 // Dataset ID
 	hid_t sid;	 // Dataset space ID

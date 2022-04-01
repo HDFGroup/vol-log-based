@@ -35,7 +35,7 @@ jobs:
             tar -zxf hdf5-1.13.0.tar.gz
             cd hdf5-1.13.0
             ./configure --prefix=${WORKDIR}/.local/hdf5/1.13.0 --disable-fortran \
-                        --disable-tests --disable-tools \
+                        --disable-tests \
                         --enable-parallel --enable-build-mode=production CC=mpicc
             make -j 4 install
         - name: Install NetCDF
@@ -74,4 +74,5 @@ jobs:
             cat ${WORKDIR}/tests/external/openpmd/test-suite.log
             cat ${WORKDIR}/tests/external/hdf5_iotest/test-suite.log
             cat ${WORKDIR}/examples/hdf5_examples/test-suite.log
+            cat ${WORKDIR}/utils/h5lreplay/test.log
 

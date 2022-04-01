@@ -306,6 +306,7 @@ AC_ARG_WITH([hdf5],
         fi
         ;;
    esac
+   hdf5_bindir=${hdf5_root}/bin
    if test "x$hdf5_inc" != x ; then
       if test "x$CPPFLAGS" = x ; then
          CPPFLAGS="-I$hdf5_inc"
@@ -363,6 +364,18 @@ if test "x$hdf5_parallel_io" = xno ; then
      H5VL_log requires parallel I/O feature enabled in HDF5. Abort.
    -----------------------------------------------------------------------])
 fi
+
+if test "x${hdf5_bindir}" != x ; then
+   AC_PATH_PROG([h5diff_path],[h5diff],,[$hdf5_bindir])
+else
+   dnl Check netcdf4-config under $PATH
+   AC_PATH_PROG([h5diff_path],[h5diff])
+fi
+AC_ARG_VAR(TESTOUTDIR, [Output file directory for "make check" and "make ptest", @<:@default: ./@:>@])
+if test "x$h5diff_path" != x ; then
+   AC_SUBST(H5DIFF_PATH, [$h5diff_path])
+fi
+AM_CONDITIONAL(HAVE_H5DIFF, [test "x$h5diff_path" != x])
 
 # Check for NETCDF4
 have_netcdf4=no

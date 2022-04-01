@@ -22,7 +22,6 @@ int main (int argc, char **argv) {
 	hid_t gid	   = -1;  // Group ID
 	hid_t sgid	   = -1;  // Subgroup ID
 	hid_t faplid   = -1;
-	hid_t dxplid   = -1;
 	hid_t log_vlid = -1;  // Logvol ID
 
 	MPI_Init (&argc, &argv);
