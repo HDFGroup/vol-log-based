@@ -99,16 +99,18 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 								   MPI_Offset *dsteps) {
 	herr_t err = 0;
 	int i, j;
-	int nsel;					   // Nunmber of selections in ent
-	char *zbuf	   = NULL;		   // Buffer for decompressing metadata
-	bool zbufalloc = false;		   // Should we free zbuf
-	char *bufp	   = (char *)ent;  // Next byte to process in ent
-	MPI_Offset *bp;				   // Next 8 byte selection to process
-	hsize_t recnum;				   // Record number
-	int encdim;					   // number of dim encoded (ndim or ndim - 1)
-	int isrec;					   // Is a record entry
-	MPI_Offset bsize;			   // Size of decomrpessed selection
-	MPI_Offset esize;			   // Size of a decomrpessed selection block
+	int nsel;			// Nunmber of selections in ent
+	char *zbuf = NULL;	// Buffer for decompressing metadata
+#ifdef ENABLE_ZLIB
+	bool zbufalloc = false;	 // Should we free zbuf
+#endif
+	char *bufp = (char *)ent;  // Next byte to process in ent
+	MPI_Offset *bp;			   // Next 8 byte selection to process
+	hsize_t recnum;			   // Record number
+	int encdim;				   // number of dim encoded (ndim or ndim - 1)
+	int isrec;				   // Is a record entry
+	MPI_Offset bsize;		   // Size of decomrpessed selection
+	MPI_Offset esize;		   // Size of a decomrpessed selection block
 
 	// Get the header
 	block.hdr = *((H5VL_logi_meta_hdr *)bufp);
@@ -174,15 +176,19 @@ herr_t H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 			RET_ERR ("Comrpessed Metadata Support Not Enabled")
 #endif
 		} else {
-			zbuf	  = bufp;
+			zbuf = bufp;
+#ifdef ENABLE_ZLIB
 			zbufalloc = false;
+#endif
 		}
 	} else {
 		// Entries with single selection will never be comrpessed
-		nsel	  = 1;
-		bsize	  = sizeof (MPI_Offset) * 2 * encdim * nsel;
-		zbuf	  = bufp;
+		nsel  = 1;
+		bsize = sizeof (MPI_Offset) * 2 * encdim * nsel;
+		zbuf  = bufp;
+#ifdef ENABLE_ZLIB
 		zbufalloc = false;
+#endif
 	}
 
 	bp = (MPI_Offset *)zbuf;

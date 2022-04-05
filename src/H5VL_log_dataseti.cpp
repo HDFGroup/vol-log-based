@@ -443,7 +443,9 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 	H5S_sel_type mstype;		   // Memory space selection type
 	H5VL_log_req_type_t rtype;	   // Whether req is nonblocking
 	MPI_Datatype ptype = MPI_DATATYPE_NULL;	 // Packing type for non-contiguous memory buffer
-	int clen, inlen;						 // Compressed size; Size of data to be compressed
+#ifdef ENABLE_ZLIB
+	int clen, inlen;  // Compressed size; Size of data to be compressed
+#endif
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	H5VL_LOGI_PROFILING_TIMER_START;
