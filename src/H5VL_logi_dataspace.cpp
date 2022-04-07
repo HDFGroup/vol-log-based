@@ -182,11 +182,12 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 	LOG_VOL_ASSERT (ndim == this->ndim)
 
 	// Get selection type
-	if (dsid == H5S_ALL) {
+	if (dsid == H5S_ALL)
 		stype = H5S_SEL_ALL;
-	} else {
+	else if (dsid == H5S_NULL)
+		stype = H5S_SEL_NONE;
+	else
 		stype = H5Sget_select_type (dsid);
-	}
 
 	switch (stype) {
 		case H5S_SEL_HYPERSLABS: {
