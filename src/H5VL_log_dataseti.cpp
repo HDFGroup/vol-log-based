@@ -455,8 +455,10 @@ herr_t H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 		mstype = H5S_SEL_ALL;
 	else if (mem_space_id == H5S_CONTIG)
 		mstype = H5S_SEL_ALL;
-	else
+	else {
 		mstype = H5Sget_select_type (mem_space_id);
+		CHECK_ID(mstype)
+	}
 
 	// Sanity check
 	if (dsel->nsel == 0) goto err_out;	// No elements selected
@@ -695,8 +697,10 @@ herr_t H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 		mstype = H5S_SEL_ALL;
 	else if (mem_space_id == H5S_CONTIG)
 		mstype = H5S_SEL_ALL;
-	else
+	else {
 		mstype = H5Sget_select_type (mem_space_id);
+		CHECK_ID(mstype)
+	}
 
 	// Setting metadata;
 	r		   = new H5VL_log_rreq_t ();
