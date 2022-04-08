@@ -51,34 +51,38 @@ void *H5VL_log_group_create (void *obj,
 	H5VL_log_obj_t *gp;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	H5VL_LOGI_PROFILING_TIMER_START;
 
-	/* Check arguments */
-	H5VL_LOGI_CHECK_NAME (name);
-	if (loc_params->type != H5VL_OBJECT_BY_SELF)
-		ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
+	try {
+		H5VL_LOGI_PROFILING_TIMER_START;
 
-	gp = new H5VL_log_obj_t (op, H5I_GROUP);
+		/* Check arguments */
+		H5VL_LOGI_CHECK_NAME (name);
+		if (loc_params->type != H5VL_OBJECT_BY_SELF)
+			ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
 
-	if (req) {
-		rp	  = new H5VL_log_req_t ();
-		ureqp = &ureq;
-	} else {
-		ureqp = NULL;
+		gp = new H5VL_log_obj_t (op, H5I_GROUP);
+
+		if (req) {
+			rp	  = new H5VL_log_req_t ();
+			ureqp = &ureq;
+		} else {
+			ureqp = NULL;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_START;
+		gp->uo = H5VLgroup_create (op->uo, loc_params, op->uvlid, name, lcpl_id, gcpl_id, gapl_id,
+								   dxpl_id, ureqp);
+		CHECK_PTR (gp->uo)
+		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_CREATE);
+
+		if (req) {
+			rp->append (ureq);
+			*req = rp;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_STOP (gp->fp, TIMER_H5VL_LOG_GROUP_CREATE);
 	}
-
-	H5VL_LOGI_PROFILING_TIMER_START;
-	gp->uo = H5VLgroup_create (op->uo, loc_params, op->uvlid, name, lcpl_id, gcpl_id, gapl_id,
-							   dxpl_id, ureqp);
-	CHECK_PTR (gp->uo)
-	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_CREATE);
-
-	if (req) {
-		rp->append (ureq);
-		*req = rp;
-	}
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (gp->fp, TIMER_H5VL_LOG_GROUP_CREATE);
+	H5VL_LOGI_EXP_CATCH
 
 	return (void *)gp;
 
@@ -108,33 +112,37 @@ void *H5VL_log_group_open (void *obj,
 	H5VL_log_obj_t *gp;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	H5VL_LOGI_PROFILING_TIMER_START;
 
-	/* Check arguments */
-	H5VL_LOGI_CHECK_NAME (name);
-	if (loc_params->type != H5VL_OBJECT_BY_SELF)
-		ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
+	try {
+		H5VL_LOGI_PROFILING_TIMER_START;
 
-	gp = new H5VL_log_obj_t (op, H5I_GROUP);
+		/* Check arguments */
+		H5VL_LOGI_CHECK_NAME (name);
+		if (loc_params->type != H5VL_OBJECT_BY_SELF)
+			ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
 
-	if (req) {
-		rp	  = new H5VL_log_req_t ();
-		ureqp = &ureq;
-	} else {
-		ureqp = NULL;
+		gp = new H5VL_log_obj_t (op, H5I_GROUP);
+
+		if (req) {
+			rp	  = new H5VL_log_req_t ();
+			ureqp = &ureq;
+		} else {
+			ureqp = NULL;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_START;
+		gp->uo = H5VLgroup_open (op->uo, loc_params, op->uvlid, name, gapl_id, dxpl_id, ureqp);
+		CHECK_PTR (gp->uo)
+		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_OPEN);
+
+		if (req) {
+			rp->append (ureq);
+			*req = rp;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_STOP (gp->fp, TIMER_H5VL_LOG_GROUP_OPEN);
 	}
-
-	H5VL_LOGI_PROFILING_TIMER_START;
-	gp->uo = H5VLgroup_open (op->uo, loc_params, op->uvlid, name, gapl_id, dxpl_id, ureqp);
-	CHECK_PTR (gp->uo)
-	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_OPEN);
-
-	if (req) {
-		rp->append (ureq);
-		*req = rp;
-	}
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (gp->fp, TIMER_H5VL_LOG_GROUP_OPEN);
+	H5VL_LOGI_EXP_CATCH
 
 	return (void *)gp;
 err_out:;
@@ -157,25 +165,31 @@ herr_t H5VL_log_group_get (void *obj, H5VL_group_get_args_t *args, hid_t dxpl_id
 	herr_t err		   = 0;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	H5VL_LOGI_PROFILING_TIMER_START;
 
-	if (req) {
-		rp	  = new H5VL_log_req_t ();
-		ureqp = &ureq;
-	} else {
-		ureqp = NULL;
+	try {
+		H5VL_LOGI_PROFILING_TIMER_START;
+
+		if (req) {
+			rp	  = new H5VL_log_req_t ();
+			ureqp = &ureq;
+		} else {
+			ureqp = NULL;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_START;
+		err = H5VLgroup_get (op->uo, op->uvlid, args, dxpl_id, ureqp);
+		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_GET);
+
+		if (req) {
+			rp->append (ureq);
+			*req = rp;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_GROUP_GET);
 	}
+	H5VL_LOGI_EXP_CATCH_ERR
 
-	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VLgroup_get (op->uo, op->uvlid, args, dxpl_id, ureqp);
-	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_GET);
-
-	if (req) {
-		rp->append (ureq);
-		*req = rp;
-	}
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_GROUP_GET);
+err_out:;
 	return err;
 } /* end H5VL_log_group_get() */
 
@@ -197,25 +211,31 @@ herr_t H5VL_log_group_specific (void *obj,
 	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	H5VL_LOGI_PROFILING_TIMER_START;
 
-	if (req) {
-		rp	  = new H5VL_log_req_t ();
-		ureqp = &ureq;
-	} else {
-		ureqp = NULL;
+	try {
+		H5VL_LOGI_PROFILING_TIMER_START;
+
+		if (req) {
+			rp	  = new H5VL_log_req_t ();
+			ureqp = &ureq;
+		} else {
+			ureqp = NULL;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_START;
+		err = H5VLgroup_specific (op->uo, op->uvlid, args, dxpl_id, ureqp);
+		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_SPECIFIC);
+
+		if (req) {
+			rp->append (ureq);
+			*req = rp;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_GROUP_SPECIFIC);
 	}
+	H5VL_LOGI_EXP_CATCH_ERR
 
-	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VLgroup_specific (op->uo, op->uvlid, args, dxpl_id, ureqp);
-	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_SPECIFIC);
-
-	if (req) {
-		rp->append (ureq);
-		*req = rp;
-	}
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_GROUP_SPECIFIC);
+err_out:;
 	return err;
 } /* end H5VL_log_group_specific() */
 
@@ -234,25 +254,31 @@ herr_t H5VL_log_group_optional (void *obj, H5VL_optional_args_t *args, hid_t dxp
 	herr_t err		   = 0;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	H5VL_LOGI_PROFILING_TIMER_START;
 
-	if (req) {
-		rp	  = new H5VL_log_req_t ();
-		ureqp = &ureq;
-	} else {
-		ureqp = NULL;
+	try {
+		H5VL_LOGI_PROFILING_TIMER_START;
+
+		if (req) {
+			rp	  = new H5VL_log_req_t ();
+			ureqp = &ureq;
+		} else {
+			ureqp = NULL;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_START;
+		err = H5VLgroup_optional (op->uo, op->uvlid, args, dxpl_id, ureqp);
+		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_OPTIONAL);
+
+		if (req) {
+			rp->append (ureq);
+			*req = rp;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_GROUP_OPTIONAL);
 	}
+	H5VL_LOGI_EXP_CATCH_ERR
 
-	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VLgroup_optional (op->uo, op->uvlid, args, dxpl_id, ureqp);
-	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_OPTIONAL);
-
-	if (req) {
-		rp->append (ureq);
-		*req = rp;
-	}
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_GROUP_OPTIONAL);
+err_out:;
 	return err;
 } /* end H5VL_log_group_optional() */
 
@@ -271,28 +297,32 @@ herr_t H5VL_log_group_close (void *grp, hid_t dxpl_id, void **req) {
 	herr_t err		   = 0;
 	H5VL_log_req_t *rp;
 	void **ureqp, *ureq;
-	H5VL_LOGI_PROFILING_TIMER_START;
 
-	if (req) {
-		rp	  = new H5VL_log_req_t ();
-		ureqp = &ureq;
-	} else {
-		ureqp = NULL;
+	try {
+		H5VL_LOGI_PROFILING_TIMER_START;
+
+		if (req) {
+			rp	  = new H5VL_log_req_t ();
+			ureqp = &ureq;
+		} else {
+			ureqp = NULL;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_START;
+		err = H5VLgroup_close (gp->uo, gp->uvlid, dxpl_id, ureqp);
+		CHECK_ERR
+		H5VL_LOGI_PROFILING_TIMER_STOP (gp->fp, TIMER_H5VLGROUP_CLOSE);
+
+		if (req) {
+			rp->append (ureq);
+			*req = rp;
+		}
+
+		H5VL_LOGI_PROFILING_TIMER_STOP (gp->fp, TIMER_H5VL_LOG_GROUP_CLOSE);
+
+		delete gp;
 	}
-
-	H5VL_LOGI_PROFILING_TIMER_START;
-	err = H5VLgroup_close (gp->uo, gp->uvlid, dxpl_id, ureqp);
-	CHECK_ERR
-	H5VL_LOGI_PROFILING_TIMER_STOP (gp->fp, TIMER_H5VLGROUP_CLOSE);
-
-	if (req) {
-		rp->append (ureq);
-		*req = rp;
-	}
-
-	H5VL_LOGI_PROFILING_TIMER_STOP (gp->fp, TIMER_H5VL_LOG_GROUP_CLOSE);
-
-	delete gp;
+	H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
 	return err;
