@@ -26,9 +26,9 @@
 
 static int verbose;
 
-const char *hdf5sig="\211HDF\r\n\032\n";
+const char *hdf5sig = "\211HDF\r\n\032\n";
 
-const char ncsig[]	 = {'C', 'D', 'F'};
+const char ncsig[] = {'C', 'D', 'F'};
 
 inline std::string get_file_signature (std::string &path) {
 	hid_t fid		 = -1;	// File ID
@@ -65,9 +65,12 @@ inline std::string get_file_signature (std::string &path) {
 				ret = std::string ("HDF5");
 			}
 		} else if (!memcmp (ncsig, sig, 3)) {
-                             if (sig[3] == 5)  ret = std::string ("NetCDF classic");
-                        else if (sig[3] == 2)  ret = std::string ("NetCDF 64-bit offset");
-                        else if (sig[3] == 1)  ret = std::string ("NetCDF 64-bit data");
+			if (sig[3] == 5)
+				ret = std::string ("NetCDF classic");
+			else if (sig[3] == 2)
+				ret = std::string ("NetCDF 64-bit offset");
+			else if (sig[3] == 1)
+				ret = std::string ("NetCDF 64-bit data");
 
 		} else {
 			ret = std::string ("unknown");
@@ -84,14 +87,14 @@ err_out:;
 
 /*----< usage() >------------------------------------------------------------*/
 static void usage (char *argv0) {
-    char *help = (char*)"Usage: %s [OPTION] FILE\n\
+	char *help = (char*)"Usage: %s [OPTION] FILE\n\
        [-h] Print this help message\n\
        [-v] Verbose mode\n\
        [-H] Dump header metadata only\n\
        [-k] Print the kind of file, one of 'HDF5', 'HDF5-LogVOL', 'NetCDF-4',\n\
             'NetCDF classic', 'NetCDF 64-bit offset', or 'NetCDF 64-bit data'\n\
        FILE: Input file name\n";
-    fprintf (stderr, help, argv0);
+	fprintf (stderr, help, argv0);
 }
 
 int main (int argc, char *argv[]) {
@@ -108,7 +111,7 @@ int main (int argc, char *argv[]) {
 	MPI_Comm_size (MPI_COMM_WORLD, &np);
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
-        verbose = 0;
+	verbose = 0;
 
 	if (np > 1) {
 		if (rank == 0) { std::cout << "Warning: h5ldump is sequential" << std::endl; }
@@ -129,14 +132,14 @@ int main (int argc, char *argv[]) {
 				break;
 			case 'h':
 			default:
-				if (rank == 0) usage((char*)"h5ldump");
+				if (rank == 0) usage ((char *)"h5ldump");
 				err = -1;
 				goto err_out;
 		}
 	}
 
 	if (optind >= argc || argv[optind] == NULL) { /* input file is mandatory */
-		if (rank == 0) usage((char*)"h5ldump");
+		if (rank == 0) usage ((char *)"h5ldump");
 		err = -1;
 		goto err_out;
 	}
@@ -164,18 +167,21 @@ int main (int argc, char *argv[]) {
 		}
 	}
 
-	// Get dataaset metadata
-	err = h5ldump_visit (inpath, dsets);
-	CHECK_ERR
+	try {
+		// Get dataaset metadata
+		err = h5ldump_visit (inpath, dsets);
+		CHECK_ERR
 
-	// Dump the logs
-	err = h5ldump_file (inpath, dsets, dumpdata, 0);
-	CHECK_ERR
+		// Dump the logs
+		err = h5ldump_file (inpath, dsets, dumpdata, 0);
+		CHECK_ERR
 
-	// Cleanup dataset contec
-	for (auto &d : dsets) {
-		if (d.dtype != -1) { H5Tclose (d.dtype); }
+		// Cleanup dataset contec
+		for (auto &d : dsets) {
+			if (d.dtype != -1) { H5Tclose (d.dtype); }
+		}
 	}
+	H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
 	return err == 0 ? 0 : -1;

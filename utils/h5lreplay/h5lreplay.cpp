@@ -79,10 +79,14 @@ int main (int argc, char *argv[]) {
 		}
 	}
 	MPI_Bcast (&err, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	CHECK_ERR
 
-	err = h5lreplay_core (inpath, outpath, rank, np);
-	CHECK_ERR
+	try {
+		CHECK_ERR
+
+		err = h5lreplay_core (inpath, outpath, rank, np);
+		CHECK_ERR
+	}
+	H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
 	return err == 0 ? 0 : -1;
