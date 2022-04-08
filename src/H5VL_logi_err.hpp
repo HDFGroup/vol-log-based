@@ -11,6 +11,10 @@
 #endif
 #include <cstdlib>
 #include <cstring>
+#include <exception>
+#include <functional>
+#include <iostream>
+#include <string>
 //
 #include <H5Epublic.h>
 //
@@ -22,6 +26,41 @@
 #else
 #define LOG_VOL_ASSERT(A) \
 	{}
+#endif
+
+#ifdef LOGVOL_DEBUG
+#define H5VL_LOGI_EXP_CATCH                    \
+	catch (H5VL_logi_exception & e) {          \
+		std::cout << e.what () << std::endl;   \
+		if (e.is_hdf5) { H5Eprint1 (stdout); } \
+		goto err_out;                          \
+	}                                          \
+	catch (std::exception & e) {               \
+		std::cout << e.what () << std::endl;   \
+		goto err_out;                          \
+	}
+#define H5VL_LOGI_EXP_CATCH_ERR                \
+	catch (H5VL_logi_exception & e) {          \
+		std::cout << e.what () << std::endl;   \
+		if (e.is_hdf5) { H5Eprint1 (stdout); } \
+		err = -1;                              \
+		goto err_out;                          \
+	}                                          \
+	catch (std::exception & e) {               \
+		std::cout << e.what () << std::endl;   \
+		err = -1;                              \
+		goto err_out;                          \
+	}
+#else
+#define H5VL_LOGI_EXP_CATCH      \
+	catch (std::exception & e) { \
+		goto err_out;            \
+	}
+#define H5VL_LOGI_EXP_CATCH_ERR  \
+	catch (std::exception & e) { \
+		err = -1;                \
+		goto err_out;            \
+	}
 #endif
 
 inline void H5VL_logi_print_err (int line, char *file, char *msg, bool h5err = false) {
@@ -93,3 +132,26 @@ inline bool H5VL_logi_debug_verbose () {
 	{                                                                                 \
 		if (!name || (name[0] == '_' && name[1] == '_')) { ERR_OUT ("Invalid name") } \
 	}
+
+class H5VL_logi_exception : std::exception {
+	std::string file;
+	int line;
+	std::string func;
+	std::string msg;
+
+   public:
+	bool is_hdf5;
+	H5VL_logi_exception (const char *file, int line, const char *func, const char *msg);
+	H5VL_logi_exception (
+		const char *file, int line, const char *func, std::string msg, bool is_hdf5 = false);
+	std::string what ();
+};
+
+class H5VL_logi_err_finally {
+   public:
+	H5VL_logi_err_finally (std::function<void ()> f) : func (f) {}
+	~H5VL_logi_err_finally (void) { func (); }
+
+   private:
+	std::function<void ()> func;
+};
