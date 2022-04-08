@@ -23,11 +23,9 @@ int main (int argc, char **argv) {
     hid_t fid       = -1;  // File ID
     hid_t did       = -1;  // Dataset ID
     hid_t sid       = -1;  // Dataset space ID
-    hid_t msid      = -1;  // Memory space ID
     hid_t faplid    = -1;
     hid_t log_vlid  = -1;  // Logvol ID
-    hsize_t dims[2] = {0, N};
-    hsize_t start[2], count[2];
+    hsize_t dims[1] = {N};
     int buf[N];
 
     MPI_Init (&argc, &argv);
@@ -60,36 +58,22 @@ int main (int argc, char **argv) {
 
     // Create datasets
     dims[0] = np;
-    sid     = H5Screate_simple (2, dims, dims);
+    sid     = H5Screate_simple (1, dims, NULL);
     CHECK_ERR (sid);
     did = H5Dcreate2 (fid, "D", H5T_STD_I32LE, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     CHECK_ERR (did)
 
-    // Write to dataset
-    for (i = 0; i < N; i++) { buf[i] = rank + i; }
-    start[0] = rank;
-    start[1] = 0;
-    count[0] = 1;
-    count[1] = N;
-    err = H5Sselect_hyperslab (sid, H5S_SELECT_SET, start, NULL, count, NULL);
-    CHECK_ERR (err)
-    msid = H5Screate_simple (1, dims + 1, dims + 1);
-    CHECK_ERR (msid);
-    err = H5Dwrite (did, H5T_NATIVE_INT, msid, sid, H5P_DEFAULT, buf);
-    CHECK_ERR (err)
-
+    // Have only one rank write the data
     if (rank == 0) {
+        err = H5Dwrite(did, H5T_NATIVE_INT, sid, sid, H5P_DEFAULT, buf);
+    } else {
         hid_t null_space = H5Screate(H5S_NULL);
         CHECK_ERR (null_space);
         err = H5Dwrite (did, H5T_NATIVE_INT, null_space, null_space, H5P_DEFAULT, NULL);
         CHECK_ERR (err)
         err = H5Sclose(null_space);
         CHECK_ERR (err)
-    } else {
-        err = H5Dwrite (did, H5T_NATIVE_INT, msid, sid, H5P_DEFAULT, buf);
-        CHECK_ERR (err)
     }
-
     err = H5Sclose (sid);
     CHECK_ERR (err)
     sid = -1;
@@ -105,7 +89,6 @@ int main (int argc, char **argv) {
     faplid = -1;
 
 err_out:
-    if (msid >= 0) H5Sclose (msid);
     if (sid >= 0) H5Sclose (sid);
     if (did >= 0) H5Dclose (did);
     if (fid >= 0) H5Fclose (fid);

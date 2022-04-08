@@ -169,9 +169,20 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 	int old_nreq;		 // Number of non-interleaving sections in previous processed groups
 	int nbreq;			 // Number of non-interleaving sections in current block
 	hssize_t nblock;	 // Number of blocks in the selection (before breaking interleaving blocks)
-	H5S_sel_type stype;	 // Tpye of selection (block list, point list ...)
+	H5S_sel_type stype;  // Type of selection (H5S_SEL_ERROR,H5S_SEL_NONE,H5S_SEL_POINTS,H5S_SEL_HYPERSLABS,H5S_SEL_ALL,H5S_SEL_N)
 	hsize_t **hstarts = NULL, **hends;	// Output buffer of H5Sget_select_hyper_nblocks
 	int *group		  = NULL;			// blocks with the same group number are interleaved
+        hssize_t nelem; // number of elements in a dataspace
+
+        nelem = H5Sget_simple_extent_npoints(dsid);
+
+        // Check if dataspace has an empty selection (H5S_NULL)
+        if (nelem == 0) {
+          this->ndim = 0;
+          this->nsel = 0;
+          this->alloc (0);
+          goto err_out;
+        }
 
 	// Get space dim
 	ndim = H5Sget_simple_extent_ndims (dsid);
@@ -180,24 +191,6 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 	CHECK_PTR (this->dims)
 	ndim = H5Sget_simple_extent_dims (dsid, this->dims, NULL);
 	LOG_VOL_ASSERT (ndim == this->ndim)
-
-	// is the space simple and NULL?
-	if (H5Sis_simple(dsid)) {
-		H5S_class_t ctype = H5Sget_simple_extent_type(dsid);
-		CHECK_ID(ctype)
-
-		if (ctype == H5S_NULL) {
-			this->nsel = 0;
-			this->alloc (0);
-			goto err_out;
-		}
-		else if (ctype == H5S_SCALAR) {
-			/* TODO */
-		}
-		else if (ctype == H5S_SIMPLE) {
-			/* TODO */
-		}
-	}
 
 	// Get selection type
 	if (dsid == H5S_ALL)
