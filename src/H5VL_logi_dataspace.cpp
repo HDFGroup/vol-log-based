@@ -181,13 +181,31 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 	ndim = H5Sget_simple_extent_dims (dsid, this->dims, NULL);
 	LOG_VOL_ASSERT (ndim == this->ndim)
 
+	// is the space simple and NULL?
+	if (H5Sis_simple(dsid)) {
+		H5S_class_t ctype = H5Sget_simple_extent_type(dsid);
+		CHECK_ID(ctype)
+
+		if (ctype == H5S_NULL) {
+			this->nsel = 0;
+			this->alloc (0);
+			goto err_out;
+		}
+		else if (ctype == H5S_SCALAR) {
+			/* TODO */
+		}
+		else if (ctype == H5S_SIMPLE) {
+			/* TODO */
+		}
+	}
+
 	// Get selection type
 	if (dsid == H5S_ALL)
 		stype = H5S_SEL_ALL;
-	else if (dsid == H5S_NULL)
-		stype = H5S_SEL_NONE;
-	else
+	else {
 		stype = H5Sget_select_type (dsid);
+		CHECK_ID(stype)
+	}
 
 	switch (stype) {
 		case H5S_SEL_HYPERSLABS: {
