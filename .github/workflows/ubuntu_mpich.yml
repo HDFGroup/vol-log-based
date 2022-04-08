@@ -25,6 +25,7 @@ jobs:
             sudo apt-get install automake autoconf libtool libtool-bin m4
             # mpi
             sudo apt-get install mpich
+            mpicc -v
             # zlib
             sudo apt-get install zlib1g-dev
         - name: Install HDF5
