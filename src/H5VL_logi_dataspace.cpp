@@ -173,6 +173,16 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 	hsize_t **hstarts = NULL, **hends;	// Output buffer of H5Sget_select_hyper_nblocks
 	int *group		  = NULL;			// blocks with the same group number are interleaved
 
+	// is the file space created by H5S_NULL?
+	H5S_class_t ctype = H5Sget_simple_extent_type(dsid);
+	CHECK_ID(ctype)
+	if (ctype == H5S_NULL) {
+		this->nsel = 0;
+		this->alloc (0);
+		this->dims = NULL;
+		return;
+	}
+
 	// Get space dim
 	ndim = H5Sget_simple_extent_ndims (dsid);
 	CHECK_ID (ndim)
@@ -180,24 +190,6 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 	CHECK_PTR (this->dims)
 	ndim = H5Sget_simple_extent_dims (dsid, this->dims, NULL);
 	LOG_VOL_ASSERT (ndim == this->ndim)
-
-	// is the space simple and NULL?
-	if (H5Sis_simple(dsid)) {
-		H5S_class_t ctype = H5Sget_simple_extent_type(dsid);
-		CHECK_ID(ctype)
-
-		if (ctype == H5S_NULL) {
-			this->nsel = 0;
-			this->alloc (0);
-			goto err_out;
-		}
-		else if (ctype == H5S_SCALAR) {
-			/* TODO */
-		}
-		else if (ctype == H5S_SIMPLE) {
-			/* TODO */
-		}
-	}
 
 	// Get selection type
 	if (dsid == H5S_ALL)
@@ -387,6 +379,13 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 		case H5S_SEL_ALL: {
 			hsize_t dims[32];
 
+			/* check if file space is created from H5S_NULL */
+			if (0 == H5Sget_simple_extent_npoints(dsid)) {
+				this->nsel = 0;
+				this->alloc (0);
+				goto err_out;
+                        }
+
 			ndim = H5Sget_simple_extent_dims (dsid, dims, NULL);
 			CHECK_ID (ndim)
 
@@ -407,7 +406,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 			ERR_OUT ("Unsupported selection type");
 	}
 
-err_out:;
+err_out:
 	if (hstarts) {
 		free (hstarts[0]);
 		free (hstarts);
