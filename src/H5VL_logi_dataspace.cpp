@@ -173,16 +173,6 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 	hsize_t **hstarts = NULL, **hends;	// Output buffer of H5Sget_select_hyper_nblocks
 	int *group		  = NULL;			// blocks with the same group number are interleaved
 
-	// is the file space created by H5S_NULL?
-	H5S_class_t ctype = H5Sget_simple_extent_type(dsid);
-	CHECK_ID(ctype)
-	if (ctype == H5S_NULL) {
-		this->nsel = 0;
-		this->alloc (0);
-		this->dims = NULL;
-		return;
-	}
-
 	// Get space dim
 	ndim = H5Sget_simple_extent_ndims (dsid);
 	CHECK_ID (ndim)
