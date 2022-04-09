@@ -34,7 +34,7 @@ class H5VL_log_selections {
 	H5VL_log_selections &operator= (H5VL_log_selections &rhs);
 	bool operator== (H5VL_log_selections &rhs);
 
-	herr_t get_mpi_type (size_t esize,
+	void get_mpi_type (size_t esize,
 						 MPI_Datatype *type);  // Calculate a MPI datatype describing the selection
 	hsize_t get_sel_size ();				   // Get number of elements in the selection
 	hsize_t get_sel_size (int i);			   // Get number of elements in the i-th selected block

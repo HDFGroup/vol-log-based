@@ -24,11 +24,11 @@
 #include "H5VL_logi_util.hpp"
 #include "h5ldump.hpp"
 
-herr_t h5ldump_mdset (hid_t lgid,
-					  std::string name,
-					  std::vector<H5VL_log_dset_info_t> &dsets,
-					  MPI_File fh,
-					  int indent) {
+void h5ldump_mdset (hid_t lgid,
+					std::string name,
+					std::vector<H5VL_log_dset_info_t> &dsets,
+					MPI_File fh,
+					int indent) {
 	herr_t err = 0;
 	int i;
 	hid_t did  = -1;				// Metadata dataset ID
@@ -39,6 +39,9 @@ herr_t h5ldump_mdset (hid_t lgid,
 	MPI_Offset *offs = NULL;		// Offset of each metadata section
 	uint8_t *buf;					// Metadata buffer
 	size_t bsize = 0;				// Size of metadata buffer
+	H5VL_logi_err_finally finally ([&] () -> void {
+		if (did >= 0) { H5Dclose (did); }
+	});
 
 	did = H5Dopen2 (lgid, name.c_str (), H5P_DEFAULT);
 	CHECK_ID (did)
@@ -88,15 +91,10 @@ herr_t h5ldump_mdset (hid_t lgid,
 		CHECK_ERR
 
 		std::cout << std::string (indent, ' ') << "Metadata section " << i << ": " << std::endl;
-		err = h5ldump_mdsec (buf, count, dsets, fh, indent + 4);
-		CHECK_ERR
+		h5ldump_mdsec (buf, count, dsets, fh, indent + 4);
 		// std::cout << std::string (indent, ' ') << "End metadata section " << i << ": " <<
 		// std::endl;
 	}
-
-err_out:;
-	if (did >= 0) { H5Dclose (did); }
-	return err;
 }
 
 template <typename T>
@@ -171,7 +169,7 @@ inline void h5ldump_print_data (uint8_t *buf, size_t nelem, size_t esize, hid_t 
 	}
 }
 
-herr_t h5ldump_mdsec (
+void h5ldump_mdsec (
 	uint8_t *buf, size_t len, std::vector<H5VL_log_dset_info_t> &dsets, MPI_File fh, int indent) {
 	herr_t err = 0;
 	int mpierr;
@@ -186,6 +184,9 @@ herr_t h5ldump_mdsec (
 	size_t dbsize = 0;	   // Size of dbuf
 	size_t bsize  = 0;	   // Size of a selection block
 	MPI_Status stat;
+	H5VL_logi_err_finally finally ([&] () -> void {
+		if (dbuf) { free (dbuf); }
+	});
 
 	while (bufp < buf + len) {
 		hdr = (H5VL_logi_meta_hdr *)bufp;
@@ -196,11 +197,9 @@ herr_t h5ldump_mdsec (
 
 		// Have to parse all entries for reference purpose
 		if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-			err = H5VL_logi_metaentry_ref_decode (dsets[hdr->did], bufp, block, bcache);
-			CHECK_ERR
+			H5VL_logi_metaentry_ref_decode (dsets[hdr->did], bufp, block, bcache);
 		} else {
-			err = H5VL_logi_metaentry_decode (dsets[hdr->did], bufp, block, dsteps);
-			CHECK_ERR
+			H5VL_logi_metaentry_decode (dsets[hdr->did], bufp, block, dsteps);
 
 			// Insert to cache
 			bcache[(char *)bufp] = block.sels;
@@ -231,9 +230,8 @@ herr_t h5ldump_mdsec (
 				uint8_t *tbuf;
 				int csize;
 
-				err = H5VL_logi_unfilter (dsets[block.hdr.did].filters, dbuf, block.hdr.fsize,
-										  (void **)&tbuf, &csize);
-				CHECK_ERR
+				H5VL_logi_unfilter (dsets[block.hdr.did].filters, dbuf, block.hdr.fsize,
+									(void **)&tbuf, &csize);
 
 				memcpy (dbuf, tbuf, csize);
 				free (tbuf);
@@ -295,8 +293,4 @@ herr_t h5ldump_mdsec (
 
 		bufp += hdr->meta_size;
 	}
-
-err_out:;
-	if (dbuf) { free (dbuf); }
-	return err;
 }

@@ -18,8 +18,7 @@
 /* If out_len is large enough, compress the data at in and save it to out. out_len is set to actual
  * compressed size If out_len is NULL, we assume out is large enough for compressed data
  */
-herr_t H5VL_log_zip_compress (void *in, int in_len, void *out, int *out_len) {
-	herr_t err = 0;
+bool H5VL_log_zip_compress (void *in, int in_len, void *out, int *out_len) {
 	int zerr;
 
 	// zlib struct
@@ -42,28 +41,24 @@ herr_t H5VL_log_zip_compress (void *in, int in_len, void *out, int *out_len) {
 	zerr = deflate (&defstream, Z_FINISH);
 	if (zerr != Z_STREAM_END) {
 		if (zerr < 0) { ERR_OUT ("deflate fail") }
-		return -1;
 	}
 	zerr = deflateEnd (&defstream);
 	if (zerr != Z_OK) { ERR_OUT ("deflateEnd fail") }
 
 	// If buffer not large enough
-	if (defstream.avail_in > 0) { return -1; }
+	if (defstream.avail_in > 0) { return false; }
 
 	// Size of comrpessed data
 	if (out_len != NULL) { *out_len = defstream.total_out; }
 
-err_out:;
-
-	return err;
+	return true;
 }
 
 /* Compress the data at in and save it to a newly allocated buffer at out. out_len is set to actual
  * compressed data size The caller is responsible to free the buffer If out_len is not NULL, it will
  * be set to buffer size allocated
  */
-herr_t H5VL_log_zip_compress_alloc (void *in, int in_len, void **out, int *out_len) {
-	herr_t err = 0;
+void H5VL_log_zip_compress_alloc (void *in, int in_len, void **out, int *out_len) {
 	int zerr;
 	int bsize;	// Start by 1/8 of the in_len
 	char *buf;
@@ -114,17 +109,12 @@ herr_t H5VL_log_zip_compress_alloc (void *in, int in_len, void **out, int *out_l
 
 	// Compressed data
 	*out = buf;
-
-err_out:;
-
-	return err;
 }
 
 /* If out_len is large enough, decompress the data at in and save it to out. out_len is set to
  * actual decompressed size If out_len is NULL, we assume out is large enough for decompressed data
  */
-herr_t H5VL_log_zip_decompress (void *in, int in_len, void *out, int *out_len) {
-	herr_t err = 0;
+bool H5VL_log_zip_decompress (void *in, int in_len, void *out, int *out_len) {
 	int zerr;
 
 	// zlib struct
@@ -150,22 +140,19 @@ herr_t H5VL_log_zip_decompress (void *in, int in_len, void *out, int *out_len) {
 	if (zerr != Z_OK) { ERR_OUT ("inflateEnd fail") }
 
 	// If buffer not large enough
-	if (infstream.avail_in > 0) { ERR_OUT ("buffer too small") }
+	if (infstream.avail_in > 0) { return false; }
 
 	// Size of decomrpessed data
 	if (out_len != NULL) { *out_len = infstream.total_out; }
 
-err_out:;
-
-	return err;
+	return true;
 }
 
 /* Decompress the data at in and save it to a newly allocated buffer at out. out_len is set to
  * actual decompressed data size The caller is responsible to free the buffer If out_len is not
  * NULL, it will be set to buffer size allocated
  */
-herr_t H5VL_log_zip_decompress_alloc (void *in, int in_len, void **out, int *out_len) {
-	herr_t err = 0;
+void H5VL_log_zip_decompress_alloc (void *in, int in_len, void **out, int *out_len) {
 	int zerr;
 	int bsize = in_len << 1;  // Start by 2 times of the in_len
 	char *buf;
@@ -214,8 +201,4 @@ herr_t H5VL_log_zip_decompress_alloc (void *in, int in_len, void **out, int *out
 
 	// Compressed data
 	*out = buf;
-
-err_out:;
-
-	return err;
 }

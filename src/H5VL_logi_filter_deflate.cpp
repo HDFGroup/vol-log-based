@@ -16,9 +16,8 @@
 #include "H5VL_logi_filter.hpp"
 #include "H5VL_logi_filter_deflate.hpp"
 
-herr_t H5VL_logi_filter_deflate (
+void H5VL_logi_filter_deflate (
 	H5VL_log_filter_t &fp, void *in, int in_len, void *out, int *out_len) {
-	herr_t err = 0;
 	int zerr;
 
 	// zlib struct
@@ -46,18 +45,14 @@ herr_t H5VL_logi_filter_deflate (
 
 	// Size of comrpessed data
 	*out_len = defstream.total_out;
-
-err_out:;
-	return err;
 }
 
 /* Compress the data at in and save it to a newly allocated buffer at out. out_len is set to actual
  * compressed data size The caller is responsible to free the buffer If out_len is not NULL, it will
  * be set to buffer size allocated
  */
-herr_t H5VL_logi_filter_deflate_alloc (
+void H5VL_logi_filter_deflate_alloc (
 	H5VL_log_filter_t &fp, void *in, int in_len, void **out, int *out_len) {
-	herr_t err = 0;
 	int zerr;
 	unsigned long bsize;  // Start by 1/8 of the in_len
 	char *buf;
@@ -98,17 +93,13 @@ herr_t H5VL_logi_filter_deflate_alloc (
 	// Size and data
 	*out_len = defstream.total_out;
 	*out	 = buf;
-
-err_out:;
-	return err;
 }
 
 /* If out_len is large enough, decompress the data at in and save it to out. out_len is set to
  * actual decompressed size If out_len is NULL, we assume out is large enough for decompressed data
  */
-herr_t H5VL_logi_filter_inflate (
+void H5VL_logi_filter_inflate (
 	H5VL_log_filter_t &fp, void *in, int in_len, void *out, int *out_len) {
-	herr_t err = 0;
 	int zerr;
 
 	// zlib struct
@@ -134,18 +125,14 @@ herr_t H5VL_logi_filter_inflate (
 
 	// Size of decomrpessed data
 	*out_len = infstream.total_out;
-
-err_out:;
-	return err;
 }
 
 /* Decompress the data at in and save it to a newly allocated buffer at out. out_len is set to
  * actual decompressed data size The caller is responsible to free the buffer If out_len is not
  * NULL, it will be set to buffer size allocated
  */
-herr_t H5VL_logi_filter_inflate_alloc (
+void H5VL_logi_filter_inflate_alloc (
 	H5VL_log_filter_t &fp, void *in, int in_len, void **out, int *out_len) {
-	herr_t err = 0;
 	int zerr;
 	int bsize;
 	char *buf;
@@ -201,8 +188,4 @@ herr_t H5VL_logi_filter_inflate_alloc (
 	// Size and data
 	*out_len = infstream.total_out;
 	*out	 = buf;
-
-err_out:;
-
-	return err;
 }

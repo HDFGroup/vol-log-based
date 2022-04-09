@@ -58,8 +58,6 @@ inline hid_t H5VL_logi_dataset_get_type (H5VL_log_file_t *fp,
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_GET);
 	CHECK_ERR
 
-err_out:;
-	if (err) { args.args.get_type.type_id = -1; }
 	return args.args.get_type.type_id;
 }
 
@@ -77,8 +75,6 @@ inline hid_t H5VL_logi_dataset_get_space (H5VL_log_file_t *fp,
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_GET);
 	CHECK_ERR
 
-err_out:;
-	if (err) { args.args.get_space.space_id = -1; }
 	return args.args.get_space.space_id;
 }
 
@@ -88,6 +84,14 @@ inline hid_t H5VL_logi_dataset_get_dcpl (H5VL_log_file_t *fp,
 										 hid_t dxpl_id) {
 	herr_t err = 0;
 	H5VL_dataset_get_args_t args;
+	H5VL_logi_err_finally finally ([&err, &args] () -> void {
+		if (err) {
+			if (args.args.get_dcpl.dcpl_id >= 0) {
+				H5Pclose (args.args.get_dcpl.dcpl_id);
+				args.args.get_dcpl.dcpl_id = -1;
+			}
+		}
+	});
 
 	args.op_type = H5VL_DATASET_GET_DCPL;
 
@@ -96,17 +100,10 @@ inline hid_t H5VL_logi_dataset_get_dcpl (H5VL_log_file_t *fp,
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_GET);
 	CHECK_ERR
 
-err_out:;
-	if (err) {
-		if (args.args.get_dcpl.dcpl_id >= 0) {
-			H5Pclose (args.args.get_dcpl.dcpl_id);
-			args.args.get_dcpl.dcpl_id = -1;
-		}
-	}
 	return args.args.get_dcpl.dcpl_id;
 }
 
-inline herr_t H5VL_logi_dataset_get_foff (
+inline void H5VL_logi_dataset_get_foff (
 	H5VL_log_file_t *fp, void *obj, hid_t connector_id, hid_t dxpl_id, haddr_t *off) {
 	herr_t err = 0;
 	H5VL_optional_args_t args;
@@ -121,9 +118,6 @@ inline herr_t H5VL_logi_dataset_get_foff (
 	err = H5VLdataset_optional (obj, connector_id, &args, dxpl_id, NULL);
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
 	CHECK_ERR
-
-err_out:;
-	return err;
 }
 
 inline hid_t H5VL_logi_attr_get_space (H5VL_log_file_t *fp,
@@ -132,6 +126,14 @@ inline hid_t H5VL_logi_attr_get_space (H5VL_log_file_t *fp,
 									   hid_t dxpl_id) {
 	herr_t err = 0;
 	H5VL_attr_get_args_t args;
+	H5VL_logi_err_finally finally ([&err, &args] () -> void {
+		if (err) {
+			if (args.args.get_space.space_id >= 0) {
+				H5Pclose (args.args.get_space.space_id);
+				args.args.get_space.space_id = -1;
+			}
+		}
+	});
 
 	args.op_type = H5VL_ATTR_GET_SPACE;
 
@@ -140,20 +142,13 @@ inline hid_t H5VL_logi_attr_get_space (H5VL_log_file_t *fp,
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLATT_GET);
 	CHECK_ERR
 
-err_out:;
-	if (err) {
-		if (args.args.get_space.space_id >= 0) {
-			H5Pclose (args.args.get_space.space_id);
-			args.args.get_space.space_id = -1;
-		}
-	}
 	return args.args.get_space.space_id;
 }
 
-inline herr_t H5VL_logi_file_flush (H5VL_log_file_t *fp,
-								   void *obj,
-								   hid_t connector_id,
-								   hid_t dxpl_id) {
+inline void H5VL_logi_file_flush (H5VL_log_file_t *fp,
+								  void *obj,
+								  hid_t connector_id,
+								  hid_t dxpl_id) {
 	herr_t err = 0;
 	H5VL_file_specific_args_t args;
 
@@ -165,8 +160,4 @@ inline herr_t H5VL_logi_file_flush (H5VL_log_file_t *fp,
 	err = H5VLfile_specific (obj, connector_id, &args, dxpl_id, NULL);
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_SPECIFIC);
 	CHECK_ERR
-
-err_out:;
-
-	return err;
 }

@@ -26,23 +26,19 @@ H5VL_logi_array_idx_t::H5VL_logi_array_idx_t (H5VL_log_file_t *fp, size_t size)
 	this->reserve (size);
 }
 
-herr_t H5VL_logi_array_idx_t::clear () {
+void H5VL_logi_array_idx_t::clear () {
 	for (auto &i : this->idxs) { i.clear (); }
-	return 0;
 }
 
-herr_t H5VL_logi_array_idx_t::reserve (size_t size) {
+void H5VL_logi_array_idx_t::reserve (size_t size) {
 	if (this->idxs.size () < size) { this->idxs.resize (size); }
-	return 0;
 }
 
-herr_t H5VL_logi_array_idx_t::insert (H5VL_logi_metaentry_t &meta) {
+void H5VL_logi_array_idx_t::insert (H5VL_logi_metaentry_t &meta) {
 	this->idxs[meta.hdr.did].push_back (meta);
-	return 0;
 }
 
-herr_t H5VL_logi_array_idx_t::parse_block (char *block, size_t size) {
-	herr_t err = 0;
+void H5VL_logi_array_idx_t::parse_block (char *block, size_t size) {
 	char *bufp = block;											// Buffer for raw metadata
 	H5VL_logi_metaentry_t entry;								// Buffer of decoded metadata entry
 	std::map<char *, std::vector<H5VL_logi_metasel_t>> bcache;	// Cache for linked metadata entry
@@ -57,12 +53,10 @@ herr_t H5VL_logi_array_idx_t::parse_block (char *block, size_t size) {
 
 			// Have to parse all entries for reference purpose
 			if (hdr_tmp->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
-				err = H5VL_logi_metaentry_ref_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, entry,
-													  bcache);
-				CHECK_ERR
+				H5VL_logi_metaentry_ref_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, entry,
+												bcache);
 			} else {
-				err = H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, entry);
-				CHECK_ERR
+				H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, entry);
 
 				// Insert to cache
 				bcache[bufp] = entry.sels;
@@ -80,16 +74,14 @@ herr_t H5VL_logi_array_idx_t::parse_block (char *block, size_t size) {
 			H5VL_logi_lreverse ((uint32_t *)bufp, (uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
 #endif
 
-			err = H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, entry);
-			CHECK_ERR
+			H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, entry);
+
 			bufp += hdr_tmp->meta_size;
 
 			// Insert to the index
 			fp->idx->insert (entry);
 		}
 	}
-err_out:;
-	return 0;
 }
 
 static bool intersect (
@@ -106,9 +98,8 @@ static bool intersect (
 	return true;
 }
 
-herr_t H5VL_logi_array_idx_t::search (H5VL_log_rreq_t *req,
-									  std::vector<H5VL_log_idx_search_ret_t> &ret) {
-	herr_t err = 0;
+void H5VL_logi_array_idx_t::search (H5VL_log_rreq_t *req,
+									std::vector<H5VL_log_idx_search_ret_t> &ret) {
 	int i, j;
 	size_t soff;
 	hsize_t os[H5S_MAX_RANK], oc[H5S_MAX_RANK];
@@ -139,6 +130,4 @@ herr_t H5VL_logi_array_idx_t::search (H5VL_log_rreq_t *req,
 		}
 		soff += req->sels->get_sel_size (i) * req->esize;
 	}
-
-	return err;
 }

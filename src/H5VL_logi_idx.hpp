@@ -47,13 +47,13 @@ class H5VL_logi_idx_t {
    public:
 	H5VL_logi_idx_t (H5VL_log_file_t *fp);
 	virtual ~H5VL_logi_idx_t ()			 = default;
-	virtual herr_t clear ()				 = 0;  // Remove all entries
-	virtual herr_t reserve (size_t size) = 0;  // Make space for at least size datasets
-	virtual herr_t insert (H5VL_logi_metaentry_t &meta) = 0;  // Add an entry
-	virtual herr_t parse_block (
+	virtual void clear ()				 = 0;  // Remove all entries
+	virtual void reserve (size_t size) = 0;  // Make space for at least size datasets
+	virtual void insert (H5VL_logi_metaentry_t &meta) = 0;  // Add an entry
+	virtual void parse_block (
 		char *block,
 		size_t size) = 0;  // Parse a block of encoded metadata and insert all entries
-	virtual herr_t search (
+	virtual void search (
 		H5VL_log_rreq_t *req,
 		std::vector<H5VL_log_idx_search_ret_t> &ret) = 0;  // Search for matchings
 };
@@ -65,12 +65,12 @@ class H5VL_logi_array_idx_t : public H5VL_logi_idx_t {
 	H5VL_logi_array_idx_t (H5VL_log_file_t *fp);
 	H5VL_logi_array_idx_t (H5VL_log_file_t *fp, size_t size);
 	~H5VL_logi_array_idx_t () = default;
-	herr_t clear ();							  // Remove all entries
-	herr_t reserve (size_t size);				  // Make space for at least size datasets
-	herr_t insert (H5VL_logi_metaentry_t &meta);  // Add an entry
-	herr_t parse_block (char *block,
+	void clear ();							  // Remove all entries
+	void reserve (size_t size);				  // Make space for at least size datasets
+	void insert (H5VL_logi_metaentry_t &meta);  // Add an entry
+	void parse_block (char *block,
 						size_t size);  // Parse a block of encoded metadata and insert all entries
-	herr_t search (H5VL_log_rreq_t *req,
+	void search (H5VL_log_rreq_t *req,
 				   std::vector<H5VL_log_idx_search_ret_t> &ret);  // Search for matchings
 };
 
@@ -99,11 +99,11 @@ class H5VL_logi_compact_idx_t : public H5VL_logi_idx_t {
 	H5VL_logi_compact_idx_t (H5VL_log_file_t *fp);
 	H5VL_logi_compact_idx_t (H5VL_log_file_t *fp, size_t size);
 	~H5VL_logi_compact_idx_t ();
-	herr_t clear ();							  // Remove all entries
-	herr_t reserve (size_t size);				  // Make space for at least size datasets
-	herr_t insert (H5VL_logi_metaentry_t &meta);  // Add an entry
-	herr_t parse_block (char *block,
+	void clear ();							  // Remove all entries
+	void reserve (size_t size);				  // Make space for at least size datasets
+	void insert (H5VL_logi_metaentry_t &meta);  // Add an entry
+	void parse_block (char *block,
 						size_t size);  // Parse a block of encoded metadata and insert all entries
-	herr_t search (H5VL_log_rreq_t *req,
+	void search (H5VL_log_rreq_t *req,
 				   std::vector<H5VL_log_idx_search_ret_t> &ret);  // Search for matchings
 };

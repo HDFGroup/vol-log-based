@@ -23,5 +23,3 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 								   const char *name,
 								   const H5O_info_t *object_info,
 								   void *op_data);
-
-herr_t h5lreplay_attr_copy_handler( hid_t location_id, const char *attr_name, const H5A_info_t *ainfo, void *op_data);

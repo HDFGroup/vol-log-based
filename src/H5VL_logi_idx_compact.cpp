@@ -77,28 +77,23 @@ H5VL_logi_compact_idx_t::~H5VL_logi_compact_idx_t () {
 	}
 }
 
-herr_t H5VL_logi_compact_idx_t::clear () {
+void H5VL_logi_compact_idx_t::clear () {
 	for (auto &i : this->idxs) { i.clear (); }
-	return 0;
 }
 
-herr_t H5VL_logi_compact_idx_t::reserve (size_t size) {
+void H5VL_logi_compact_idx_t::reserve (size_t size) {
 	if (this->idxs.size () < size) { this->idxs.resize (size); }
-	return 0;
 }
 
-herr_t H5VL_logi_compact_idx_t::insert (H5VL_logi_metaentry_t &meta) {
+void H5VL_logi_compact_idx_t::insert (H5VL_logi_metaentry_t &meta) {
 	H5VL_logi_compact_idx_entry_t *entry;
 
 	entry = new H5VL_logi_compact_idx_entry_t (fp->dsets_info[meta.hdr.did]->ndim, meta);
 
 	this->idxs[meta.hdr.did].push_back (entry);
-
-	return 0;
 }
 
-herr_t H5VL_logi_compact_idx_t::parse_block (char *block, size_t size) {
-	herr_t err = 0;
+void H5VL_logi_compact_idx_t::parse_block (char *block, size_t size) {
 	char *bufp = block;										   // Buffer for raw metadata
 	H5VL_logi_compact_idx_entry_t *centry;					   // Buffer of decoded metadata entry
 	H5VL_logi_metaentry_t entry;							   // Buffer of decoded metadata entry
@@ -133,8 +128,7 @@ herr_t H5VL_logi_compact_idx_t::parse_block (char *block, size_t size) {
 															 bcache[bufp + roff]);
 				centry->rec = (hssize_t)rec;
 			} else {
-				err = H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, entry);
-				CHECK_ERR
+				H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, entry);
 
 				centry =
 					new H5VL_logi_compact_idx_entry_t (fp->dsets_info[hdr_tmp->did]->ndim, entry);
@@ -155,8 +149,7 @@ herr_t H5VL_logi_compact_idx_t::parse_block (char *block, size_t size) {
 			H5VL_logi_lreverse ((uint32_t *)bufp, (uint32_t *)(bufp + sizeof (H5VL_logi_meta_hdr)));
 #endif
 
-			err = H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, entry);
-			CHECK_ERR
+			H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, entry);
 
 			centry = new H5VL_logi_compact_idx_entry_t (fp->dsets_info[hdr_tmp->did]->ndim, entry);
 
@@ -166,8 +159,6 @@ herr_t H5VL_logi_compact_idx_t::parse_block (char *block, size_t size) {
 			this->idxs[hdr_tmp->did].push_back (centry);
 		}
 	}
-err_out:;
-	return 0;
 }
 
 static bool intersect (
@@ -184,9 +175,8 @@ static bool intersect (
 	return true;
 }
 
-herr_t H5VL_logi_compact_idx_t::search (H5VL_log_rreq_t *req,
-										std::vector<H5VL_log_idx_search_ret_t> &ret) {
-	herr_t err = 0;
+void H5VL_logi_compact_idx_t::search (H5VL_log_rreq_t *req,
+									  std::vector<H5VL_log_idx_search_ret_t> &ret) {
 	int i, j, k;
 	int nsel;
 	MPI_Offset doff = 0;
@@ -281,6 +271,4 @@ herr_t H5VL_logi_compact_idx_t::search (H5VL_log_rreq_t *req,
 		}
 		soff += req->sels->get_sel_size (i) * req->esize;
 	}
-
-	return err;
 }

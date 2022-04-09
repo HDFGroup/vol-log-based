@@ -129,21 +129,17 @@ void *H5VL_log_dataset_create (void *obj,
 		}
 
 		// Filters
-		err = H5VL_logi_get_filters (dcpl_id, dip->filters);
-		CHECK_ERR
+		H5VL_logi_get_filters (dcpl_id, dip->filters);
 
 		// Record dataset metadata as attributes
-		err = H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_STD_I64LE, H5T_NATIVE_INT64,
-								 dip->ndim, dip->dims, dxpl_id, ureqp);
-		CHECK_ERR
+		H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_STD_I64LE, H5T_NATIVE_INT64,
+						   dip->ndim, dip->dims, dxpl_id, ureqp);
 		if (req) { rp->append (ureq); }
-		err = H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_MDIMS, H5T_STD_I64LE, H5T_NATIVE_INT64,
-								 dip->ndim, dip->mdims, dxpl_id, ureqp);
-		CHECK_ERR
+		H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_MDIMS, H5T_STD_I64LE, H5T_NATIVE_INT64,
+						   dip->ndim, dip->mdims, dxpl_id, ureqp);
 		if (req) { rp->append (ureq); }
-		err = H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_ID, H5T_STD_I32LE, H5T_NATIVE_INT32, 1,
-								 &(dp->id), dxpl_id, ureqp);
-		CHECK_ERR
+		H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_ID, H5T_STD_I32LE, H5T_NATIVE_INT32, 1,
+						   &(dp->id), dxpl_id, ureqp);
 		if (req) {
 			rp->append (ureq);
 			*req = rp;
@@ -271,8 +267,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 		// H5S_All means using file space
 		if (mem_space_id == H5S_ALL) mem_space_id = dsid;
 
-		err = H5VL_log_dataseti_read (dp, mem_type_id, mem_space_id, dsel, plist_id, buf, req);
-		CHECK_ERR
+		H5VL_log_dataseti_read (dp, mem_type_id, mem_space_id, dsel, plist_id, buf, req);
 	}
 	H5VL_LOGI_EXP_CATCH_ERR
 
@@ -320,8 +315,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 		// H5S_All means using file space
 		if (mem_space_id == H5S_ALL) mem_space_id = dsid;
 
-		err = H5VL_log_dataseti_write (dp, mem_type_id, mem_space_id, dsel, plist_id, buf, req);
-		CHECK_ERR
+		H5VL_log_dataseti_write (dp, mem_type_id, mem_space_id, dsel, plist_id, buf, req);
 	}
 	H5VL_LOGI_EXP_CATCH_ERR
 
@@ -433,9 +427,8 @@ herr_t H5VL_log_dataset_specific (void *obj,
 				}
 
 				// Record new size
-				err = H5VL_logi_put_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_NATIVE_INT64,
-										 dip->dims, dxpl_id);
-				CHECK_ERR
+				H5VL_logi_put_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_NATIVE_INT64, dip->dims,
+								   dxpl_id);
 
 				// Recalculate dsteps if needed
 				if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
@@ -502,9 +495,8 @@ herr_t H5VL_log_dataset_optional (void *obj,
 			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
 			CHECK_PTR (dsel)
 
-			err = H5VL_log_dataseti_write (dp, varnarg->mem_type_id, H5S_CONTIG, dsel, dxpl_id,
-										   varnarg->buf, req);
-			CHECK_ERR
+			H5VL_log_dataseti_write (dp, varnarg->mem_type_id, H5S_CONTIG, dsel, dxpl_id,
+									 varnarg->buf, req);
 		} else if (args->op_type == H5Dread_n_op_val) {
 			H5VL_LOGI_PROFILING_TIMER_START;
 			dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
@@ -512,9 +504,8 @@ herr_t H5VL_log_dataset_optional (void *obj,
 			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
 			CHECK_PTR (dsel)
 
-			err = H5VL_log_dataseti_read (dp, varnarg->mem_type_id, H5S_CONTIG, dsel, dxpl_id,
-										  varnarg->buf, req);
-			CHECK_ERR
+			H5VL_log_dataseti_read (dp, varnarg->mem_type_id, H5S_CONTIG, dsel, dxpl_id,
+									varnarg->buf, req);
 		} else {
 			/*
 			if (req) {

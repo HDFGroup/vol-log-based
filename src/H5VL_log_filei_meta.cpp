@@ -46,7 +46,7 @@ struct equal_pair {
 	}
 };
 
-herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
+void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int mpierr;
 	int i;
@@ -67,6 +67,14 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	MPI_Datatype mmtype = MPI_DATATYPE_NULL;  // Memory datatype for writing the metadata
 	MPI_Status stat;						  // Status of MPI I/O
 	H5VL_loc_params_t loc;
+	H5VL_logi_err_finally finally ([&offs, &lens, &mdoffs, &mdsid, &dcplid, &mmtype] () -> void {
+		H5VL_log_free (offs);
+		H5VL_log_free (lens);
+		H5VL_log_free (mdoffs);
+		H5VL_log_Sclose (mdsid);
+		H5VL_log_Pclose (dcplid);
+		if (mmtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mmtype); }
+	});
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -174,8 +182,8 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 		fp->nmdset++;
 
 		// Get metadata dataset file offset
-		err = H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, fp->dxplid, &mdoff);
-		CHECK_ERR
+		H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, fp->dxplid, &mdoff);
+
 		// If not allocated, flush the file and reopen the dataset
 		if (mdoff == HADDR_UNDEF) {
 			H5VL_file_specific_args_t arg;
@@ -197,8 +205,7 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 			CHECK_PTR (mdp);
 
 			// Get dataset file offset
-			err = H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, fp->dxplid, &mdoff);
-			CHECK_ERR
+			H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, fp->dxplid, &mdoff);
 
 			// Still don't work, discard the data
 			if (mdoff == HADDR_UNDEF) {
@@ -264,22 +271,13 @@ herr_t H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 	fp->wreq_hash.clear ();
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
-err_out:
-	// Cleanup
-	H5VL_log_free (offs);
-	H5VL_log_free (lens);
-	H5VL_log_free (mdoffs);
-	H5VL_log_Sclose (mdsid);
-	H5VL_log_Pclose (dcplid);
-	if (mmtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mmtype); }
-	return err;
 }
 
 /*
  * Remove all existing index entry in fp
  * Load all metadata in the metadata index of fp
  */
-herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
+void H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	herr_t err = 0;
 	int i;
 	H5VL_loc_params_t loc;
@@ -294,6 +292,11 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	H5VL_logi_metaentry_t block;  // Buffer of decoded metadata entry
 	std::map<char *, std::vector<H5VL_logi_metasel_t>> bcache;	// Cache for linked metadata entry
 	char mdname[16];
+	H5VL_logi_err_finally finally ([&mdsid, &mmsid, &buf] () -> void {
+		if (mdsid >= 0) H5Sclose (mdsid);
+		if (mmsid >= 0) H5Sclose (mmsid);
+		if (buf) { H5VL_log_free (buf); }
+	});
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -353,8 +356,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		CHECK_ERR
 
 		// Parse metadata
-		err = fp->idx->parse_block (buf, count);
-		CHECK_ERR
+		fp->idx->parse_block (buf, count);
 
 		// Free metadata buffer
 		H5VL_log_free (buf);
@@ -364,14 +366,6 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 	fp->idxvalid = true;
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAUPDATE);
-err_out:;
-
-	// Cleanup
-	if (mdsid >= 0) H5Sclose (mdsid);
-	if (mmsid >= 0) H5Sclose (mmsid);
-	if (buf) { H5VL_log_free (buf); }
-
-	return err;
 }
 
 /*
@@ -380,7 +374,7 @@ err_out:;
  * buffer size is reached Advance sec to the next unprocessed section. If all section is
  * processed, advance md and set sec to 0 If all metadata datasset is processed, set md to -1
  */
-herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
+void H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	herr_t err = 0;
 	int i;
 	H5VL_loc_params_t loc;
@@ -396,6 +390,11 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	H5VL_logi_metaentry_t block;  // Buffer of decoded metadata entry
 	std::map<char *, std::vector<H5VL_logi_metasel_t>> bcache;	// Cache for linked metadata entry
 	char mdname[16];
+	H5VL_logi_err_finally finally ([&mdsid, &mmsid, &buf] () -> void {
+		if (mdsid >= 0) H5Sclose (mdsid);
+		if (mmsid >= 0) H5Sclose (mmsid);
+		H5VL_log_free (buf);
+	});
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -480,16 +479,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	CHECK_ERR
 
 	// Parse metadata
-	err = fp->idx->parse_block (buf, count);
-	CHECK_ERR
+	fp->idx->parse_block (buf, count);
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAUPDATE);
-err_out:;
-
-	// Cleanup
-	if (mdsid >= 0) H5Sclose (mdsid);
-	if (mmsid >= 0) H5Sclose (mmsid);
-	H5VL_log_free (buf);
-
-	return err;
 }

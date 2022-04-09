@@ -81,10 +81,7 @@ int main (int argc, char *argv[]) {
 	MPI_Bcast (&err, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 	try {
-		CHECK_ERR
-
-		err = h5lreplay_core (inpath, outpath, rank, np);
-		CHECK_ERR
+		h5lreplay_core (inpath, outpath, rank, np);
 	}
 	H5VL_LOGI_EXP_CATCH_ERR
 
@@ -92,7 +89,7 @@ err_out:;
 	return err == 0 ? 0 : -1;
 }
 
-herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np) {
+void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np) {
 	herr_t err = 0;
 	int mpierr;
 	hid_t nativevlid;	// Native VOL ID
@@ -108,7 +105,7 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 	// int nldset;		 // # data dataset in the current file (main file| subfile)
 	int nmdset;		 // # metadata dataset in the current file (main file| subfile)
 	int config;		 // Config flags of the input file
-	int att_buf[4];	 // Temporary buffer for reading file attributes
+	int att_buf[5];	 // Temporary buffer for reading file attributes
 	h5lreplay_copy_handler_arg copy_arg;  // File structure
 	std::vector<h5lreplay_idx_t>
 		reqs;						// Requests recorded in the current file (main file| subfile)
@@ -117,6 +114,19 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 	MPI_File fsub = MPI_FILE_NULL;	// file handle of the subfile
 	DIR *subdir	  = NULL;			// subfile dir
 	struct dirent *subfile;			// subfile entry in dir
+	H5VL_logi_err_finally finally ([&] () -> void {
+		if (faplid >= 0) { H5Pclose (faplid); }
+		if (dxplid >= 0) { H5Pclose (dxplid); }
+		if (aid >= 0) { H5Aclose (aid); }
+		if (lgid >= 0) { H5Gclose (lgid); }
+		if (finid >= 0) { H5Fclose (finid); }
+		if (fsubid >= 0) { H5Fclose (fsubid); }
+		for (auto &dset : copy_arg.dsets) { H5Dclose (dset.id); }
+		if (foutid >= 0) { H5Fclose (foutid); }
+		if (fin != MPI_FILE_NULL) { MPI_File_close (&fin); }
+		if (fout != MPI_FILE_NULL) { MPI_File_close (&fout); }
+		if (subdir) { closedir (subdir); }
+	});
 
 	// Open the input and output file
 	nativevlid = H5VLpeek_connector_id_by_name ("native");
@@ -208,17 +218,13 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 					for (auto &r : reqs) { r.clear (); }
 
 					// Read the metadata
-					err =
-						h5lreplay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs, config);
-					CHECK_ERR
+					h5lreplay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs, config);
 
 					// Read the data
-					err = h5lreplay_read_data (fsub, copy_arg.dsets, reqs);
-					CHECK_ERR
+					h5lreplay_read_data (fsub, copy_arg.dsets, reqs);
 
 					// Write the data
-					err = h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
-					CHECK_ERR
+					h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
 
 					// Close the subfile
 					MPI_File_close (&fsub);
@@ -243,29 +249,12 @@ herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int 
 		CHECK_ID (lgid)
 
 		// Read the metadata
-		err = h5lreplay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs, config);
-		CHECK_ERR
+		h5lreplay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs, config);
 
 		// Read the data
-		err = h5lreplay_read_data (fin, copy_arg.dsets, reqs);
-		CHECK_ERR
+		h5lreplay_read_data (fin, copy_arg.dsets, reqs);
 
 		// Write the data
-		err = h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
-		CHECK_ERR
+		h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
 	}
-
-err_out:;
-	if (faplid >= 0) { H5Pclose (faplid); }
-	if (dxplid >= 0) { H5Pclose (dxplid); }
-	if (aid >= 0) { H5Aclose (aid); }
-	if (lgid >= 0) { H5Gclose (lgid); }
-	if (finid >= 0) { H5Fclose (finid); }
-	if (fsubid >= 0) { H5Fclose (fsubid); }
-	for (auto &dset : copy_arg.dsets) { H5Dclose (dset.id); }
-	if (foutid >= 0) { H5Fclose (foutid); }
-	if (fin != MPI_FILE_NULL) { MPI_File_close (&fin); }
-	if (fout != MPI_FILE_NULL) { MPI_File_close (&fout); }
-	if (subdir) { closedir (subdir); }
-	return err;
 }

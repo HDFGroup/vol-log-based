@@ -38,7 +38,10 @@ inline std::string get_file_signature (std::string &path) {
 	char sig[8];			// File signature
 	htri_t islog, isnc4;
 	std::string ret;
-
+	H5VL_logi_err_finally finally ([&] () -> void {
+		if (fid >= 0) { H5Fclose (fid); }
+		if (faplid >= 0) { H5Pclose (faplid); }
+	});
 	fin.open (path, std::ios_base::in);
 	if (fin.is_open ()) {
 		memset (sig, 0, sizeof (sig));
@@ -79,9 +82,6 @@ inline std::string get_file_signature (std::string &path) {
 		ret = std::string ("Unknown");
 		std::cout << "Error: cannot open " << path << std::endl;
 	}
-err_out:;
-	if (fid >= 0) { H5Fclose (fid); }
-	if (faplid >= 0) { H5Pclose (faplid); }
 	return ret;
 }
 
@@ -145,36 +145,35 @@ int main (int argc, char *argv[]) {
 	}
 	inpath = std::string (argv[optind]);
 
-	// Make sure input file is HDF5 file
-	ftype = get_file_signature (inpath);
-	if (showftype) {
-		std::cout << ftype << std::endl;
-		goto err_out;
-	}
-
-	if (ftype != "Logvol") {
-		std::cout << "Error: " << inpath << " is not a valid logvol file." << std::endl;
-		err = -1;
-
-		if (ftype == "HDF5") {
-			std::cout << inpath << " is a regular HDF5 file." << std::endl;
-			std::cout << "Use h5dump in HDF5 utilities to read regular HDF5 files." << std::endl;
-		} else if (ftype == "NetCDF" || ftype == "NetCDF 4") {
-			std::cout << inpath << " is a " << ftype << " file." << std::endl;
-			std::cout << "Use ncdump in NetCDF utilities to read NetCDF files." << std::endl;
-		} else {
-			std::cout << "Type of " << inpath << " is unknown" << std::endl;
-		}
-	}
-
 	try {
+		// Make sure input file is HDF5 file
+		ftype = get_file_signature (inpath);
+		if (showftype) {
+			std::cout << ftype << std::endl;
+			goto err_out;
+		}
+
+		if (ftype != "Logvol") {
+			std::cout << "Error: " << inpath << " is not a valid logvol file." << std::endl;
+			err = -1;
+
+			if (ftype == "HDF5") {
+				std::cout << inpath << " is a regular HDF5 file." << std::endl;
+				std::cout << "Use h5dump in HDF5 utilities to read regular HDF5 files."
+						  << std::endl;
+			} else if (ftype == "NetCDF" || ftype == "NetCDF 4") {
+				std::cout << inpath << " is a " << ftype << " file." << std::endl;
+				std::cout << "Use ncdump in NetCDF utilities to read NetCDF files." << std::endl;
+			} else {
+				std::cout << "Type of " << inpath << " is unknown" << std::endl;
+			}
+		}
+
 		// Get dataaset metadata
-		err = h5ldump_visit (inpath, dsets);
-		CHECK_ERR
+		h5ldump_visit (inpath, dsets);
 
 		// Dump the logs
-		err = h5ldump_file (inpath, dsets, dumpdata, 0);
-		CHECK_ERR
+		h5ldump_file (inpath, dsets, dumpdata, 0);
 
 		// Cleanup dataset contec
 		for (auto &d : dsets) {
@@ -187,10 +186,10 @@ err_out:;
 	return err == 0 ? 0 : -1;
 }
 
-herr_t h5ldump_file (std::string path,
-					 std::vector<H5VL_log_dset_info_t> &dsets,
-					 bool dumpdata,
-					 int indent) {
+void h5ldump_file (std::string path,
+				   std::vector<H5VL_log_dset_info_t> &dsets,
+				   bool dumpdata,
+				   int indent) {
 	herr_t err = 0;
 	int mpierr;
 	int i;
@@ -206,6 +205,13 @@ herr_t h5ldump_file (std::string path,
 	int nsubfile;			// Number of subfiles
 	int config;				// File config flags
 	int att_buf[5];			// attirbute buffer
+	H5VL_logi_err_finally finally ([&] () -> void {
+		if (fh != MPI_FILE_NULL) { MPI_File_close (&fh); }
+		if (aid >= 0) { H5Aclose (aid); }
+		if (lgid >= 0) { H5Gclose (lgid); }
+		if (fid >= 0) { H5Fclose (fid); }
+		if (faplid >= 0) { H5Pclose (faplid); }
+	});
 
 	// Always use native VOL
 	nativevlid = H5VLpeek_connector_id_by_name ("native");
@@ -267,9 +273,8 @@ herr_t h5ldump_file (std::string path,
 	if (config & H5VL_FILEI_CONFIG_SUBFILING) {
 		for (i = 0; i < nsubfile; i++) {
 			std::cout << std::string (indent, ' ') << "Subfile " << i << std::endl;
-			err = h5ldump_file (path + ".subfiles/" + std::to_string (i) + ".h5", dsets, dumpdata,
+			h5ldump_file (path + ".subfiles/" + std::to_string (i) + ".h5", dsets, dumpdata,
 								indent + 4);
-			CHECK_ERR
 			// std::cout << std::string (indent, ' ') << "End subfile " << i << std::endl;
 		}
 	} else {
@@ -285,22 +290,13 @@ herr_t h5ldump_file (std::string path,
 		// Iterate through metadata datasets
 		for (i = 0; i < nmdset; i++) {
 			std::cout << std::string (indent, ' ') << "Metadata dataset " << i << std::endl;
-			err = h5ldump_mdset (lgid,
+			h5ldump_mdset (lgid,
 								 H5VL_LOG_FILEI_DSET_META + std::string ("_") + std::to_string (i),
 								 dsets, fh, indent + 4);
-			CHECK_ERR
 			// std::cout << std::string (indent, ' ') << "End metadata dataset " << i << std::endl;
 		}
 	}
 	indent -= 4;
 	;
 	// std::cout << std::string (indent, ' ') << "End file: " << path << std::endl;
-
-err_out:;
-	if (fh != MPI_FILE_NULL) { MPI_File_close (&fh); }
-	if (aid >= 0) { H5Aclose (aid); }
-	if (lgid >= 0) { H5Gclose (lgid); }
-	if (fid >= 0) { H5Fclose (fid); }
-	if (faplid >= 0) { H5Pclose (faplid); }
-	return err;
 }

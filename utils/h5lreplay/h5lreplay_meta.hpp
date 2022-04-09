@@ -30,16 +30,16 @@ class h5lreplay_idx_t : public H5VL_logi_idx_t {
 	h5lreplay_idx_t ();
 	~h5lreplay_idx_t () = default;
 	std::vector<meta_block> entries;
-	herr_t clear ();							  // Remove all entries
-	herr_t reserve (size_t size);				  // Make space for at least size datasets
-	herr_t insert (H5VL_logi_metaentry_t &meta);  // Add an entry
-	herr_t parse_block (char *block,
+	void clear ();							  // Remove all entries
+	void reserve (size_t size);				  // Make space for at least size datasets
+	void insert (H5VL_logi_metaentry_t &meta);  // Add an entry
+	void parse_block (char *block,
 						size_t size);  // Parse a block of encoded metadata and insert all entries
-	herr_t search (H5VL_log_rreq_t *req,
+	void search (H5VL_log_rreq_t *req,
 				   std::vector<H5VL_log_idx_search_ret_t> &ret);  // Search for matchings
 };
 
-herr_t h5lreplay_parse_meta (int rank,
+void h5lreplay_parse_meta (int rank,
 							 int np,
 							 hid_t lgid,
 							 int nmdset,

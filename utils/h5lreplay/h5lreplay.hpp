@@ -17,5 +17,5 @@ typedef struct dset_info : H5VL_log_dset_info_t {
 	hid_t id;
 } dset_info;
 
-herr_t h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np) ;
+void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np) ;
 

@@ -146,7 +146,7 @@ H5VL_log_selections::H5VL_log_selections (int ndim, hsize_t *dims, int nsel) : n
 		this->dims = NULL;
 	}
 	this->nsel = nsel;
-err_out:;
+
 	if (err) { throw "OOM"; }
 }
 
@@ -186,7 +186,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 		stype = H5S_SEL_ALL;
 	else {
 		stype = H5Sget_select_type (dsid);
-		CHECK_ID(stype)
+		CHECK_ID (stype)
 	}
 
 	switch (stype) {
@@ -370,11 +370,11 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 			hsize_t dims[32];
 
 			/* check if file space is created from H5S_NULL */
-			if (0 == H5Sget_simple_extent_npoints(dsid)) {
+			if (0 == H5Sget_simple_extent_npoints (dsid)) {
 				this->nsel = 0;
 				this->alloc (0);
 				goto err_out;
-                        }
+			}
 
 			ndim = H5Sget_simple_extent_dims (dsid, dims, NULL);
 			CHECK_ID (ndim)
@@ -416,7 +416,6 @@ H5VL_log_selections::~H5VL_log_selections () {
 }
 
 H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
-	herr_t err = 0;
 	int i;
 
 	// Deallocate existing start and count array
@@ -454,9 +453,6 @@ H5VL_log_selections &H5VL_log_selections::operator= (H5VL_log_selections &rhs) {
 		this->sels_arr = NULL;
 	}
 
-err_out:;
-	if (err) { throw "OOM"; }
-
 	return *this;
 }
 
@@ -478,7 +474,6 @@ bool H5VL_log_selections::operator== (H5VL_log_selections &rhs) {
 
 // Should only be called once
 void H5VL_log_selections::alloc (int nsel) {
-	int err = 0;
 	int i;
 
 	if (nsel) {
@@ -501,9 +496,6 @@ void H5VL_log_selections::alloc (int nsel) {
 		this->counts   = NULL;
 		this->sels_arr = NULL;
 	}
-
-err_out:;
-	if (err) { throw "OOM"; }
 }
 
 void H5VL_log_selections::convert_to_deep () {
@@ -526,7 +518,7 @@ void H5VL_log_selections::convert_to_deep () {
 	}
 }
 
-herr_t H5VL_log_selections::get_mpi_type (size_t esize, MPI_Datatype *type) {
+void H5VL_log_selections::get_mpi_type (size_t esize, MPI_Datatype *type) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
@@ -536,6 +528,20 @@ herr_t H5VL_log_selections::get_mpi_type (size_t esize, MPI_Datatype *type) {
 	MPI_Datatype *types = NULL;
 	MPI_Datatype etype;
 	int size[H5S_MAX_RANK], ssize[H5S_MAX_RANK], sstart[H5S_MAX_RANK];
+	H5VL_logi_err_finally finally (
+		[&types, &offs, &lens, &derived_etype, &etype, this] () -> void {
+			int i;
+			if (types != NULL) {
+				for (i = 0; i < this->nsel; i++) {
+					if (types[i] != MPI_BYTE) { MPI_Type_free (types + i); }
+				}
+				free (types);
+			}
+			free (offs);
+			free (lens);
+
+			if (derived_etype) { MPI_Type_free (&etype); }
+		});
 
 	if (!dims) { RET_ERR ("No dataspace dimension information") }
 
@@ -555,7 +561,7 @@ herr_t H5VL_log_selections::get_mpi_type (size_t esize, MPI_Datatype *type) {
 	// No selection, return
 	if (nsel == 0) {
 		*type = MPI_DATATYPE_NULL;
-		return 0;
+		return;
 	}
 
 	lens = (int *)malloc (sizeof (int) * nsel);
@@ -585,21 +591,6 @@ herr_t H5VL_log_selections::get_mpi_type (size_t esize, MPI_Datatype *type) {
 	CHECK_MPIERR
 	mpierr = MPI_Type_commit (type);
 	CHECK_MPIERR
-
-err_out:
-
-	if (types != NULL) {
-		for (i = 0; i < nsel; i++) {
-			if (types[i] != MPI_BYTE) { MPI_Type_free (types + i); }
-		}
-		free (types);
-	}
-	free (offs);
-	free (lens);
-
-	if (derived_etype) { MPI_Type_free (&etype); }
-
-	return err;
 }
 
 hsize_t H5VL_log_selections::get_sel_size (int idx) {

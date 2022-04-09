@@ -148,12 +148,12 @@ void *H5VL_log_file_create (
 		fp->name   = std::string (name);
 		err		   = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
 		CHECK_ERR
-		err = H5VL_log_filei_parse_fapl (fp, fapl_id);
-		CHECK_ERR
-		err = H5VL_log_filei_parse_fcpl (fp, fcpl_id);
-		CHECK_ERR
-		err = H5VL_log_filei_init_idx (fp);
-		CHECK_ERR
+		H5VL_log_filei_parse_fapl (fp, fapl_id);
+
+		H5VL_log_filei_parse_fcpl (fp, fcpl_id);
+
+		H5VL_log_filei_init_idx (fp);
+
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_INIT);
 
 		// Create the file with underlying VOL
@@ -176,8 +176,7 @@ void *H5VL_log_file_create (
 		// Figure out lustre configuration
 		H5VL_LOGI_PROFILING_TIMER_START;
 		if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
-			err = H5VL_log_filei_parse_strip_info (fp);
-			CHECK_ERR
+			H5VL_log_filei_parse_strip_info (fp);
 			// Dummy stripe setting for debugging without lustre
 			// fp->scount=2;
 			// fp->ssize=8388608;
@@ -194,8 +193,7 @@ void *H5VL_log_file_create (
 		H5VL_LOGI_PROFILING_TIMER_START;
 		if ((fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) ||
 			(fp->config & H5VL_FILEI_CONFIG_SUBFILING)) {
-			err = H5VL_log_filei_calc_node_rank (fp);
-			CHECK_ERR
+			H5VL_log_filei_calc_node_rank (fp);
 		} else {
 			fp->group_rank = fp->rank;
 			fp->group_np   = fp->np;
@@ -210,8 +208,7 @@ void *H5VL_log_file_create (
 			// Aligned write not supported in subfiles
 			fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
 
-			err = H5VL_log_filei_create_subfile (fp, flags, fp->ufaplid, dxpl_id);
-			CHECK_ERR
+			H5VL_log_filei_create_subfile (fp, flags, fp->ufaplid, dxpl_id);
 		} else {
 			fp->sfp		= fp->uo;
 			fp->subname = fp->name;
@@ -248,9 +245,8 @@ void *H5VL_log_file_create (
 		attbuf[2] = fp->nmdset;
 		attbuf[3] = fp->config;
 		attbuf[4] = fp->ngroup;
-		err = H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32, 5,
-								 attbuf, dxpl_id, NULL);
-		CHECK_ERR
+		H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32, 5, attbuf,
+						   dxpl_id, NULL);
 
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE);
 	}
@@ -390,8 +386,7 @@ void *H5VL_log_file_open (
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_OPEN);
 
 		// Fapl property can overwrite config in file, parse after loading config
-		err = H5VL_log_filei_parse_fapl (fp, fapl_id);
-		CHECK_ERR
+		H5VL_log_filei_parse_fapl (fp, fapl_id);
 
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
 	}
@@ -535,7 +530,7 @@ herr_t H5VL_log_file_specific (void *file,
 				H5Pclose (under_fapl_id);
 			} break;
 			case H5VL_FILE_FLUSH: {
-				err = H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
+				H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
 				break;
 			} break;
 			default:
@@ -597,8 +592,7 @@ herr_t H5VL_log_file_optional (void *file, H5VL_optional_args_t *args, hid_t dxp
 		// Open the log group and read file attributes
 		if (args->op_type == H5VL_NATIVE_FILE_POST_OPEN) {
 			if (!(fp->lgp)) {  // Log group is already set for file create
-				err = H5VL_log_filei_post_open (fp);
-				CHECK_ERR
+				H5VL_log_filei_post_open (fp);
 			}
 
 			// create the contig SID
@@ -629,7 +623,7 @@ err_out:;
 herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
 	herr_t err = 0;
 	try {
-		return H5VL_log_filei_dec_ref ((H5VL_log_file_t *)file);
+		H5VL_log_filei_dec_ref ((H5VL_log_file_t *)file);
 		// return H5VL_log_filei_close ((H5VL_log_file_t *)file);
 	}
 	H5VL_LOGI_EXP_CATCH_ERR

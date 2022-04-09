@@ -10,14 +10,14 @@
 #include <stdlib.h>
 
 #include "H5VL_log.h"
-#include "H5VL_logi_err.hpp"
+#include "testutils.hpp"
 
 #define N 10
 #define M 10
 int buf[N * M];
 
 int main (int argc, char **argv) {
-	int err = 0;
+	int err, nerrs = 0;
 	int rank, np;
 	const char *file_name;
 	int i;
@@ -55,9 +55,9 @@ int main (int argc, char **argv) {
 	CHECK_ID (faplid)
 	// MPI and collective metadata is required by LOG VOL
 	err = H5Pset_fapl_mpio (faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
-	CHECK_ERR
+	CHECK_ERR (err)
 	err = H5Pset_all_coll_metadata_ops (faplid, 1);
-	CHECK_ERR
+	CHECK_ERR (err)
 
 	// Create file
 	fid = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);
@@ -93,17 +93,17 @@ int main (int argc, char **argv) {
 
 	// Write attributes
 	err = H5Awrite (faid, H5T_NATIVE_INT32, buf);
-	CHECK_ERR
+	CHECK_ERR (err)
 	err = H5Awrite (gaid, H5T_NATIVE_INT32, buf + 1);
-	CHECK_ERR
+	CHECK_ERR (err)
 	err = H5Awrite (daid, H5T_NATIVE_INT32, buf + 2);
-	CHECK_ERR
+	CHECK_ERR (err)
 
 	// Write datasets
 	err = H5Dwrite (did, H5T_NATIVE_INT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, buf);
-	CHECK_ERR
+	CHECK_ERR (err)
 	err = H5Dwrite (gdid, H5T_NATIVE_INT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, buf);
-	CHECK_ERR
+	CHECK_ERR (err)
 
 err_out:
 	if (sid >= 0) H5Sclose (sid);
@@ -121,5 +121,5 @@ err_out:
 
 	MPI_Finalize ();
 
-	return err;
+	return nerrs == 0 ? 0 : -1;
 }

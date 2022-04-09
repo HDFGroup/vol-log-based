@@ -80,57 +80,51 @@ inline bool H5VL_logi_debug_verbose () {
 	return false;
 }
 
-#define CHECK_ERR                                                         \
-	{                                                                     \
-		if (err < 0) {                                                    \
-			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL, true); \
-			goto err_out;                                                 \
-		}                                                                 \
+#define CHECK_ERR                                                          \
+	{                                                                      \
+		if (err < 0) {                                                     \
+			std::string msg = "function returns " + std::to_string (err);  \
+			throw H5VL_logi_exception (__FILE__, __LINE__, __func__, msg); \
+		}                                                                  \
 	}
 
-#define CHECK_MPIERR                                                  \
-	{                                                                 \
-		if (mpierr != MPI_SUCCESS) {                                  \
-			int el = 256;                                             \
-			char errstr[256];                                         \
-			MPI_Error_string (mpierr, errstr, &el);                   \
-			H5VL_logi_print_err (__LINE__, (char *)__FILE__, errstr); \
-			err = -1;                                                 \
-			goto err_out;                                             \
-		}                                                             \
+#define CHECK_MPIERR                                                          \
+	{                                                                         \
+		if (mpierr != MPI_SUCCESS) {                                          \
+			int el = 256;                                                     \
+			char errstr[256];                                                 \
+			MPI_Error_string (err, errstr, &el);                              \
+			throw H5VL_logi_exception (__FILE__, __LINE__, __func__, errstr); \
+		}                                                                     \
 	}
 
-#define CHECK_ID(A)                                                       \
-	{                                                                     \
-		if (A < 0) {                                                      \
-			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL, true); \
-			goto err_out;                                                 \
-		}                                                                 \
+#define CHECK_PTR(A)                                                                            \
+	{                                                                                           \
+		if (A == NULL) {                                                                        \
+			throw H5VL_logi_exception (__FILE__, __LINE__, __func__, "#A initialization fail"); \
+		}                                                                                       \
 	}
 
-#define CHECK_PTR(A)                                                      \
-	{                                                                     \
-		if (A == NULL) {                                                  \
-			H5VL_logi_print_err (__LINE__, (char *)__FILE__, NULL, true); \
-			goto err_out;                                                 \
-		}                                                                 \
+#define CHECK_ID(A)                                                           \
+	{                                                                         \
+		if (A < 0) {                                                          \
+			throw H5VL_logi_exception (__FILE__, __LINE__, __func__,          \
+									   "HDF5 object #A ID is invalid", true); \
+		}                                                                     \
 	}
 
-#define ERR_OUT(A)                                                   \
-	{                                                                \
-		H5VL_logi_print_err (__LINE__, (char *)__FILE__, (char *)A); \
-		goto err_out;                                                \
-	}
+#define ERR_OUT(A) \
+	{ throw H5VL_logi_exception (__FILE__, __LINE__, __func__, (char *)A); }
 
-#define RET_ERR(A)  \
-	{               \
-		err = -1;   \
-		ERR_OUT (A) \
-	}
+#define RET_ERR(A) ERR_OUT (A)
 
-#define H5VL_LOGI_CHECK_NAME(name)                                                    \
-	{                                                                                 \
-		if (!name || (name[0] == '_' && name[1] == '_')) { ERR_OUT ("Invalid name") } \
+#define H5VL_LOGI_CHECK_NAME(name)                                                          \
+	{                                                                                       \
+		if (!name || (name[0] == '_' && name[1] == '_')) {                                  \
+			ERR_OUT (                                                                       \
+				"Object (link) name starting wiht \"__\" are reserved for log-based VOL's " \
+				"internal objects")                                                         \
+		}                                                                                   \
 	}
 
 class H5VL_logi_exception : std::exception {

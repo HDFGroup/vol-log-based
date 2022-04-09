@@ -33,9 +33,9 @@ typedef struct hidx {
 	bool operator< (const struct hidx &rhs) const { return foff < rhs.foff; }
 } hidx;
 
-herr_t h5lreplay_read_data (MPI_File fin,
-							std::vector<dset_info> &dsets,
-							std::vector<h5lreplay_idx_t> &reqs) {
+void h5lreplay_read_data (MPI_File fin,
+						  std::vector<dset_info> &dsets,
+						  std::vector<h5lreplay_idx_t> &reqs) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
@@ -49,6 +49,10 @@ herr_t h5lreplay_read_data (MPI_File fin,
 	MPI_Datatype ftype = MPI_DATATYPE_NULL;
 	MPI_Datatype mtype = MPI_DATATYPE_NULL;
 	MPI_Status stat;
+	H5VL_logi_err_finally finally ([&] () -> void {
+		if (ftype != MPI_DATATYPE_NULL) { MPI_Type_free (&ftype); }
+		if (mtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mtype); }
+	});
 
 	// Allocate buffer
 	zbsize = 0;
@@ -112,24 +116,18 @@ herr_t h5lreplay_read_data (MPI_File fin,
 				char *buf = NULL;
 				int csize = 0;
 
-				err = H5VL_logi_unfilter (dsets[req.hdr.did].filters, req.bufs[0], req.hdr.fsize,
-										  (void **)&buf, &csize);
-				CHECK_ERR
+				H5VL_logi_unfilter (dsets[req.hdr.did].filters, req.bufs[0], req.hdr.fsize,
+									(void **)&buf, &csize);
 
 				memcpy (buf, req.bufs[0], csize);
 			}
 		}
 	}
-
-err_out:;
-	if (ftype != MPI_DATATYPE_NULL) { MPI_Type_free (&ftype); }
-	if (mtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mtype); }
-	return err;
 }
 
-herr_t h5lreplay_write_data (hid_t foutid,
-							 std::vector<dset_info> &dsets,
-							 std::vector<h5lreplay_idx_t> &reqs) {
+void h5lreplay_write_data (hid_t foutid,
+						   std::vector<dset_info> &dsets,
+						   std::vector<h5lreplay_idx_t> &reqs) {
 	herr_t err = 0;
 	hid_t dsid = -1;
 	hid_t msid = -1;
@@ -137,6 +135,10 @@ herr_t h5lreplay_write_data (hid_t foutid,
 	hsize_t zero = 0;
 	hsize_t msize;
 	int i, j, k;
+	H5VL_logi_err_finally finally ([&] () -> void {
+		if (dsid >= 0) { H5Sclose (dsid); }
+		if (msid >= 0) { H5Sclose (msid); }
+	});
 
 	one[0] = INT_MAX;
 	msid   = H5Screate_simple (1, one, one);
@@ -163,9 +165,4 @@ herr_t h5lreplay_write_data (hid_t foutid,
 		H5Sclose (dsid);
 		dsid = -1;
 	}
-
-err_out:;
-	if (dsid >= 0) { H5Sclose (dsid); }
-	if (msid >= 0) { H5Sclose (msid); }
-	return err;
 }

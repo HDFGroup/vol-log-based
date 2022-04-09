@@ -7,7 +7,9 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
+//
+#include <memory>
+//
 #include "H5VL_log_filei.hpp"
 #include "H5VL_log_obj.hpp"
 #include "H5VL_log_obji.hpp"
@@ -33,21 +35,16 @@ void *H5VL_log_obj_open_with_uo (void *obj,
 								 H5I_type_t type,
 								 const H5VL_loc_params_t *loc_params) {
 	H5VL_log_obj_t *pp = (H5VL_log_obj_t *)obj;
-	H5VL_log_obj_t *op = NULL;
+	std::unique_ptr<H5VL_log_obj_t> op;
 
 	/* Check arguments */
 	// if(loc_params->type != H5VL_OBJECT_BY_SELF) ERR_OUT("loc_params->type is not
 	// H5VL_OBJECT_BY_SELF")
 
-	op = new H5VL_log_obj_t (pp, type, uo);
+	op = std::make_unique<H5VL_log_obj_t> (pp, type, uo);
 	CHECK_PTR (op);
 
-	return (void *)op;
-
-err_out:;
-	delete op;
-
-	return NULL;
+	return (void *)(op.release ());
 } /* end H5VL_log_group_ppen() */
 
 H5VL_log_obj_t::H5VL_log_obj_t () {

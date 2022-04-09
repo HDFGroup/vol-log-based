@@ -77,45 +77,47 @@ herr_t H5VL_log_init (hid_t vipl_id) {
 	// ssize_t infty = LOG_VOL_BSIZE_UNLIMITED;
 	// htri_t exist;
 
-	mpierr = MPI_Initialized (&mpi_inited);
-	CHECK_MPIERR
-	if (!mpi_inited) { MPI_Init (NULL, NULL); }
+	try {
+		mpierr = MPI_Initialized (&mpi_inited);
+		CHECK_MPIERR
+		if (!mpi_inited) { MPI_Init (NULL, NULL); }
 
-	// Register H5Dwrite_n and H5Dread_n
-	if (!h5dwriten_registered) {
-		err = H5VLregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dwrite_n",
-										  &H5Dwrite_n_op_val);
-		CHECK_ERR
-		err = H5VLregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dread_n",
-										  &H5Dread_n_op_val);
-		CHECK_ERR
-		h5dwriten_registered = true;
-	}
+		// Register H5Dwrite_n and H5Dread_n
+		if (!h5dwriten_registered) {
+			err = H5VLregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dwrite_n",
+											  &H5Dwrite_n_op_val);
+			CHECK_ERR
+			err = H5VLregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dread_n",
+											  &H5Dread_n_op_val);
+			CHECK_ERR
+			h5dwriten_registered = true;
+		}
 
-	/* SID no longer recognized at this stage, move to file close
-	if(H5VL_log_dataspace_contig==H5I_INVALID_HID){
-		H5VL_log_dataspace_contig = H5Screate(H5S_SCALAR);
-		CHECK_ID(H5VL_log_dataspace_contig);
-	}
-	*/
+		/* SID no longer recognized at this stage, move to file close
+		if(H5VL_log_dataspace_contig==H5I_INVALID_HID){
+			H5VL_log_dataspace_contig = H5Screate(H5S_SCALAR);
+			CHECK_ID(H5VL_log_dataspace_contig);
+		}
+		*/
 
-	/* Default pclass should not be changed, insert property to plist instead
-	exist = H5Pexist (H5P_DATASET_XFER, "nonblocking");
-	CHECK_ID (exist)
-	if (!exist) {
-		err = H5Pregister2 (H5P_DATASET_XFER, "nonblocking", sizeof (H5VL_log_req_type_t),
-							&blocking, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-		CHECK_ERR
-	}
+		/* Default pclass should not be changed, insert property to plist instead
+		exist = H5Pexist (H5P_DATASET_XFER, "nonblocking");
+		CHECK_ID (exist)
+		if (!exist) {
+			err = H5Pregister2 (H5P_DATASET_XFER, "nonblocking", sizeof (H5VL_log_req_type_t),
+								&blocking, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+			CHECK_ERR
+		}
 
-	exist = H5Pexist (H5P_FILE_ACCESS, "nb_buffer_size");
-	CHECK_ID (exist)
-	if (!exist) {
-		err = H5Pregister2 (H5P_FILE_ACCESS, "nb_buffer_size", sizeof (ssize_t), &infty, NULL, NULL,
-							NULL, NULL, NULL, NULL, NULL);
-		CHECK_ERR
+		exist = H5Pexist (H5P_FILE_ACCESS, "nb_buffer_size");
+		CHECK_ID (exist)
+		if (!exist) {
+			err = H5Pregister2 (H5P_FILE_ACCESS, "nb_buffer_size", sizeof (ssize_t), &infty, NULL,
+		NULL, NULL, NULL, NULL, NULL, NULL); CHECK_ERR
+		}
+		*/
 	}
-	*/
+	H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
 	return err;
@@ -138,27 +140,30 @@ herr_t H5VL_log_obj_term (void) {
 	herr_t err = 0;
 	int mpierr;
 
-	/* SID no longer recognized at this stage, move to file close
-	if(H5VL_log_dataspace_contig!=H5I_INVALID_HID){
-		H5VL_log_dataspace_contig=H5I_INVALID_HID;
-	}
-	*/
+	try {
+		/* SID no longer recognized at this stage, move to file close
+		if(H5VL_log_dataspace_contig!=H5I_INVALID_HID){
+			H5VL_log_dataspace_contig=H5I_INVALID_HID;
+		}
+		*/
 
-	// Unregister H5Dwrite_n and H5Dread_n
-	if (h5dwriten_registered) {
-		err = H5VLunregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dwrite_n");
-		CHECK_ERR
-		// Unregister H5Dread_n
-		err = H5VLunregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dread_n");
-		CHECK_ERR
-		h5dwriten_registered = false;
-	}
+		// Unregister H5Dwrite_n and H5Dread_n
+		if (h5dwriten_registered) {
+			err = H5VLunregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dwrite_n");
+			CHECK_ERR
+			// Unregister H5Dread_n
+			err = H5VLunregister_opt_operation (H5VL_SUBCLS_DATASET, "H5VL_log.H5Dread_n");
+			CHECK_ERR
+			h5dwriten_registered = false;
+		}
 
-	if (!mpi_inited) {
-		mpierr = MPI_Initialized (&mpi_inited);
-		CHECK_MPIERR
-		if (mpi_inited) { MPI_Finalize (); }
+		if (!mpi_inited) {
+			mpierr = MPI_Initialized (&mpi_inited);
+			CHECK_MPIERR
+			if (mpi_inited) { MPI_Finalize (); }
+		}
 	}
+	H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
 	return err;

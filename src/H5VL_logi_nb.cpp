@@ -40,7 +40,6 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (const H5VL_log_wreq_t &rhs) {
 }
 
 H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
-	herr_t err				  = 0;
 	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)dset;
 	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
 	size_t mbsize;
@@ -150,18 +149,13 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 		H5VL_logi_llreverse (rstart, (uint64_t *)(meta_buf + mbsize));
 	}
 #endif
-
-err_out:;
-	if (err) { throw "OOM"; }
 }
 
 H5VL_log_wreq_t::~H5VL_log_wreq_t () {
 	if (meta_buf) { free (meta_buf); }
 }
 
-herr_t H5VL_log_wreq_t::resize (size_t size) {
-	herr_t err = 0;
-
+void H5VL_log_wreq_t::resize (size_t size) {
 	LOG_VOL_ASSERT (size >= sizeof (H5VL_logi_meta_hdr))
 
 	// Resize metadata buffer
@@ -173,9 +167,6 @@ herr_t H5VL_log_wreq_t::resize (size_t size) {
 	// Update header
 	hdr			   = (H5VL_logi_meta_hdr *)meta_buf;
 	hdr->meta_size = size;
-
-err_out:;
-	return err;
 }
 
 size_t std::hash<H5VL_log_wreq_t>::operator() (H5VL_log_wreq_t const &r) const noexcept {
@@ -207,24 +198,17 @@ H5VL_log_merged_wreq_t::H5VL_log_merged_wreq_t () {
 }
 
 H5VL_log_merged_wreq_t::H5VL_log_merged_wreq_t (H5VL_log_dset_t *dp, int nsel) {
-	herr_t err;
-
-	err = this->init (dp, nsel);
-	if (err != 0) { throw "Init fail"; }
+	this->init (dp, nsel);
 }
 
 H5VL_log_merged_wreq_t::H5VL_log_merged_wreq_t (H5VL_log_file_t *fp, int id, int nsel) {
-	herr_t err;
-
-	err = this->init (fp, id, nsel);
-	if (err != 0) { throw "Init fail"; }
+	this->init (fp, id, nsel);
 }
 
 H5VL_log_merged_wreq_t::~H5VL_log_merged_wreq_t () {}
 
-herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
-	herr_t err = 0;
-	int flag   = 0;
+void H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
+	int flag = 0;
 
 	if (nsel < H5VL_LOGI_MERGED_REQ_SEL_RESERVE) { nsel = H5VL_LOGI_MERGED_REQ_SEL_RESERVE; }
 
@@ -266,18 +250,13 @@ herr_t H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
 
 	// No aggregated requests, data size set to 0
 	this->hdr->fsize = 0;
-
-err_out:;
-	return err;
 }
 
-herr_t H5VL_log_merged_wreq_t::init (H5VL_log_dset_t *dp, int nsel) {
-	return this->init (dp->fp, dp->id, nsel);
+void H5VL_log_merged_wreq_t::init (H5VL_log_dset_t *dp, int nsel) {
+	this->init (dp->fp, dp->id, nsel);
 }
 
-herr_t H5VL_log_merged_wreq_t::reserve (size_t size) {
-	herr_t err = 0;
-
+void H5VL_log_merged_wreq_t::reserve (size_t size) {
 	if (this->mbufp + size > this->mbufe) {
 		while (this->meta_size_alloc < this->hdr->meta_size + size) {
 			this->meta_size_alloc <<= H5VL_LOGI_MERGED_REQ_SEL_MUL;
@@ -291,22 +270,16 @@ herr_t H5VL_log_merged_wreq_t::reserve (size_t size) {
 		this->mbufp = this->meta_buf + this->hdr->meta_size;
 		this->mbufe = this->meta_buf + this->meta_size_alloc;
 	}
-err_out:;
-	return err;
 }
 
-herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
-									   H5VL_log_req_data_block_t &db,
-									   H5VL_log_selections *sels) {
-	herr_t err				  = 0;
+void H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
+									 H5VL_log_req_data_block_t &db,
+									 H5VL_log_selections *sels) {
 	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
 	size_t msize;
 
 	// Init the meta buffer if not yet inited
-	if (this->meta_buf == NULL) {
-		err = this->init (dp, sels->nsel);
-		CHECK_ERR
-	}
+	if (this->meta_buf == NULL) { this->init (dp, sels->nsel); }
 
 	// Reserve space in the metadata buffer
 	if (this->hdr->flag & H5VL_FILEI_CONFIG_SEL_ENCODE) {
@@ -335,56 +308,37 @@ herr_t H5VL_log_merged_wreq_t::append (H5VL_log_dset_t *dp,
 	// Update metadata size
 	// Header will be updated before flushing
 	this->hdr->meta_size = this->mbufp - this->meta_buf;
-err_out:;
-	return err;
 }
 
-inline herr_t H5VL_log_read_idx_search (H5VL_log_file_t *fp,
-										std::vector<H5VL_log_rreq_t *> &reqs,
-										std::vector<H5VL_log_idx_search_ret_t> &intersecs) {
-	herr_t err = 0;
+inline void H5VL_log_read_idx_search (H5VL_log_file_t *fp,
+									  std::vector<H5VL_log_rreq_t *> &reqs,
+									  std::vector<H5VL_log_idx_search_ret_t> &intersecs) {
 	int md, sec;  // Current metadata dataset and vurrent section
 
 	// Flush metadata if dirty
-	if (fp->metadirty) {
-		err = H5VL_log_filei_metaflush (fp);
-		CHECK_ERR
-	}
+	if (fp->metadirty) { H5VL_log_filei_metaflush (fp); }
 
 	// If there is no metadata size limit, we load all the metadata at once
 	if (fp->mbuf_size == LOG_VOL_BSIZE_UNLIMITED) {
 		// Load metadata
-		if (!(fp->idxvalid)) {
-			err = H5VL_log_filei_metaupdate (fp);
-			CHECK_ERR
-		}
+		if (!(fp->idxvalid)) { H5VL_log_filei_metaupdate (fp); }
 
 		// Search index
-		for (auto r : reqs) {
-			err = fp->idx->search (r, intersecs);
-			CHECK_ERR
-		}
+		for (auto r : reqs) { fp->idx->search (r, intersecs); }
 	} else {
 		md = sec = 0;
 		while (md != -1) {	// Until we iterated all metadata datasets
-			// Load partial metadata
-			err = H5VL_log_filei_metaupdate_part (fp, md, sec);
-			CHECK_ERR
+							// Load partial metadata
+			H5VL_log_filei_metaupdate_part (fp, md, sec);
 			// Search index
-			for (auto &r : reqs) {
-				err = fp->idx->search (r, intersecs);
-				CHECK_ERR
-			}
+			for (auto &r : reqs) { fp->idx->search (r, intersecs); }
 		}
 	}
-
-err_out:;
-	return err;
 }
 
-herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
-								 std::vector<H5VL_log_rreq_t *> &reqs,
-								 hid_t dxplid) {
+void H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
+							   std::vector<H5VL_log_rreq_t *> &reqs,
+							   hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;
 	int i;
@@ -404,12 +358,21 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 		NULL;  // Temporary buffers for packing data from unfiltered data block into request buffer
 	size_t tbsize = 0;	// size of tbuf
 	MPI_Status stat;
+	H5VL_logi_err_finally finally (
+		[&tbuf, &bufs, &mtype, &ftype, &zftype, &zmtype, &compound_zetype, &zetype] () -> void {
+			free (tbuf);
+			for (auto const &buf : bufs) { free (buf.second); }
+			if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
+			if (ftype != MPI_DATATYPE_NULL) MPI_Type_free (&ftype);
+			if (zftype != MPI_DATATYPE_NULL) MPI_Type_free (&zftype);
+			if (zmtype != MPI_DATATYPE_NULL) MPI_Type_free (&zmtype);
+			if (compound_zetype && zetype != MPI_DATATYPE_NULL) MPI_Type_free (&zetype);
+		});
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	// Search index
-	err = H5VL_log_read_idx_search (fp, reqs, intersecs);
-	CHECK_ERR
+	H5VL_log_read_idx_search (fp, reqs, intersecs);
 
 	// Allocate zbuf for filtered data
 	for (auto &block : intersecs) {
@@ -429,8 +392,8 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 	// Read data
 	if (intersecs.size () > 0) {
 		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VL_log_dataset_readi_gen_rtypes (intersecs, &ftype, &mtype, overlaps);
-		CHECK_ERR
+		H5VL_log_dataset_readi_gen_rtypes (intersecs, &ftype, &mtype, overlaps);
+
 		H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_DATASETI_READI_GEN_RTYPES);
 		mpierr = MPI_Type_commit (&mtype);
 		CHECK_MPIERR
@@ -466,9 +429,8 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 				char *buf = NULL;
 				int csize = 0;
 
-				err = H5VL_logi_unfilter (block.info->filters, block.zbuf, block.fsize,
-										  (void **)&buf, &csize);
-				CHECK_ERR
+				H5VL_logi_unfilter (block.info->filters, block.zbuf, block.fsize, (void **)&buf,
+									&csize);
 
 				memcpy (block.zbuf, buf, csize);
 				free (buf);
@@ -551,20 +513,9 @@ herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_PERFORM_READ);
-err_out:;
-	free (tbuf);
-	for (auto const &buf : bufs) { free (buf.second); }
-	if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
-	if (ftype != MPI_DATATYPE_NULL) MPI_Type_free (&ftype);
-	if (zftype != MPI_DATATYPE_NULL) MPI_Type_free (&zftype);
-	if (zmtype != MPI_DATATYPE_NULL) MPI_Type_free (&zmtype);
-	if (compound_zetype && zetype != MPI_DATATYPE_NULL) MPI_Type_free (&zetype);
-	return err;
 }
 
-herr_t H5VL_log_nb_flush_read_reqs (void *file,
-									std::vector<H5VL_log_rreq_t *> &reqs,
-									hid_t dxplid) {
+void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &reqs, hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;
 	int i;
@@ -572,8 +523,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 	H5VL_loc_params_t loc;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
-	err = H5VL_log_nb_flush_write_reqs (fp, dxplid);
-	CHECK_ERR
+	H5VL_log_nb_flush_write_reqs (fp, dxplid);
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -599,8 +549,8 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 
 			// Open the current subfile
 			fp->group_id = (group_id + i) % fp->ngroup;
-			err			 = H5VL_log_filei_open_subfile (fp, fp->flag, fp->ufaplid, fp->dxplid);
-			CHECK_ERR
+			H5VL_log_filei_open_subfile (fp, fp->flag, fp->ufaplid, fp->dxplid);
+
 			// Open the LOG group
 			loc.obj_type = H5I_FILE;
 			loc.type	 = H5VL_OBJECT_BY_SELF;
@@ -615,8 +565,7 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 			H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS_SWITCH_SUBFILE);
 		}
 
-		err = H5VL_log_nb_perform_read (fp, reqs, dxplid);
-		CHECK_ERR
+		H5VL_log_nb_perform_read (fp, reqs, dxplid);
 	}
 
 	// Clear the request queue
@@ -624,12 +573,9 @@ herr_t H5VL_log_nb_flush_read_reqs (void *file,
 	reqs.clear ();
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS);
-
-err_out:;
-	return err;
 }
 
-herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
+void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
@@ -655,6 +601,15 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	H5VL_loc_params_t loc;
 	char dname[16];	 // Name of the log dataset
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+	H5VL_logi_err_finally finally ([&mtype, &ldsid, &dcplid, &mlens, &moffs] () -> void {
+		if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
+		H5VL_log_Sclose (ldsid);
+		// H5VL_log_Sclose (vldsid);
+		H5VL_log_Pclose (dcplid);
+
+		H5VL_log_free (mlens);
+		H5VL_log_free (moffs);
+	});
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 	H5VL_LOGI_PROFILING_TIMER_START;
@@ -761,8 +716,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 
 			H5VL_LOGI_PROFILING_TIMER_START;
 			// Get dataset file offset
-			err = H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
-			CHECK_ERR
+			H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
 			// If not allocated, flush the file and reopen the dataset
 			if (doff == HADDR_UNDEF) {
 				H5VL_file_specific_args_t arg;
@@ -784,8 +738,7 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 				CHECK_PTR (ldp);
 
 				// Get dataset file offset
-				err = H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
-				CHECK_ERR
+				H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
 
 				// Still don't work, discard the data
 				if (doff == HADDR_UNDEF) {
@@ -876,22 +829,9 @@ herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS);
-
-err_out:
-	// Cleanup
-	if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
-	H5VL_log_Sclose (ldsid);
-	// H5VL_log_Sclose (vldsid);
-	H5VL_log_Pclose (dcplid);
-
-	H5VL_log_free (mlens);
-	H5VL_log_free (moffs);
-
-	return err;
 }
 
-inline herr_t H5VL_log_nb_flush_posix_write (int fd, char *buf, size_t count) {
-	herr_t err = 0;
+inline void H5VL_log_nb_flush_posix_write (int fd, char *buf, size_t count) {
 	ssize_t wsize;
 
 	while (count > 0) {
@@ -900,15 +840,10 @@ inline herr_t H5VL_log_nb_flush_posix_write (int fd, char *buf, size_t count) {
 		buf += wsize;
 		count -= wsize;
 	}
-
-err_out:;
-	return err;
 }
 
 // Deprecated
-herr_t H5VL_log_nb_ost_write (
-	void *file, off_t doff, off_t off, int cnt, int *mlens, off_t *moffs) {
-	herr_t err = 0;
+void H5VL_log_nb_ost_write (void *file, off_t doff, off_t off, int cnt, int *mlens, off_t *moffs) {
 	int i;
 	char *bs = NULL, *be, *bp;
 	char *mbuf;
@@ -919,6 +854,7 @@ herr_t H5VL_log_nb_ost_write (
 	size_t mlen;
 	size_t stride;
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+	H5VL_logi_err_finally finally ([&bs] () -> void { H5VL_log_free (bs); });
 
 	H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -945,13 +881,11 @@ herr_t H5VL_log_nb_ost_write (
 
 				// flush
 				if (skip_size) {
-					err		  = H5VL_log_nb_flush_posix_write (fp->fd, bs + skip_size,
-														   fp->ssize - skip_size);
+					H5VL_log_nb_flush_posix_write (fp->fd, bs + skip_size, fp->ssize - skip_size);
 					skip_size = 0;
 				} else {
-					err = H5VL_log_nb_flush_posix_write (fp->fd, bs, fp->ssize);
+					H5VL_log_nb_flush_posix_write (fp->fd, bs, fp->ssize);
 				}
-				CHECK_ERR
 
 				// Move to next stride
 				seek_off = lseek (fp->fd, stride, SEEK_CUR);
@@ -971,21 +905,13 @@ herr_t H5VL_log_nb_ost_write (
 		}
 	}
 	// Last stripe
-	if (bp > bs) {
-		err = H5VL_log_nb_flush_posix_write (fp->fd, bs + skip_size, bp - bs - skip_size);
-	}
+	if (bp > bs) { H5VL_log_nb_flush_posix_write (fp->fd, bs + skip_size, bp - bs - skip_size); }
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_WRITE_REQS_ALIGNED);
-err_out:
-
-	// Cleanup
-	H5VL_log_free (bs);
-
-	return err;
 }
 
 // Deprecated
-herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
+void H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 	herr_t err = 0;
 	int mpierr;
 	int i, j;
@@ -1002,6 +928,14 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 	H5VL_loc_params_t loc;
 	char dname[16];
 	H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+	H5VL_logi_err_finally finally ([&] () -> void {
+		if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
+		H5VL_log_Sclose (ldsid);
+
+		H5VL_log_free (mlens);
+		H5VL_log_free (moffs);
+	});
+
 	H5VL_LOGI_PROFILING_TIMER_START;
 
 	cnt = fp->wreqs.size () - fp->nflushed;
@@ -1058,8 +992,8 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 		CHECK_PTR (ldp);
 
 		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
-		CHECK_ERR	   // Get dataset file offset
+		// Get dataset file offset
+		H5VL_logi_dataset_get_foff (fp, ldp, fp->uvlid, dxplid, &doff);
 		if (remain) {  // Align to the next stripe
 			doff += fp->ssize - remain;
 		}
@@ -1085,8 +1019,7 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 		fsize_local[fp->target_ost] -= fbase;
 
 		// Write the data
-		err = H5VL_log_nb_ost_write (fp, doff, foff, cnt, mlens, moffs);
-		CHECK_ERR
+		H5VL_log_nb_ost_write (fp, doff, foff, cnt, mlens, moffs);
 
 		// Notify next node
 		MPI_Reduce (fsize_local + fp->target_ost, &fbase, 1, MPI_LONG_LONG, MPI_SUM, 0,
@@ -1115,15 +1048,6 @@ herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
 	}
 
 	H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS);
-err_out:
-	// Cleanup
-	if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
-	H5VL_log_Sclose (ldsid);
-
-	H5VL_log_free (mlens);
-	H5VL_log_free (moffs);
-
-	return err;
 }
 
 H5VL_log_rreq_t::H5VL_log_rreq_t () {}

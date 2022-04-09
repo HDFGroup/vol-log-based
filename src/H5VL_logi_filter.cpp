@@ -17,9 +17,8 @@
 #include "H5VL_logi_mem.hpp"
 #include "hdf5.h"
 
-herr_t H5VL_logi_filter (
+void H5VL_logi_filter (
 	H5VL_log_filter_pipeline_t &pipeline, void *in, int in_len, void **out, int *out_len) {
-	herr_t err = 0;
 	int i;
 	int bsize[2];  // Size of buf
 	int size_in;   // Size of bin
@@ -27,6 +26,10 @@ herr_t H5VL_logi_filter (
 	char *buf[2];  // Buffer for intermediate results in the filter pipeline
 	char *bin;	   // Current input
 	char *bout;	   // Current output
+	H5VL_logi_err_finally finally ([&buf] () -> void {
+		H5VL_log_free (buf[0]);
+		H5VL_log_free (buf[1]);
+	});
 
 	bsize[0] = bsize[1] = 0;
 	buf[0] = buf[1] = NULL;
@@ -50,9 +53,8 @@ herr_t H5VL_logi_filter (
 
 		switch (pipeline[i].id) {
 			case H5Z_FILTER_DEFLATE: {
-				err = H5VL_logi_filter_deflate_alloc (pipeline[i], bin, size_in, (void **)&bout,
-													  &size_out);
-				CHECK_ERR
+				H5VL_logi_filter_deflate_alloc (pipeline[i], bin, size_in, (void **)&bout,
+												&size_out);
 			} break;
 			default:
 				ERR_OUT ("Filter not supported")
@@ -68,14 +70,10 @@ herr_t H5VL_logi_filter (
 			size_in			 = size_out;
 		}
 	}
-
-err_out:;
-	H5VL_log_free (buf[0]) H5VL_log_free (buf[1]) return err;
 }
 
-herr_t H5VL_logi_unfilter (
+void H5VL_logi_unfilter (
 	H5VL_log_filter_pipeline_t &pipeline, void *in, int in_len, void **out, int *out_len) {
-	herr_t err = 0;
 	int i;
 	int bsize[2];  // Size of buf
 	int size_in;   // Size of bin
@@ -83,7 +81,11 @@ herr_t H5VL_logi_unfilter (
 	char *buf[2];  // Buffer for intermediate results in the filter pipeline
 	char *bin;	   // Current input
 	char *bout;	   // Current output
-	
+	H5VL_logi_err_finally finally ([&buf] () -> void {
+		H5VL_log_free (buf[0]);
+		H5VL_log_free (buf[1]);
+	});
+
 	bsize[0] = bsize[1] = 0;
 	buf[0] = buf[1] = NULL;
 
@@ -106,9 +108,8 @@ herr_t H5VL_logi_unfilter (
 
 		switch (pipeline[i].id) {
 			case H5Z_FILTER_DEFLATE: {
-				err = H5VL_logi_filter_deflate_alloc (pipeline[i], bin, size_in, (void **)&bout,
-													  &size_out);
-				CHECK_ERR
+				H5VL_logi_filter_deflate_alloc (pipeline[i], bin, size_in, (void **)&bout,
+												&size_out);
 			} break;
 			default:
 				ERR_OUT ("Filter not supported")
@@ -124,9 +125,6 @@ herr_t H5VL_logi_unfilter (
 			size_in = size_out;
 		}
 	}
-
-err_out:;
-	H5VL_log_free (buf[0]) H5VL_log_free (buf[1]) return err;
 }
 
 H5VL_log_filter_t::H5VL_log_filter_t () { this->cd_nelmts = 0; }

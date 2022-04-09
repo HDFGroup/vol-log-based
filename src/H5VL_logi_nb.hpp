@@ -51,7 +51,7 @@ class H5VL_log_wreq_t {
 	bool operator== (H5VL_log_wreq_t &rhs) const;
 	bool operator== (const H5VL_log_wreq_t rhs) const;
 
-	herr_t resize (size_t size);
+	void resize (size_t size);
 
 	H5VL_log_wreq_t ();
 	H5VL_log_wreq_t (const H5VL_log_wreq_t &obj);
@@ -76,15 +76,15 @@ class H5VL_log_merged_wreq_t : public H5VL_log_wreq_t {
 	H5VL_log_merged_wreq_t (H5VL_log_dset_t *dp, int nsel);
 	~H5VL_log_merged_wreq_t ();
 
-	herr_t append (H5VL_log_dset_t *dp,
-				   H5VL_log_req_data_block_t &db,
-				   H5VL_log_selections *sels);	// Append new requests into this reqeust
-	herr_t reset (H5VL_log_dset_info_t &dset);
+	void append (H5VL_log_dset_t *dp,
+				 H5VL_log_req_data_block_t &db,
+				 H5VL_log_selections *sels);  // Append new requests into this reqeust
+	void reset (H5VL_log_dset_info_t &dset);
 
    private:
-	herr_t init (H5VL_log_dset_t *dp, int nsel);
-	herr_t init (H5VL_log_file_t *fp, int id, int nsel);
-	herr_t reserve (size_t size);  // Allocate meta_buf of size at least size
+	void init (H5VL_log_dset_t *dp, int nsel);
+	void init (H5VL_log_file_t *fp, int id, int nsel);
+	void reserve (size_t size);	 // Allocate meta_buf of size at least size
 };
 class H5VL_log_rreq_t {
    public:
@@ -111,11 +111,10 @@ class H5VL_log_rreq_t {
 	~H5VL_log_rreq_t ();
 };
 
-herr_t H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &reqs, hid_t dxplid);
-herr_t H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
-								 std::vector<H5VL_log_rreq_t *> &reqs,
-								 hid_t dxplid);
-herr_t H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid);
-herr_t H5VL_log_nb_ost_write (
-	void *file, off_t doff, off_t off, int cnt, int *mlens, off_t *moffs);
-herr_t H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid);
+void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &reqs, hid_t dxplid);
+void H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
+							   std::vector<H5VL_log_rreq_t *> &reqs,
+							   hid_t dxplid);
+void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid);
+void H5VL_log_nb_ost_write (void *file, off_t doff, off_t off, int cnt, int *mlens, off_t *moffs);
+void H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid);

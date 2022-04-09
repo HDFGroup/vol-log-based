@@ -28,13 +28,13 @@
 #include "h5lreplay.hpp"
 #include "h5lreplay_meta.hpp"
 
-herr_t h5lreplay_parse_meta (int rank,
-							 int np,
-							 hid_t lgid,
-							 int nmdset,
-							 std::vector<dset_info> &dsets,
-							 std::vector<h5lreplay_idx_t> &reqs,
-							 int config) {
+void h5lreplay_parse_meta (int rank,
+						   int np,
+						   hid_t lgid,
+						   int nmdset,
+						   std::vector<dset_info> &dsets,
+						   std::vector<h5lreplay_idx_t> &reqs,
+						   int config) {
 	herr_t err = 0;
 	int i, j;
 	hid_t did = -1;
@@ -47,6 +47,12 @@ herr_t h5lreplay_parse_meta (int rank,
 	char *zbuf = NULL;
 	H5VL_logi_metaentry_t block;								 // Buffer of decoded metadata entry
 	std::map<char *, std::vector<H5VL_logi_metasel_t> > bcache;	 // Cache for linked metadata entry
+	H5VL_logi_err_finally finally ([&] () -> void {
+		if (zbufalloc && zbuf) { free (zbuf); }
+		if (did >= 0) { H5Dclose (did); }
+		if (msid >= 0) { H5Sclose (msid); }
+		if (dsid >= 0) { H5Sclose (dsid); }
+	});
 
 	// Memory space set to contiguous
 	start = count = INT64_MAX - 1;
@@ -185,38 +191,23 @@ herr_t h5lreplay_parse_meta (int rank,
 			}
 		}
 	}
-err_out:;
-	if (zbufalloc && zbuf) { free (zbuf); }
-
-	if (did >= 0) { H5Dclose (did); }
-	if (msid >= 0) { H5Sclose (msid); }
-	if (dsid >= 0) { H5Sclose (dsid); }
-	return err;
 }
 
 h5lreplay_idx_t::h5lreplay_idx_t () : H5VL_logi_idx_t (NULL) {}
 
-herr_t h5lreplay_idx_t::clear () {
-	this->entries.clear ();
+void h5lreplay_idx_t::clear () { this->entries.clear (); }
 
-	return 0;
-}
+void h5lreplay_idx_t::reserve (size_t size) {}
 
-herr_t h5lreplay_idx_t::reserve (size_t size) { return 0; }
-
-herr_t h5lreplay_idx_t::insert (H5VL_logi_metaentry_t &meta) {
+void h5lreplay_idx_t::insert (H5VL_logi_metaentry_t &meta) {
 	meta_block block;
 
 	block.dsize = meta.dsize;
 	block.hdr	= meta.hdr;
 	block.sels	= meta.sels;
 	this->entries.push_back (block);
-
-	return 0;
 }
 
-herr_t h5lreplay_idx_t::parse_block (char *block, size_t size) { return 0; }
+void h5lreplay_idx_t::parse_block (char *block, size_t size) {}
 
-herr_t h5lreplay_idx_t::search (H5VL_log_rreq_t *req, std::vector<H5VL_log_idx_search_ret_t> &ret) {
-	return 0;
-}
+void h5lreplay_idx_t::search (H5VL_log_rreq_t *req, std::vector<H5VL_log_idx_search_ret_t> &ret) {}

@@ -44,103 +44,105 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 		goto err_out;
 	}
 
-	// Copy a dataset
-	if (object_info->type == H5O_TYPE_DATASET) {
-		int id;
-		int ndim;
-		hsize_t hndim;
-		hsize_t dims[H5S_MAX_RANK], mdims[H5S_MAX_RANK];
+	try {
+		// Copy a dataset
+		if (object_info->type == H5O_TYPE_DATASET) {
+			int id;
+			int ndim;
+			hsize_t hndim;
+			hsize_t dims[H5S_MAX_RANK], mdims[H5S_MAX_RANK];
 
 #ifdef LOGVOL_DEBUG
-		std::cout << "Reconstructing user dataset " << name << std::endl;
+			std::cout << "Reconstructing user dataset " << name << std::endl;
 #endif
 
-		// Open src dataset
-		src_id = H5Dopen2 (o_id, name, H5P_DEFAULT);
-		CHECK_ID (src_id)
-		dcplid = H5Dget_create_plist (src_id);
+			// Open src dataset
+			src_id = H5Dopen2 (o_id, name, H5P_DEFAULT);
+			CHECK_ID (src_id)
+			dcplid = H5Dget_create_plist (src_id);
 
-		// Read ndim and dims
-		aid = H5Aopen (src_id, H5VL_LOG_DATASETI_ATTR_DIMS, H5P_DEFAULT);
-		CHECK_ID (aid)
-		sid = H5Aget_space (aid);
-		CHECK_ID (sid)
-		ndim = H5Sget_simple_extent_dims (sid, &hndim, NULL);
-		assert (ndim == 1);
-		ndim = (int)hndim;
-		H5Sclose (sid);
-		sid = -1;
-		err = H5Aread (aid, H5T_NATIVE_INT64, dims);
-		CHECK_ERR
-		H5Aclose (aid);
-		aid = -1;
-		// Read max dims
-		aid = H5Aopen (src_id, H5VL_LOG_DATASETI_ATTR_MDIMS, H5P_DEFAULT);
-		CHECK_ID (aid)
-		err = H5Aread (aid, H5T_NATIVE_INT64, mdims);
-		CHECK_ERR
-		H5Aclose (aid);
-		aid = -1;
-		// Read dataset ID
-		aid = H5Aopen (src_id, H5VL_LOG_DATASETI_ATTR_ID, H5P_DEFAULT);
-		CHECK_ID (aid)
-		err = H5Aread (aid, H5T_NATIVE_INT, &id);
-		CHECK_ERR
-		H5Aclose (aid);
-		aid = -1;
-		// Datatype and esize
-		tid = H5Dget_type (src_id);
-		CHECK_ID (tid)
+			// Read ndim and dims
+			aid = H5Aopen (src_id, H5VL_LOG_DATASETI_ATTR_DIMS, H5P_DEFAULT);
+			CHECK_ID (aid)
+			sid = H5Aget_space (aid);
+			CHECK_ID (sid)
+			ndim = H5Sget_simple_extent_dims (sid, &hndim, NULL);
+			assert (ndim == 1);
+			ndim = (int)hndim;
+			H5Sclose (sid);
+			sid = -1;
+			err = H5Aread (aid, H5T_NATIVE_INT64, dims);
+			CHECK_ERR
+			H5Aclose (aid);
+			aid = -1;
+			// Read max dims
+			aid = H5Aopen (src_id, H5VL_LOG_DATASETI_ATTR_MDIMS, H5P_DEFAULT);
+			CHECK_ID (aid)
+			err = H5Aread (aid, H5T_NATIVE_INT64, mdims);
+			CHECK_ERR
+			H5Aclose (aid);
+			aid = -1;
+			// Read dataset ID
+			aid = H5Aopen (src_id, H5VL_LOG_DATASETI_ATTR_ID, H5P_DEFAULT);
+			CHECK_ID (aid)
+			err = H5Aread (aid, H5T_NATIVE_INT, &id);
+			CHECK_ERR
+			H5Aclose (aid);
+			aid = -1;
+			// Datatype and esize
+			tid = H5Dget_type (src_id);
+			CHECK_ID (tid)
 
-		// Create dst dataset
-		err = H5Pset_layout (dcplid, H5D_CONTIGUOUS);
-		CHECK_ERR
-		sid = H5Screate_simple (ndim, dims, mdims);
-		CHECK_ID (sid)
-		dst_id = H5Dcreate2 (argp->fid, name, tid, sid, H5P_DEFAULT, dcplid, H5P_DEFAULT);
-		CHECK_ID (dst_id)
+			// Create dst dataset
+			err = H5Pset_layout (dcplid, H5D_CONTIGUOUS);
+			CHECK_ERR
+			sid = H5Screate_simple (ndim, dims, mdims);
+			CHECK_ID (sid)
+			dst_id = H5Dcreate2 (argp->fid, name, tid, sid, H5P_DEFAULT, dcplid, H5P_DEFAULT);
+			CHECK_ID (dst_id)
 
-		// Filters
-		err = H5VL_logi_get_filters (dcplid, dset.filters);
-		CHECK_ERR
+			// Filters
+			H5VL_logi_get_filters (dcplid, dset.filters);
 
-		// Copy all attributes
-		// err = H5Aiterate2 (src_did, H5_INDEX_CRT_ORDER, H5_ITER_INC, &zero,
-		//				   h5lreplay_attr_copy_handler, &dst_did);
-		// CHECK_ERR
+			// Copy all attributes
+			// err = H5Aiterate2 (src_did, H5_INDEX_CRT_ORDER, H5_ITER_INC, &zero,
+			//				   h5lreplay_attr_copy_handler, &dst_did);
+			// CHECK_ERR
 
-		dset.id	   = dst_id;
-		dset.dtype = tid;
-		dset.esize = H5Tget_size (tid);
-		dset.ndim  = ndim;
+			dset.id	   = dst_id;
+			dset.dtype = tid;
+			dset.esize = H5Tget_size (tid);
+			dset.ndim  = ndim;
 
-		// Record did for replaying data
-		// Do not close dst_did
-		argp->dsets[id] = dset;
+			// Record did for replaying data
+			// Do not close dst_did
+			argp->dsets[id] = dset;
 
-		// Copy attributes
-		n	= 0;
-		err = H5Aiterate2 (src_id, H5_INDEX_NAME, H5_ITER_INC, &n, h5lreplay_attr_copy_handler,
-						   (void *)dst_id);
-		CHECK_ERR
-	} else if (object_info->type == H5O_TYPE_GROUP) {  // Copy a group
-		// Open source group
-		src_id = H5Gopen2 (o_id, name, H5P_DEFAULT);
-		CHECK_ID (src_id)
+			// Copy attributes
+			n	= 0;
+			err = H5Aiterate2 (src_id, H5_INDEX_NAME, H5_ITER_INC, &n, h5lreplay_attr_copy_handler,
+							   (void *)dst_id);
+			CHECK_ERR
+		} else if (object_info->type == H5O_TYPE_GROUP) {  // Copy a group
+			// Open source group
+			src_id = H5Gopen2 (o_id, name, H5P_DEFAULT);
+			CHECK_ID (src_id)
 
-		// Create dst group
-		dst_id = H5Gcreate2 (argp->fid, name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-		CHECK_ID (dst_id)
+			// Create dst group
+			dst_id = H5Gcreate2 (argp->fid, name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+			CHECK_ID (dst_id)
 
-		// Copy attributes
-		n	= 0;
-		err = H5Aiterate2 (src_id, H5_INDEX_NAME, H5_ITER_INC, &n, h5lreplay_attr_copy_handler,
-						   (void *)dst_id);
-		CHECK_ERR
-	} else {  // Copy anything else as is
-		err = H5Ocopy (o_id, name, argp->fid, name, H5P_DEFAULT, H5P_DEFAULT);
-		CHECK_ERR
+			// Copy attributes
+			n	= 0;
+			err = H5Aiterate2 (src_id, H5_INDEX_NAME, H5_ITER_INC, &n, h5lreplay_attr_copy_handler,
+							   (void *)dst_id);
+			CHECK_ERR
+		} else {  // Copy anything else as is
+			err = H5Ocopy (o_id, name, argp->fid, name, H5P_DEFAULT, H5P_DEFAULT);
+			CHECK_ERR
+		}
 	}
+	H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
 	if (sid >= 0) { H5Sclose (sid); }
@@ -184,42 +186,45 @@ herr_t h5lreplay_attr_copy_handler (hid_t location_id,
 		goto err_out;
 	}
 
+	try {
 #ifdef LOGVOL_DEBUG
-	std::cout << "Copying user attribute " << attr_name << std::endl;
+		std::cout << "Copying user attribute " << attr_name << std::endl;
 #endif
 
-	// Open src attr
-	src_aid = H5Aopen (location_id, attr_name, H5P_DEFAULT);
-	CHECK_ID (src_aid)
+		// Open src attr
+		src_aid = H5Aopen (location_id, attr_name, H5P_DEFAULT);
+		CHECK_ID (src_aid)
 
-	// Get space
-	sid = H5Aget_space (src_aid);
-	CHECK_ID (sid)
+		// Get space
+		sid = H5Aget_space (src_aid);
+		CHECK_ID (sid)
 
-	// Allocate buffer
-	ndim = H5Sget_simple_extent_dims (sid, dims, mdims);
-	CHECK_ID (ndim)
-	bsize = 1;
-	for (i = 0; i < ndim; i++) { bsize *= dims[i]; }
-	tid = H5Aget_type (src_aid);
-	CHECK_ID (tid)
-	esize = H5Tget_size (tid);
-	if (esize <= 0) { ERR_OUT ("Attribute element size unknown") }
-	bsize *= esize;
-	buf = malloc (bsize);
-	CHECK_PTR (buf)
+		// Allocate buffer
+		ndim = H5Sget_simple_extent_dims (sid, dims, mdims);
+		CHECK_ID (ndim)
+		bsize = 1;
+		for (i = 0; i < ndim; i++) { bsize *= dims[i]; }
+		tid = H5Aget_type (src_aid);
+		CHECK_ID (tid)
+		esize = H5Tget_size (tid);
+		if (esize <= 0) { ERR_OUT ("Attribute element size unknown") }
+		bsize *= esize;
+		buf = malloc (bsize);
+		CHECK_PTR (buf)
 
-	// Read attr
-	err = H5Aread (src_aid, tid, buf);
-	CHECK_ERR
+		// Read attr
+		err = H5Aread (src_aid, tid, buf);
+		CHECK_ERR
 
-	// Create dst attr
-	dst_aid = H5Acreate2 (pid, attr_name, tid, sid, H5P_DEFAULT, H5P_DEFAULT);
-	CHECK_ID (dst_aid)
+		// Create dst attr
+		dst_aid = H5Acreate2 (pid, attr_name, tid, sid, H5P_DEFAULT, H5P_DEFAULT);
+		CHECK_ID (dst_aid)
 
-	// Write attr
-	err = H5Awrite (dst_aid, tid, buf);
-	CHECK_ERR
+		// Write attr
+		err = H5Awrite (dst_aid, tid, buf);
+		CHECK_ERR
+	}
+	H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
 	if (buf) { free (buf); }

@@ -27,14 +27,13 @@ typedef struct H5VL_log_filter_t {
 
 typedef std::vector<H5VL_log_filter_t> H5VL_log_filter_pipeline_t;
 
-herr_t H5VL_logi_filter (
+void H5VL_logi_filter (
 	H5VL_log_filter_pipeline_t &pipeline, void *in, int in_len, void **out, int *out_len);
 
-herr_t H5VL_logi_unfilter (
+void H5VL_logi_unfilter (
 	H5VL_log_filter_pipeline_t &pipeline, void *in, int in_len, void **out, int *out_len);
 
-inline herr_t H5VL_logi_get_filters (hid_t dcplid, std::vector<H5VL_log_filter_t> &filters) {
-	herr_t err = 0;
+inline void H5VL_logi_get_filters (hid_t dcplid, std::vector<H5VL_log_filter_t> &filters) {
 	int i;
 	int nfilter;  // Number of filters in dcplid
 
@@ -60,7 +59,4 @@ inline herr_t H5VL_logi_get_filters (hid_t dcplid, std::vector<H5VL_log_filter_t
 
 		LOG_VOL_ASSERT (filters[i].cd_nelmts <= filters[i].cd_values.size ())
 	}
-
-err_out:;
-	return err;
 }
