@@ -67,7 +67,9 @@ for write performance. Our design principle of log-based VOL is described in
   + All opened objects of a file must be closed before the file is closed.
   + Log-based VOL does not recognize files written by the native VOL.
     + The native VOL can read log-based VOL output files, but not vice-versa.
-
+  + In H5Dwrite, the dataspace indicated by file_space_id must have the same dimensions as the dataset's dataspace.
+    + file_space_id can be a selection, e.g., a subarray of the dataset's dataspace.
+    + If a zero-sized request is indicated by a null dataspace, users must call H5Sselect_none to set a zero-sized selection of the dataspace.
 ### HDF5 VOL Connector ID
 * This log-based VOL has been registered with the HDF group with
   [Connector Identifier 514](https://portal.hdfgroup.org/display/support/Registered+VOL+Connectors).
