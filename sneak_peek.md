@@ -64,7 +64,9 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * New test program
-  + none
+  + `tests/testcases/null_space.cpp` tests when only rank 0 process writes
+    zero-sized request using H5Sselect_none() and others writes non-zero-sized
+    amount.
 
 * Conformity with HDF5 library
   + none
@@ -79,4 +81,13 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Clarifications
-  + none
+  + In HDF5, the correct way to do zero-size write is to call select API
+    H5Sselect_none() using the dataset's dataspace, instead of
+    H5Screate(H5S_NULL). HDF5 reference manual says "Any dataspace specified in
+    file_space_id is ignored by the library and the dataset's dataspace is
+    always used." The dataset's dataspace is the dataspace used when creating
+    the dataset. Once the dataset is created, its dataspace can be set to a
+    selected area (e.g. subarray) and passed into H5Dwrite() to write to an
+    subbarray space of the dataset occupied in the file. Note that the size of
+    mem_type_id must match file_space_id.
+
