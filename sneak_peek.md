@@ -55,7 +55,9 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Bug fixes
-  + none
+  + Fix a bug when writing a zero-sized request. See a67fb43 and 5acb7e3.
+  + Fix a hanging bug when a subset of processes write zero-sized requests.
+    See 3f34656.
 
 * New example programs
   + none
