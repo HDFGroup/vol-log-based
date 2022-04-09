@@ -78,10 +78,10 @@ void H5VL_log_profile_print (void *file) {
 
 	if (rank == 0) {
 		for (i = 0; i < H5VL_LOG_NTIMER; i++) {
-			printf ("#+$: %s_time_mean: %lf\n", tname[i], tmean[i]);
-			printf ("#+$: %s_time_max: %lf\n", tname[i], tmax[i]);
-			printf ("#+$: %s_time_min: %lf\n", tname[i], tmin[i]);
-			printf ("#+$: %s_time_var: %lf\n\n", tname[i], tvar[i]);
+			printf ("LOGVOL: %s_time_mean: %lf\n", tname[i], tmean[i]);
+			printf ("LOGVOL: %s_time_max: %lf\n", tname[i], tmax[i]);
+			printf ("LOGVOL: %s_time_min: %lf\n", tname[i], tmin[i]);
+			printf ("LOGVOL: %s_time_var: %lf\n\n", tname[i], tvar[i]);
 		}
 	}
 
@@ -96,10 +96,10 @@ void H5VL_log_profile_print (void *file) {
 
 	if (rank == 0) {
 		for (i = 0; i < H5VL_LOG_NTIMER; i++) {
-			printf ("#+$: %s_count_mean: %lf\n", tname[i], tmean[i]);
-			printf ("#+$: %s_count_max: %lf\n", tname[i], tmax[i]);
-			printf ("#+$: %s_count_min: %lf\n", tname[i], tmin[i]);
-			printf ("#+$: %s_count_var: %lf\n\n", tname[i], tvar[i]);
+			printf ("LOGVOL: %s_count_mean: %lf\n", tname[i], tmean[i]);
+			printf ("LOGVOL: %s_count_max: %lf\n", tname[i], tmax[i]);
+			printf ("LOGVOL: %s_count_min: %lf\n", tname[i], tmin[i]);
+			printf ("LOGVOL: %s_count_var: %lf\n\n", tname[i], tvar[i]);
 		}
 	}
 }
