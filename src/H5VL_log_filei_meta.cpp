@@ -13,6 +13,7 @@
 #include <array>
 #include <cstdlib>
 #include <cstring>
+#include <cassert>
 #include <map>
 #include <unordered_map>
 #include <vector>
@@ -320,7 +321,7 @@ herr_t H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
 		mdsid = H5VL_logi_dataset_get_space (fp, mdp, fp->uvlid, fp->dxplid);
 		CHECK_ID (mdsid)
 		ndim = H5Sget_simple_extent_dims (mdsid, &mdsize, NULL);
-		LOG_VOL_ASSERT (ndim == 1);
+		assert (ndim == 1);
 
 		// N sections
 		start = 0;
@@ -418,7 +419,7 @@ herr_t H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 	mdsid = H5VL_logi_dataset_get_space (fp, mdp, fp->uvlid, fp->dxplid);
 	CHECK_ID (mdsid)
 	ndim = H5Sget_simple_extent_dims (mdsid, &mdsize, NULL);
-	LOG_VOL_ASSERT (ndim == 1);
+	assert (ndim == 1);
 
 	// Get number of sections (first 8 bytes)
 	start = 0;
