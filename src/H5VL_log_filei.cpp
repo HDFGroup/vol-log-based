@@ -556,14 +556,12 @@ herr_t H5VL_log_filei_close (H5VL_log_file_t *fp) {
 
 	if (fp->flag != H5F_ACC_RDONLY) {
 		// Flush write requests
-		if ((int)(fp->wreqs.size ()) > fp->nflushed) {
-			if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
-				err = H5VL_log_nb_flush_write_reqs_align (fp, fp->dxplid);
-			} else {
-				err = H5VL_log_nb_flush_write_reqs (fp, fp->dxplid);
-			}
-			CHECK_ERR
+		if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
+			err = H5VL_log_nb_flush_write_reqs_align (fp, fp->dxplid);
+		} else {
+			err = H5VL_log_nb_flush_write_reqs (fp, fp->dxplid);
 		}
+		CHECK_ERR
 
 		// Generate metadata table
 		err = H5VL_log_filei_metaflush (fp);
