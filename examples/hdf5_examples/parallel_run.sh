@@ -19,6 +19,7 @@ for p in ${PAR_TESTS} ; do
 
       export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
       export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
+      echo "*** TESTING $p ***"
       ${MPIRUN} ./${p} -c -f ${TESTOUTDIR}
 
       unset HDF5_VOL_CONNECTOR
