@@ -77,12 +77,12 @@ jobs:
           run: |
             WORKDIR=$(pwd)
             cat ${WORKDIR}/config.log
-            # cat ${WORKDIR}/tests/basic/*.log
-            # cat ${WORKDIR}/tests/dynamic/*.log
-            # cat ${WORKDIR}/tests/testcases/*.log
-            # cat ${WORKDIR}/tests/nc4/*.log
-            # cat ${WORKDIR}/tests/external/openpmd/*.log
-            # cat ${WORKDIR}/examples/*.log
-            # cat ${WORKDIR}/examples/hdf5_examples/*.log
-            # cat ${WORKDIR}/utils/*/*.log
+            cat ${WORKDIR}/tests/basic/*.log
+            cat ${WORKDIR}/tests/dynamic/*.log
+            cat ${WORKDIR}/tests/testcases/*.log
+            cat ${WORKDIR}/tests/nc4/*.log
+            cat ${WORKDIR}/tests/external/openpmd/*.log
+            cat ${WORKDIR}/examples/*.log
+            cat ${WORKDIR}/examples/hdf5_examples/*.log
+            cat ${WORKDIR}/utils/*/*.log
 
