@@ -30,25 +30,35 @@ jobs:
         - name: Install HDF5
           run: |
             WORKDIR=$(pwd)
-            rm -rf hdf5-1.13.0.tar.gz hdf5-1.13.0 ${WORKDIR}/.local/hdf5
+            rm -rf hdf5-1.13.0.tar.gz hdf5-1.13.0 ${WORKDIR}/.local/hdf5 qout
             wget -qc https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz
             tar -zxf hdf5-1.13.0.tar.gz
             cd hdf5-1.13.0
-            ./configure --prefix=${WORKDIR}/.local/hdf5/1.13.0 --disable-fortran \
+            ./configure --prefix=${WORKDIR}/.local/hdf5/1.13.0 \
+                        --silent \
+                        --disable-fortran \
                         --disable-tests \
-                        --enable-parallel --enable-build-mode=production CC=mpicc
-            make -j 4 install
+                        --enable-parallel \
+                        --enable-build-mode=production \
+                        CC=mpicc
+            make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
+            make -s -j 4 distclean >> qout 2>&1
         - name: Install NetCDF
           run: |
             WORKDIR=$(pwd)
-            rm -rf v4.7.4.tar.gz netcdf-c-4.7.4 ${WORKDIR}/.local/netcdf-c
+            rm -rf v4.7.4.tar.gz netcdf-c-4.7.4 ${WORKDIR}/.local/netcdf-c qout
             wget -qc https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.7.4.tar.gz
             tar -zxf v4.7.4.tar.gz
             cd netcdf-c-4.7.4
-            ./configure --prefix=${WORKDIR}/.local/netcdf-c/4.7.4 --disable-dap \
-                        CC=mpicc CPPFLAGS="-I${WORKDIR}/.local/hdf5/1.13.0/include" \
-                        LDFLAGS="-L${WORKDIR}/.local/hdf5/1.13.0/lib" LIBS="-lhdf5"
-            make -j 4 install
+            ./configure --prefix=${WORKDIR}/.local/netcdf-c/4.7.4 \
+                        --silent \
+                        --disable-dap \
+                        CC=mpicc \
+                        CPPFLAGS="-I${WORKDIR}/.local/hdf5/1.13.0/include" \
+                        LDFLAGS="-L${WORKDIR}/.local/hdf5/1.13.0/lib" \
+                        LIBS="-lhdf5"
+            make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
+            make -s -j 4 distclean >> qout 2>&1
         - name: Test log VOL
           run: |
             WORKDIR=$(pwd)
@@ -58,21 +68,24 @@ jobs:
                         --enable-test-openpmd \
                         --enable-test-hdf5-iotest \
                         TESTMPIRUN="mpiexec --oversubscribe -n NP"
-            make V=1 -j 4
-            make V=1 tests
+            # Do NOT test QMCPACK, as it requires FFTW which fails to build
+            make -j 4
+            # Do NOT parallel build, cmake for external tests can fail
+            make tests
             make check
             make ptest
-            make distcheck DISTCHECK_CONFIGURE_FLAGS="--with-hdf5=${WORKDIR}/.local/hdf5/1.13.0"
+            make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0"
         - name: Print log
-          if: ${{ failure() }}
           run: |
             WORKDIR=$(pwd)
             cat ${WORKDIR}/config.log
-            cat ${WORKDIR}/tests/dynamic/test-suite.log
-            cat ${WORKDIR}/tests/nc4/test-suite.log
-            cat ${WORKDIR}/tests/basic/test-suite.log
-            cat ${WORKDIR}/tests/testcases/test-suite.log
-            cat ${WORKDIR}/tests/external/openpmd/test-suite.log
-            cat ${WORKDIR}/tests/external/hdf5_iotest/test-suite.log
-            cat ${WORKDIR}/examples/hdf5_examples/test-suite.log
-            cat ${WORKDIR}/utils/h5lreplay/test.log
+            cat ${WORKDIR}/tests/basic/*.log
+            cat ${WORKDIR}/tests/dynamic/*.log
+            cat ${WORKDIR}/tests/testcases/*.log
+            cat ${WORKDIR}/tests/nc4/*.log
+            cat ${WORKDIR}/tests/external/hdf5_iotest/*.log
+            cat ${WORKDIR}/tests/external/openpmd/*.log
+            cat ${WORKDIR}/examples/*.log
+            cat ${WORKDIR}/examples/hdf5_examples/*.log
+            cat ${WORKDIR}/utils/*/*.log
+
