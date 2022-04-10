@@ -21,13 +21,13 @@
 /* Function prototypes */
 /********************* */
 const H5VL_link_class_t H5VL_log_link_g {
-	//   H5VL_log_link_create_reissue,                       /* create_reissue */
-	H5VL_log_link_create,	/* create */
-	H5VL_log_link_copy,		/* copy */
-	H5VL_log_link_move,		/* move */
-	H5VL_log_link_get,		/* get */
-	H5VL_log_link_specific, /* specific */
-	H5VL_log_link_optional	/* optional */
+    //   H5VL_log_link_create_reissue,                       /* create_reissue */
+    H5VL_log_link_create,   /* create */
+    H5VL_log_link_copy,     /* copy */
+    H5VL_log_link_move,     /* move */
+    H5VL_log_link_get,      /* get */
+    H5VL_log_link_specific, /* specific */
+    H5VL_log_link_optional  /* optional */
 };
 
 /*-------------------------------------------------------------------------
@@ -42,22 +42,22 @@ const H5VL_link_class_t H5VL_log_link_g {
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_link_create_reissue (H5VL_link_create_args_t *args,
-									 void *obj,
-									 const H5VL_loc_params_t *loc_params,
-									 hid_t connector_id,
-									 hid_t lcpl_id,
-									 hid_t lapl_id,
-									 hid_t dxpl_id,
-									 void **req,
-									 ...) {
-	va_list arguments;
-	herr_t err = 0;
+                                     void *obj,
+                                     const H5VL_loc_params_t *loc_params,
+                                     hid_t connector_id,
+                                     hid_t lcpl_id,
+                                     hid_t lapl_id,
+                                     hid_t dxpl_id,
+                                     void **req,
+                                     ...) {
+    va_list arguments;
+    herr_t err = 0;
 
-	va_start (arguments, req);
-	err = H5VLlink_create (args, obj, loc_params, connector_id, lcpl_id, lapl_id, dxpl_id, req);
-	va_end (arguments);
+    va_start (arguments, req);
+    err = H5VLlink_create (args, obj, loc_params, connector_id, lcpl_id, lapl_id, dxpl_id, req);
+    va_end (arguments);
 
-	return err;
+    return err;
 } /* end H5VL_log_link_create_reissue() */
 
 /*-------------------------------------------------------------------------
@@ -71,55 +71,55 @@ herr_t H5VL_log_link_create_reissue (H5VL_link_create_args_t *args,
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_link_create (H5VL_link_create_args_t *args,
-							 void *obj,
-							 const H5VL_loc_params_t *loc_params,
-							 hid_t lcpl_id,
-							 hid_t lapl_id,
-							 hid_t dxpl_id,
-							 void **req) {
-	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-	hid_t uvlid		  = -1;
-	herr_t err		  = 0;
+                             void *obj,
+                             const H5VL_loc_params_t *loc_params,
+                             hid_t lcpl_id,
+                             hid_t lapl_id,
+                             hid_t dxpl_id,
+                             void **req) {
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
+    hid_t uvlid       = -1;
+    herr_t err        = 0;
 
-	try {
+    try {
 #ifdef LOGVOL_DEBUG
-		if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Create\n"); }
+        if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Create\n"); }
 #endif
 
-		/* Try to retrieve the "under" VOL id */
-		if (o) uvlid = o->uvlid;
+        /* Try to retrieve the "under" VOL id */
+        if (o) uvlid = o->uvlid;
 
-		/* Fix up the link target object for hard link creation */
-		if (H5VL_LINK_CREATE_HARD == args->op_type) {
-			void *cur_obj;
-			H5VL_loc_params_t cur_params;
+        /* Fix up the link target object for hard link creation */
+        if (H5VL_LINK_CREATE_HARD == args->op_type) {
+            void *cur_obj;
+            H5VL_loc_params_t cur_params;
 
-			/* Retrieve the object & loc params for the link target */
-			cur_obj	   = args->args.hard.curr_obj;
-			cur_params = args->args.hard.curr_loc_params;
+            /* Retrieve the object & loc params for the link target */
+            cur_obj    = args->args.hard.curr_obj;
+            cur_params = args->args.hard.curr_loc_params;
 
-			/* If it's a non-NULL pointer, find the 'under object' and re-set the property */
-			if (cur_obj) {
-				/* Check if we still need the "under" VOL ID */
-				if (uvlid < 0) uvlid = ((H5VL_log_obj_t *)cur_obj)->uvlid;
+            /* If it's a non-NULL pointer, find the 'under object' and re-set the property */
+            if (cur_obj) {
+                /* Check if we still need the "under" VOL ID */
+                if (uvlid < 0) uvlid = ((H5VL_log_obj_t *)cur_obj)->uvlid;
 
-				/* Set the object for the link target */
-				cur_obj = ((H5VL_log_obj_t *)cur_obj)->uo;
-			} /* end if */
+                /* Set the object for the link target */
+                cur_obj = ((H5VL_log_obj_t *)cur_obj)->uo;
+            } /* end if */
 
-			/* Re-issue 'link create' call, using the unwrapped pieces */
-			err =
-				H5VL_log_link_create_reissue (args, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id,
-											  lapl_id, dxpl_id, req, cur_obj, cur_params);
-		} /* end if */
-		else
-			err = H5VLlink_create (args, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id, lapl_id,
-								   dxpl_id, req);
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+            /* Re-issue 'link create' call, using the unwrapped pieces */
+            err =
+                H5VL_log_link_create_reissue (args, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id,
+                                              lapl_id, dxpl_id, req, cur_obj, cur_params);
+        } /* end if */
+        else
+            err = H5VLlink_create (args, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id, lapl_id,
+                                   dxpl_id, req);
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_link_create() */
 
 /*-------------------------------------------------------------------------
@@ -138,52 +138,52 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_link_copy (void *src_obj,
-						   const H5VL_loc_params_t *loc_params1,
-						   void *dst_obj,
-						   const H5VL_loc_params_t *loc_params2,
-						   hid_t lcpl_id,
-						   hid_t lapl_id,
-						   hid_t dxpl_id,
-						   void **req) {
-	H5VL_log_obj_t *o_src = (H5VL_log_obj_t *)src_obj;
-	H5VL_log_obj_t *o_dst = (H5VL_log_obj_t *)dst_obj;
-	hid_t uvlid			  = -1;
-	herr_t err			  = 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+                           const H5VL_loc_params_t *loc_params1,
+                           void *dst_obj,
+                           const H5VL_loc_params_t *loc_params2,
+                           hid_t lcpl_id,
+                           hid_t lapl_id,
+                           hid_t dxpl_id,
+                           void **req) {
+    H5VL_log_obj_t *o_src = (H5VL_log_obj_t *)src_obj;
+    H5VL_log_obj_t *o_dst = (H5VL_log_obj_t *)dst_obj;
+    hid_t uvlid           = -1;
+    herr_t err            = 0;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
 
-	try {
+    try {
 #ifdef LOGVOL_DEBUG
-		if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Copy\n"); }
+        if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Copy\n"); }
 #endif
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		/* Retrieve the "under" VOL id */
-		if (o_src)
-			uvlid = o_src->uvlid;
-		else if (o_dst)
-			uvlid = o_dst->uvlid;
-		assert (uvlid > 0);
+        /* Retrieve the "under" VOL id */
+        if (o_src)
+            uvlid = o_src->uvlid;
+        else if (o_dst)
+            uvlid = o_dst->uvlid;
+        assert (uvlid > 0);
 
-		err = H5VLlink_copy ((o_src ? o_src->uo : NULL), loc_params1, (o_dst ? o_dst->uo : NULL),
-							 loc_params2, uvlid, lcpl_id, lapl_id, dxpl_id, ureqp);
-		CHECK_ERR
+        err = H5VLlink_copy ((o_src ? o_src->uo : NULL), loc_params1, (o_dst ? o_dst->uo : NULL),
+                             loc_params2, uvlid, lcpl_id, lapl_id, dxpl_id, ureqp);
+        CHECK_ERR
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_link_copy() */
 
 /*-------------------------------------------------------------------------
@@ -202,82 +202,82 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_link_move (void *src_obj,
-						   const H5VL_loc_params_t *loc_params1,
-						   void *dst_obj,
-						   const H5VL_loc_params_t *loc_params2,
-						   hid_t lcpl_id,
-						   hid_t lapl_id,
-						   hid_t dxpl_id,
-						   void **req) {
-	H5VL_log_obj_t *o_src = (H5VL_log_obj_t *)src_obj;
-	H5VL_log_obj_t *o_dst = (H5VL_log_obj_t *)dst_obj;
-	hid_t uvlid			  = -1;
-	herr_t err			  = 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+                           const H5VL_loc_params_t *loc_params1,
+                           void *dst_obj,
+                           const H5VL_loc_params_t *loc_params2,
+                           hid_t lcpl_id,
+                           hid_t lapl_id,
+                           hid_t dxpl_id,
+                           void **req) {
+    H5VL_log_obj_t *o_src = (H5VL_log_obj_t *)src_obj;
+    H5VL_log_obj_t *o_dst = (H5VL_log_obj_t *)dst_obj;
+    hid_t uvlid           = -1;
+    herr_t err            = 0;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
 
-	try {
+    try {
 #ifdef LOGVOL_DEBUG
-		if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Move\n"); }
+        if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Move\n"); }
 #endif
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		// Block access to internal objects
-		switch (loc_params1->type) {
-			case H5VL_OBJECT_BY_NAME:
-				if (!(loc_params1->loc_data.loc_by_name.name) ||
-					loc_params1->loc_data.loc_by_name.name[0] == '_') {
-					RET_ERR ("Access to internal objects denied")
-				}
-				break;
-			case H5VL_OBJECT_BY_SELF:
-				break;
-			case H5VL_OBJECT_BY_IDX:
-			case H5VL_OBJECT_BY_TOKEN:
-				RET_ERR ("Access by idx annd token is not supported")
-				break;
-		}
-		switch (loc_params2->type) {
-			case H5VL_OBJECT_BY_NAME:
-				if (!(loc_params2->loc_data.loc_by_name.name) ||
-					loc_params2->loc_data.loc_by_name.name[0] == '_') {
-					RET_ERR ("Access to internal objects denied")
-				}
-				break;
-			case H5VL_OBJECT_BY_SELF:
-				break;
-			case H5VL_OBJECT_BY_IDX:
-			case H5VL_OBJECT_BY_TOKEN:
-				RET_ERR ("Access by idx annd token is not supported")
-				break;
-		}
+        // Block access to internal objects
+        switch (loc_params1->type) {
+            case H5VL_OBJECT_BY_NAME:
+                if (!(loc_params1->loc_data.loc_by_name.name) ||
+                    loc_params1->loc_data.loc_by_name.name[0] == '_') {
+                    RET_ERR ("Access to internal objects denied")
+                }
+                break;
+            case H5VL_OBJECT_BY_SELF:
+                break;
+            case H5VL_OBJECT_BY_IDX:
+            case H5VL_OBJECT_BY_TOKEN:
+                RET_ERR ("Access by idx annd token is not supported")
+                break;
+        }
+        switch (loc_params2->type) {
+            case H5VL_OBJECT_BY_NAME:
+                if (!(loc_params2->loc_data.loc_by_name.name) ||
+                    loc_params2->loc_data.loc_by_name.name[0] == '_') {
+                    RET_ERR ("Access to internal objects denied")
+                }
+                break;
+            case H5VL_OBJECT_BY_SELF:
+                break;
+            case H5VL_OBJECT_BY_IDX:
+            case H5VL_OBJECT_BY_TOKEN:
+                RET_ERR ("Access by idx annd token is not supported")
+                break;
+        }
 
-		/* Retrieve the "under" VOL id */
-		if (o_src)
-			uvlid = o_src->uvlid;
-		else if (o_dst)
-			uvlid = o_dst->uvlid;
-		assert (uvlid > 0);
+        /* Retrieve the "under" VOL id */
+        if (o_src)
+            uvlid = o_src->uvlid;
+        else if (o_dst)
+            uvlid = o_dst->uvlid;
+        assert (uvlid > 0);
 
-		err = H5VLlink_move ((o_src ? o_src->uo : NULL), loc_params1, (o_dst ? o_dst->uo : NULL),
-							 loc_params2, uvlid, lcpl_id, lapl_id, dxpl_id, ureqp);
-		CHECK_ERR
+        err = H5VLlink_move ((o_src ? o_src->uo : NULL), loc_params1, (o_dst ? o_dst->uo : NULL),
+                             loc_params2, uvlid, lcpl_id, lapl_id, dxpl_id, ureqp);
+        CHECK_ERR
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_link_move() */
 
 /*-------------------------------------------------------------------------
@@ -291,55 +291,55 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_link_get (void *obj,
-						  const H5VL_loc_params_t *loc_params,
-						  H5VL_link_get_args_t *args,
-						  hid_t dxpl_id,
-						  void **req) {
-	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-	herr_t err		  = 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+                          const H5VL_loc_params_t *loc_params,
+                          H5VL_link_get_args_t *args,
+                          hid_t dxpl_id,
+                          void **req) {
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
+    herr_t err        = 0;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
 
-	try {
+    try {
 #ifdef LOGVOL_DEBUG
-		if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Get\n"); }
+        if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Get\n"); }
 #endif
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		// Block access to internal objects
-		switch (loc_params->type) {
-			case H5VL_OBJECT_BY_NAME:
-				if (!(loc_params->loc_data.loc_by_name.name) ||
-					loc_params->loc_data.loc_by_name.name[0] == '_') {
-					RET_ERR ("Access to internal objects denied")
-				}
-				break;
-			case H5VL_OBJECT_BY_SELF:
-				break;
-			case H5VL_OBJECT_BY_IDX:
-			case H5VL_OBJECT_BY_TOKEN:
-				RET_ERR ("Access by idx annd token is not supported")
-				break;
-		}
+        // Block access to internal objects
+        switch (loc_params->type) {
+            case H5VL_OBJECT_BY_NAME:
+                if (!(loc_params->loc_data.loc_by_name.name) ||
+                    loc_params->loc_data.loc_by_name.name[0] == '_') {
+                    RET_ERR ("Access to internal objects denied")
+                }
+                break;
+            case H5VL_OBJECT_BY_SELF:
+                break;
+            case H5VL_OBJECT_BY_IDX:
+            case H5VL_OBJECT_BY_TOKEN:
+                RET_ERR ("Access by idx annd token is not supported")
+                break;
+        }
 
-		err = H5VLlink_get (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
-		CHECK_ERR
+        err = H5VLlink_get (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
+        CHECK_ERR
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_link_get() */
 
 /*-------------------------------------------------------------------------
@@ -353,77 +353,77 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_link_specific (void *obj,
-							   const H5VL_loc_params_t *loc_params,
-							   H5VL_link_specific_args_t *args,
-							   hid_t dxpl_id,
-							   void **req) {
-	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-	herr_t err		  = 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
-	H5VL_log_linki_iterate_op_data *ctx = NULL;
+                               const H5VL_loc_params_t *loc_params,
+                               H5VL_link_specific_args_t *args,
+                               hid_t dxpl_id,
+                               void **req) {
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
+    herr_t err        = 0;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
+    H5VL_log_linki_iterate_op_data *ctx = NULL;
 
-	try {
+    try {
 #ifdef LOGVOL_DEBUG
-		if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Specific\n"); }
+        if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Specific\n"); }
 #endif
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		// Block access to internal objects
-		switch (loc_params->type) {
-			case H5VL_OBJECT_BY_NAME:
-				if (!(loc_params->loc_data.loc_by_name.name) ||
-					loc_params->loc_data.loc_by_name.name[0] == '_') {
-					if (args->op_type == H5VL_LINK_EXISTS) {
-						*args->args.exists.exists = false;
-						goto err_out;
-					} else {
-						RET_ERR ("Access to internal objects denied")
-					}
-				}
-				break;
-			case H5VL_OBJECT_BY_SELF:
-				break;
-			case H5VL_OBJECT_BY_IDX:
-			case H5VL_OBJECT_BY_TOKEN:
-				RET_ERR ("Access by idx annd token is not supported")
-				break;
-		}
+        // Block access to internal objects
+        switch (loc_params->type) {
+            case H5VL_OBJECT_BY_NAME:
+                if (!(loc_params->loc_data.loc_by_name.name) ||
+                    loc_params->loc_data.loc_by_name.name[0] == '_') {
+                    if (args->op_type == H5VL_LINK_EXISTS) {
+                        *args->args.exists.exists = false;
+                        goto err_out;
+                    } else {
+                        RET_ERR ("Access to internal objects denied")
+                    }
+                }
+                break;
+            case H5VL_OBJECT_BY_SELF:
+                break;
+            case H5VL_OBJECT_BY_IDX:
+            case H5VL_OBJECT_BY_TOKEN:
+                RET_ERR ("Access by idx annd token is not supported")
+                break;
+        }
 
-		// Replace H5Literate/visit callback with logvol wrpapper
-		if (args->op_type == H5VL_LINK_ITER) {
-			ctx =
-				(H5VL_log_linki_iterate_op_data *)malloc (sizeof (H5VL_log_linki_iterate_op_data));
-			ctx->op					   = args->args.iterate.op;
-			ctx->op_data			   = args->args.iterate.op_data;
-			args->args.iterate.op	   = H5VL_log_linki_iterate_op;
-			args->args.iterate.op_data = ctx;
-		}
+        // Replace H5Literate/visit callback with logvol wrpapper
+        if (args->op_type == H5VL_LINK_ITER) {
+            ctx =
+                (H5VL_log_linki_iterate_op_data *)malloc (sizeof (H5VL_log_linki_iterate_op_data));
+            ctx->op                    = args->args.iterate.op;
+            ctx->op_data               = args->args.iterate.op_data;
+            args->args.iterate.op      = H5VL_log_linki_iterate_op;
+            args->args.iterate.op_data = ctx;
+        }
 
-		err = H5VLlink_specific (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
-		CHECK_ERR
+        err = H5VLlink_specific (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
+        CHECK_ERR
 
-		if (args->op_type == H5VL_LINK_ITER) {
-			args->args.iterate.op	   = ctx->op;
-			args->args.iterate.op_data = ctx->op_data;
-		}
+        if (args->op_type == H5VL_LINK_ITER) {
+            args->args.iterate.op      = ctx->op;
+            args->args.iterate.op_data = ctx->op_data;
+        }
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	if (ctx) { free (ctx); }
-	return err;
+    if (ctx) { free (ctx); }
+    return err;
 } /* end H5VL_log_link_specific() */
 
 /*-------------------------------------------------------------------------
@@ -437,53 +437,53 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_link_optional (void *obj,
-							   const H5VL_loc_params_t *loc_params,
-							   H5VL_optional_args_t *args,
-							   hid_t dxpl_id,
-							   void **req) {
-	H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
-	herr_t err		  = 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+                               const H5VL_loc_params_t *loc_params,
+                               H5VL_optional_args_t *args,
+                               hid_t dxpl_id,
+                               void **req) {
+    H5VL_log_obj_t *o = (H5VL_log_obj_t *)obj;
+    herr_t err        = 0;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
 
-	try {
+    try {
 #ifdef LOGVOL_DEBUG
-		if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Optional\n"); }
+        if (H5VL_logi_debug_verbose ()) { printf ("------- LOG VOL LINK Optional\n"); }
 #endif
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		// Block access to internal objects
-		switch (loc_params->type) {
-			case H5VL_OBJECT_BY_NAME:
-				if (!(loc_params->loc_data.loc_by_name.name) ||
-					loc_params->loc_data.loc_by_name.name[0] == '_') {
-					RET_ERR ("Access to internal objects denied")
-				}
-				break;
-			case H5VL_OBJECT_BY_SELF:
-				break;
-			case H5VL_OBJECT_BY_IDX:
-			case H5VL_OBJECT_BY_TOKEN:
-				RET_ERR ("Access by idx annd token is not supported")
-				break;
-		}
+        // Block access to internal objects
+        switch (loc_params->type) {
+            case H5VL_OBJECT_BY_NAME:
+                if (!(loc_params->loc_data.loc_by_name.name) ||
+                    loc_params->loc_data.loc_by_name.name[0] == '_') {
+                    RET_ERR ("Access to internal objects denied")
+                }
+                break;
+            case H5VL_OBJECT_BY_SELF:
+                break;
+            case H5VL_OBJECT_BY_IDX:
+            case H5VL_OBJECT_BY_TOKEN:
+                RET_ERR ("Access by idx annd token is not supported")
+                break;
+        }
 
-		err = H5VLlink_optional (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
-		CHECK_ERR
+        err = H5VLlink_optional (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
+        CHECK_ERR
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_link_optional() */

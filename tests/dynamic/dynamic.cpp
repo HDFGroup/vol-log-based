@@ -20,12 +20,12 @@ int main (int argc, char **argv) {
     int err, nerrs = 0, rank, np, buf[10][10];
     const char *file_name;
     hid_t fid, faplid, space_id, dset, xfer_plist, fspace, mspace;
-    char volname[128]={0};        // Name of current VOL
-    ssize_t volname_len;          // Length of volname
-    std::string vol_name;         // Name of the VOL used
-    std::string target_vol_name;  // Name of the specified VOL
-    char *env;                    // HDF5_VOL_CONNECTOR environment variable
-    hsize_t ones[2]={1,1}, dims[2]={10,10}; /* dataspace dim sizes */
+    char volname[128] = {0};                      // Name of current VOL
+    ssize_t volname_len;                          // Length of volname
+    std::string vol_name;                         // Name of the VOL used
+    std::string target_vol_name;                  // Name of the specified VOL
+    char *env;                                    // HDF5_VOL_CONNECTOR environment variable
+    hsize_t ones[2] = {1, 1}, dims[2] = {10, 10}; /* dataspace dim sizes */
     hsize_t start[2], count[2];
 
     MPI_Init (&argc, &argv);
@@ -59,47 +59,47 @@ int main (int argc, char **argv) {
     } else {
         target_vol_name = "native";
     }
-    volname_len = H5VLget_connector_name (fid, volname, 128);
+    volname_len          = H5VLget_connector_name (fid, volname, 128);
     volname[volname_len] = '\0';
-    vol_name = std::string (volname);
+    vol_name             = std::string (volname);
     EXP_VAL (vol_name, target_vol_name)
 
-    space_id = H5Screate_simple(2, dims, NULL);
+    space_id = H5Screate_simple (2, dims, NULL);
 
     /* create a dataset collectively */
-    dset = H5Dcreate2(fid, "variable", H5T_NATIVE_INT, space_id,
-                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dset = H5Dcreate2 (fid, "variable", H5T_NATIVE_INT, space_id, H5P_DEFAULT, H5P_DEFAULT,
+                       H5P_DEFAULT);
     CHECK_ERR (dset)
 
     start[0] = (rank == 2 || rank == 3) ? 5 : 0;
     start[1] = (rank == 1 || rank == 3) ? 5 : 0;
     count[0] = count[1] = 5;
 
-    fspace = H5Dget_space(dset);
+    fspace = H5Dget_space (dset);
     CHECK_ERR (fspace)
-    err = H5Sselect_hyperslab(fspace, H5S_SELECT_SET, start, NULL, ones, count);
+    err = H5Sselect_hyperslab (fspace, H5S_SELECT_SET, start, NULL, ones, count);
     CHECK_ERR (fspace)
 
-    mspace = H5Screate_simple(2, count, NULL);
+    mspace = H5Screate_simple (2, count, NULL);
     CHECK_ERR (mspace)
 
-    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate (H5P_DATASET_XFER);
     CHECK_ERR (xfer_plist)
-    err = H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
+    err = H5Pset_dxpl_mpio (xfer_plist, H5FD_MPIO_COLLECTIVE);
     CHECK_ERR (err)
 
-    err = H5Dwrite(dset, H5T_NATIVE_INT, mspace, fspace, xfer_plist, buf);
+    err = H5Dwrite (dset, H5T_NATIVE_INT, mspace, fspace, xfer_plist, buf);
     CHECK_ERR (err)
 
-    err = H5Pclose(xfer_plist);
+    err = H5Pclose (xfer_plist);
     CHECK_ERR (err)
-    err = H5Sclose(mspace);
+    err = H5Sclose (mspace);
     CHECK_ERR (err)
-    err = H5Sclose(fspace);
+    err = H5Sclose (fspace);
     CHECK_ERR (err)
-    err = H5Dclose(dset);
+    err = H5Dclose (dset);
     CHECK_ERR (err)
-    err = H5Sclose(space_id);
+    err = H5Sclose (space_id);
     CHECK_ERR (err)
     err = H5Fclose (fid);
     CHECK_ERR (err)

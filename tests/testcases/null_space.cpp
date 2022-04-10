@@ -17,14 +17,14 @@
 
 int main (int argc, char **argv) {
     const char *file_name;
-    int nerrs = 0, rank, np, buf[N];
-    herr_t err = 0;
+    int nerrs           = 0, rank, np, buf[N];
+    herr_t err          = 0;
     hid_t file_id       = -1;  // File ID
     hid_t dataset_id    = -1;  // Dataset ID
     hid_t file_space_id = -1;  // Dataset space ID
     hid_t faplid        = -1;  // file access property list ID
     hid_t log_vlid      = -1;  // Logvol ID
-    hsize_t dims[1] = {N};
+    hsize_t dims[1]     = {N};
 
     MPI_Init (&argc, &argv);
     MPI_Comm_size (MPI_COMM_WORLD, &np);
@@ -63,13 +63,13 @@ int main (int argc, char **argv) {
     CHECK_ERR (file_id)
 
     // Create dataset's dataspace (in file)
-    dims[0] = np;
+    dims[0]       = np;
     file_space_id = H5Screate_simple (1, dims, NULL);
     CHECK_ERR (file_space_id);
 
     // Create a new dataset
-    dataset_id = H5Dcreate2 (file_id, "D", H5T_STD_I32LE, file_space_id,
-                             H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dataset_id = H5Dcreate2 (file_id, "D", H5T_STD_I32LE, file_space_id, H5P_DEFAULT, H5P_DEFAULT,
+                             H5P_DEFAULT);
     CHECK_ERR (dataset_id)
 
     // only rank 0 writes zero-sized data
@@ -87,15 +87,14 @@ int main (int argc, char **argv) {
          */
 
         /* create a zero-sized memory space */
-        hid_t mem_space_id = H5Screate(H5S_NULL);
+        hid_t mem_space_id = H5Screate (H5S_NULL);
         CHECK_ERR (mem_space_id)
 
         /* set the selection of dataset's file space to zero size */
         err = H5Sselect_none (file_space_id);
         CHECK_ERR (err)
 
-        err = H5Dwrite (dataset_id, H5T_NATIVE_INT, mem_space_id,
-                        file_space_id, H5P_DEFAULT, NULL);
+        err = H5Dwrite (dataset_id, H5T_NATIVE_INT, mem_space_id, file_space_id, H5P_DEFAULT, NULL);
         CHECK_ERR (err)
 
         err = H5Sclose (mem_space_id);
@@ -103,11 +102,10 @@ int main (int argc, char **argv) {
 
     } else {
         /* copy file_space_id into mem_space_id, so their sizes are equal */
-        hid_t mem_space_id = H5Scopy(file_space_id);
+        hid_t mem_space_id = H5Scopy (file_space_id);
         CHECK_ERR (mem_space_id)
 
-        err = H5Dwrite (dataset_id, H5T_NATIVE_INT, mem_space_id,
-                        file_space_id, H5P_DEFAULT, buf);
+        err = H5Dwrite (dataset_id, H5T_NATIVE_INT, mem_space_id, file_space_id, H5P_DEFAULT, buf);
         CHECK_ERR (err)
 
         err = H5Sclose (mem_space_id);
@@ -132,10 +130,10 @@ int main (int argc, char **argv) {
 
 err_out:
     if (file_space_id >= 0) H5Sclose (file_space_id);
-    if (dataset_id >= 0)    H5Dclose (dataset_id);
-    if (file_id >= 0)       H5Fclose (file_id);
-    if (faplid >= 0)        H5Pclose (faplid);
-    if (log_vlid >= 0)      H5VLclose (log_vlid);
+    if (dataset_id >= 0) H5Dclose (dataset_id);
+    if (file_id >= 0) H5Fclose (file_id);
+    if (faplid >= 0) H5Pclose (faplid);
+    if (log_vlid >= 0) H5VLclose (log_vlid);
 
     SHOW_TEST_RESULT
 

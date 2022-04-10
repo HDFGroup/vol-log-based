@@ -20,14 +20,14 @@
 /********************* */
 
 const H5VL_attr_class_t H5VL_log_attr_g {
-	H5VL_log_attr_create,	/* create       */
-	H5VL_log_attr_open,		/* open         */
-	H5VL_log_attr_read,		/* read         */
-	H5VL_log_attr_write,	/* write        */
-	H5VL_log_attr_get,		/* get          */
-	H5VL_log_attr_specific, /* specific     */
-	H5VL_log_attr_optional, /* optional     */
-	H5VL_log_attr_close		/* close        */
+    H5VL_log_attr_create,   /* create       */
+    H5VL_log_attr_open,     /* open         */
+    H5VL_log_attr_read,     /* read         */
+    H5VL_log_attr_write,    /* write        */
+    H5VL_log_attr_get,      /* get          */
+    H5VL_log_attr_specific, /* specific     */
+    H5VL_log_attr_optional, /* optional     */
+    H5VL_log_attr_close     /* close        */
 };
 
 /*-------------------------------------------------------------------------
@@ -41,55 +41,55 @@ const H5VL_attr_class_t H5VL_log_attr_g {
  *-------------------------------------------------------------------------
  */
 void *H5VL_log_attr_create (void *obj,
-							const H5VL_loc_params_t *loc_params,
-							const char *name,
-							hid_t type_id,
-							hid_t space_id,
-							hid_t acpl_id,
-							hid_t aapl_id,
-							hid_t dxpl_id,
-							void **req) {
-	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-	H5VL_log_obj_t *ap;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+                            const H5VL_loc_params_t *loc_params,
+                            const char *name,
+                            hid_t type_id,
+                            hid_t space_id,
+                            hid_t acpl_id,
+                            hid_t aapl_id,
+                            hid_t dxpl_id,
+                            void **req) {
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    H5VL_log_obj_t *ap;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		/* Check arguments */
-		H5VL_LOGI_CHECK_NAME (name);
+        /* Check arguments */
+        H5VL_LOGI_CHECK_NAME (name);
 
-		ap = new H5VL_log_obj_t (op, H5I_ATTR);
+        ap = new H5VL_log_obj_t (op, H5I_ATTR);
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		ap->uo = H5VLattr_create (op->uo, loc_params, op->uvlid, name, type_id, space_id, acpl_id,
-								  aapl_id, dxpl_id, ureqp);
-		H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VLATT_CREATE);
-		CHECK_PTR (ap->uo);
+        H5VL_LOGI_PROFILING_TIMER_START;
+        ap->uo = H5VLattr_create (op->uo, loc_params, op->uvlid, name, type_id, space_id, acpl_id,
+                                  aapl_id, dxpl_id, ureqp);
+        H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VLATT_CREATE);
+        CHECK_PTR (ap->uo);
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VL_LOG_ATT_CREATE);
-	}
-	H5VL_LOGI_EXP_CATCH
+        H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VL_LOG_ATT_CREATE);
+    }
+    H5VL_LOGI_EXP_CATCH
 
-	return (void *)ap;
+    return (void *)ap;
 
 err_out:;
-	delete ap;
+    delete ap;
 
-	return NULL;
+    return NULL;
 } /* end H5VL_log_attr_create() */
 
 /*-------------------------------------------------------------------------
@@ -103,51 +103,51 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 void *H5VL_log_attr_open (void *obj,
-						  const H5VL_loc_params_t *loc_params,
-						  const char *name,
-						  hid_t aapl_id,
-						  hid_t dxpl_id,
-						  void **req) {
-	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-	H5VL_log_obj_t *ap;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+                          const H5VL_loc_params_t *loc_params,
+                          const char *name,
+                          hid_t aapl_id,
+                          hid_t dxpl_id,
+                          void **req) {
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    H5VL_log_obj_t *ap;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		/* Check arguments */
-		H5VL_LOGI_CHECK_NAME (name);
+        /* Check arguments */
+        H5VL_LOGI_CHECK_NAME (name);
 
-		ap = new H5VL_log_obj_t (op, H5I_ATTR);
+        ap = new H5VL_log_obj_t (op, H5I_ATTR);
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		ap->uo = H5VLattr_open (op->uo, loc_params, op->uvlid, name, aapl_id, dxpl_id, ureqp);
-		H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VLATT_OPEN);
-		CHECK_PTR (ap->uo);
+        H5VL_LOGI_PROFILING_TIMER_START;
+        ap->uo = H5VLattr_open (op->uo, loc_params, op->uvlid, name, aapl_id, dxpl_id, ureqp);
+        H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VLATT_OPEN);
+        CHECK_PTR (ap->uo);
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VL_LOG_ATT_OPEN);
-	}
-	H5VL_LOGI_EXP_CATCH
+        H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VL_LOG_ATT_OPEN);
+    }
+    H5VL_LOGI_EXP_CATCH
 
-	return (void *)ap;
+    return (void *)ap;
 
 err_out:;
-	delete ap;
+    delete ap;
 
-	return NULL;
+    return NULL;
 } /* end H5VL_log_attr_open() */
 
 /*-------------------------------------------------------------------------
@@ -161,36 +161,36 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_read (void *attr, hid_t mem_type_id, void *buf, hid_t dxpl_id, void **req) {
-	H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
-	herr_t err		   = 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
+    herr_t err         = 0;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VLattr_read (op->uo, op->uvlid, mem_type_id, buf, dxpl_id, ureqp);
-		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_READ);
+        H5VL_LOGI_PROFILING_TIMER_START;
+        err = H5VLattr_read (op->uo, op->uvlid, mem_type_id, buf, dxpl_id, ureqp);
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_READ);
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_READ);
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_READ);
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_attr_read() */
 
 /*-------------------------------------------------------------------------
@@ -204,37 +204,37 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_write (
-	void *attr, hid_t mem_type_id, const void *buf, hid_t dxpl_id, void **req) {
-	H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
-	herr_t err		   = 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+    void *attr, hid_t mem_type_id, const void *buf, hid_t dxpl_id, void **req) {
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)attr;
+    herr_t err         = 0;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VLattr_write (op->uo, op->uvlid, mem_type_id, buf, dxpl_id, ureqp);
-		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_WRITE);
+        H5VL_LOGI_PROFILING_TIMER_START;
+        err = H5VLattr_write (op->uo, op->uvlid, mem_type_id, buf, dxpl_id, ureqp);
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_WRITE);
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_WRITE);
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_WRITE);
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_attr_write() */
 
 /*-------------------------------------------------------------------------
@@ -248,36 +248,36 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_get (void *obj, H5VL_attr_get_args_t *args, hid_t dxpl_id, void **req) {
-	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-	herr_t err		   = 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    herr_t err         = 0;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VLattr_get (op->uo, op->uvlid, args, dxpl_id, ureqp);
-		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_GET);
+        H5VL_LOGI_PROFILING_TIMER_START;
+        err = H5VLattr_get (op->uo, op->uvlid, args, dxpl_id, ureqp);
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_GET);
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_GET);
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_GET);
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_attr_get() */
 
 /*-------------------------------------------------------------------------
@@ -291,78 +291,78 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_specific (void *obj,
-							   const H5VL_loc_params_t *loc_params,
-							   H5VL_attr_specific_args_t *args,
-							   hid_t dxpl_id,
-							   void **req) {
-	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-	herr_t err		   = 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
-	H5VL_log_atti_iterate_op_data *ctx = NULL;
+                               const H5VL_loc_params_t *loc_params,
+                               H5VL_attr_specific_args_t *args,
+                               hid_t dxpl_id,
+                               void **req) {
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    herr_t err         = 0;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
+    H5VL_log_atti_iterate_op_data *ctx = NULL;
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		// Block access to internal objects
-		switch (loc_params->type) {
-			case H5VL_OBJECT_BY_NAME:
-				if (!(loc_params->loc_data.loc_by_name.name) ||
-					loc_params->loc_data.loc_by_name.name[0] == '_') {
-					if (args->op_type == H5VL_ATTR_EXISTS) {
-						*args->args.exists.exists = false;
-						goto err_out;
-					} else {
-						RET_ERR ("Access to internal objects denied")
-					}
-				}
-				break;
-			case H5VL_OBJECT_BY_SELF:
-				break;
-			case H5VL_OBJECT_BY_IDX:
-			case H5VL_OBJECT_BY_TOKEN:
-				RET_ERR ("Access by idx annd token is not supported")
-				break;
-		}
+        // Block access to internal objects
+        switch (loc_params->type) {
+            case H5VL_OBJECT_BY_NAME:
+                if (!(loc_params->loc_data.loc_by_name.name) ||
+                    loc_params->loc_data.loc_by_name.name[0] == '_') {
+                    if (args->op_type == H5VL_ATTR_EXISTS) {
+                        *args->args.exists.exists = false;
+                        goto err_out;
+                    } else {
+                        RET_ERR ("Access to internal objects denied")
+                    }
+                }
+                break;
+            case H5VL_OBJECT_BY_SELF:
+                break;
+            case H5VL_OBJECT_BY_IDX:
+            case H5VL_OBJECT_BY_TOKEN:
+                RET_ERR ("Access by idx annd token is not supported")
+                break;
+        }
 
-		// Replace H5Aiterate callback with logvol wrpapper
-		if (args->op_type == H5VL_ATTR_ITER) {
-			ctx = (H5VL_log_atti_iterate_op_data *)malloc (sizeof (H5VL_log_atti_iterate_op_data));
-			ctx->op					   = args->args.iterate.op;
-			ctx->op_data			   = args->args.iterate.op_data;
-			args->args.iterate.op	   = H5VL_log_atti_iterate_op;
-			args->args.iterate.op_data = ctx;
-		}
+        // Replace H5Aiterate callback with logvol wrpapper
+        if (args->op_type == H5VL_ATTR_ITER) {
+            ctx = (H5VL_log_atti_iterate_op_data *)malloc (sizeof (H5VL_log_atti_iterate_op_data));
+            ctx->op                    = args->args.iterate.op;
+            ctx->op_data               = args->args.iterate.op_data;
+            args->args.iterate.op      = H5VL_log_atti_iterate_op;
+            args->args.iterate.op_data = ctx;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VLattr_specific (op->uo, loc_params, op->uvlid, args, dxpl_id, ureqp);
-		CHECK_ERR
-		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_SPECIFIC);
+        H5VL_LOGI_PROFILING_TIMER_START;
+        err = H5VLattr_specific (op->uo, loc_params, op->uvlid, args, dxpl_id, ureqp);
+        CHECK_ERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_SPECIFIC);
 
-		if (args->op_type == H5VL_ATTR_ITER) {
-			args->args.iterate.op	   = ctx->op;
-			args->args.iterate.op_data = ctx->op_data;
-		}
+        if (args->op_type == H5VL_ATTR_ITER) {
+            args->args.iterate.op      = ctx->op;
+            args->args.iterate.op_data = ctx->op_data;
+        }
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_SPECIFIC);
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_SPECIFIC);
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	if (ctx) { free (ctx); }
-	return err;
+    if (ctx) { free (ctx); }
+    return err;
 } /* end H5VL_log_attr_specific() */
 
 /*-------------------------------------------------------------------------
@@ -376,36 +376,36 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_optional (void *obj, H5VL_optional_args_t *args, hid_t dxpl_id, void **req) {
-	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-	herr_t err		   = 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    herr_t err         = 0;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VLattr_optional (op->uo, op->uvlid, args, dxpl_id, ureqp);
-		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_OPTIONAL);
+        H5VL_LOGI_PROFILING_TIMER_START;
+        err = H5VLattr_optional (op->uo, op->uvlid, args, dxpl_id, ureqp);
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_OPTIONAL);
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_OPTIONAL);
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_ATT_OPTIONAL);
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_attr_optional() */
 
 /*-------------------------------------------------------------------------
@@ -419,37 +419,37 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_attr_close (void *attr, hid_t dxpl_id, void **req) {
-	H5VL_log_obj_t *ap = (H5VL_log_obj_t *)attr;
-	herr_t err		   = 0;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
-	
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    H5VL_log_obj_t *ap = (H5VL_log_obj_t *)attr;
+    herr_t err         = 0;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
 
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VLattr_close (ap->uo, ap->uvlid, dxpl_id, ureqp);
-		CHECK_ERR
-		H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VLATT_CLOSE);
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
+        H5VL_LOGI_PROFILING_TIMER_START;
+        err = H5VLattr_close (ap->uo, ap->uvlid, dxpl_id, ureqp);
+        CHECK_ERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VLATT_CLOSE);
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VL_LOG_ATT_CLOSE);
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
 
-		delete ap;
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VL_LOG_ATT_CLOSE);
+
+        delete ap;
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_attr_close() */

@@ -28,14 +28,14 @@
 /********************* */
 
 const H5VL_dataset_class_t H5VL_log_dataset_g {
-	H5VL_log_dataset_create,   /* create       */
-	H5VL_log_dataset_open,	   /* open         */
-	H5VL_log_dataset_read,	   /* read         */
-	H5VL_log_dataset_write,	   /* write        */
-	H5VL_log_dataset_get,	   /* get          */
-	H5VL_log_dataset_specific, /* specific     */
-	H5VL_log_dataset_optional, /* optional     */
-	H5VL_log_dataset_close	   /* close        */
+    H5VL_log_dataset_create,   /* create       */
+    H5VL_log_dataset_open,     /* open         */
+    H5VL_log_dataset_read,     /* read         */
+    H5VL_log_dataset_write,    /* write        */
+    H5VL_log_dataset_get,      /* get          */
+    H5VL_log_dataset_specific, /* specific     */
+    H5VL_log_dataset_optional, /* optional     */
+    H5VL_log_dataset_close     /* close        */
 };
 
 int H5Dwrite_n_op_val = 0;
@@ -52,141 +52,141 @@ int H5Dread_n_op_val  = 0;
  *-------------------------------------------------------------------------
  */
 void *H5VL_log_dataset_create (void *obj,
-							   const H5VL_loc_params_t *loc_params,
-							   const char *name,
-							   hid_t lcpl_id,
-							   hid_t type_id,
-							   hid_t space_id,
-							   hid_t dcpl_id,
-							   hid_t dapl_id,
-							   hid_t dxpl_id,
-							   void **req) {
-	herr_t err = 0;
-	int i;
-	H5VL_log_obj_t *op	= (H5VL_log_obj_t *)obj;
-	H5VL_log_dset_t *dp = NULL;
-	H5VL_log_dset_info_t *dip;	// Dataset info
-	// H5VL_link_create_args_t args;
-	// H5VL_loc_params_t loc;
-	hid_t sid = -1;
-	int ndim;
-	H5VL_log_req_t *rp;
-	void **ureqp, *ureq;
-	// char lname[1024];
+                               const H5VL_loc_params_t *loc_params,
+                               const char *name,
+                               hid_t lcpl_id,
+                               hid_t type_id,
+                               hid_t space_id,
+                               hid_t dcpl_id,
+                               hid_t dapl_id,
+                               hid_t dxpl_id,
+                               void **req) {
+    herr_t err = 0;
+    int i;
+    H5VL_log_obj_t *op  = (H5VL_log_obj_t *)obj;
+    H5VL_log_dset_t *dp = NULL;
+    H5VL_log_dset_info_t *dip;  // Dataset info
+    // H5VL_link_create_args_t args;
+    // H5VL_loc_params_t loc;
+    hid_t sid = -1;
+    int ndim;
+    H5VL_log_req_t *rp;
+    void **ureqp, *ureq;
+    // char lname[1024];
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		/* Check arguments */
-		H5VL_LOGI_CHECK_NAME (name);
+        /* Check arguments */
+        H5VL_LOGI_CHECK_NAME (name);
 
-		// Unused
-		// Create request handle
-		if (req) {
-			rp	  = new H5VL_log_req_t ();
-			ureqp = &ureq;
-		} else {
-			ureqp = NULL;
-		}
+        // Unused
+        // Create request handle
+        if (req) {
+            rp    = new H5VL_log_req_t ();
+            ureqp = &ureq;
+        } else {
+            ureqp = NULL;
+        }
 
-		// Create anchor dataset
-		// TODO: native VOL will not save filter information when layout is contiguous
-		sid = H5Screate (H5S_SCALAR);
-		CHECK_ID (sid);
-		err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
-		CHECK_ERR
+        // Create anchor dataset
+        // TODO: native VOL will not save filter information when layout is contiguous
+        sid = H5Screate (H5S_SCALAR);
+        CHECK_ID (sid);
+        err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
+        CHECK_ERR
 
-		dp	   = new H5VL_log_dset_t (op, H5I_DATASET);
-		dp->id = dp->fp->ndset;	 // ID nees to be set before writing to attribute
+        dp     = new H5VL_log_dset_t (op, H5I_DATASET);
+        dp->id = dp->fp->ndset;  // ID nees to be set before writing to attribute
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid,
-									 dcpl_id, dapl_id, dxpl_id, ureqp);
-		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_CREATE);
-		CHECK_PTR (dp->uo)
-		if (req) { rp->append (ureq); }
+        H5VL_LOGI_PROFILING_TIMER_START;
+        dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid,
+                                     dcpl_id, dapl_id, dxpl_id, ureqp);
+        H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_CREATE);
+        CHECK_PTR (dp->uo)
+        if (req) { rp->append (ureq); }
 
-		// Construct new dataset info
-		dip = new H5VL_log_dset_info_t ();
-		CHECK_PTR (dip)
+        // Construct new dataset info
+        dip = new H5VL_log_dset_info_t ();
+        CHECK_PTR (dip)
 
-		dip->dtype = H5Tcopy (type_id);
-		CHECK_ID (dip->dtype)
-		dip->esize = H5Tget_size (type_id);
-		CHECK_ID (dip->esize)
+        dip->dtype = H5Tcopy (type_id);
+        CHECK_ID (dip->dtype)
+        dip->esize = H5Tget_size (type_id);
+        CHECK_ID (dip->esize)
 
-		// NOTE: I don't know if it work for scalar dataset, can we create zero sized attr?
-		ndim = H5Sget_simple_extent_dims (space_id, dip->dims, dip->mdims);
-		CHECK_ID (ndim)
-		dip->ndim = (hsize_t)ndim;
+        // NOTE: I don't know if it work for scalar dataset, can we create zero sized attr?
+        ndim = H5Sget_simple_extent_dims (space_id, dip->dims, dip->mdims);
+        CHECK_ID (ndim)
+        dip->ndim = (hsize_t)ndim;
 
-		// Dstep for encoding selection
-		if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-			dip->dsteps[dip->ndim - 1] = 1;
-			for (i = dip->ndim - 2; i > -1; i--) {
-				dip->dsteps[i] = dip->dsteps[i + 1] * dip->dims[i + 1];
-			}
-		}
+        // Dstep for encoding selection
+        if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+            dip->dsteps[dip->ndim - 1] = 1;
+            for (i = dip->ndim - 2; i > -1; i--) {
+                dip->dsteps[i] = dip->dsteps[i + 1] * dip->dims[i + 1];
+            }
+        }
 
-		// Filters
-		H5VL_logi_get_filters (dcpl_id, dip->filters);
+        // Filters
+        H5VL_logi_get_filters (dcpl_id, dip->filters);
 
-		// Record dataset metadata as attributes
-		H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_STD_I64LE, H5T_NATIVE_INT64,
-						   dip->ndim, dip->dims, dxpl_id, ureqp);
-		if (req) { rp->append (ureq); }
-		H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_MDIMS, H5T_STD_I64LE, H5T_NATIVE_INT64,
-						   dip->ndim, dip->mdims, dxpl_id, ureqp);
-		if (req) { rp->append (ureq); }
-		H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_ID, H5T_STD_I32LE, H5T_NATIVE_INT32, 1,
-						   &(dp->id), dxpl_id, ureqp);
-		if (req) {
-			rp->append (ureq);
-			*req = rp;
-		}
+        // Record dataset metadata as attributes
+        H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_STD_I64LE, H5T_NATIVE_INT64,
+                           dip->ndim, dip->dims, dxpl_id, ureqp);
+        if (req) { rp->append (ureq); }
+        H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_MDIMS, H5T_STD_I64LE, H5T_NATIVE_INT64,
+                           dip->ndim, dip->mdims, dxpl_id, ureqp);
+        if (req) { rp->append (ureq); }
+        H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_ID, H5T_STD_I32LE, H5T_NATIVE_INT32, 1,
+                           &(dp->id), dxpl_id, ureqp);
+        if (req) {
+            rp->append (ureq);
+            *req = rp;
+        }
 
-		// Append dataset to the file
-		LOG_VOL_ASSERT (dp->fp->ndset == (int)(dp->fp->dsets_info.size ()))
-		LOG_VOL_ASSERT (dp->fp->ndset == (int)(dp->fp->mreqs.size ()))
-		dp->fp->ndset++;
-		dp->fp->dsets_info.push_back (dip);			 // Dataset info
-		dp->fp->idx->reserve (dp->fp->ndset);		 // Index for H5Dread
-		dp->fp->mreqs.resize (dp->fp->ndset, NULL);	 // Merged requests
+        // Append dataset to the file
+        LOG_VOL_ASSERT (dp->fp->ndset == (int)(dp->fp->dsets_info.size ()))
+        LOG_VOL_ASSERT (dp->fp->ndset == (int)(dp->fp->mreqs.size ()))
+        dp->fp->ndset++;
+        dp->fp->dsets_info.push_back (dip);          // Dataset info
+        dp->fp->idx->reserve (dp->fp->ndset);        // Index for H5Dread
+        dp->fp->mreqs.resize (dp->fp->ndset, NULL);  // Merged requests
 
-		// Create soft link to aid dataset visiting on file opening
-		// Broken, not used anymore
-		/*
-		sprintf (lname, "_dset%d", dp->id);
-		args.op_type					 = H5VL_LINK_CREATE_SOFT;
-		args.args.soft.target			 = name;
-		loc.type						 = H5VL_OBJECT_BY_NAME;
-		loc.loc_data.loc_by_name.lapl_id = H5P_LINK_ACCESS_DEFAULT;
-		loc.loc_data.loc_by_name.name	 = lname;
-		loc.obj_type					 = op->type;
-		err = H5VLlink_create (&args, op->fp->uo, &loc, op->uvlid, H5P_LINK_CREATE_DEFAULT,
-							   H5P_LINK_ACCESS_DEFAULT, dp->fp->dxplid, req);
-		CHECK_ERR
-		*/
+        // Create soft link to aid dataset visiting on file opening
+        // Broken, not used anymore
+        /*
+        sprintf (lname, "_dset%d", dp->id);
+        args.op_type					 = H5VL_LINK_CREATE_SOFT;
+        args.args.soft.target			 = name;
+        loc.type						 = H5VL_OBJECT_BY_NAME;
+        loc.loc_data.loc_by_name.lapl_id = H5P_LINK_ACCESS_DEFAULT;
+        loc.loc_data.loc_by_name.name	 = lname;
+        loc.obj_type					 = op->type;
+        err = H5VLlink_create (&args, op->fp->uo, &loc, op->uvlid, H5P_LINK_CREATE_DEFAULT,
+                                                   H5P_LINK_ACCESS_DEFAULT, dp->fp->dxplid, req);
+        CHECK_ERR
+        */
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CREATE);
+        H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CREATE);
 
 #ifdef LOGVOL_DEBUG
-		if (H5VL_logi_debug_verbose ()) {
-			printf ("H5VL_log_dataset_create(%p, %s, %ld)\n", obj, name, dip->ndim);
-		}
+        if (H5VL_logi_debug_verbose ()) {
+            printf ("H5VL_log_dataset_create(%p, %s, %ld)\n", obj, name, dip->ndim);
+        }
 #endif
-	}
-	H5VL_LOGI_EXP_CATCH
+    }
+    H5VL_LOGI_EXP_CATCH
 
-	goto fn_exit;
+    goto fn_exit;
 err_out:;
-	if (dp) {
-		delete dip;
-		delete dp;
-		dp = NULL;
-	}
+    if (dp) {
+        delete dip;
+        delete dp;
+        dp = NULL;
+    }
 fn_exit:;
-	return (void *)dp;
+    return (void *)dp;
 } /* end H5VL_log_dataset_create() */
 
 /*-------------------------------------------------------------------------
@@ -200,34 +200,34 @@ fn_exit:;
  *-------------------------------------------------------------------------
  */
 void *H5VL_log_dataset_open (void *obj,
-							 const H5VL_loc_params_t *loc_params,
-							 const char *name,
-							 hid_t dapl_id,
-							 hid_t dxpl_id,
-							 void **req) {
-	// herr_t err		   = 0;
-	H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-	void *uo		   = NULL;
+                             const H5VL_loc_params_t *loc_params,
+                             const char *name,
+                             hid_t dapl_id,
+                             hid_t dxpl_id,
+                             void **req) {
+    // herr_t err		   = 0;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    void *uo           = NULL;
 
-	try {
+    try {
 #ifdef LOGVOL_DEBUG
-		if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_dataset_open(%p, %s)\n", obj, name); }
+        if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_dataset_open(%p, %s)\n", obj, name); }
 #endif
 
-		/* Check arguments */
-		H5VL_LOGI_CHECK_NAME (name);
+        /* Check arguments */
+        H5VL_LOGI_CHECK_NAME (name);
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);
-		CHECK_PTR (uo);
-		H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLDATASET_OPEN);
+        H5VL_LOGI_PROFILING_TIMER_START;
+        uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);
+        CHECK_PTR (uo);
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLDATASET_OPEN);
 
-		return H5VL_log_dataseti_open (op, uo, dxpl_id);
-	}
-	H5VL_LOGI_EXP_CATCH
+        return H5VL_log_dataseti_open (op, uo, dxpl_id);
+    }
+    H5VL_LOGI_EXP_CATCH
 
 err_out:;
-	return NULL;
+    return NULL;
 } /* end H5VL_log_dataset_open() */
 
 /*-------------------------------------------------------------------------
@@ -241,40 +241,40 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_dataset_read (void *dset,
-							  hid_t mem_type_id,
-							  hid_t mem_space_id,
-							  hid_t file_space_id,
-							  hid_t plist_id,
-							  void *buf,
-							  void **req) {
-	herr_t err				  = 0;
-	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)dset;
-	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
-	hid_t dsid;												 // Dataset space id
-	H5VL_log_selections *dsel = NULL;						 // Selection blocks
+                              hid_t mem_type_id,
+                              hid_t mem_space_id,
+                              hid_t file_space_id,
+                              hid_t plist_id,
+                              void *buf,
+                              void **req) {
+    herr_t err                = 0;
+    H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
+    H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];  // Dataset info
+    hid_t dsid;                                              // Dataset space id
+    H5VL_log_selections *dsel = NULL;                        // Selection blocks
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
-		if (file_space_id == H5S_ALL) {
-			dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
-			CHECK_ID (dsid);
-		} else {
-			dsid = file_space_id;
-		}
-		dsel = new H5VL_log_selections (dsid);
-		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
+        if (file_space_id == H5S_ALL) {
+            dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
+            CHECK_ID (dsid);
+        } else {
+            dsid = file_space_id;
+        }
+        dsel = new H5VL_log_selections (dsid);
+        H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
 
-		// H5S_All means using file space
-		if (mem_space_id == H5S_ALL) mem_space_id = dsid;
+        // H5S_All means using file space
+        if (mem_space_id == H5S_ALL) mem_space_id = dsid;
 
-		H5VL_log_dataseti_read (dp, mem_type_id, mem_space_id, dsel, plist_id, buf, req);
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        H5VL_log_dataseti_read (dp, mem_type_id, mem_space_id, dsel, plist_id, buf, req);
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	// Note: dsel should be freed when the read request is deleted
-	if (dsid != file_space_id) { H5Sclose (dsid); }
-	return err;
+    // Note: dsel should be freed when the read request is deleted
+    if (dsid != file_space_id) { H5Sclose (dsid); }
+    return err;
 } /* end H5VL_log_dataset_read() */
 
 /*-------------------------------------------------------------------------
@@ -288,41 +288,41 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_dataset_write (void *dset,
-							   hid_t mem_type_id,
-							   hid_t mem_space_id,
-							   hid_t file_space_id,
-							   hid_t plist_id,
-							   const void *buf,
-							   void **req) {
-	herr_t err				  = 0;
-	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)dset;
-	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
-	hid_t dsid;												 // Dataset space id
-	H5VL_log_selections *dsel = NULL;						 // Selection blocks
+                               hid_t mem_type_id,
+                               hid_t mem_space_id,
+                               hid_t file_space_id,
+                               hid_t plist_id,
+                               const void *buf,
+                               void **req) {
+    herr_t err                = 0;
+    H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
+    H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];  // Dataset info
+    hid_t dsid;                                              // Dataset space id
+    H5VL_log_selections *dsel = NULL;                        // Selection blocks
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
-		if (file_space_id == H5S_ALL) {
-			dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
-			CHECK_ID (dsid);
-		} else {
-			dsid = file_space_id;
-		}
-		dsel = new H5VL_log_selections (dsid);
-		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
-		CHECK_PTR (dsel)
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
+        if (file_space_id == H5S_ALL) {
+            dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
+            CHECK_ID (dsid);
+        } else {
+            dsid = file_space_id;
+        }
+        dsel = new H5VL_log_selections (dsid);
+        H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
+        CHECK_PTR (dsel)
 
-		// H5S_All means using file space
-		if (mem_space_id == H5S_ALL) mem_space_id = dsid;
+        // H5S_All means using file space
+        if (mem_space_id == H5S_ALL) mem_space_id = dsid;
 
-		H5VL_log_dataseti_write (dp, mem_type_id, mem_space_id, dsel, plist_id, buf, req);
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        H5VL_log_dataseti_write (dp, mem_type_id, mem_space_id, dsel, plist_id, buf, req);
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	if (dsel) { delete dsel; }
-	if (dsid != file_space_id) { H5Sclose (dsid); }
-	return err;
+    if (dsel) { delete dsel; }
+    if (dsid != file_space_id) { H5Sclose (dsid); }
+    return err;
 } /* end H5VL_log_dataset_write() */
 
 /*-------------------------------------------------------------------------
@@ -336,57 +336,57 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_dataset_get (void *dset, H5VL_dataset_get_args_t *args, hid_t dxpl_id, void **req) {
-	herr_t err				  = 0;
-	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)dset;
-	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
-	// H5VL_log_req_t *rp;
-	// void **ureqp, *ureq;
+    herr_t err                = 0;
+    H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
+    H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];  // Dataset info
+    // H5VL_log_req_t *rp;
+    // void **ureqp, *ureq;
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		switch (args->op_type) {
-			/* H5Dget_space */
-			case H5VL_DATASET_GET_SPACE: {
-				args->args.get_space.space_id = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
-				break;
-			}
+        switch (args->op_type) {
+            /* H5Dget_space */
+            case H5VL_DATASET_GET_SPACE: {
+                args->args.get_space.space_id = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
+                break;
+            }
 
-			/* H5Dget_space_status */
-			case H5VL_DATASET_GET_SPACE_STATUS: {
-				err = -1;
-				ERR_OUT ("H5VL_DATASET_GET_SPACE_STATUS not supported")
-				break;
-			}
+            /* H5Dget_space_status */
+            case H5VL_DATASET_GET_SPACE_STATUS: {
+                err = -1;
+                ERR_OUT ("H5VL_DATASET_GET_SPACE_STATUS not supported")
+                break;
+            }
 
-			/* H5Dargs->get_type */
-			case H5VL_DATASET_GET_TYPE:
-			/* H5Dget_create_plist */
-			case H5VL_DATASET_GET_DCPL:
-			/* H5Dget_access_plist */
-			case H5VL_DATASET_GET_DAPL: {
-				H5VL_LOGI_PROFILING_TIMER_START;
-				err = H5VLdataset_get (dp->uo, dp->uvlid, args, dxpl_id, req);
-				H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_GET);
-				break;
-			}
+            /* H5Dargs->get_type */
+            case H5VL_DATASET_GET_TYPE:
+            /* H5Dget_create_plist */
+            case H5VL_DATASET_GET_DCPL:
+            /* H5Dget_access_plist */
+            case H5VL_DATASET_GET_DAPL: {
+                H5VL_LOGI_PROFILING_TIMER_START;
+                err = H5VLdataset_get (dp->uo, dp->uvlid, args, dxpl_id, req);
+                H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_GET);
+                break;
+            }
 
-			/* H5Dget_storage_size */
-			case H5VL_DATASET_GET_STORAGE_SIZE: {
-				err = -1;
-				ERR_OUT ("H5VL_DATASET_GET_STORAGE_SIZE not supported")
-				break;
-			}
-			default:
-				ERR_OUT ("Unrecognized op type")
-		} /* end switch */
+            /* H5Dget_storage_size */
+            case H5VL_DATASET_GET_STORAGE_SIZE: {
+                err = -1;
+                ERR_OUT ("H5VL_DATASET_GET_STORAGE_SIZE not supported")
+                break;
+            }
+            default:
+                ERR_OUT ("Unrecognized op type")
+        } /* end switch */
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_GET);
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_GET);
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_dataset_get() */
 
 /*-------------------------------------------------------------------------
@@ -400,66 +400,66 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_dataset_specific (void *obj,
-								  H5VL_dataset_specific_args_t *args,
-								  hid_t dxpl_id,
-								  void **req) {
-	herr_t err				  = 0;
-	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)obj;
-	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
-	// H5VL_log_req_t *rp;
-	// void **ureqp, *ureq;
+                                  H5VL_dataset_specific_args_t *args,
+                                  hid_t dxpl_id,
+                                  void **req) {
+    herr_t err                = 0;
+    H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)obj;
+    H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];  // Dataset info
+    // H5VL_log_req_t *rp;
+    // void **ureqp, *ureq;
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		switch (args->op_type) {
-			case H5VL_DATASET_SET_EXTENT: { /* H5Dset_extent */
-				int32_t i;
-				const hsize_t *new_sizes = args->args.set_extent.size;
+        switch (args->op_type) {
+            case H5VL_DATASET_SET_EXTENT: { /* H5Dset_extent */
+                int32_t i;
+                const hsize_t *new_sizes = args->args.set_extent.size;
 
-				// Adjust dim
-				for (i = 0; i < (int32_t) (dip->ndim); i++) {
-					if (dip->mdims[i] != H5S_UNLIMITED && new_sizes[i] > dip->mdims[i]) {
-						err = -1;
-						ERR_OUT ("size cannot exceed max size")
-					}
-					dip->dims[i] = new_sizes[i];
-				}
+                // Adjust dim
+                for (i = 0; i < (int32_t) (dip->ndim); i++) {
+                    if (dip->mdims[i] != H5S_UNLIMITED && new_sizes[i] > dip->mdims[i]) {
+                        err = -1;
+                        ERR_OUT ("size cannot exceed max size")
+                    }
+                    dip->dims[i] = new_sizes[i];
+                }
 
-				// Record new size
-				H5VL_logi_put_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_NATIVE_INT64, dip->dims,
-								   dxpl_id);
+                // Record new size
+                H5VL_logi_put_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_NATIVE_INT64, dip->dims,
+                                   dxpl_id);
 
-				// Recalculate dsteps if needed
-				if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-					dip->dsteps[dip->ndim - 1] = 1;
-					for (i = dip->ndim - 2; i > -1; i--) {
-						dip->dsteps[i] = dip->dsteps[i + 1] * dip->dims[i + 1];
-					}
+                // Recalculate dsteps if needed
+                if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+                    dip->dsteps[dip->ndim - 1] = 1;
+                    for (i = dip->ndim - 2; i > -1; i--) {
+                        dip->dsteps[i] = dip->dsteps[i + 1] * dip->dims[i + 1];
+                    }
 
-					// Flush merged request as dstep may be changed
-					if (dp->fp->mreqs[dp->id] && (dp->fp->mreqs[dp->id]->nsel > 0)) {
-						dp->fp->wreqs.push_back (dp->fp->mreqs[dp->id]);
-						// Update total metadata size in wreqs
-						dp->fp->mdsize += dp->fp->mreqs[dp->id]->hdr->meta_size;
-						dp->fp->mreqs[dp->id] = NULL;
-					}
-				}
+                    // Flush merged request as dstep may be changed
+                    if (dp->fp->mreqs[dp->id] && (dp->fp->mreqs[dp->id]->nsel > 0)) {
+                        dp->fp->wreqs.push_back (dp->fp->mreqs[dp->id]);
+                        // Update total metadata size in wreqs
+                        dp->fp->mdsize += dp->fp->mreqs[dp->id]->hdr->meta_size;
+                        dp->fp->mreqs[dp->id] = NULL;
+                    }
+                }
 
-				break;
-			}
-			default:
-				H5VL_LOGI_PROFILING_TIMER_START;
-				err = H5VLdataset_specific (dp->uo, dp->uvlid, args, dxpl_id, req);
-				H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_SPECIFIC);
-		}
+                break;
+            }
+            default:
+                H5VL_LOGI_PROFILING_TIMER_START;
+                err = H5VLdataset_specific (dp->uo, dp->uvlid, args, dxpl_id, req);
+                H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_SPECIFIC);
+        }
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_SPECIFIC);
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_SPECIFIC);
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	return err;
+    return err;
 } /* end H5VL_log_dataset_specific() */
 
 /*-------------------------------------------------------------------------
@@ -473,71 +473,71 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_dataset_optional (void *obj,
-								  H5VL_optional_args_t *args,
-								  hid_t dxpl_id,
-								  void **req) {
-	herr_t err				  = 0;
-	H5VL_log_obj_t *op		  = (H5VL_log_obj_t *)obj;
-	H5VL_log_dset_t *dp		  = (H5VL_log_dset_t *)op;
-	H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
-	// H5VL_log_req_t *rp;
-	// void **ureqp, *ureq;
-	H5VL_log_selections *dsel	  = NULL;								   // Selection blocks
-	H5VL_log_dio_n_arg_t *varnarg = (H5VL_log_dio_n_arg_t *)(args->args);  // H5Dwrite_n args
+                                  H5VL_optional_args_t *args,
+                                  hid_t dxpl_id,
+                                  void **req) {
+    herr_t err                = 0;
+    H5VL_log_obj_t *op        = (H5VL_log_obj_t *)obj;
+    H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)op;
+    H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];  // Dataset info
+    // H5VL_log_req_t *rp;
+    // void **ureqp, *ureq;
+    H5VL_log_selections *dsel     = NULL;                                  // Selection blocks
+    H5VL_log_dio_n_arg_t *varnarg = (H5VL_log_dio_n_arg_t *)(args->args);  // H5Dwrite_n args
 
-	try {
-		H5VL_LOGI_PROFILING_TIMER_START;
+    try {
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		if (args->op_type == H5Dwrite_n_op_val) {
-			H5VL_LOGI_PROFILING_TIMER_START;
-			dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
-											varnarg->counts);
-			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
-			CHECK_PTR (dsel)
+        if (args->op_type == H5Dwrite_n_op_val) {
+            H5VL_LOGI_PROFILING_TIMER_START;
+            dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
+                                            varnarg->counts);
+            H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
+            CHECK_PTR (dsel)
 
-			H5VL_log_dataseti_write (dp, varnarg->mem_type_id, H5S_CONTIG, dsel, dxpl_id,
-									 varnarg->buf, req);
-		} else if (args->op_type == H5Dread_n_op_val) {
-			H5VL_LOGI_PROFILING_TIMER_START;
-			dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
-											varnarg->counts);
-			H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
-			CHECK_PTR (dsel)
+            H5VL_log_dataseti_write (dp, varnarg->mem_type_id, H5S_CONTIG, dsel, dxpl_id,
+                                     varnarg->buf, req);
+        } else if (args->op_type == H5Dread_n_op_val) {
+            H5VL_LOGI_PROFILING_TIMER_START;
+            dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
+                                            varnarg->counts);
+            H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
+            CHECK_PTR (dsel)
 
-			H5VL_log_dataseti_read (dp, varnarg->mem_type_id, H5S_CONTIG, dsel, dxpl_id,
-									varnarg->buf, req);
-		} else {
-			/*
-			if (req) {
-				rp	  = new H5VL_log_req_t ();
-				ureqp = &ureq;
-			} else {
-				ureqp = NULL;
-			}
-			*/
+            H5VL_log_dataseti_read (dp, varnarg->mem_type_id, H5S_CONTIG, dsel, dxpl_id,
+                                    varnarg->buf, req);
+        } else {
+            /*
+            if (req) {
+                    rp	  = new H5VL_log_req_t ();
+                    ureqp = &ureq;
+            } else {
+                    ureqp = NULL;
+            }
+            */
 
-			H5VL_LOGI_PROFILING_TIMER_START;
-			err = H5VLdataset_optional (op->uo, op->uvlid, args, dxpl_id, req);
-			H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLDATASET_OPTIONAL);
+            H5VL_LOGI_PROFILING_TIMER_START;
+            err = H5VLdataset_optional (op->uo, op->uvlid, args, dxpl_id, req);
+            H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLDATASET_OPTIONAL);
 
-			/*
-			if (req) {
-				rp->append (ureq);
-				*req = rp;
-			}
-			*/
+            /*
+            if (req) {
+                    rp->append (ureq);
+                    *req = rp;
+            }
+            */
 
-			H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_DATASET_OPTIONAL);
-		}
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+            H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_DATASET_OPTIONAL);
+        }
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-	if (args->op_type == H5Dwrite_n_op_val) {  // Dsel for read will be freed when req is deleted
-		if (dsel) { delete dsel; }
-	}
+    if (args->op_type == H5Dwrite_n_op_val) {  // Dsel for read will be freed when req is deleted
+        if (dsel) { delete dsel; }
+    }
 
-	return err;
+    return err;
 } /* end H5VL_log_dataset_optional() */
 
 /*-------------------------------------------------------------------------
@@ -551,44 +551,44 @@ err_out:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
-	herr_t err			= 0;
-	H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
-	// H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
+    herr_t err          = 0;
+    H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
+    // H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];	 // Dataset info
 
-	try {
+    try {
 #ifdef LOGVOL_DEBUG
-		if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_dataset_close(%p)\n", dset); }
+        if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_dataset_close(%p)\n", dset); }
 #endif
 
-		H5VL_LOGI_PROFILING_TIMER_START;
+        H5VL_LOGI_PROFILING_TIMER_START;
 
-		H5VL_LOGI_PROFILING_TIMER_START;
-		err = H5VLdataset_close (dp->uo, dp->uvlid, dxpl_id, NULL);
-		CHECK_ERR
-		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_CLOSE);
+        H5VL_LOGI_PROFILING_TIMER_START;
+        err = H5VLdataset_close (dp->uo, dp->uvlid, dxpl_id, NULL);
+        CHECK_ERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_CLOSE);
 
-		// Flush and free merged reqeusts
-		// Dataset info is shared by all dataset instances
-		// Deallocate them only at file close
-		/*
-		if (dp->fp->mreqs[dp->id]->dbufs.size ()) {
-			dp->fp->wreqs.push_back (dp->fp->mreqs[dp->id]);
-			// Update total metadata size in wreqs
-			dp->fp->mdsize += dp->fp->mreqs[dp->id]->hdr->meta_size;
-		} else {
-			delete dp->fp->mreqs[dp->id];
-			dp->fp->mreqs[dp->id] = NULL;
-		}
-		H5Tclose (dip->dtype);
-		*/
+        // Flush and free merged reqeusts
+        // Dataset info is shared by all dataset instances
+        // Deallocate them only at file close
+        /*
+        if (dp->fp->mreqs[dp->id]->dbufs.size ()) {
+                dp->fp->wreqs.push_back (dp->fp->mreqs[dp->id]);
+                // Update total metadata size in wreqs
+                dp->fp->mdsize += dp->fp->mreqs[dp->id]->hdr->meta_size;
+        } else {
+                delete dp->fp->mreqs[dp->id];
+                dp->fp->mreqs[dp->id] = NULL;
+        }
+        H5Tclose (dip->dtype);
+        */
 
-		H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CLOSE);
+        H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CLOSE);
 
-		delete dp;
-	}
-	H5VL_LOGI_EXP_CATCH_ERR
+        delete dp;
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
 
-	return err;
+    return err;
 } /* end H5VL_log_dataset_close() */
