@@ -18,16 +18,22 @@ AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
-check_PROGRAMS =    create_open \
-                    dwrite_n \
-                    dread_n \
-                    non_blocking
+check_PROGRAMS_test = 	create_open \
+						dwrite_n \
+						dread_n \
+						non_blocking 
+
+check_PROGRAMS =    ${check_PROGRAMS_test} \
+					demo \
+					demo_logvol \
+					demo_scontig \
+					demo_dwrite_n
 
 EXTRA_DIST = wrap_runs.sh \
 			 parallel_run.sh \
-             README.md
+			 README.md
 
-TESTPROGRAMS = $(check_PROGRAMS)
+TESTPROGRAMS = $(check_PROGRAMS_test)
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead
@@ -64,7 +70,7 @@ SUBDIRS = $(C_SUBDIRS)
 
 PTEST_SUBDIRS = $(SUBDIRS)
 
-ptest: $(check_PROGRAMS)
+ptest: $(check_PROGRAMS_test)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
 	@echo "==========================================================="

@@ -153,7 +153,7 @@ int main (int argc, char *argv[]) {
             goto err_out;
         }
 
-        if (ftype != "Logvol") {
+        if (ftype != "HDF5-LogVOL") {
             std::cout << "Error: " << inpath << " is not a valid logvol file." << std::endl;
             err = -1;
 
@@ -247,7 +247,7 @@ void h5ldump_file (std::string path,
     indent += 4;
     std::cout << std::string (indent, ' ') << "File properties: " << std::endl;
     indent += 4;
-    std::cout << std::string (indent, ' ') << "Automatic write reqeusts merging: "
+    std::cout << std::string (indent, ' ') << "Automatic write requests merging: "
               << ((config & H5VL_FILEI_CONFIG_METADATA_MERGE) ? "on" : "off") << std::endl;
     std::cout << std::string (indent, ' ')
               << "Metadata encoding: " << ((config & H5VL_FILEI_CONFIG_SEL_ENCODE) ? "on" : "off")
