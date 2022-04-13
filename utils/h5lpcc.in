@@ -1,0 +1,70 @@
+#! /bin/sh
+#
+# Copyright (C) 2022, Northwestern University and Argonne National Laboratory
+# See COPYRIGHT notice in top-level directory.
+#
+# This forms the basis for the log-based VOL-config utility, which tells you
+# various things about the log-based VOL installation. This code was based on
+# file nc-config.in from netCDF distribution.
+#
+# $Id$
+#
+# @configure_input@
+
+# Install path
+prefix=@INSTALL_PREFIX@
+exec_prefix=@INSTALL_EXEC_PREFIX@
+libdir="@libdir@"
+includedir="@includedir@"
+
+# Preprocessing:
+CPP="@CPP@"
+CPPFLAGS="@CPPFLAGS@"
+
+# Compilation:
+MPICC="@MPICC@"
+MPICXX="@MPICXX@"
+CFLAGS="@CFLAGS@"
+CXXFLAGS="@CXXFLAGS@"
+
+# Linking:
+LDFLAGS="@LDFLAGS@"
+LIBS="@LIBS@"
+
+enable_zlib="@enable_zlib@"
+if test "x$enable_zlib" = x1; then
+   # zlib header files are required to build Log-based VOL, but not Log-based VOL applications
+   LDFLAGS="@ADIOS_LDFLAGS@ $LDFLAGS"
+   LIBS="@ADIOS_LIBS@ $LIBS"
+fi
+
+if test $# -eq 0; then
+    echo "Error: Command line argument is needed!"
+    exit 1
+fi
+
+PREARG="${MPICC} -I${includedir} ${CPPFLAGS}"
+AFTARG="-L${libdir} ${LDFLAGS} -lH5VL_log ${LIBS} "
+ARGV=""
+
+show=no
+while test $# -gt 0; do
+    case "$1" in
+    --show)
+        show=yes
+        ;;
+
+    *)
+        ARGV="${ARGV} $1"
+        ;;
+    esac
+    shift
+done
+
+CMD="${PREARG} ${ARGV} ${AFTARG}"
+
+if test "x${show}" = xyes; then
+    echo ${CMD}
+else
+    ${CMD}
+fi

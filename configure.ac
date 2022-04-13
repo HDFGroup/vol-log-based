@@ -747,6 +747,8 @@ AC_CONFIG_FILES(Makefile \
                 utils/h5lenv.csh \
                 utils/h5lreplay/Makefile \
                 utils/h5lconfig \
+                utils/h5lpcc \
+                utils/h5lpcxx \
                 examples/Makefile \
                 examples/hdf5_examples/Makefile
                 )
