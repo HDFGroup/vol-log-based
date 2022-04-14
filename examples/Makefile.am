@@ -19,19 +19,19 @@ AM_CPPFLAGS += -I${top_builddir}/src
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
 check_PROGRAMS_test = 	create_open \
-						dwrite_n \
-						dread_n \
-						non_blocking 
+                        dwrite_n \
+                        dread_n \
+                        non_blocking 
 
 check_PROGRAMS =    ${check_PROGRAMS_test} \
-					demo \
-					demo_logvol \
-					demo_scontig \
-					demo_dwrite_n
+                    demo \
+                    demo_logvol \
+                    demo_scontig \
+                    demo_dwrite_n
 
 EXTRA_DIST = wrap_runs.sh \
-			 parallel_run.sh \
-			 README.md
+             parallel_run.sh \
+             README.md
 
 TESTPROGRAMS = $(check_PROGRAMS_test)
 
