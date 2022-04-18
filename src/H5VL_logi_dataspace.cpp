@@ -222,6 +222,8 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 
                 err = H5Sget_select_hyper_blocklist (dsid, 0, nblock, hstarts[0]);
 
+                merge_blocks<true> (ndim, nblock, hstarts, hends);
+
                 sortblocks (ndim, nblock, hstarts, hends);
 
                 merge_blocks<true> (ndim, nblock, hstarts, hends);
