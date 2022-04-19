@@ -60,7 +60,15 @@ This is essentially a placeholder for the next release note ...
     See 3f34656.
 
 * New example programs
-  + none
+  + Demo of modifying traditional HDF5 application to use log-based VOL
+    + demo
+      + A simple HDF5 applications
+    + demo_logvol
+      + Modifying demo to use log-based VOL
+    + demo_scontig
+      + Use log-based VOL's H5S_CONTIG constant to replace dataspace for memory buffer
+    + demo_dwrite_n
+      + Use log-based VOL's H5Dwrite_n API to write multiple block in a dataaset
 
 * New programs for I/O benchmarks
   + none

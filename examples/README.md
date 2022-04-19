@@ -13,6 +13,15 @@
   + Run make tests under the examples folder to build all example programs without running
 
 ### Example programs
+  * Demo of modifying traditional HDF5 application to use log-based VOL
+    + demo
+      + A simple HDF5 applications
+    + demo_logvol
+      + Modifying demo to use log-based VOL
+    + demo_scontig
+      + Use log-based VOL's H5S_CONTIG constant to replace dataspace for memory buffer
+    + demo_dwrite_n
+      + Use log-based VOL's H5Dwrite_n API to write multiple block in a dataaset
   * Log-based VOL examples
     + create_open
       + Demonstrates the way to use log-based vol programmatically
