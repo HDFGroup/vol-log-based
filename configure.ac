@@ -701,9 +701,6 @@ UD_MSG_DEBUG([CONFIG_DATE=$CONFIG_DATE])
 AC_SUBST(HDF5_LIB_PATH,${hdf5_lib})
 AC_SUBST(HDF5_ROOT_PATH,${hdf5_root})
 
-if test "x$exec_prefix" == xNONE ; then
-exec_prefix=${prefix}
-fi
 AC_SUBST(INSTALL_PREFIX,${prefix})
 AC_SUBST(INSTALL_EXEC_PREFIX,${exec_prefix})
 AC_SUBST(PACKAGE_NAME)

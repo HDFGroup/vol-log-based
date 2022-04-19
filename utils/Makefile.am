@@ -17,3 +17,6 @@ dist-hook:
 install-exec-hook:
 	$(SED_I) -e "1,10s|_RELEASE_DATE_|@H5VL_LOG_RELEASE_DATE@|" $(DESTDIR)$(bindir)/h5lconfig
 	$(SED_I) -e "1,10s|_VERSION_|$(VERSION)|" $(DESTDIR)$(bindir)/h5lconfig
+	$(SED_I) -e 's|INSTALL_PREFIX|$(prefix)|g ; s|INSTALL_EXEC_PREFIX|$(exec_prefix)|g' $(DESTDIR)$(bindir)/h5lconfig
+	$(SED_I) -e 's|INSTALL_PREFIX|$(prefix)|g ; s|INSTALL_EXEC_PREFIX|$(exec_prefix)|g' $(DESTDIR)$(bindir)/h5lpcc
+	$(SED_I) -e 's|INSTALL_PREFIX|$(prefix)|g ; s|INSTALL_EXEC_PREFIX|$(exec_prefix)|g' $(DESTDIR)$(bindir)/h5lpcxx

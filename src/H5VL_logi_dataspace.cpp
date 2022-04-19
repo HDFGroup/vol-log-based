@@ -225,7 +225,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                 merge_blocks<true> (ndim, nblock, hstarts, hends);
 
                 sortblocks (ndim, nblock, hstarts, hends);
-
+                
                 merge_blocks<true> (ndim, nblock, hstarts, hends);
 
                 // Check for interleving
