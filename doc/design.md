@@ -113,6 +113,8 @@ Writing the log datasets to file is carried out by calling MPI_File_write at the
 Writing the metadata tables to file is delayed until a read request is made or when the file is closing.
 Log metadata of all flushed requests is kept in the memory, so it can be used to construct the tables right before written to the file. Each entry in the log metadata contains the information about log dataset ID and offset, so individual write requests can be uniquely identified.
 
+The format of the metadata table is specified in [doc/format.md](doc/format.md).
+
 ### Reading from datasets in log-based storage layout
 
 Reading in a log storage layout is inherently inefficient because the data is completely unorganized.
