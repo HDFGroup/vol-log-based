@@ -7,7 +7,8 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * New optimization
-  + none
+  + Improve dataspace selection parsing speed when there are a large number of hyper-slabs that can be coalesced.
+  + Replace error code with exceptions in internal functions for better efficiency.
 
 * New Limitations
   + none
@@ -49,7 +50,10 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Updated utility program
-  + none
+  + h5lpcc
+    + C compiler wrapper to build applications using log-based VOL.
+  + h5lpcxx
+    + C++ compiler wrapper to build applications using log-based VOL.
 
 * Other updates:
   + none
@@ -58,6 +62,9 @@ This is essentially a placeholder for the next release note ...
   + Fix a bug when writing a zero-sized request. See a67fb43 and 5acb7e3.
   + Fix a hanging bug when a subset of processes write zero-sized requests.
     See 3f34656.
+  + Fix a bug in h5lreplay that ignores attributes.
+  + Fix a bug in h5lreplay that crashes when there are groups.
+  + Fix a bug in h5lconfig that reports the wrong library path.
 
 * New example programs
   + Demo of modifying traditional HDF5 application to use log-based VOL
@@ -77,6 +84,8 @@ This is essentially a placeholder for the next release note ...
   + `tests/testcases/null_space.cpp` tests when only rank 0 process writes
     zero-sized request using H5Sselect_none() and others writes non-zero-sized
     amount.
+  + `utils/h5lreplay/h5lgen.cpp` generates a log-based HDF5 file to test h5lreplay.
+    The converted file is compared with the file written using the native VOL.
 
 * Conformity with HDF5 library
   + none
@@ -94,10 +103,9 @@ This is essentially a placeholder for the next release note ...
   + In HDF5, the correct way to do zero-size write is to call select API
     H5Sselect_none() using the dataset's dataspace, instead of
     H5Screate(H5S_NULL). HDF5 reference manual says "Any dataspace specified in
-    file_space_id is ignored by the library and the dataset's dataspace is
+    file_space_id is ignored by the library and the dataset's dataspace isa
     always used." The dataset's dataspace is the dataspace used when creating
     the dataset. Once the dataset is created, its dataspace can be set to a
     selected area (e.g. subarray) and passed into H5Dwrite() to write to an
     subbarray space of the dataset occupied in the file. Note that the size of
     mem_type_id must match file_space_id.
-
