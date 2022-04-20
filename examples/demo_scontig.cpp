@@ -10,7 +10,7 @@
 #include <stdlib.h>
 
 #include "H5VL_log.h"
-#define N 100000
+#define N 1000000
 int buf;
 int main (int argc, char **argv) {
     int i;

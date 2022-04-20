@@ -10,11 +10,11 @@
 #include <stdlib.h>
 
 #include "H5VL_log.h"
-#define N 100000
-int buf[N];
+#define N 1000000
+int buf;
 int main (int argc, char **argv) {
     int i;
-    hid_t fid, did, sid;
+    hid_t fid, did, sid, msid;
     hid_t log_vlid, faplid;
     hsize_t dim = N, start, count, one = 1;
     MPI_Init (&argc, &argv);
@@ -31,13 +31,14 @@ int main (int argc, char **argv) {
     sid = H5Screate_simple (1, &dim, &dim);
     did = H5Dcreate2 (fid, "D", H5T_STD_I32LE, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     // Write to dataset
+    msid = H5Screate_simple(1, &one, &one);
     for (i = 0; i < N; i++) {
-        buf[i] = i + 1; start  = i; count  = 1;
+        buf = i + 1; start  = i; count  = 1;
         H5Sselect_hyperslab (sid, H5S_SELECT_SET, &start, NULL, &one, &count);
-        H5Dwrite (did, H5T_NATIVE_INT, H5S_ALL, sid, H5P_DEFAULT, buf);
+        H5Dwrite (did, H5T_NATIVE_INT, msid, sid, H5P_DEFAULT, &buf);
     }
     // Close objects
-    H5Sclose (sid); H5Dclose (did); H5Fclose (fid); H5Pclose(faplid);
+    H5Sclose (sid); H5Sclose (msid); H5Dclose (did); H5Fclose (fid); H5Pclose(faplid);
     MPI_Finalize ();
     return 0;
 }

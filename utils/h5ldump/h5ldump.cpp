@@ -263,8 +263,6 @@ void h5ldump_file (std::string path,
     std::cout << std::string (indent, ' ') << "Number of data datasets: " << nldset << std::endl;
     std::cout << std::string (indent, ' ') << "Number of metadata datasets: " << nmdset
               << std::endl;
-    std::cout << std::string (indent, ' ') << "Number of metadata datasets: " << nmdset
-              << std::endl;
     if (config & H5VL_FILEI_CONFIG_SUBFILING) {
         std::cout << std::string (indent, ' ') << "Number of subfiles: " << nsubfile << std::endl;
     }
