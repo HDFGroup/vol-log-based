@@ -77,17 +77,7 @@ herr_t H5VL_log_token_to_str (void *obj,
 
 #ifdef LOGVOL_DEBUG
     if (H5VL_logi_debug_verbose ()) {
-        char objname[128];
-        ssize_t nsize;
-
-        nsize = H5Iget_name (obj_type, objname, 128);
-        if (nsize == 0) {
-            sprintf (objname, "Unnamed_Object");
-        } else if (nsize < 0) {
-            sprintf (objname, "Unknown_Object");
-        }
-
-        printf ("H5VL_log_token_to_str(%p, %s, %p, %p)\n", obj, objname, token, token_str);
+        printf ("H5VL_log_token_to_str(%p, obj_type, %p, %p)\n", obj, token, token_str);
     }
 #endif
 
@@ -120,17 +110,7 @@ herr_t H5VL_log_token_from_str (void *obj,
 
 #ifdef LOGVOL_DEBUG
     if (H5VL_logi_debug_verbose ()) {
-        char objname[128];
-        ssize_t nsize;
-
-        nsize = H5Iget_name (obj_type, objname, 128);
-        if (nsize == 0) {
-            sprintf (objname, "Unnamed_Object");
-        } else if (nsize < 0) {
-            sprintf (objname, "Unknown_Object");
-        }
-
-        printf ("H5VL_log_token_from_str(%p, %s, %s, %p)\n", obj, objname, token_str, token);
+        printf ("H5VL_log_token_from_str(%p, obj_type, %s, %p)\n", obj, token_str, token);
     }
 #endif
 

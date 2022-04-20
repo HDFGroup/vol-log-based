@@ -64,30 +64,8 @@ void *H5VL_log_file_create (
 
 #ifdef LOGVOL_DEBUG
         if (H5VL_logi_debug_verbose ()) {
-            char vname[3][128];
-            ssize_t nsize;
-
-            nsize = H5Iget_name (fcpl_id, vname[0], 128);
-            if (nsize == 0) {
-                sprintf (vname[0], "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname[0], "Unknown_Object");
-            }
-            nsize = H5Iget_name (fapl_id, vname[1], 128);
-            if (nsize == 0) {
-                sprintf (vname[1], "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname[1], "Unknown_Object");
-            }
-            nsize = H5Iget_name (dxpl_id, vname[2], 128);
-            if (nsize == 0) {
-                sprintf (vname[2], "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname[2], "Unknown_Object");
-            }
-
-            printf ("H5VL_log_file_create(%s, %u, %s, %s, %s, %p)\n", name, flags, vname[0],
-                    vname[1], vname[2], req);
+            printf ("H5VL_log_file_create(%s, %u, fcpl_id, fapl_id, dxpl_id, %p)\n", name, flags,
+                    req);
         }
 #endif
 
@@ -291,24 +269,7 @@ void *H5VL_log_file_open (
 
 #ifdef LOGVOL_DEBUG
         if (H5VL_logi_debug_verbose ()) {
-            char vname[3][128];
-            ssize_t nsize;
-
-            nsize = H5Iget_name (fapl_id, vname[1], 128);
-            if (nsize == 0) {
-                sprintf (vname[1], "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname[1], "Unknown_Object");
-            }
-            nsize = H5Iget_name (dxpl_id, vname[2], 128);
-            if (nsize == 0) {
-                sprintf (vname[2], "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname[2], "Unknown_Object");
-            }
-
-            printf ("H5VL_log_file_open(%s, %u, %s, %s, %p)\n", name, flags, vname[0], vname[1],
-                    req);
+            printf ("H5VL_log_file_open(%s, %u, fapl_id, dxpl_id, %p)\n", name, flags, req);
         }
 #endif
 
@@ -422,23 +383,7 @@ herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id,
 
 #ifdef LOGVOL_DEBUG
         if (H5VL_logi_debug_verbose ()) {
-            char vname[2][128];
-            ssize_t nsize;
-
-            nsize = H5Iget_name (args->op_type, vname[0], 128);
-            if (nsize == 0) {
-                sprintf (vname[0], "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname[0], "Unknown_Object");
-            }
-            nsize = H5Iget_name (dxpl_id, vname[1], 128);
-            if (nsize == 0) {
-                sprintf (vname[1], "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname[1], "Unknown_Object");
-            }
-
-            printf ("H5VL_log_file_get(%p, %s, %s, %p, ...)\n", file, vname[0], vname[1], req);
+            printf ("H5VL_log_file_get(%p, args, dxpl_id, %p, ...)\n", file, req);
         }
 #endif
 
@@ -477,23 +422,7 @@ herr_t H5VL_log_file_specific (void *file,
 
 #ifdef LOGVOL_DEBUG
         if (H5VL_logi_debug_verbose ()) {
-            char vname[2][128];
-            ssize_t nsize;
-
-            nsize = H5Iget_name (args->op_type, vname[0], 128);
-            if (nsize == 0) {
-                sprintf (vname[0], "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname[0], "Unknown_Object");
-            }
-            nsize = H5Iget_name (dxpl_id, vname[1], 128);
-            if (nsize == 0) {
-                sprintf (vname[1], "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname[1], "Unknown_Object");
-            }
-
-            printf ("H5VL_log_file_specific(%p, %s, %s, %p, ...)\n", file, vname[0], vname[1], req);
+            printf ("H5VL_log_file_specific(%p, args, dxplid, %p, ...)\n", file, req);
         }
 #endif
 
@@ -564,23 +493,7 @@ herr_t H5VL_log_file_optional (void *file, H5VL_optional_args_t *args, hid_t dxp
 
 #ifdef LOGVOL_DEBUG
         if (H5VL_logi_debug_verbose ()) {
-            char vname[2][128];
-            ssize_t nsize;
-
-            nsize = H5Iget_name (args->op_type, vname[0], 128);
-            if (nsize == 0) {
-                sprintf (vname[0], "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname[0], "Unknown_Object");
-            }
-            nsize = H5Iget_name (dxpl_id, vname[1], 128);
-            if (nsize == 0) {
-                sprintf (vname[1], "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname[1], "Unknown_Object");
-            }
-
-            printf ("H5VL_log_file_optional(%p, %s, %s, %p, ...)\n", file, vname[0], vname[1], req);
+            printf ("H5VL_log_file_optional(%p, args, dxpl_id, %p, ...)\n", file, req);
         }
 #endif
 

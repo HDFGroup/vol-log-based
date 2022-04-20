@@ -184,16 +184,7 @@ herr_t H5VL_log_optional (void *obj, H5VL_optional_args_t *args, hid_t dxpl_id, 
 
 #ifdef LOGVOL_DEBUG
     if (H5VL_logi_debug_verbose ()) {
-        char vname[128];
-        ssize_t nsize;
-
-        nsize = H5Iget_name (dxpl_id, vname, 128);
-        if (nsize == 0) {
-            sprintf (vname, "Unnamed_Object");
-        } else if (nsize < 0) {
-            sprintf (vname, "Unknown_Object");
-        }
-        printf ("H5VL_log_optional(%p,%d,%s,%p,...\n", obj, args->op_type, vname, req);
+        printf ("H5VL_log_optional(%p, %d, dxpl_id, %p,...\n", obj, args->op_type, req);
     }
 #endif
 

@@ -108,17 +108,7 @@ void *H5VL_log_wrap_object (void *obj, H5I_type_t type, void *_wrap_ctx) {
     try {
 #ifdef LOGVOL_DEBUG
         if (H5VL_logi_debug_verbose ()) {
-            char vname[128];
-            ssize_t nsize;
-
-            nsize = H5Iget_name (type, vname, 128);
-            if (nsize == 0) {
-                sprintf (vname, "Unnamed_Object");
-            } else if (nsize < 0) {
-                sprintf (vname, "Unknown_Object");
-            }
-
-            printf ("H5VL_log_wrap_object(%p, %s, %p)\n", obj, vname, _wrap_ctx);
+            printf ("H5VL_log_wrap_object(%p, type, %p)\n", obj, _wrap_ctx);
         }
 #endif
 
