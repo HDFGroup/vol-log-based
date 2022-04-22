@@ -127,7 +127,7 @@ inline bool H5VL_logi_debug_verbose () {
         }                                                                                   \
     }
 
-class H5VL_logi_exception : std::exception {
+class H5VL_logi_exception : public std::exception {
     std::string file;
     int line;
     std::string func;
