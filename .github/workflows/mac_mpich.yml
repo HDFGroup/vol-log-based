@@ -74,6 +74,7 @@ jobs:
             # make ptest
             # make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 --enable-shared CXXFLAGS='-O0 -g -std=c++14' LIBS=-lstdc++"
         - name: Print log
+          if: ${{ always() }}
           run: |
             WORKDIR=$(pwd)
             cat ${WORKDIR}/config.log
