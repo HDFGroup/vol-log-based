@@ -1,0 +1,17 @@
+--- tst_vars3.c	2022-04-14 01:44:07.885767000 -0500
++++ tst_vars3_logvol.c	2022-04-22 01:37:55.030138465 -0500
+@@ -420,6 +420,7 @@
+         if (nc_close(ncid)) ERR;
+     }
+     SUMMARIZE_ERR;
++#if false
+ #ifdef USE_SZIP
+     printf("**** testing simple szip filter setup...");
+     {
+@@ -757,5 +758,6 @@
+     }
+     SUMMARIZE_ERR;
+ #endif /* USE_SZIP */
++#endif
+     FINAL_RESULTS;
+ }
