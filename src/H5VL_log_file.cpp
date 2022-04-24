@@ -110,6 +110,7 @@ void *H5VL_log_file_create (
         fp->mdsize = 0;
         fp->zbsize = 0;
         fp->zbuf   = NULL;
+        fp->is_log_based_file = true;
         mpierr     = MPI_Comm_dup (comm, &(fp->comm));
         CHECK_MPIERR
         if (mpiinfo != MPI_INFO_NULL) {
@@ -319,6 +320,7 @@ void *H5VL_log_file_open (
         fp->mdsize = 0;
         fp->zbsize = 0;
         fp->zbuf   = NULL;
+        fp->is_log_based_file = true;
         mpierr     = MPI_Comm_dup (comm, &(fp->comm));
         CHECK_MPIERR
         if (mpiinfo != MPI_INFO_NULL) {

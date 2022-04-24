@@ -111,6 +111,8 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     int config;  // Config flags
     H5VL_log_idx_type_t
         index_type;  // What index to use for metadata entries (only used to handle read operations)
+    
+    bool is_log_based_file; // indicate if a file is a regular file (false) or a log-based file (false)
 
 #ifdef ENABLE_PROFILING
 #ifndef REPLAY_BUILD
