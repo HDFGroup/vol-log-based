@@ -34,6 +34,13 @@ extern void H5VL_logi_put_att (
     H5VL_log_obj_t *op, const char *name, hid_t mtype, void *buf, hid_t dxpl_id);
 extern void H5VL_logi_get_att (
     H5VL_log_obj_t *op, const char *name, hid_t mtype, void *buf, hid_t dxpl_id);
+
+// Added by Zanhua: check att exists
+// extern herr_t H5VL_logi_exists_att(
+// 	void* uo, hid_t uvlid, H5I_type_t type, const char *name, hid_t dxpl_id, hbool_t *exists_ptr);
+extern hbool_t H5VL_logi_exists_att (H5VL_log_obj_t *op, const char *name, hid_t dxpl_id);
+extern hbool_t H5VL_logi_exists_link (H5VL_log_file_t *op, const char *name, hid_t dxpl_id);
+
 extern void H5VL_logi_get_att_ex (
     H5VL_log_obj_t *op, const char *name, hid_t mtype, hsize_t *len, void *buf, hid_t dxpl_id);
 
