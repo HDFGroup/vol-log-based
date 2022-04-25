@@ -60,37 +60,37 @@ While applications these APIs are not required to use the log-based VOL, they pr
     ```
 
 #### Properties APIs (H5P*)
-* H5Pset_nonblocking
+* H5PSet_buffered
   + Set whether an H5Dwrite or H5Dread call is blocking or non-blocking in a dataset transfer property list
   + Syntax
-    + H5Pset_nonblocking (plist, nonblocking)
+    + H5PSet_buffered (plist, nonblocking)
       + IN plist ID of the dataset transfer property list to attach the setting
       + IN nonblocking Whether to perform blocking or non-blocking I/O
-        + H5VL_LOG_REQ_BLOCKING (default)
+        + true (default)
           + The user buffer can be modified after H5Dwrite returns
           + The data is available in the user buffer after H5Dread returns
-        + H5VL_LOG_REQ_NONBLOCKING
+        + false
           + The user buffer shall not be modified before H5Fflush returns
           + The data is not available in the user buffer before H5Fflush returns
   + C binding
     ```
-        herr_t H5Pset_nonblocking (hid_t plist, H5VL_log_req_type_t nonblocking);
+        herr_t H5PSet_buffered (hid_t plist, H5VL_log_req_type_t nonblocking);
     ```
-* H5Pget_nonblocking
+* H5Pget_buffered
   + Get whether an H5Dwrite or H5Dread call is blocking or non-blocking in a dataset transfer property list
   + Syntax
-    + H5Pget_nonblocking (plist, nonblocking)
+    + H5Pget_buffered (plist, nonblocking)
       + IN plist ID of the dataset transfer property list to retrieve the setting
       + OUT whether the current setting in the dataset transfer property list is blocking or non-blocking
-        + H5VL_LOG_REQ_BLOCKING
+        + true
           + The user buffer can be modified after H5Dwrite returns
           + The data is available in the user buffer after H5Dread returns
-        + H5VL_LOG_REQ_NONBLOCKING
+        + false
           + The user buffer shall not be modified before H5Fflush returns
           + The data is not available in the user buffer before H5Fflush returns
   + C binding
     ```
-        herr_t H5Pget_nonblocking (hid_t plist, H5VL_log_req_type_t *nonblocking);
+        herr_t H5Pget_buffered (hid_t plist, H5VL_log_req_type_t *nonblocking);
     ```
 * H5Pset_idx_buffer_size
   + Set the amount of memory the log-based VOL can use to index metadata for handling read requests

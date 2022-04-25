@@ -427,7 +427,7 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
     H5VL_log_req_data_block_t db;  // Request data
     htri_t eqtype;                 // user buffer type equals dataset type?
     H5S_sel_type mstype;           // Memory space selection type
-    H5VL_log_req_type_t rtype;     // Whether req is nonblocking
+    hbool_t rtype;     // Whether req is nonblocking
     MPI_Datatype ptype = MPI_DATATYPE_NULL;  // Packing type for non-contiguous memory buffer
 #ifdef ENABLE_ZLIB
     int clen, inlen;  // Compressed size; Size of data to be compressed
@@ -541,14 +541,14 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
     }
 
     // Non-blocking?
-    err = H5Pget_nonblocking (plist_id, &rtype);
+    err = H5Pget_buffered (plist_id, &rtype);
     CHECK_ERR
 
     // Need convert?
     eqtype = H5Tequal (dip->dtype, mem_type_id);
 
     // Can reuse user buffer
-    if (rtype == H5VL_LOG_REQ_NONBLOCKING && eqtype > 0 && mstype == H5S_SEL_ALL) {
+    if (rtype == true && eqtype > 0 && mstype == H5S_SEL_ALL) {
         db.xbuf = db.ubuf;
     } else {  // Need internal buffer
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -661,7 +661,7 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     htri_t eqtype;              // Is mem_type_id same as dataset external type
     H5VL_log_rreq_t *r;         // Request entry
     H5S_sel_type mstype;        // Type of selection in mem_space_id
-    H5VL_log_req_type_t rtype;  // Non-blocking?
+    hbool_t rtype;  // Non-blocking?
     H5VL_LOGI_PROFILING_TIMER_START;
 
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -694,7 +694,7 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     r->sels    = dsel;
 
     // Non-blocking?
-    err = H5Pget_nonblocking (plist_id, &rtype);
+    err = H5Pget_buffered (plist_id, &rtype);
     CHECK_ERR
 
     // Need convert?
@@ -730,7 +730,7 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     }
 
     // Flush it immediately if blocking, otherwise place into queue
-    if (rtype != H5VL_LOG_REQ_NONBLOCKING) {
+    if (rtype != true) {
         std::vector<H5VL_log_rreq_t *> tmp (1, r);
         H5VL_log_nb_flush_read_reqs (dp->fp, tmp, plist_id);
     } else {

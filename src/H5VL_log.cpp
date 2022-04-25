@@ -135,7 +135,7 @@ err_out:;
 }
 
 #define NB_PROPERTY_NAME "H5VL_log_nonblocking"
-herr_t H5Pset_nonblocking (hid_t plist, H5VL_log_req_type_t nonblocking) {
+herr_t H5Pset_buffered (hid_t plist, hbool_t nonblocking) {
     herr_t err = 0;
     htri_t isdxpl, pexist;
 
@@ -147,8 +147,8 @@ herr_t H5Pset_nonblocking (hid_t plist, H5VL_log_req_type_t nonblocking) {
         pexist = H5Pexist (plist, NB_PROPERTY_NAME);
         CHECK_ID (pexist)
         if (!pexist) {
-            H5VL_log_req_type_t blocking = H5VL_LOG_REQ_BLOCKING;
-            err = H5Pinsert2 (plist, NB_PROPERTY_NAME, sizeof (H5VL_log_req_type_t), &blocking,
+            hbool_t blocking = false;
+            err = H5Pinsert2 (plist, NB_PROPERTY_NAME, sizeof (hbool_t), &blocking,
                               NULL, NULL, NULL, NULL, NULL, NULL);
             CHECK_ERR
         }
@@ -162,7 +162,7 @@ err_out:;
     return err;
 }
 
-herr_t H5Pget_nonblocking (hid_t plist, H5VL_log_req_type_t *nonblocking) {
+herr_t H5Pget_buffered (hid_t plist, hbool_t *nonblocking) {
     herr_t err = 0;
     htri_t isdxpl, pexist;
 
@@ -170,7 +170,7 @@ herr_t H5Pget_nonblocking (hid_t plist, H5VL_log_req_type_t *nonblocking) {
         isdxpl = H5Pisa_class (plist, H5P_DATASET_XFER);
         CHECK_ID (isdxpl)
         if (isdxpl == 0)
-            *nonblocking = H5VL_LOG_REQ_BLOCKING;  // Default property will not pass class check
+            *nonblocking = false;  // Default property will not pass class check
         else {
             pexist = H5Pexist (plist, NB_PROPERTY_NAME);
             CHECK_ID (pexist)
@@ -179,7 +179,7 @@ herr_t H5Pget_nonblocking (hid_t plist, H5VL_log_req_type_t *nonblocking) {
                 CHECK_ERR
 
             } else {
-                *nonblocking = H5VL_LOG_REQ_BLOCKING;
+                *nonblocking = false;
             }
         }
     }

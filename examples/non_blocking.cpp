@@ -82,7 +82,7 @@ int main (int argc, char **argv) {
     // Create non-blocking dxpl
     dxplid = H5Pcreate (H5P_DATASET_XFER);
     assert (dxplid >= 0);
-    err = H5Pset_nonblocking (dxplid, H5VL_LOG_REQ_NONBLOCKING);
+    err = H5Pset_buffered (dxplid, true);
     assert (err == 0);
 
     // Write to the dataset using H5Dwrite

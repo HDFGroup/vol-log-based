@@ -32,7 +32,7 @@ int main (int argc, char **argv) {
     did = H5Dcreate2 (fid, "D", H5T_STD_I32LE, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     // Write to dataset
     dxplid = H5Pcreate(H5P_DATASET_XFER);
-    H5Pset_nonblocking(dxplid, H5VL_LOG_REQ_NONBLOCKING);
+    H5Pset_buffered(dxplid, true);
     for (i = 0; i < N; i++) {
         buf[i] = i + 1; start  = i; count  = 1;
         H5Sselect_hyperslab (sid, H5S_SELECT_SET, &start, NULL, &one, &count);
