@@ -64,13 +64,18 @@ void *H5VL_log_object_open (void *obj,
         }
 
         uo = H5VLobject_open (op->uo, loc_params, op->uvlid, opened_type, dxpl_id, req);
-        if (uo == NULL) { CHECK_PTR (uo); }
+        CHECK_PTR (uo);
 
-        if (*opened_type == H5I_DATASET) {
-            ret = H5VL_log_dataseti_open (obj, uo, dxpl_id);
+        if (op->fp->is_log_based_file) {
+            if (*opened_type == H5I_DATASET) {
+                ret = H5VL_log_dataseti_open (obj, uo, dxpl_id);
+            } else {
+                ret = H5VL_log_obj_open_with_uo (obj, uo, *opened_type, loc_params);
+            }
         } else {
-            ret = H5VL_log_obj_open_with_uo (obj, uo, *opened_type, loc_params);
+            ret = uo;
         }
+        
     }
     H5VL_LOGI_EXP_CATCH
 
@@ -118,8 +123,11 @@ herr_t H5VL_log_object_copy (void *src_obj,
                 "H5VL_log_object_copy(%p, %p, %s, %p, %p, %s, ocpypl_id, lcpl_id, dxplid, %p)\n",
                 src_obj, src_loc_params, src_name, dst_obj, dst_loc_params, dst_name, req);
         }
-#endif
-        ERR_OUT ("H5VL_log_object_copy Not Supported")
+#endif  
+        if (o_src->fp->is_log_based_file || o_dst->fp->is_log_based_file) {
+            ERR_OUT ("H5VL_log_object_copy Not Supported")
+        }
+        
 
         /* Rename user objects to avoid conflict with internal object */
         if (src_loc_params->type == H5VL_OBJECT_BY_NAME) {
@@ -180,19 +188,21 @@ herr_t H5VL_log_object_get (void *obj,
 #endif
 
         // Block access to internal objects
-        switch (loc_params->type) {
-            case H5VL_OBJECT_BY_NAME:
-                /* Rename user objects to avoid conflict with internal object */
-                original_name = loc_params->loc_data.loc_by_name.name;
-                iname         = H5VL_logi_name_remap (original_name);
-                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
-                break;
-            case H5VL_OBJECT_BY_SELF:
-                break;
-            case H5VL_OBJECT_BY_IDX:
-            case H5VL_OBJECT_BY_TOKEN:
-                RET_ERR ("Access by idx annd token is not supported")
-                break;
+        if (op->fp->is_log_based_file) {
+            switch (loc_params->type) {
+                case H5VL_OBJECT_BY_NAME:
+                    /* Rename user objects to avoid conflict with internal object */
+                    original_name = loc_params->loc_data.loc_by_name.name;
+                    iname         = H5VL_logi_name_remap (original_name);
+                    ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
+                    break;
+                case H5VL_OBJECT_BY_SELF:
+                    break;
+                case H5VL_OBJECT_BY_IDX:
+                case H5VL_OBJECT_BY_TOKEN:
+                    RET_ERR ("Access by idx annd token is not supported")
+                    break;
+            }
         }
 
         err = H5VLobject_get (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
@@ -246,7 +256,13 @@ herr_t H5VL_log_object_specific (void *obj,
                     req);
         }
 #endif
-
+        if (!op->fp->is_log_based_file) {
+            // TODO: Save copy of underlying VOL connector ID, in case of
+            // 'refresh' operation destroying the current object
+            err = H5VLobject_specific (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
+            CHECK_ERR;
+            return err;
+        }
         // Block access to internal objects
         switch (loc_params->type) {
             case H5VL_OBJECT_BY_NAME:
@@ -319,21 +335,24 @@ herr_t H5VL_log_object_optional (void *obj,
         }
 #endif
 
-        // Block access to internal objects
-        switch (loc_params->type) {
-            case H5VL_OBJECT_BY_NAME:
-                /* Rename user objects to avoid conflict with internal object */
-                original_name = loc_params->loc_data.loc_by_name.name;
-                iname         = H5VL_logi_name_remap (original_name);
-                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
-                break;
-            case H5VL_OBJECT_BY_SELF:
-                break;
-            case H5VL_OBJECT_BY_IDX:
-            case H5VL_OBJECT_BY_TOKEN:
-                RET_ERR ("Access by idx annd token is not supported")
-                break;
+        if (op->fp->is_log_based_file) {
+            // Block access to internal objects
+            switch (loc_params->type) {
+                case H5VL_OBJECT_BY_NAME:
+                    /* Rename user objects to avoid conflict with internal object */
+                    original_name = loc_params->loc_data.loc_by_name.name;
+                    iname         = H5VL_logi_name_remap (original_name);
+                    ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
+                    break;
+                case H5VL_OBJECT_BY_SELF:
+                    break;
+                case H5VL_OBJECT_BY_IDX:
+                case H5VL_OBJECT_BY_TOKEN:
+                    RET_ERR ("Access by idx annd token is not supported")
+                    break;
+            }
         }
+        
 
         err = H5VLobject_optional (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
         CHECK_ERR

@@ -59,8 +59,10 @@ void *H5VL_log_attr_create (void *obj,
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
 
-        /* Rename user objects to avoid conflict with internal object */
-        iname = H5VL_logi_name_remap (name);
+        /* Check arguments */
+        if (op->fp->is_log_based_file) {
+            iname = H5VL_logi_name_remap (name);
+        }
 
         ap = new H5VL_log_obj_t (op, H5I_ATTR);
 
@@ -121,15 +123,17 @@ void *H5VL_log_attr_open (void *obj,
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
 
-        /* Rename user objects to avoid conflict with internal object */
-        iname = H5VL_logi_name_remap (name);
+        if (op->fp->is_log_based_file) {
+            /* Rename user objects to avoid conflict with internal object */
+            iname = H5VL_logi_name_remap (name);
 
-        // Skip internal attributes
-        if (loc_params->type == H5VL_OBJECT_BY_IDX) {
-            if (op->type == H5I_FILE) {
-                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_idx.n += 1;
-            } else if (op->type == H5I_DATASET) {
-                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_idx.n += 3;
+            // Skip internal attributes
+            if (loc_params->type == H5VL_OBJECT_BY_IDX) {
+                if (op->type == H5I_FILE) {
+                    ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_idx.n += 1;
+                } else if (op->type == H5I_DATASET) {
+                    ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_idx.n += 3;
+                }
             }
         }
 
@@ -396,6 +400,11 @@ herr_t H5VL_log_attr_specific (void *obj,
             ureqp = &ureq;
         } else {
             ureqp = NULL;
+        }
+
+        if (!op->fp->is_log_based_file) {
+            err = H5VLattr_specific(op->uo, loc_params, op->uvlid, args, dxpl_id, req);
+            return err;
         }
 
         // Block access to internal objects

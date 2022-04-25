@@ -524,13 +524,14 @@ herr_t H5VL_log_file_optional (void *file, H5VL_optional_args_t *args, hid_t dxp
         CHECK_ERR
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_OPTIONAL);
 
-        // Open the log group and read file attributes
-        if (args->op_type == H5VL_NATIVE_FILE_POST_OPEN) {
-            if (!(fp->lgp)) {  // Log group is already set for file create
-                H5VL_log_filei_post_open (fp);
+        if (fp->is_log_based_file) {
+            if(args->op_type == H5VL_NATIVE_FILE_POST_OPEN) {
+                if (!(fp->lgp)) {  // Log group is already set for file create
+                    H5VL_log_filei_post_open (fp);
+                }
+                
             }
         }
-
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPTIONAL);
     }
     H5VL_LOGI_EXP_CATCH_ERR

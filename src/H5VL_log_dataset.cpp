@@ -79,8 +79,10 @@ void *H5VL_log_dataset_create (void *obj,
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
 
-        /* Rename user objects to avoid conflict with internal object */
-        iname = H5VL_logi_name_remap (name);
+        /* Check arguments */
+        if(op->fp->is_log_based_file) {
+            iname = H5VL_logi_name_remap (name);
+        }
 
         // Logvol doesn't support variable len type
         is_var_type = H5Tis_variable_str (type_id);
@@ -95,12 +97,20 @@ void *H5VL_log_dataset_create (void *obj,
             ureqp = NULL;
         }
 
+        dp     = new H5VL_log_dset_t (op, H5I_DATASET);
+        if(!op->fp->is_log_based_file) {
+            dp->uo = H5VLdataset_create(op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, space_id, dcpl_id, dapl_id, dxpl_id, ureqp);
+            CHECK_PTR (dp->uo)
+            if (req) { rp->append (ureq); }
+            return dp;
+        }
+
         // Create anchor dataset
         // TODO: native VOL will not save filter information when layout is contiguous
         err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
         CHECK_ERR
 
-        dp     = new H5VL_log_dset_t (op, H5I_DATASET);
+        
         dp->id = dp->fp->ndset;  // ID nees to be set before writing to attribute
 
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -222,9 +232,16 @@ void *H5VL_log_dataset_open (void *obj,
 #ifdef LOGVOL_DEBUG
         if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_dataset_open(%p, %s)\n", obj, name); }
 #endif
-
-        /* Rename user objects to avoid conflict with internal object */
-        iname = H5VL_logi_name_remap (name);
+        /* Check arguments */
+        if (op->fp->is_log_based_file) {
+            /* Rename user objects to avoid conflict with internal object */
+            iname = H5VL_logi_name_remap (name);
+        } else {
+            H5VL_log_dset_t *dp = new H5VL_log_dset_t(op, H5I_DATASET);
+            dp->uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);
+            CHECK_PTR (dp->uo);
+            return (void*) dp;
+        }
 
         H5VL_LOGI_PROFILING_TIMER_START;
         uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, iname, dapl_id, dxpl_id, NULL);
@@ -265,6 +282,10 @@ herr_t H5VL_log_dataset_read (void *dset,
     H5VL_log_selections *dsel = NULL;                        // Selection blocks
 
     try {
+        if(!dp->fp->is_log_based_file) {
+            return H5VLdataset_read(dp->uo, dp->uvlid, mem_type_id, mem_space_id, file_space_id, plist_id, buf, NULL);
+        }
+
         H5VL_LOGI_PROFILING_TIMER_START;
         if (file_space_id == H5S_ALL) {
             dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
@@ -312,6 +333,10 @@ herr_t H5VL_log_dataset_write (void *dset,
     H5VL_log_selections *dsel = NULL;                        // Selection blocks
 
     try {
+        if(!dp->fp->is_log_based_file) {
+            return H5VLdataset_write(dp->uo, dp->uvlid, mem_type_id, mem_space_id, file_space_id, plist_id, buf, NULL);
+        }
+
         H5VL_LOGI_PROFILING_TIMER_START;
         if (file_space_id == H5S_ALL) {
             dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
@@ -354,6 +379,11 @@ herr_t H5VL_log_dataset_get (void *dset, H5VL_dataset_get_args_t *args, hid_t dx
     // void **ureqp, *ureq;
 
     try {
+        if (!dp->fp->is_log_based_file) {
+            err = H5VLdataset_get (dp->uo, dp->uvlid, args, dxpl_id, req);
+            return err;
+        }
+
         H5VL_LOGI_PROFILING_TIMER_START;
 
         switch (args->op_type) {
@@ -421,6 +451,13 @@ herr_t H5VL_log_dataset_specific (void *obj,
     // void **ureqp, *ureq;
 
     try {
+        if (!dp->fp->is_log_based_file) {
+            // TODO: Save copy of underlying VOL connector ID, in case of
+            // 'refresh' operation destroying the current object. Check H5VLpassthru.c.
+            err = H5VLdataset_specific(dp->uo, dp->uvlid, args, dxpl_id, req);
+            return err;
+        }
+
         H5VL_LOGI_PROFILING_TIMER_START;
 
         switch (args->op_type) {
@@ -490,6 +527,14 @@ herr_t H5VL_log_dataset_optional (void *obj,
     herr_t err                = 0;
     H5VL_log_obj_t *op        = (H5VL_log_obj_t *)obj;
     H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)op;
+
+
+    if(!dp->fp->is_log_based_file) {
+        err = H5VLdataset_optional (op->uo, op->uvlid, args, dxpl_id, req);
+        return err;
+    }
+
+
     H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];  // Dataset info
     // H5VL_log_req_t *rp;
     // void **ureqp, *ureq;
