@@ -37,6 +37,14 @@
 #define DEFAULT_SIZE 209715200  // 200 MiB
 //#define DEFAULT_SIZE 10485760 // 10 MiB
 
+#define CHECK_LOG_INTERNAL_EXIST(EXISTS)   \
+do {                                        \
+    if (EXISTS == 0) {                      \
+        fp->is_log_based_file = false;      \
+        return;                             \
+    }                                       \
+} while(0)
+
 std::map<decltype (stcrtstat::st_ino), H5VL_log_file_t *> files;
 H5VL_log_file_t *H5VL_log_filei_search (const char *path) {
     int err;
@@ -103,12 +111,23 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     int mpierr;
     H5VL_loc_params_t loc;
     H5VL_object_specific_args_t args;
+    hbool_t exists;
     int attbuf[5];
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
+    // modified by Zanhua:
+    // check for exisitence of __int_att, __LOG;
+    // if inexists, mark as regular file and return directly.
+    exists = H5VL_logi_exists_att(fp, H5VL_LOG_FILEI_ATTR_INT, fp->dxplid);
+    CHECK_LOG_INTERNAL_EXIST(exists);
+
+    exists  = H5VL_logi_exists_link(fp, H5VL_LOG_FILEI_GROUP_LOG, fp->dxplid);
+    CHECK_LOG_INTERNAL_EXIST(exists);
+
     // Att
     H5VL_logi_get_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_NATIVE_INT32, attbuf, fp->dxplid);
+
     fp->ndset  = attbuf[0];
     fp->nldset = attbuf[1];
     fp->nmdset = attbuf[2];
@@ -119,7 +138,7 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     fp->group_rank = fp->rank;
     fp->group_comm = fp->comm;
     fp->group_id   = 0;
-    H5VL_log_filei_init_idx (fp);
+    H5VL_log_filei_init_idx (fp);  // comment zanhua: free idx if regular file; do this here or at file close?
     fp->idx->reserve (fp->ndset);
 
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -150,8 +169,10 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     loc.obj_type = H5I_FILE;
     loc.type     = H5VL_OBJECT_BY_SELF;
     H5VL_LOGI_PROFILING_TIMER_START
+
     fp->lgp = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
                               H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
+    
     CHECK_PTR (fp->lgp)
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
 

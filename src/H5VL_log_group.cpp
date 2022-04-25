@@ -58,12 +58,12 @@ void *H5VL_log_group_create (void *obj,
         H5VL_LOGI_PROFILING_TIMER_START;
 
         /* Check arguments */
-        if (loc_params->type != H5VL_OBJECT_BY_SELF)
-            ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
-
-        /* Rename user objects to avoid conflict with internal object */
-        iname = H5VL_logi_name_remap (name);
-
+        if (op->fp->is_log_based_file) {
+            if (loc_params->type != H5VL_OBJECT_BY_SELF)
+                ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
+            /* Rename user objects to avoid conflict with internal object */
+            iname = H5VL_logi_name_remap (name);
+        }
         gp = new H5VL_log_obj_t (op, H5I_GROUP);
 
         if (req) {
@@ -125,8 +125,18 @@ void *H5VL_log_group_open (void *obj,
         H5VL_LOGI_PROFILING_TIMER_START;
 
         /* Check arguments */
+<<<<<<< HEAD
         if (loc_params->type != H5VL_OBJECT_BY_SELF)
             ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
+=======
+        if (op->fp->is_log_based_file) {
+            H5VL_LOGI_CHECK_NAME (name);
+            if (loc_params->type != H5VL_OBJECT_BY_SELF)
+                ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
+        }
+        
+        
+>>>>>>> 7ecb800 (Rebase passthru with new release 1.3.0)
 
         /* Rename user objects to avoid conflict with internal object */
         iname = H5VL_logi_name_remap (name);
