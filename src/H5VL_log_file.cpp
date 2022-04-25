@@ -433,6 +433,7 @@ herr_t H5VL_log_file_specific (void *file,
         }
 #endif
 
+
         switch (args->op_type) {
             case H5VL_FILE_REOPEN: {
                 *(args->args.reopen.file) = file;
@@ -440,12 +441,16 @@ herr_t H5VL_log_file_specific (void *file,
             } break;
             case H5VL_FILE_IS_ACCESSIBLE:
             case H5VL_FILE_DELETE: {
+                
                 hid_t uvlid, under_fapl_id, fapl_id;
                 void *under_vol_info;
                 H5VL_log_info_t *info = NULL;
 
-                // Try get info about under VOL
+                // Try get info about under VOL;
+                // comment: fapl_id is still correct for the case of H5VL_FILE_IS_ACCESSIBLE.
+                //          this is a property(?) of union.
                 fapl_id = args->args.del.fapl_id;
+                
                 H5Pget_vol_info (fapl_id, (void **)&info);
                 if (info) {
                     uvlid          = info->uvlid;
@@ -459,7 +464,6 @@ herr_t H5VL_log_file_specific (void *file,
                     CHECK_ID (uvlid)
                     under_vol_info = NULL;
                 }
-
                 /* Call specific of under VOL */
                 under_fapl_id = H5Pcopy (fapl_id);
                 H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
@@ -469,12 +473,21 @@ herr_t H5VL_log_file_specific (void *file,
             } break;
             case H5VL_FILE_FLUSH: {
                 H5VL_LOGI_PROFILING_TIMER_START;
-                H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
+                if (fp->is_log_based_file) {
+                    H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
+                } else {
+                    err = H5VLfile_specific(fp->uo, fp->uvlid, args, dxpl_id, req);
+                }
                 H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_SPECIFIC);
-                break;
             } break;
-            default:
-                ERR_OUT ("Unsupported args->op_type")
+            default: {
+                if (fp->is_log_based_file) {
+                    ERR_OUT ("Unsupported args->op_type")
+                } else {
+                    err = H5VLfile_specific(fp->uo, fp->uvlid, args, dxpl_id, req);
+                }
+            }
+                
         } /* end select */
     }
     H5VL_LOGI_EXP_CATCH_ERR
@@ -538,8 +551,15 @@ err_out:;
  */
 herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
     herr_t err = 0;
+    H5VL_log_file_t *fp;
     try {
-        H5VL_log_filei_dec_ref ((H5VL_log_file_t *)file);
+        fp = (H5VL_log_file_t *)file;
+        if (fp->is_log_based_file) {
+            H5VL_log_filei_dec_ref (fp);
+        } else {
+            err = H5VLfile_close(fp->uo, fp->uvlid, dxpl_id, req);
+        }
+        
         // return H5VL_log_filei_close ((H5VL_log_file_t *)file);
     }
     H5VL_LOGI_EXP_CATCH_ERR
