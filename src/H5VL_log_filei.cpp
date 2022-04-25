@@ -277,22 +277,16 @@ void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
         }
     }
 
-    env = getenv ("H5VL_LOG_SUBFILING");
+    env = getenv ("H5VL_LOG_NSUBFILES");
     if (env) {
-        if (strcmp (env, "1") == 0) {
-            fp->config |= H5VL_FILEI_CONFIG_SUBFILING;
-        } else {
-            fp->config &= ~H5VL_FILEI_CONFIG_SUBFILING;
-        }
-    }
-
-    if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
-        env = getenv ("H5VL_LOG_N_SUBFILE");
-        if (env) {
+        fp->config |= H5VL_FILEI_CONFIG_SUBFILING;
+        if (strlen (env) > 0) {
             fp->ngroup = atoi (env);
         } else {
             fp->ngroup = 0;
         }
+    } else {
+        fp->config &= ~H5VL_FILEI_CONFIG_SUBFILING;
     }
 }
 
