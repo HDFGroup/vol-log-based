@@ -26,7 +26,7 @@ check_PROGRAMS_test = 	create_open \
 check_PROGRAMS =    ${check_PROGRAMS_test} \
                     demo \
                     demo_logvol \
-                    demo_nonblocking \
+                    demo_buffered \
                     demo_scontig \
                     demo_dwrite_n
 
