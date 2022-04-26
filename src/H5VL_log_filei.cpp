@@ -11,6 +11,7 @@
 #include <array>
 #include <cassert>
 #include <cstring>
+#include <cstdlib>
 #include <memory>
 // Sys hdrs
 #include <dirent.h>
