@@ -1,0 +1,17 @@
+LD_LIBRARY_PATH="/homes/zhd1108/LOG-VOL/git_install/lib:/homes/zhd1108/HDF5/1.13.0/lib" \
+	mpirun -n 1 ./create_open
+zanhua, close is called
+========================
+Zanhua, File open called
+Zanhua, post open called
+
+zanhua, H5VL_log_dataset_create called. is log: 1
+zanhua, H5VL_log_dataset_write is called
+zanhua, close is called
+========================
+Zanhua, File open called
+Zanhua, post open called
+
+zanhua, H5VL_log_dataset_create called. is log: 0
+zanhua, H5VL_log_dataset_write is called
+zanhua, close is called
