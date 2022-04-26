@@ -19,6 +19,7 @@
 #include <hdf5.h>
 #include <mpi.h>
 #include <unistd.h>
+#include <libgen.h>
 //
 #include "H5VL_log_filei.hpp"
 #include "H5VL_logi_nb.hpp"
