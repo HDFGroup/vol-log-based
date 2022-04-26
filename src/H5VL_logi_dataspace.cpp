@@ -172,6 +172,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
     H5S_sel_type stype;  // Tpye of selection (block list, point list ...)
     hsize_t **hstarts = NULL, **hends;  // Output buffer of H5Sget_select_hyper_nblocks
     int *group        = NULL;           // blocks with the same group number are interleaved
+    htri_t isregular;                   // If hyperslab selection is regular
 
     // Get space dim
     ndim = H5Sget_simple_extent_ndims (dsid);
@@ -191,6 +192,30 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
 
     switch (stype) {
         case H5S_SEL_HYPERSLABS: {
+            isregular = H5Sis_regular_hyperslab (dsid);
+            if (isregular == true) {
+                bool is_unit_block = true;
+                hsize_t start[H5S_MAX_RANK], count[H5S_MAX_RANK], stride[H5S_MAX_RANK],
+                    block[H5S_MAX_RANK];
+                err = H5Sget_regular_hyperslab (dsid, start, stride, count, block);
+                CHECK_ERR
+
+                for (i = 0; i < ndim; i++) {
+                    if (block[i] != 1) { is_unit_block = false; }
+                    if (stride[i] != 1) { is_unit_block = false; }
+                }
+
+                if (is_unit_block) {
+                    this->nsel = 1;
+                    this->alloc (1);
+                    for (i = 0; i < ndim; i++) {
+                        starts[0][i] = start[i];
+                        counts[0][i] = count[i];
+                    }
+                    break;
+                }
+            }
+
             nblock = H5Sget_select_hyper_nblocks (dsid);
             CHECK_ID (nblock)
 
@@ -225,7 +250,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                 merge_blocks<true> (ndim, nblock, hstarts, hends);
 
                 sortblocks (ndim, nblock, hstarts, hends);
-                
+
                 merge_blocks<true> (ndim, nblock, hstarts, hends);
 
                 // Check for interleving
@@ -235,9 +260,9 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                 for (i = 0; i < nblock - 1; i++) {
                     if (lessthan (
                             ndim, hends[i],
-                            hstarts[i + 1])) {  // The end cord is the max offset of the previous
-                                                // block. If less than the start offset of the next
-                                                // block, there won't be interleving
+                            hstarts[i + 1])) {  // The end cord is the max offset of the
+                                                // previous block. If less than the start offset
+                                                // of the next block, there won't be interleving
                         group[i + 1] = group[i] + 1;
                     } else {
                         group[i + 1] = group[i];
@@ -293,8 +318,8 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                                 counts[nreq][ndim - 1] =
                                     (hsize_t) (hends[j][ndim - 1] - hstarts[j][ndim - 1] + 1);
 
-                                for (l = 0; l < ndim;
-                                     l++) {  // The lowest dimension that we haven't reach the end
+                                for (l = 0; l < ndim; l++) {  // The lowest dimension that we
+                                                              // haven't reach the end
                                     if (starts[nreq][l] < hends[j][l]) break;
                                 }
                                 nreq++;
@@ -304,8 +329,8 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                                     memcpy (counts[nreq], counts[nreq - 1],
                                             sizeof (hsize_t) * ndim);  // Fill in Count
 
-                                    // Increase start to the next location, carry to lower dim if
-                                    // overflow
+                                    // Increase start to the next location, carry to lower dim
+                                    // if overflow
                                     starts[nreq][ndim - 2]++;
                                     for (k = ndim - 2; k > 0; k--) {
                                         if (starts[nreq][k] > hends[j][k]) {
@@ -316,8 +341,8 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                                         }
                                     }
 
-                                    for (l = 0; l < ndim; l++) {  // The lowest dimension that we
-                                                                  // haven't reach the end
+                                    for (l = 0; l < ndim; l++) {  // The lowest dimension that
+                                                                  // we haven't reach the end
                                         if (starts[nreq][l] < hends[j][l]) break;
                                     }
                                     nreq++;
