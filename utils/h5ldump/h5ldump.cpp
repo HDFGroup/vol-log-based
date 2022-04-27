@@ -17,9 +17,9 @@
 #include <vector>
 //
 #include <hdf5.h>
+#include <libgen.h>
 #include <mpi.h>
 #include <unistd.h>
-#include <libgen.h>
 //
 #include "H5VL_log_filei.hpp"
 #include "H5VL_logi_nb.hpp"
@@ -272,8 +272,8 @@ void h5ldump_file (std::string path,
     if (config & H5VL_FILEI_CONFIG_SUBFILING) {
         for (i = 1; i <= nsubfile; i++) {
             std::cout << std::string (indent, ' ') << "Subfile " << i << std::endl;
-            h5ldump_file (path + ".subfiles/" + std::string (basename (path.c_str ())) + "." +
-                              std::to_string (i),
+            h5ldump_file (path + ".subfiles/" + std::string (basename ((char *)(path.c_str ()))) +
+                              "." + std::to_string (i),
                           dsets, dumpdata, indent + 4);
             // std::cout << std::string (indent, ' ') << "End subfile " << i << std::endl;
         }
