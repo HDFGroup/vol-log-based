@@ -237,6 +237,7 @@ void *H5VL_log_dataset_open (void *obj,
             /* Rename user objects to avoid conflict with internal object */
             iname = H5VL_logi_name_remap (name);
         } else {
+            // printf("Zanhua: dataset open for regular file.\n");
             H5VL_log_dset_t *dp = new H5VL_log_dset_t(op, H5I_DATASET);
             dp->uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);
             CHECK_PTR (dp->uo);
