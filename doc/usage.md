@@ -65,6 +65,29 @@ HDF5 environment variables.
      % source ${HOME}/Log_IO_VOL/bin/h5lenv.bash
      ```
 
+### Enable log-based VOL subfiling
+Subfiling reduces lock contention on parallel file systems by reducing the number of processes sharing a file.
+
+* Enable subfiling through environment variables
+  + Set the environment variable `H5VL_LOG_NSUBFILES` to the number of subfiles.
+      ```
+      % export H5VL_LOG_NSUBFILES=2
+      ```
+    + If the number of subfiles is not specified, log-based VOL will create one subfile per compute node.
+        ```
+        % export H5VL_LOG_NSUBFILES
+        ```
+* Output file structure when enable subfiling
+  * A master file
+    + Stores user datasets, attributes ... etc.
+  * A subfile directory
+    + named <master_file_name>.subfiles
+    + Subfiles
+      + Named <master_file_name>.id
+        + id starts from 1
+      + Stores the log data structure.
+
+
 ### Difference to the native VOL driver
   * Blocking and non-blocking I/O mode
     + H5Dwrite and H5Dread can be either blocking or non-blocking.

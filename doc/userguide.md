@@ -53,7 +53,6 @@ for write performance. Our design principle of log-based VOL is described in
     + Reading is implemented by searching through log records to find
       the log blocks intersecting with the read request.
     + The searching requires to read the entire log metadata into the memory.
-  + The subfiling feature is under development.
   + Async I/O (a new feature of HDF5 in the future release) is not yet supported.
   + Virtual Datasets (VDS) feature is not supported.
   + Multiple opened instances of the same file is not supported.
