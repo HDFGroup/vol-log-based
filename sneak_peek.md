@@ -26,7 +26,8 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * API syntax changes
-  + none
+  + H5Pset_nonblocking/H5Pget_nonblocking changed to H5Pset_buffered/H5Pget_buffered
+    + Property type changed from enum H5VL_log_req_type_t to hbool_t
 
 * API semantics updates
   + none
@@ -44,7 +45,9 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * New run-time environment variables
-  + none
+  + H5VL_LOG_NSUBFILES
+    + Enable subfiling and set the number of subilfes
+    + Old environment variables H5VL_LOG_SUBFILING and H5VL_LOG_N_SUBFILE are removed.
 
 * Build recipes
   + none
@@ -56,7 +59,8 @@ This is essentially a placeholder for the next release note ...
     + C++ compiler wrapper to build applications using log-based VOL.
 
 * Other updates:
-  + none
+  + Change the name of subfiles master_file_name.subfile_ID.
+    + ID starts from 1
 
 * Bug fixes
   + Fix a bug when writing a zero-sized request. See a67fb43 and 5acb7e3.
