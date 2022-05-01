@@ -8,10 +8,12 @@
 #include <config.h>
 #endif
 // Std hdrs
+#include <libgen.h>
+
 #include <array>
 #include <cassert>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 // Sys hdrs
 #include <dirent.h>
@@ -283,6 +285,7 @@ void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
         fp->config |= H5VL_FILEI_CONFIG_SUBFILING;
         if (strlen (env) > 0) {
             fp->ngroup = atoi (env);
+            if (fp->ngroup < 0) { fp->ngroup = 0; }
         } else {
             fp->ngroup = 0;
         }
@@ -636,8 +639,10 @@ void H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
     err = H5Pset_fapl_mpio (fapl_id, fp->group_comm, MPI_INFO_NULL);
     CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_START;
-    fp->subname = fp->name + ".subfiles/" + fp->name + "." + std::to_string (fp->group_id + 1);
-    fp->sfp     = H5VLfile_create (fp->subname.c_str (), flags, H5P_FILE_CREATE_DEFAULT, fapl_id,
+    fp->subname = std::string (basename ((char *)(fp->name.c_str ()))) + ".subfiles/" +
+                  std::string (basename ((char *)(fp->name.c_str ()))) + "." +
+                  std::to_string (fp->group_id + 1);
+    fp->sfp = H5VLfile_create (fp->subname.c_str (), flags, H5P_FILE_CREATE_DEFAULT, fapl_id,
                                dxpl_id, NULL);
     CHECK_PTR (fp->sfp)
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
