@@ -278,7 +278,7 @@ herr_t H5VL_log_dataset_read (void *dset,
                               void **req) {
     herr_t err                = 0;
     H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
-    H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];  // Dataset info
+    H5VL_log_dset_info_t *dip = NULL;  // Dataset info
     hid_t dsid;                                              // Dataset space id
     H5VL_log_selections *dsel = NULL;                        // Selection blocks
 
@@ -286,7 +286,7 @@ herr_t H5VL_log_dataset_read (void *dset,
         if(!dp->fp->is_log_based_file) {
             return H5VLdataset_read(dp->uo, dp->uvlid, mem_type_id, mem_space_id, file_space_id, plist_id, buf, NULL);
         }
-
+        dip = dp->fp->dsets_info[dp->id];
         H5VL_LOGI_PROFILING_TIMER_START;
         if (file_space_id == H5S_ALL) {
             dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
