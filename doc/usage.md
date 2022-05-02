@@ -84,7 +84,6 @@ Subfiling reduces lock contention on parallel file systems by reducing the numbe
     + named <master_file_name>.subfiles
     + Subfiles
       + Named <master_file_name>.id
-        + id starts from 1
       + Stores the log data structure.
 
 

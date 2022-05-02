@@ -270,7 +270,7 @@ void h5ldump_file (std::string path,
     indent -= 4;
 
     if (config & H5VL_FILEI_CONFIG_SUBFILING) {
-        for (i = 1; i <= nsubfile; i++) {
+        for (i = 0; i < nsubfile; i++) {
             std::cout << std::string (indent, ' ') << "Subfile " << i << std::endl;
             h5ldump_file (path + ".subfiles/" + std::string (basename ((char *)(path.c_str ()))) +
                               "." + std::to_string (i),
