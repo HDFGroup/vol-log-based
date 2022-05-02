@@ -2,7 +2,7 @@
 The log metadata is defined as an HDF5 dataset of type H5T_STD_U8LE (unsigned byte in Little Endian format).
 It is a byte stream containing the information of all write requests logged by the log driver.
 Below is the format specification of the metadata table in the form of Backus Normal Form (BNF) grammar notation. 
-
+```
 metadata                      = decomp entries
 decomp                        = nproc [end_off ...]
 nproc                         = INT32
@@ -41,4 +41,4 @@ ON                            = 1                                          // A 
 OFF                           = 0                                          // A 0 bit
 INT32                         = <32-bit signed integer, native representation>
 INT64                         = <64-bit signed integer, native representation>
-
+```
