@@ -227,17 +227,17 @@ void *H5VL_log_dataset_open (void *obj,
     char *iname        = NULL;  // Internal name of object
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
     void *uo           = NULL;
-
+    
     try {
 #ifdef LOGVOL_DEBUG
         if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_dataset_open(%p, %s)\n", obj, name); }
 #endif
         /* Check arguments */
+        
         if (op->fp->is_log_based_file) {
             /* Rename user objects to avoid conflict with internal object */
             iname = H5VL_logi_name_remap (name);
         } else {
-            // printf("Zanhua: dataset open for regular file.\n");
             H5VL_log_dset_t *dp = new H5VL_log_dset_t(op, H5I_DATASET);
             dp->uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);
             CHECK_PTR (dp->uo);
@@ -329,7 +329,8 @@ herr_t H5VL_log_dataset_write (void *dset,
                                void **req) {
     herr_t err                = 0;
     H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
-    H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];  // Dataset info
+
+    H5VL_log_dset_info_t *dip = NULL;  // Dataset info
     hid_t dsid;                                              // Dataset space id
     H5VL_log_selections *dsel = NULL;                        // Selection blocks
 
@@ -337,7 +338,7 @@ herr_t H5VL_log_dataset_write (void *dset,
         if(!dp->fp->is_log_based_file) {
             return H5VLdataset_write(dp->uo, dp->uvlid, mem_type_id, mem_space_id, file_space_id, plist_id, buf, NULL);
         }
-
+        dip = dp->fp->dsets_info[dp->id];
         H5VL_LOGI_PROFILING_TIMER_START;
         if (file_space_id == H5S_ALL) {
             dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
