@@ -20,6 +20,8 @@
       + Modifying demo to use log-based VOL
     + demo_scontig
       + Use log-based VOL's H5S_CONTIG constant to replace dataspace for memory buffer
+    + demo_buffered
+      + Use log-based VOL's H5Pset_buffered API to disable data buffering for better performance
     + demo_dwrite_n
       + Use log-based VOL's H5Dwrite_n API to write multiple block in a dataaset
   * Log-based VOL examples
