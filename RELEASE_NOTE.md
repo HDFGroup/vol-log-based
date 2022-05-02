@@ -1,5 +1,68 @@
 ## Release Notes of the Log Layout Based HDF5 Virtual Object Layer
 
+### Version 1.2.1 (May 01, 2022)
+* New optimization
+  + Improve dataspace selection parsing speed when there are a large number of hyper-slabs that can be coalesced.
+  + Replace error code with exceptions in internal functions for better efficiency.
+
+* API syntax changes
+  + H5Pset_nonblocking/H5Pget_nonblocking changed to H5Pset_buffered/H5Pget_buffered
+    + Property data type changed from enum H5VL_log_req_type_t to hbool_t
+
+* New run-time environment variables
+  + H5VL_LOG_NSUBFILES
+    + Enable subfiling and set the number of subilfes
+    + Old environment variables H5VL_LOG_SUBFILING and H5VL_LOG_N_SUBFILE are removed.
+
+* Updated utility program
+  + h5lpcc
+    + C compiler wrapper to build applications using log-based VOL.
+  + h5lpcxx
+    + C++ compiler wrapper to build applications using log-based VOL.
+
+* Other updates:
+  + Change the name of subfiles master_file_name.subfile_ID.
+    + ID starts from 1
+
+* Bug fixes
+  + Fix a bug when writing a zero-sized request. See a67fb43 and 5acb7e3.
+  + Fix a hanging bug when a subset of processes write zero-sized requests.
+    See 3f34656.
+  + Fix a bug in h5lreplay that ignores attributes.
+  + Fix a bug in h5lreplay that crashes when there are groups.
+  + Fix a bug in h5lconfig that reports the wrong library path.
+
+* New example programs
+  + Demo of modifying traditional HDF5 application to use log-based VOL
+    + demo
+      + A simple HDF5 applications
+    + demo_logvol
+      + Modifying demo to use log-based VOL
+    + demo_scontig
+      + Use log-based VOL's H5S_CONTIG constant to replace dataspace for memory buffer
+    + demo_buffered
+      + Use log-based VOL's H5Pset_buffered API to disable data buffering for better performance
+    + demo_dwrite_n
+      + Use log-based VOL's H5Dwrite_n API to write multiple block in a dataaset
+
+* New test program
+  + `tests/testcases/null_space.cpp` tests when only rank 0 process writes
+    zero-sized request using H5Sselect_none() and others writes non-zero-sized
+    amount.
+  + `utils/h5lreplay/h5lgen.cpp` generates a log-based HDF5 file to test h5lreplay.
+    The converted file is compared with the file written using the native VOL.
+
+* Clarifications
+  + In HDF5, the correct way to do zero-size write is to call select API
+    H5Sselect_none() using the dataset's dataspace, instead of
+    H5Screate(H5S_NULL). HDF5 reference manual says "Any dataspace specified in
+    file_space_id is ignored by the library and the dataset's dataspace isa
+    always used." The dataset's dataspace is the dataspace used when creating
+    the dataset. Once the dataset is created, its dataspace can be set to a
+    selected area (e.g. subarray) and passed into H5Dwrite() to write to an
+    subbarray space of the dataset occupied in the file. Note that the size of
+    mem_type_id must match file_space_id.
+
 ### Version 1.2.0 (March 27, 2022)
 * New features
   + Flush write requests before handling any read requests.
