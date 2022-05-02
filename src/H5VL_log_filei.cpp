@@ -885,7 +885,15 @@ void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp) { fp->refcnt++; }
 
 void H5VL_log_filei_dec_ref (H5VL_log_file_t *fp) {
     fp->refcnt--;
-    if (fp->refcnt == 0) { H5VL_log_filei_close (fp); }
+    if (fp->refcnt == 0) { 
+        if (fp->is_log_based_file) {
+            H5VL_log_filei_close (fp);
+        }
+        else {
+            H5VLfile_close(fp->uo, fp->uvlid, fp->dxplid, NULL);
+        }
+        
+    }
 }
 
 H5VL_log_file_t::H5VL_log_file_t () {
