@@ -4,7 +4,7 @@
 #
 # @configure_input@
 
-C_SUBDIRS = basic dynamic testcases external
+C_SUBDIRS = basic dynamic testcases external passthru_features
 
 DIST_SUBDIRS = $(C_SUBDIRS) nc4
 
