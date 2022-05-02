@@ -105,6 +105,7 @@ EXTRA_DIST = wrap_runs.sh parallel_run.sh nc_tests.h \
              tst_files.patch.$(NETCDF_VERSION) \
              tst_grps.patch.$(NETCDF_VERSION) \
              tst_types.patch.$(NETCDF_VERSION) \
+             tst_vars3.patch.$(NETCDF_VERSION) \
              parallel_vara.patch.$(NETCDF_VERSION)
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
