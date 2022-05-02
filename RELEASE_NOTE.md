@@ -1,20 +1,29 @@
 ## Release Notes of the Log Layout Based HDF5 Virtual Object Layer
 
-### Version 1.2.1 (May 01, 2022)
+### Version 1.3.0 (May 01, 2022)
 * New optimization
   + Improve dataspace selection parsing speed when there are a large number of hyper-slabs that can be coalesced.
-  + Replace error code with exceptions in internal functions for better efficiency.
 
 * API syntax changes
-  + H5Pset_nonblocking/H5Pget_nonblocking changed to H5Pset_buffered/H5Pget_buffered
-    + Property data type changed from enum H5VL_log_req_type_t to hbool_t
+  + H5Pset_nonblocking/H5Pget_nonblocking renamed to H5Pset_buffered/H5Pget_buffered
+    + Old
+      ```
+      herr_t H5Pset_nonblocking (hid_t plist, H5VL_log_req_type_t nonblocking);
+      herr_t H5Pget_nonblocking (hid_t plist, H5VL_log_req_type_t *nonblocking);
+      ```
+    + New 
+      ```
+      herr_t H5Pset_buffered (hid_t plist, hbool_t buffered);
+      herr_t H5Pget_buffered (hid_t plist, hbool_t *buffered);
+      ```
+      + If buffered is true (default), the data buffer can be modified after H5Dwrite/H5Dwrte_n returns.
 
 * New run-time environment variables
   + H5VL_LOG_NSUBFILES
     + Enable subfiling and set the number of subilfes
     + Old environment variables H5VL_LOG_SUBFILING and H5VL_LOG_N_SUBFILE are removed.
 
-* Updated utility program
+* New utility programs
   + h5lpcc
     + C compiler wrapper to build applications using log-based VOL.
   + h5lpcxx
@@ -22,7 +31,7 @@
 
 * Other updates:
   + Change the name of subfiles master_file_name.subfile_ID.
-    + ID starts from 1
+  + Replace error code with exceptions in internal functions for better efficiency.
 
 * Bug fixes
   + Fix a bug when writing a zero-sized request. See a67fb43 and 5acb7e3.
