@@ -20,6 +20,7 @@ LDADD = $(top_builddir)/src/libH5VL_log.la
 
 check_PROGRAMS =    attribute \
                     earlyFileClose \
+					earlyFileClose_logvol\
                     group \
                     read_from_regular_write_to_log
 
