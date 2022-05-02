@@ -61,36 +61,36 @@ While applications these APIs are not required to use the log-based VOL, they pr
 
 #### Properties APIs (H5P*)
 * H5PSet_buffered
-  + Set whether an H5Dwrite or H5Dread call is blocking or non-blocking in a dataset transfer property list
+  + Set whether an H5Dwrite call data should be buffered in log-based VOL
   + Syntax
-    + H5PSet_buffered (plist, nonblocking)
+    + H5PSet_buffered (plist, buffered)
       + IN plist ID of the dataset transfer property list to attach the setting
-      + IN nonblocking Whether to perform blocking or non-blocking I/O
+      + IN buffered whether to keep a copy of the data in log-based VOL
         + true (default)
           + The user buffer can be modified after H5Dwrite returns
-          + The data is available in the user buffer after H5Dread returns
+          + The data is not available in the user buffer before H5Fflush returns
         + false
           + The user buffer shall not be modified before H5Fflush returns
-          + The data is not available in the user buffer before H5Fflush returns
+          + The data is available in the user buffer after H5Dread returns
   + C binding
     ```
-        herr_t H5PSet_buffered (hid_t plist, H5VL_log_req_type_t nonblocking);
+        herr_t H5PSet_buffered (hid_t plist, H5VL_log_req_type_t buffered);
     ```
 * H5Pget_buffered
-  + Get whether an H5Dwrite or H5Dread call is blocking or non-blocking in a dataset transfer property list
+  + Get whether an H5Dwrite call data should be buffered in log-based VOL
   + Syntax
-    + H5Pget_buffered (plist, nonblocking)
+    + H5Pget_buffered (plist, buffered)
       + IN plist ID of the dataset transfer property list to retrieve the setting
-      + OUT whether the current setting in the dataset transfer property list is blocking or non-blocking
+      + OUT buffered whether the current setting in the dataset transfer property list is buffered or not
         + true
           + The user buffer can be modified after H5Dwrite returns
-          + The data is available in the user buffer after H5Dread returns
+          + The data is not available in the user buffer before H5Fflush returns
         + false
           + The user buffer shall not be modified before H5Fflush returns
-          + The data is not available in the user buffer before H5Fflush returns
+          + The data is available in the user buffer after H5Dread returns
   + C binding
     ```
-        herr_t H5Pget_buffered (hid_t plist, H5VL_log_req_type_t *nonblocking);
+        herr_t H5Pget_buffered (hid_t plist, H5VL_log_req_type_t *buffered);
     ```
 * H5Pset_idx_buffer_size
   + Set the amount of memory the log-based VOL can use to index metadata for handling read requests
