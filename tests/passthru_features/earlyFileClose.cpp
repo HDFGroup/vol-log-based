@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     err = H5Pset_coll_metadata_write(fapl_id, 1);
     CHECKERR(err);
     
-    // create and write to log based file.
+    // create a regular file.
     regular_file_id = H5Fcreate(regular_file_name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
     err = H5Fclose(regular_file_id);
     CHECKERR(err);
