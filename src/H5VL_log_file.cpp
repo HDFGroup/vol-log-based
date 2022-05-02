@@ -555,13 +555,7 @@ herr_t H5VL_log_file_close (void *file, hid_t dxpl_id, void **req) {
     H5VL_log_file_t *fp;
     try {
         fp = (H5VL_log_file_t *)file;
-        if (fp->is_log_based_file) {
-            H5VL_log_filei_dec_ref (fp);
-        } else {
-            err = H5VLfile_close(fp->uo, fp->uvlid, dxpl_id, req);
-        }
-        
-        // return H5VL_log_filei_close ((H5VL_log_file_t *)file);
+        H5VL_log_filei_dec_ref (fp);
     }
     H5VL_LOGI_EXP_CATCH_ERR
 
