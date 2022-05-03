@@ -552,10 +552,6 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     // Close the file with posix
     if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) { close (fp->fd); }
 
-    // Close contig dataspacce ID
-    H5VL_log_dataspace_contig_ref--;
-    if (H5VL_log_dataspace_contig_ref == 0) { H5Sclose (H5VL_log_dataspace_contig); }
-
     // Free compression buffer
     free (fp->zbuf);
 

@@ -40,7 +40,7 @@ int main (int argc, char **argv) {
     H5Sselect_hyperslab (dset_space_id, H5S_SELECT_SET, start, NULL, count, block);
     dxpl_id = H5Pcreate (H5P_DATASET_XFER);
     H5Pset_buffered (dxpl_id, false);
-    H5Dwrite (dataset_id, H5T_NATIVE_INT, H5S_CONTIG, dset_space_id, dxpl_id, buf);
+    H5Dwrite (dataset_id, H5T_NATIVE_INT, H5S_BLOCK, dset_space_id, dxpl_id, buf);
 
     // Close objects
     H5Sclose (dset_space_id);

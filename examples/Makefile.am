@@ -27,7 +27,6 @@ check_PROGRAMS =    ${check_PROGRAMS_test} \
                     demo \
                     demo_logvol \
                     demo_buffered \
-                    demo_scontig \
                     demo_dwrite_n
 
 EXTRA_DIST = wrap_runs.sh \
