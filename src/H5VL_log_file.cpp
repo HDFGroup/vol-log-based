@@ -32,6 +32,8 @@ const H5VL_file_class_t H5VL_log_file_g {
     H5VL_log_file_close     /* close */
 };
 
+int H5VL_log_dataspace_contig_ref = 0;
+hid_t H5VL_log_dataspace_contig   = H5I_INVALID_HID;
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_file_create
@@ -505,6 +507,12 @@ herr_t H5VL_log_file_optional (void *file, H5VL_optional_args_t *args, hid_t dxp
             if (!(fp->lgp)) {  // Log group is already set for file create
                 H5VL_log_filei_post_open (fp);
             }
+
+            // create the contig SID
+            if (H5VL_log_dataspace_contig_ref == 0) {
+                H5VL_log_dataspace_contig = H5Screate (H5S_SCALAR);
+            }
+            H5VL_log_dataspace_contig_ref++;
         }
 
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPTIONAL);

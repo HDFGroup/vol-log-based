@@ -78,7 +78,7 @@ int main (int argc, char **argv) {
     err = H5Dwrite (did, H5T_NATIVE_INT, msid, sid, H5P_DEFAULT, buf);
     CHECK_ERR (err)
 
-    err = H5Dwrite_n (did, H5S_BLOCK, 0, NULL, NULL, H5P_DEFAULT, buf);
+    err = H5Dwrite_n (did, H5S_CONTIG, 0, NULL, NULL, H5P_DEFAULT, buf);
     CHECK_ERR (err)
 
     err = H5Sclose (sid);

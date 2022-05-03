@@ -427,7 +427,7 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
     H5VL_log_req_data_block_t db;  // Request data
     htri_t eqtype;                 // user buffer type equals dataset type?
     H5S_sel_type mstype;           // Memory space selection type
-    hbool_t rtype;                 // Whether req is nonblocking
+    hbool_t rtype;     // Whether req is nonblocking
     MPI_Datatype ptype = MPI_DATATYPE_NULL;  // Packing type for non-contiguous memory buffer
 #ifdef ENABLE_ZLIB
     int clen, inlen;  // Compressed size; Size of data to be compressed
@@ -441,7 +441,7 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
     // Check mem space selection
     if (mem_space_id == H5S_ALL)
         mstype = H5S_SEL_ALL;
-    else if (mem_space_id == H5S_BLOCK)
+    else if (mem_space_id == H5S_CONTIG)
         mstype = H5S_SEL_ALL;
     else {
         mstype = H5Sget_select_type (mem_space_id);
@@ -560,10 +560,8 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
         H5VL_log_filei_balloc (dp->fp, db.size * std::max (esize, (size_t) (dip->esize)),
                                (void **)(&(db.xbuf)));
         // err = H5VL_log_filei_pool_alloc (&(dp->fp->data_buf),
-        //								 db.size * std::max (esize,
-        //(size_t)
-        //(dip->esize)), 								 (void
-        //**)(&(r->xbuf)));
+        //								 db.size * std::max (esize, (size_t)
+        //(dip->esize)), 								 (void **)(&(r->xbuf)));
         // CHECK_ERR
 
         // Need packing
@@ -660,10 +658,10 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     herr_t err                = 0;
     H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];  // Dataset info
     size_t esize;                                            // Element size of mem_type_id
-    htri_t eqtype;        // Is mem_type_id same as dataset external type
-    H5VL_log_rreq_t *r;   // Request entry
-    H5S_sel_type mstype;  // Type of selection in mem_space_id
-    hbool_t rtype;        // Non-blocking?
+    htri_t eqtype;              // Is mem_type_id same as dataset external type
+    H5VL_log_rreq_t *r;         // Request entry
+    H5S_sel_type mstype;        // Type of selection in mem_space_id
+    hbool_t rtype;  // Non-blocking?
     H5VL_LOGI_PROFILING_TIMER_START;
 
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -675,7 +673,7 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     // Check mem space selection
     if (mem_space_id == H5S_ALL)
         mstype = H5S_SEL_ALL;
-    else if (mem_space_id == H5S_BLOCK)
+    else if (mem_space_id == H5S_CONTIG)
         mstype = H5S_SEL_ALL;
     else {
         mstype = H5Sget_select_type (mem_space_id);

@@ -130,3 +130,20 @@ While applications these APIs are not required to use the log-based VOL, they pr
     ```
         hid_t H5VL_log_register (void);
     ```
+
+#### Constants
+* H5S_CONTIG
+  + The memory space is contiguous and is the same size as the selected part of the dataset dataspace
+  + Usage
+    ```
+	      H5Dwrite (dset_id, mem_type_id, H5S_CONTIG, dspace_id, dxpl_id, buf);
+        H5Dread (dset_id, mem_type_id, H5S_CONTIG, dspace_id, dxpl_id, buf);
+    ```
+  + Equivalent to
+     ```
+        hssize_t ret = H5Sget_select_npoints( hdspace_id );
+        hsize_t dim = (hsize_t)ret;
+        mem_space_id = H5Screate_simple( 1, &dim, &dim );
+	      H5Dwrite (dset_id, mem_type_id, H5S_CONTIG, dspace_id, dxpl_id, buf);
+        H5Dread (dset_id, mem_type_id, H5S_CONTIG, dspace_id, dxpl_id, buf);
+    ``` 
