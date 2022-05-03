@@ -51,6 +51,7 @@
   + Fix a bug in `h5lconfig` that reports the wrong library path.
 
 * New example programs
+<<<<<<< HEAD
   + A set of demo programs that shows the required modification of traditional
     HDF5 programs in order to use log-based VOL.
     + `examples/demo.cpp` is a simple HDF5 application.
@@ -61,6 +62,17 @@
       Log-based VOL internal data buffering.
     + `examples/demo_dwrite_n.cpp` calls API `H5Dwrite_n` to write multiple
       block in a dataaset.
+=======
+  + Demo of modifying traditional HDF5 application to use log-based VOL
+    + demo
+      + A simple HDF5 applications
+    + demo_logvol
+      + Modifying demo to use log-based VOL
+    + demo_buffered
+      + Use log-based VOL's H5Pset_buffered API to disable data buffering for better performance
+    + demo_dwrite_n
+      + Use log-based VOL's H5Dwrite_n API to write multiple block in a dataaset
+>>>>>>> replace H5S_CONTIG with H5S_BLOCK
 
 * New test programs
   + `tests/testcases/null_space.cpp` tests when only process rank 0 writes a

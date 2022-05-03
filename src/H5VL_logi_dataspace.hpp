@@ -61,5 +61,3 @@ typedef struct H5VL_log_selection2 {
     size_t size;       // Size of the selection (bytes)
 } H5VL_log_selection2;
 
-extern int H5VL_log_dataspace_contig_ref;
-extern hid_t H5VL_log_dataspace_conti;

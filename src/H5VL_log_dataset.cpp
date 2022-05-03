@@ -495,7 +495,7 @@ herr_t H5VL_log_dataset_optional (void *obj,
             H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
             CHECK_PTR (dsel)
 
-            H5VL_log_dataseti_write (dp, varnarg->mem_type_id, H5S_CONTIG, dsel, dxpl_id,
+            H5VL_log_dataseti_write (dp, varnarg->mem_type_id, H5S_BLOCK, dsel, dxpl_id,
                                      varnarg->buf, req);
         } else if (args->op_type == H5Dread_n_op_val) {
             H5VL_LOGI_PROFILING_TIMER_START;
@@ -504,7 +504,7 @@ herr_t H5VL_log_dataset_optional (void *obj,
             H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
             CHECK_PTR (dsel)
 
-            H5VL_log_dataseti_read (dp, varnarg->mem_type_id, H5S_CONTIG, dsel, dxpl_id,
+            H5VL_log_dataseti_read (dp, varnarg->mem_type_id, H5S_BLOCK, dsel, dxpl_id,
                                     varnarg->buf, req);
         } else {
             /*
