@@ -55,8 +55,6 @@
     HDF5 programs in order to use log-based VOL.
     + `examples/demo.cpp` is a simple HDF5 application.
     + `examples/demo_logvol.cpp` modifies `demo.cpp` to use log-based VOL.
-    + `examples/demo_scontig.cpp` uses log-based VOL's `H5S_CONTIG` constant
-      to replace memory dataspace argument for the contiguous memory buffer.
     + `examples/demo_buffered.cpp` calls API `H5Pset_buffered` to disable the
       Log-based VOL internal data buffering.
     + `examples/demo_dwrite_n.cpp` calls API `H5Dwrite_n` to write multiple
