@@ -6,12 +6,12 @@
     hyper-slabs that can be coalesced.
 
 * New APIs
-  + To reflect the functionality of the APIs, H5Pset_nonblocking and
-    H5Pget_nonblocking have been renamed to H5Pset_buffered and
-    H5Pget_buffered, respectively.
+  + To reflect the functionality of the APIs, `H5Pset_nonblocking` and
+    `H5Pget_nonblocking` have been renamed to `H5Pset_buffered` and
+    `H5Pget_buffered`, respectively. See PR #23
     + New APIs that let users to tell the Log-based VOL whether it should
       buffer the write data. If argument buffered is true (default), then the
-      user write buffer can be modified after H5Dwrite/H5Dwrte_n returns.
+      user write buffer can be modified after `H5Dwrite`/`H5Dwrte_n` returns.
       ```
       herr_t H5Pset_buffered (hid_t plist, hbool_t buffered);
       herr_t H5Pget_buffered (hid_t plist, hbool_t *buffered);
@@ -41,6 +41,10 @@
 * Other updates:
   + Change the naming scheme for subfiles to `master_file_name.subfile_ID`.
   + Replace all error codes with C++ exceptions.
+
+* Deprecated constant
+  + Constant `H5S_CONTIG` is deprecated in 1.3.0, as it serves exactly the same
+    purpose as `H5S_BLOCK` which is first defined in HDF5 1.13.0. See PR #22
 
 * Bug fixes
   + Fix a bug when writing a zero-sized request. See commits a67fb43 and 5acb7e3.
