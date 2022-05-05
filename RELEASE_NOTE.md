@@ -16,6 +16,7 @@
       herr_t H5Pset_buffered (hid_t plist, hbool_t buffered);
       herr_t H5Pget_buffered (hid_t plist, hbool_t *buffered);
       ```
+      If not set, the default property is buffered.
     + These two APIs below will be deprecated in the future releases, but kept
       for backward compatibility.
       ```
@@ -26,8 +27,16 @@
   + `H5VL_LOG_NSUBFILES`
     + Enable subfiling and set the number of subilfes.
     + When the variable is not set, the subfiling is disabled.
-    + When the variable is set without a value, then subfiling is enabled and
-      the default is one file per compute node allocated.
+    + When the variable is set without a value, i.e. through command
+      ```
+      export H5VL_LOG_NSUBFILES=
+      or
+      setenv H5VL_LOG_NSUBFILES
+      ```
+      then subfiling is enabled and the default is one file per compute node
+      allocated.
+    + Old environment variables `H5VL_LOG_SUBFILING` and `H5VL_LOG_N_SUBFILE`
+      introduced in 1.2.0 are deprecated.
 
 * New utility programs
   + `h5lpcc`
