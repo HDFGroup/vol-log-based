@@ -43,7 +43,7 @@ HDF5 environment variables.
 * Use HDF5 environment variables, without modifying the user's application
   source codes.
   + The log-based VOL can be enabled at the run time by setting the
-    environment variables below. No source code changes of existing user
+    environment variables below. No source code changes to existing user
     programs are required. (Note this is an HDF5 feature, applicable to all VOL
     plugins.)
     + Append log-based VOL library directory to the shared object search path,
@@ -68,7 +68,7 @@ HDF5 environment variables.
 ### Enable log-based VOL subfiling feature
 Subfiling is a feature to mitigate the file lock conflict in a parallel file
 write operation. It divides MPI processes into groups disjointedly and creates
-one file per group, thus named as subfile. Each subfile is shared only among
+one file per group, thus named subfiling. Each subfile is shared only among
 the processes in the same group and contains data written by those processes
 only. By reducing the number of MPI processes sharing a file, subfiling reduces
 the file access conflicts and hence effectively improves the degree of I/O
@@ -80,10 +80,11 @@ parallelism.
     ```
     % export H5VL_LOG_NSUBFILES=2
     ```
-  + If the environment variable is set without a value, then the number of
-    subfiles will be set to equal to the number of compute nodes allocated.
+  + If the environment variable is set without a value or with a non-positive value
+    , then the number of subfiles will be set to equal to the number of compute 
+    nodes allocated.
     ```
-    % export H5VL_LOG_NSUBFILES
+    % export H5VL_LOG_NSUBFILES=
     ```
 * Output file structure and naming scheme.
   * A master file (whose file name is supplied by the user to `H5Fcreate`)
@@ -97,7 +98,7 @@ parallelism.
 
 ### Differences from the native VOL
   * Buffered and non-buffered modes
-    + H5Dwrite can called in either buffered or non-buffered mode.
+    + H5Dwrite can be called in either buffered or non-buffered mode.
     + The mode can be set in the dataset transfer property list through API
       `H5Pset_buffered()`
     + The mode can be queried through API `H5Pget_buffered()`.
@@ -129,8 +130,8 @@ parallelism.
     + The log-based VOL caches some metadata of an opened file.
       The cached metadata is not synced among opened instances.
     + The file can be corrupted if the application opens and operates multiple handles to the same file.
-  * The names of (links to) objects cannot start with prefix double underscore "_".
-    + Names starting with double underscore "_" are reserved for the log-based VOL for its internal data and metadata.
+  * The names of (links to) objects cannot start with the prefix double underscore "__".
+    + Names starting with double underscore "__" are reserved for the log-based VOL for its internal data and metadata.
   * The log-based VOL does not support all the HDF5 APIs.
     See [doc/compatibility.md](./compatibility.md) for a full list of supported and unsupported APIs.
   * Lob-based VOL will crash if there are any objects left open when the program exit.
