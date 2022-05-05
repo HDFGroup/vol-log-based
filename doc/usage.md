@@ -65,39 +65,55 @@ HDF5 environment variables.
      % source ${HOME}/Log_IO_VOL/bin/h5lenv.bash
      ```
 
-### Enable log-based VOL subfiling
-Subfiling reduces lock contention on parallel file systems by reducing the number of processes sharing a file.
+### Enable log-based VOL subfiling feature
+Subfiling is a feature to mitigate the file lock conflict in a parallel file
+write operation. It divides MPI processes into groups disjointedly and creates
+one file per group, thus named as subfile. Each subfile is shared only among
+the processes in the same group and contains data written by those processes
+only. By reducing the number of MPI processes sharing a file, subfiling reduces
+the file access conflicts and hence effectively improves the degree of I/O
+parallelism.
 
-* Enable subfiling through environment variables
-  + Set the environment variable `H5VL_LOG_NSUBFILES` to the number of subfiles.
-      ```
-      % export H5VL_LOG_NSUBFILES=2
-      ```
-    + If the number of subfiles is not specified, log-based VOL will create one subfile per compute node.
-        ```
-        % export H5VL_LOG_NSUBFILES
-        ```
-* Output file structure when enable subfiling
-  * A master file
+* Enabling subfiling through an environment variable
+  + Set the environment variable `H5VL_LOG_NSUBFILES` to the number of
+    subfiles, for example
+    ```
+    % export H5VL_LOG_NSUBFILES=2
+    ```
+  + If the environment variable is set without a value, then the number of
+    subfiles will be set to equal to the number of compute nodes allocated.
+    ```
+    % export H5VL_LOG_NSUBFILES
+    ```
+* Output file structure and naming scheme.
+  * A master file (whose file name is supplied by the user to `H5Fcreate`)
     + Stores user datasets, attributes ... etc.
-  * A subfile directory
-    + named <master_file_name>.subfiles
-    + Subfiles
-      + Named <master_file_name>.id
-      + Stores the log data structure.
+  * A directory containing all the subfiles.
+    + The directory is named `<master_file_name>.subfiles`.
+  * Subfiles
+    + Each subfile is named `<master_file_name>.id` where `id` is the ID
+      starting from 0 to the number of subfiles minus one.
+    + Each subfile stores the log data.
 
-
-### Difference to the native VOL driver
-  * Blocking and non-blocking I/O mode
-    + H5Dwrite and H5Dread can be either blocking or non-blocking.
-    + I/O mode can be set in the dataset transfer property list.
-    + In a non-blocking H5Dwrite, the data buffer should not be modified before H5Fflush returns.
-    + In a non-blocking H5Dread, the data is only available after H5Fflush returns.
+### Differences from the native VOL
+  * Buffered and non-buffered modes
+    + H5Dwrite can called in either buffered or non-buffered mode.
+    + The mode can be set in the dataset transfer property list through API
+      `H5Pset_buffered()`
+    + The mode can be queried through API `H5Pget_buffered()`.
+    + When in the non-buffered mode, the user buffer should not be modified
+      between the call to `H5Dwrite()` and `H5Fflush()`, as it will be used to
+      flush the write data at `H5Fflush()` or `H5Fclose()`.
+    + On the other hand, when in buffered mode, the write data will be buffered
+      in an internal buffer. The user buffer can be modified after the call to
+      `H5Dwrite()` returns.
   * Write operations are always non-blocking
-    + H5Dwrite only stages the write request in the log-based VOL.
-    + Blocking call is simulated by keeping a copy of the data in the VOL.
-    + User must call H5Fflush to flush the data to the file before it is visible by other processes.
-    + The data will be flush automatically when the file is closing.
+    + `H5Dwrite()` only caches the write request data internally.
+    + Users must call `H5Fflush()` explicitly to flush the data to the file.
+    + All cached write data is flushed at `H5Fclose()`.
+  * Read operations are non-blocking
+    + Even after the call to `H5Dread()` returns, the data is not read into the
+      user buffer until the call to `H5Fflush()` returns.
 
 ### Current limitations
   * Blocking read operations must be collective.

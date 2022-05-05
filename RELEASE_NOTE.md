@@ -28,8 +28,6 @@
     + When the variable is not set, the subfiling is disabled.
     + When the variable is set without a value, then subfiling is enabled and
       the default is one file per compute node allocated.
-    + Old environment variables `H5VL_LOG_SUBFILING` and `H5VL_LOG_N_SUBFILE`
-      will be deprecated.
 
 * New utility programs
   + `h5lpcc`
