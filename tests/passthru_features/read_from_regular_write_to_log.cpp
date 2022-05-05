@@ -40,10 +40,22 @@ int main(int argc, char **argv) {
     dims[0] = DATA_SIZE;
     init_data(data, DATA_SIZE);
 
+    int rank;
+    
     MPI_Init(&argc, &argv);
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
-    log_file_name = "log-based.h5";
-    regular_file_name = "regular.h5";
+    if (argc > 3) {
+        if (!rank) printf ("Usage: %s [filename1] [filename2]\n", argv[0]);
+        MPI_Finalize ();
+        return 1;
+    } else if (argc > 2) {
+        regular_file_name = argv[1];
+        log_file_name = argv[2];
+    } else {
+        regular_file_name = "regular.h5";
+        log_file_name = "log-based.h5";
+    }
 
     // Log-based VOL VOL require MPI-IO and parallel access
     // Set MPI-IO and parallel access proterty.

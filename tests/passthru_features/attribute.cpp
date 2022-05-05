@@ -54,13 +54,30 @@ int helper(int argc, char ** argv, const char *file_name, bool use_log_vol);
 
 int main(int argc, char **argv) {
     herr_t err = 0;
+    const char *file_name_base;
+    const char *file_name_use_log;
+    int rank;
     
     MPI_Init(&argc, &argv);
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
-    // err = helper(argc, argv, H5FILE_NAME_BASE, false);
-    // if (err == 0) {
-    err = helper(argc, argv, H5FILE_NAME_USE_LOG, true);
-    // }
+    if (argc > 3) {
+        if (!rank) printf ("Usage: %s [filename1] [filename2]\n", argv[0]);
+        MPI_Finalize ();
+        return 1;
+    } else if (argc > 2) {
+        file_name_base = argv[1];
+        file_name_use_log = argv[2];
+    } else {
+        file_name_base = H5FILE_NAME_BASE;
+        file_name_use_log = H5FILE_NAME_USE_LOG;
+    }
+
+    
+    err = helper(argc, argv, file_name_base, false);
+    if (err == 0) {
+        err = helper(argc, argv, file_name_use_log, true);
+    }
     MPI_Finalize();
     
    
