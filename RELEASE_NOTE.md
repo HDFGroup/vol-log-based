@@ -1,6 +1,6 @@
 ## Release Notes of the Log Layout Based HDF5 Virtual Object Layer
 
-### Version 1.3.0 (May 02, 2022)
+### Version 1.3.0 (May 05, 2022)
 * New optimization
   + Improve dataspace selection parsing speed when there are a large number of
     hyper-slabs that can be coalesced.
