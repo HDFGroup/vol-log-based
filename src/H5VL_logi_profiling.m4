@@ -23,6 +23,7 @@ dnl
 
 #include "H5VL_logi_profiling.hpp"
 #include <mpi.h>
+#include <libgen.h>
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
@@ -60,6 +61,7 @@ void H5VL_log_profile_print (void *file) {
     int i;
     int np, rank, flag;
     H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+    std::string fname   = basename ((char *)(fp->name.c_str ()));
 
     MPI_Initialized (&flag);
     if (!flag) { MPI_Init (NULL, NULL); }
@@ -78,10 +80,10 @@ void H5VL_log_profile_print (void *file) {
 
     if (rank == 0) {
         for (i = 0; i < H5VL_LOG_NTIMER; i++) {
-            printf ("LOGVOL: %s_time_mean: %lf\n", tname[i], tmean[i]);
-            printf ("LOGVOL: %s_time_max: %lf\n", tname[i], tmax[i]);
-            printf ("LOGVOL: %s_time_min: %lf\n", tname[i], tmin[i]);
-            printf ("LOGVOL: %s_time_var: %lf\n\n", tname[i], tvar[i]);
+            printf ("LOGVOL_%s: %s_time_mean: %lf\n", fname.c_str (), tname[i], tmean[i]);
+            printf ("LOGVOL_%s: %s_time_max: %lf\n", fname.c_str (), tname[i], tmax[i]);
+            printf ("LOGVOL_%s: %s_time_min: %lf\n", fname.c_str (), tname[i], tmin[i]);
+            printf ("LOGVOL_%s: %s_time_var: %lf\n\n", fname.c_str (), tname[i], tvar[i]);
         }
     }
 
@@ -96,10 +98,10 @@ void H5VL_log_profile_print (void *file) {
 
     if (rank == 0) {
         for (i = 0; i < H5VL_LOG_NTIMER; i++) {
-            printf ("LOGVOL: %s_count_mean: %lf\n", tname[i], tmean[i]);
-            printf ("LOGVOL: %s_count_max: %lf\n", tname[i], tmax[i]);
-            printf ("LOGVOL: %s_count_min: %lf\n", tname[i], tmin[i]);
-            printf ("LOGVOL: %s_count_var: %lf\n\n", tname[i], tvar[i]);
+            printf ("LOGVOL_%s: %s_count_mean: %lf\n", fname.c_str (), tname[i], tmean[i]);
+            printf ("LOGVOL_%s: %s_count_max: %lf\n", fname.c_str (), tname[i], tmax[i]);
+            printf ("LOGVOL_%s: %s_count_min: %lf\n", fname.c_str (), tname[i], tmin[i]);
+            printf ("LOGVOL_%s: %s_count_var: %lf\n\n", fname.c_str (), tname[i], tvar[i]);
         }
     }
 }
