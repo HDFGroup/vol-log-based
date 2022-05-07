@@ -573,7 +573,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
 
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CLOSE);
 
-#ifdef LOGVOL_PROFILING
+#ifdef ENABLE_PROFILING
     {
         char *_env_str = getenv ("H5VL_LOG_SHOW_PROFILING_INFO");
         if (_env_str != NULL && *_env_str != '0') { H5VL_log_profile_print (fp); }
