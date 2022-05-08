@@ -7,8 +7,8 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-MPIRUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
-# echo "MPIRUN = ${MPIRUN}"
+MPIRUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/1/g"`
+
 # echo "check_PROGRAMS=${check_PROGRAMS}"
 
 # export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}" 
@@ -18,18 +18,14 @@ MPIRUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 unset HDF5_VOL_CONNECTOR
 unset HDF5_PLUGIN_PATH
 
-err=0
 for p in ${check_PROGRAMS} ; do
     outfile="${TESTOUTDIR}/${p}.h5"
-    ${MPIRUN} ./${p} ${outfile}
-
-    FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k $outfile`
-    if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
-       echo "Error: Output file $outfile is not Log VOL, but ${FILE_KIND}"
-       err=1
-    else
-       echo "Success: Output file $outfile is ${FILE_KIND}"
-    fi
+    outfile_regular="${TESTOUTDIR}/${p}_regular.h5"
+    outfile_log="${TESTOUTDIR}/${p}_log.h5"
+    ${MPIRUN} ./${p} ${outfile_regular} ${outfile_log}
+    # if [ "${p}" == "read_from_regular_write_to_log_regular" ]; then
+    #     h5diff $outfile_log $outfile_regular
+    # fi
 done
-exit $err
+exit 0
 
