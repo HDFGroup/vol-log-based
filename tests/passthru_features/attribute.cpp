@@ -162,9 +162,7 @@ herr_t helper(int argc, char ** argv, const char *file_name, bool use_log_vol)
     /*
      * Write data to the dataset.
      */
-    printf("Test Case succeeds till %d\n", __LINE__);
     err = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, vector);
-    printf("Test Case succeeds till %d\n", __LINE__);
     CHECKERR(err);
     /*
      * Create dataspace for the first attribute.
