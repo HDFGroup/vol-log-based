@@ -554,7 +554,17 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
 #ifdef LOGVOL_DEBUG
     if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_filei_close(%p, ...)\n", fp); }
 #endif
+    if (!fp->is_log_based_file) {
+        H5VLfile_close (fp->uo, fp->uvlid, fp->dxplid, NULL);
+        // Clean up
+        MPI_Comm_free (&(fp->comm));
+        if (fp->info != MPI_INFO_NULL) { MPI_Info_free (&(fp->info)); }
+        H5Pclose (fp->dxplid);
+        H5Pclose (fp->ufaplid);
 
+        delete fp;
+        return;
+    }
     if (fp->flag != H5F_ACC_RDONLY) {
         // Flush write requests
         if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
@@ -886,13 +896,7 @@ void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp) { fp->refcnt++; }
 void H5VL_log_filei_dec_ref (H5VL_log_file_t *fp) {
     fp->refcnt--;
     if (fp->refcnt == 0) { 
-        if (fp->is_log_based_file) {
-            H5VL_log_filei_close (fp);
-        }
-        else {
-            H5VLfile_close(fp->uo, fp->uvlid, fp->dxplid, NULL);
-        }
-        
+        H5VL_log_filei_close (fp);
     }
 }
 
