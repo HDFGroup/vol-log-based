@@ -110,7 +110,7 @@ void H5VL_logi_get_att (
     H5VL_logi_get_att (op->uo, op->uvlid, op->type, name, mtype, buf, dxpl_id);
 }
 
-// Added by Zanhua: check att exists
+// This method checks if an attribute exists
 hbool_t H5VL_logi_exists_att (H5VL_log_obj_t *op, const char *name, hid_t dxpl_id){
     H5VL_loc_params_t loc;
     H5VL_attr_specific_args_t attr_check_exists;
@@ -126,7 +126,7 @@ hbool_t H5VL_logi_exists_att (H5VL_log_obj_t *op, const char *name, hid_t dxpl_i
     return exist;
 
 }
-// Added by Zanhua: check link exists
+// This methods checks if a link (group or dataset) exists in file
 hbool_t H5VL_logi_exists_link (H5VL_log_file_t *fp, const char *name, hid_t dxpl_id){
     H5VL_link_specific_args_t arg;
     hbool_t exists = 0;

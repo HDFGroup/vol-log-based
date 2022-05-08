@@ -116,7 +116,6 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
-    // modified by Zanhua:
     // check for exisitence of __int_att, __LOG;
     // if inexists, mark as regular file and return directly.
     exists = H5VL_logi_exists_att(fp, H5VL_LOG_FILEI_ATTR_INT, fp->dxplid);
@@ -138,7 +137,7 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     fp->group_rank = fp->rank;
     fp->group_comm = fp->comm;
     fp->group_id   = 0;
-    H5VL_log_filei_init_idx (fp);  // comment zanhua: free idx if regular file; do this here or at file close?
+    H5VL_log_filei_init_idx (fp);
     fp->idx->reserve (fp->ndset);
 
     H5VL_LOGI_PROFILING_TIMER_START;
