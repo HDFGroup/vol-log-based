@@ -32,7 +32,6 @@ const H5VL_file_class_t H5VL_log_file_g {
     H5VL_log_file_close     /* close */
 };
 
-
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_file_create
  *
@@ -416,8 +415,6 @@ herr_t H5VL_log_file_specific (void *file,
     H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
     try {
-        H5VL_LOGI_PROFILING_TIMER_START;
-
 #ifdef LOGVOL_DEBUG
         if (H5VL_logi_debug_verbose ()) {
             printf ("H5VL_log_file_specific(%p, args, dxplid, %p, ...)\n", file, req);
@@ -450,21 +447,19 @@ herr_t H5VL_log_file_specific (void *file,
                 /* Call specific of under VOL */
                 under_fapl_id = H5Pcopy (fapl_id);
                 H5Pset_vol (under_fapl_id, uvlid, under_vol_info);
-                H5VL_LOGI_PROFILING_TIMER_START;
                 err = H5VLfile_specific (NULL, uvlid, args, dxpl_id, req);
                 CHECK_ERR
-                H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_SPECIFIC);
                 H5Pclose (under_fapl_id);
             } break;
             case H5VL_FILE_FLUSH: {
+                H5VL_LOGI_PROFILING_TIMER_START;
                 H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
+                H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_SPECIFIC);
                 break;
             } break;
             default:
                 ERR_OUT ("Unsupported args->op_type")
         } /* end select */
-
-        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_SPECIFIC);
     }
     H5VL_LOGI_EXP_CATCH_ERR
 
