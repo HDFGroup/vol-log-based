@@ -140,8 +140,8 @@ void *H5VL_log_file_create (
         CHECK_ERR
         err = H5Pset_coll_metadata_write (fp->ufaplid, (hbool_t) true);
         CHECK_ERR
-        err = H5Pset_alignment (fp->ufaplid, 4096, 4096);
-        CHECK_ERR
+        // err = H5Pset_alignment (fp->ufaplid, 4096, 4096);
+        // CHECK_ERR
         H5VL_LOGI_PROFILING_TIMER_START;
         fp->uo = H5VLfile_create (name, flags, fcpl_id, fp->ufaplid, dxpl_id, NULL);
         CHECK_PTR (fp->uo)
@@ -336,8 +336,8 @@ void *H5VL_log_file_open (
         CHECK_ERR
         err = H5Pset_coll_metadata_write (fp->ufaplid, (hbool_t) true);
         CHECK_ERR
-        err = H5Pset_alignment (fp->ufaplid, 4096, 4096);
-        CHECK_ERR
+        // err = H5Pset_alignment (fp->ufaplid, 4096, 4096);
+        // CHECK_ERR
         H5VL_LOGI_PROFILING_TIMER_START;
         fp->uo = H5VLfile_open (name, flags, fp->ufaplid, dxpl_id, NULL);
         CHECK_PTR (fp->uo)
