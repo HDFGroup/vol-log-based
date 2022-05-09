@@ -56,6 +56,9 @@ int main(int argc, char **argv) {
     err = H5Pset_coll_metadata_write(fapl_id, 1);
     CHECKERR(err);
 
+    err = H5Pset_fclose_degree(fapl_id, H5F_CLOSE_WEAK);
+    CHECKERR(err);
+    
     // registering LOG VOL
     log_vol_id = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
     err = H5Pset_vol(fapl_id, log_vol_id, NULL);
