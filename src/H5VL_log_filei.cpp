@@ -21,6 +21,7 @@
 #include <sys/errno.h> /* errno */
 #include <sys/stat.h>
 #include <unistd.h>
+
 // Logvol hdrs
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
@@ -34,6 +35,40 @@
 //#define DEFAULT_SIZE 1073741824 // 1 GiB
 #define DEFAULT_SIZE 209715200  // 200 MiB
 //#define DEFAULT_SIZE 10485760 // 10 MiB
+
+std::map<__ino_t, H5VL_log_file_t *> files;
+H5VL_log_file_t *H5VL_log_filei_search (const char *path) {
+    int err;
+    struct stat s;
+
+    err = stat (path, &s);
+
+    if (err == 0) {
+        auto f = files.find (s.st_ino);
+
+        if (f != files.end ()) return f->second;
+    }
+
+    return NULL;
+}
+void H5VL_log_filei_register (H5VL_log_file_t *fp) {
+    int err;
+    struct stat s;
+
+    err = stat (fp->name.c_str (), &s);
+    CHECK_ERR
+
+    files[s.st_ino] = fp;
+}
+void H5VL_log_filei_rm (H5VL_log_file_t *fp) {
+    int err;
+    struct stat s;
+
+    err = stat (fp->name.c_str (), &s);
+    CHECK_ERR
+
+    files.erase (s.st_ino);
+}
 
 void H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf) {
     size_t *bp;
@@ -579,6 +614,8 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
         if (_env_str != NULL && *_env_str != '0') { H5VL_log_profile_print (fp); }
     }
 #endif
+
+    H5VL_log_filei_rm (fp);
 
     // Clean up
     if (fp->group_comm != fp->comm) { MPI_Comm_free (&(fp->group_comm)); }
