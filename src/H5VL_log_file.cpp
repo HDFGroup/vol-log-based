@@ -372,8 +372,8 @@ fn_exit:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id, void **req) {
-    herr_t err          = 0;
-    H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+    herr_t err         = 0;
+    H5VL_log_obj_t *op = (H5VL_log_obj_t *)file;
 
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -385,11 +385,11 @@ herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id,
 #endif
 
         H5VL_LOGI_PROFILING_TIMER_START;
-        err = H5VLfile_get (fp->uo, fp->uvlid, args, dxpl_id, req);
+        err = H5VLfile_get (op->uo, op->uvlid, args, dxpl_id, req);
         CHECK_ERR
-        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_GET);
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLFILE_GET);
 
-        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_GET);
+        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_FILE_GET);
     }
     H5VL_LOGI_EXP_CATCH_ERR
 
