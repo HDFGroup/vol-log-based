@@ -65,7 +65,7 @@ void *H5VL_log_dataset_create (void *obj,
     int i;
     H5VL_log_obj_t *op  = (H5VL_log_obj_t *)obj;
     H5VL_log_dset_t *dp = NULL;
-    H5VL_log_dset_info_t *dip;  // Dataset info
+    H5VL_log_dset_info_t *dip = NULL;  // Dataset info
     // H5VL_link_create_args_t args;
     // H5VL_loc_params_t loc;
     hid_t sid = -1;
@@ -181,7 +181,7 @@ void *H5VL_log_dataset_create (void *obj,
     goto fn_exit;
 err_out:;
     if (dp) {
-        delete dip;
+        if (dip) { delete dip; }
         delete dp;
         dp = NULL;
     }
