@@ -422,6 +422,10 @@ herr_t H5VL_log_file_specific (void *file,
 #endif
 
         switch (args->op_type) {
+            case H5VL_FILE_REOPEN: {
+                *(args->args.reopen.file) = file;
+                H5VL_log_filei_inc_ref (fp);
+            } break;
             case H5VL_FILE_IS_ACCESSIBLE:
             case H5VL_FILE_DELETE: {
                 hid_t uvlid, under_fapl_id, fapl_id;
