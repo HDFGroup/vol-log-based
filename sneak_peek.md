@@ -4,8 +4,7 @@ This is essentially a placeholder for the next release note ...
 (Copy the contents below to RELEASE_NOTE.md when making an official release.)
 
 * New features
-  + none
-
+  + none    
 * New optimization
   + none
 
@@ -34,7 +33,8 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Updated error strings
-  + none
+  + Return error if a file is opened multiple time
+    + Logvol only allow one opened file handle at a time.
 
 * New error code
   + none

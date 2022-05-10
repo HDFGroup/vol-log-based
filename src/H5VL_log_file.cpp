@@ -52,7 +52,7 @@ void *H5VL_log_file_create (
     hid_t uvlid;
     hid_t fdid;  // VFL driver ID
     void *under_vol_info;
-    MPI_Comm comm    = MPI_COMM_WORLD;
+    MPI_Comm comm    = MPI_COMM_SELF;
     MPI_Info mpiinfo = MPI_INFO_NULL;
     int attbuf[5];
 
@@ -68,6 +68,12 @@ void *H5VL_log_file_create (
 
         /* Check arguments */
         H5VL_LOGI_CHECK_NAME (name);
+
+        fp = H5VL_log_filei_search (name);
+        if (fp) {
+            fp = NULL;
+            RET_ERR ("File already exist")
+        }
 
         H5VL_LOGI_PROFILING_TIMER_START;
         // Try get info about under VOL
@@ -223,6 +229,8 @@ void *H5VL_log_file_create (
         H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32, 5, attbuf,
                            dxpl_id, NULL);
 
+        H5VL_log_filei_register (fp);
+
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE);
     }
     H5VL_LOGI_EXP_CATCH
@@ -258,7 +266,7 @@ void *H5VL_log_file_open (
     hid_t uvlid;
     hid_t fdid;  // VFL driver ID
     void *under_vol_info;
-    MPI_Comm comm;
+    MPI_Comm comm    = MPI_COMM_SELF;
     MPI_Info mpiinfo = MPI_INFO_NULL;
 
     try {
@@ -272,6 +280,12 @@ void *H5VL_log_file_open (
 
         /* Check arguments */
         H5VL_LOGI_CHECK_NAME (name);
+
+        fp = H5VL_log_filei_search (name);
+        if (fp) {
+            fp = NULL;
+            RET_ERR ("File already exist")
+        }
 
         // Try get info about under VOL
         H5Pget_vol_info (fapl_id, (void **)&info);
@@ -345,6 +359,8 @@ void *H5VL_log_file_open (
 
         // Fapl property can overwrite config in file, parse after loading config
         H5VL_log_filei_parse_fapl (fp, fapl_id);
+
+        H5VL_log_filei_register (fp);
 
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
     }
