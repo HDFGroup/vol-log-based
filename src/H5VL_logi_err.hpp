@@ -29,27 +29,25 @@
 #endif
 
 #ifdef LOGVOL_DEBUG
-#define H5VL_LOGI_EXP_CATCH                    \
-    catch (H5VL_logi_exception & e) {          \
-        std::cout << e.what () << std::endl;   \
-        if (e.is_hdf5) { H5Eprint1 (stdout); } \
-        goto err_out;                          \
-    }                                          \
-    catch (std::exception & e) {               \
-        std::cout << e.what () << std::endl;   \
-        goto err_out;                          \
+#define H5VL_LOGI_EXP_CATCH           \
+    catch (H5VL_logi_exception & e) { \
+        H5VL_logi_print_err (e);      \
+        goto err_out;                 \
+    }                                 \
+    catch (std::exception & e) {      \
+        H5VL_logi_print_err (e);      \
+        goto err_out;                 \
     }
-#define H5VL_LOGI_EXP_CATCH_ERR                \
-    catch (H5VL_logi_exception & e) {          \
-        std::cout << e.what () << std::endl;   \
-        if (e.is_hdf5) { H5Eprint1 (stdout); } \
-        err = -1;                              \
-        goto err_out;                          \
-    }                                          \
-    catch (std::exception & e) {               \
-        std::cout << e.what () << std::endl;   \
-        err = -1;                              \
-        goto err_out;                          \
+#define H5VL_LOGI_EXP_CATCH_ERR       \
+    catch (H5VL_logi_exception & e) { \
+        H5VL_logi_print_err (e);      \
+        err = -1;                     \
+        goto err_out;                 \
+    }                                 \
+    catch (std::exception & e) {      \
+        H5VL_logi_print_err (e);      \
+        err = -1;                     \
+        goto err_out;                 \
     }
 #else
 #define H5VL_LOGI_EXP_CATCH      \
@@ -62,17 +60,6 @@
         goto err_out;            \
     }
 #endif
-
-inline void H5VL_logi_print_err (int line, char *file, char *msg, bool h5err = false) {
-#ifdef LOGVOL_DEBUG
-    if (msg) {
-        printf ("Error at line %d in %s: %s\n", line, file, msg);
-    } else {
-        printf ("Error at line %d in %s:\n", line, file);
-    }
-    if (h5err) { H5Eprint1 (stdout); }
-#endif
-}
 
 inline bool H5VL_logi_debug_verbose () {
     char *val = getenv ("LOGVOL_VERBOSE_DEBUG");
@@ -149,3 +136,16 @@ class H5VL_logi_err_finally {
    private:
     std::function<void ()> func;
 };
+
+inline void H5VL_logi_print_err (H5VL_logi_exception &e) {
+#ifdef LOGVOL_DEBUG
+    std::cout << e.what () << std::endl;
+    if (e.is_hdf5) { H5Eprint1 (stdout); }
+#endif
+}
+
+inline void H5VL_logi_print_err (std::exception &e) {
+#ifdef LOGVOL_DEBUG
+    std::cout << e.what () << std::endl;
+#endif
+}
