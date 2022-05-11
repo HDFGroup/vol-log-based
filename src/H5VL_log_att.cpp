@@ -50,8 +50,9 @@ void *H5VL_log_attr_create (void *obj,
                             hid_t dxpl_id,
                             void **req) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    H5VL_log_obj_t *ap;
+    H5VL_log_obj_t *ap = NULL;
     H5VL_log_req_t *rp;
+    htri_t is_var_type;
     void **ureqp, *ureq;
 
     try {
@@ -59,6 +60,10 @@ void *H5VL_log_attr_create (void *obj,
 
         /* Check arguments */
         H5VL_LOGI_CHECK_NAME (name);
+
+        // Logvol doesn't support variable len type
+        is_var_type = H5Tis_variable_str (type_id);
+        if (is_var_type == true) { RET_ERR ("Variable length types are not supproted") }
 
         ap = new H5VL_log_obj_t (op, H5I_ATTR);
 
@@ -87,7 +92,7 @@ void *H5VL_log_attr_create (void *obj,
     return (void *)ap;
 
 err_out:;
-    delete ap;
+    if (ap) { delete ap; }
 
     return NULL;
 } /* end H5VL_log_attr_create() */
@@ -109,7 +114,7 @@ void *H5VL_log_attr_open (void *obj,
                           hid_t dxpl_id,
                           void **req) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    H5VL_log_obj_t *ap;
+    H5VL_log_obj_t *ap = NULL;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
 
@@ -145,7 +150,7 @@ void *H5VL_log_attr_open (void *obj,
     return (void *)ap;
 
 err_out:;
-    delete ap;
+    if (ap) { delete ap; }
 
     return NULL;
 } /* end H5VL_log_attr_open() */

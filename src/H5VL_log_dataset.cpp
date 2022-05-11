@@ -63,13 +63,14 @@ void *H5VL_log_dataset_create (void *obj,
                                void **req) {
     herr_t err = 0;
     int i;
-    H5VL_log_obj_t *op  = (H5VL_log_obj_t *)obj;
-    H5VL_log_dset_t *dp = NULL;
+    H5VL_log_obj_t *op        = (H5VL_log_obj_t *)obj;
+    H5VL_log_dset_t *dp       = NULL;
     H5VL_log_dset_info_t *dip = NULL;  // Dataset info
     // H5VL_link_create_args_t args;
     // H5VL_loc_params_t loc;
     hid_t sid = -1;
     int ndim;
+    htri_t is_var_type;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
     // char lname[1024];
@@ -79,6 +80,10 @@ void *H5VL_log_dataset_create (void *obj,
 
         /* Check arguments */
         H5VL_LOGI_CHECK_NAME (name);
+
+        // Logvol doesn't support variable len type
+        is_var_type = H5Tis_variable_str (type_id);
+        if (is_var_type == true) { RET_ERR ("Variable length types are not supproted") }
 
         // Unused
         // Create request handle

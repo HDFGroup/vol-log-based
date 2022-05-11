@@ -48,7 +48,7 @@ void *H5VL_log_group_create (void *obj,
                              hid_t dxpl_id,
                              void **req) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    H5VL_log_obj_t *gp;
+    H5VL_log_obj_t *gp = NULL;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
 
@@ -87,7 +87,7 @@ void *H5VL_log_group_create (void *obj,
     return (void *)gp;
 
 err_out:;
-    delete gp;
+    if (gp) { delete gp; }
 
     return NULL;
 } /* end H5VL_log_group_create() */
@@ -109,7 +109,7 @@ void *H5VL_log_group_open (void *obj,
                            hid_t dxpl_id,
                            void **req) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    H5VL_log_obj_t *gp;
+    H5VL_log_obj_t *gp = NULL;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
 
@@ -146,7 +146,7 @@ void *H5VL_log_group_open (void *obj,
 
     return (void *)gp;
 err_out:;
-    delete gp;
+    if (gp) { delete gp; }
     return NULL;
 } /* end H5VL_log_group_open() */
 
