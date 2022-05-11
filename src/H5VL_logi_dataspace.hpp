@@ -20,7 +20,7 @@ class H5VL_log_selections {
 
    public:
     int ndim;          // Number of dimensions of the data space
-    int nsel;          // Size of the selection (bytes)
+    int nsel;          // Size of the selection (blocks)
     hsize_t **starts;  // Start of selection
     hsize_t **counts;  // Count of selection
     hsize_t *dims;     // Dimensions length of the data space
