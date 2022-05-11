@@ -194,23 +194,26 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
         case H5S_SEL_HYPERSLABS: {
             isregular = H5Sis_regular_hyperslab (dsid);
             if (isregular == true) {
-                bool is_unit_block = true;
                 hsize_t start[H5S_MAX_RANK], count[H5S_MAX_RANK], stride[H5S_MAX_RANK],
                     block[H5S_MAX_RANK];
                 err = H5Sget_regular_hyperslab (dsid, start, stride, count, block);
                 CHECK_ERR
 
+                int is_stride_all_ones = true;
+                int is_count_all_ones = true;
+                int is_block_all_ones = true;
                 for (i = 0; i < ndim; i++) {
-                    if (block[i] != 1) { is_unit_block = false; }
-                    if (stride[i] != 1) { is_unit_block = false; }
+                    if (stride[i] != 1) is_stride_all_ones = false;
+                    if (count[i]  != 1) is_count_all_ones  = false;
+                    if (block[i]  != 1) is_block_all_ones  = false;
                 }
 
-                if (is_unit_block) {
-                    this->nsel = 1;
+                if ((is_stride_all_ones && is_block_all_ones) || is_count_all_ones) {
+                    this->nsel = 1;   /* there is only 1 block in this case */
                     this->alloc (1);
                     for (i = 0; i < ndim; i++) {
                         starts[0][i] = start[i];
-                        counts[0][i] = count[i];
+                        counts[0][i] = (is_block_all_ones) ? count[i] : block[i];
                     }
                     break;
                 }
