@@ -1,11 +1,20 @@
---- tst_types.c	2022-03-13 14:41:41.297988497 -0500
-+++ tst_types_logvol.c	2022-03-13 14:41:21.537988396 -0500
+--- tst_types.c	2022-05-12 01:23:15.392673458 -0500
++++ tst_types_logvol.c	2022-05-12 01:23:04.162673551 -0500
 @@ -1,4 +1,5 @@
  /* This is part of the netCDF package.
 +/* This is part of the netCDF package.
     Copyright 2018 University Corporation for Atmospheric Research/Unidata
     See COPYRIGHT file for conditions of use.
  
+@@ -12,7 +13,7 @@
+ #include "err_macros.h"
+ 
+ #define MAX_VARNAME 20
+-#define NUM_TYPES 6
++#define NUM_TYPES 5
+ #define NUM_DIMS 1
+ #define SIZE 5
+ #define STRIDE_SIZE 2
 @@ -140,7 +141,7 @@
        if (nc_create(FILENAME2, NC_NETCDF4, &ncid2)) ERR;
  
