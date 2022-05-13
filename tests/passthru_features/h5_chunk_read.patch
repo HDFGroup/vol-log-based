@@ -1,0 +1,67 @@
+--- h5_chunk_read_source.c	2022-05-12 23:05:23.073530987 -0500
++++ h5_chunk_read_passthru.c	2022-05-12 23:38:45.639349771 -0500
+@@ -17,6 +17,7 @@
+  */
+ 
+ #include "hdf5.h"
++#include "H5VL_log.h"
+ 
+ #define H5FILE_NAME "SDSextendible.h5"
+ #define DATASETNAME "ExtendibleArray"
+@@ -25,9 +26,21 @@
+ #define NX          10
+ #define NY          5
+ 
+-int
+-main(void)
+-{
++int helper(const char *file_name);
++
++int main(int argc, char **argv) {
++    herr_t err = 0;
++    const char *file_name;
++    
++    MPI_Init(&argc, &argv);
++
++    file_name = H5FILE_NAME;
++
++    err = helper(file_name);
++    MPI_Finalize();
++    return err;
++}
++int helper(const char *file_name){
+     hid_t   file; /* handles */
+     hid_t   dataset;
+     hid_t   filespace;
+@@ -47,10 +60,19 @@
+     int rank, rank_chunk;
+     int i, j;
+ 
++    hid_t fapl_id = H5P_DEFAULT, log_vol_id = 0;
++
++    fapl_id = H5Pcreate(H5P_FILE_ACCESS); 
++    H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
++    H5Pset_all_coll_metadata_ops(fapl_id, 1);
++    H5Pset_coll_metadata_write(fapl_id, 1);
++    log_vol_id = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
++    H5Pset_vol(fapl_id, log_vol_id, NULL);
++    
+     /*
+      * Open the file and the dataset.
+      */
+-    file    = H5Fopen(H5FILE_NAME, H5F_ACC_RDONLY, H5P_DEFAULT);
++    file = H5Fopen(file_name, H5F_ACC_RDWR, fapl_id);
+     dataset = H5Dopen2(file, DATASETNAME, H5P_DEFAULT);
+ 
+     /*
+@@ -203,5 +225,10 @@
+     H5Sclose(filespace);
+     H5Fclose(file);
+ 
++    H5Pclose(fapl_id);
++    if (log_vol_id > 0) {
++        H5VLclose(log_vol_id);
++    } 
++
+     return 0;
+ }

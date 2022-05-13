@@ -1,0 +1,66 @@
+--- h5_extend_write_source.c	2022-05-12 23:21:00.946262482 -0500
++++ h5_extend_write_passthru.c	2022-05-12 23:27:40.872422522 -0500
+@@ -19,6 +19,7 @@
+  */
+ 
+ #include "hdf5.h"
++#include "H5VL_log.h"
+ 
+ #define H5FILE_NAME "SDSextendible.h5"
+ #define DATASETNAME "ExtendibleArray"
+@@ -26,9 +27,23 @@
+ #define NX          10
+ #define NY          5
+ 
+-int
+-main(void)
+-{
++int helper(const char *file_name);
++
++int main(int argc, char **argv) {
++    herr_t err = 0;
++    const char *file_name;
++    int rank;
++    
++    MPI_Init(&argc, &argv);
++    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
++    
++    file_name = H5FILE_NAME;
++
++    err = helper(file_name);
++    MPI_Finalize();
++    return err;
++}
++int helper(const char *file_name){
+     hid_t   file; /* handles */
+     hid_t   dataspace, dataset;
+     hid_t   filespace;
+@@ -57,15 +72,27 @@
+     int data3[2][2] = {{3, 3}, {3, 3}};
+     int fillvalue   = 0;
+ 
++    hid_t fapl_id = H5P_DEFAULT, log_vol_id = 0;
++
+     /*
+      * Create the data space with unlimited dimensions.
+      */
+     dataspace = H5Screate_simple(RANK, dims, maxdims);
+ 
++
+     /*
+      * Create a new file. If file exists its contents will be overwritten.
+      */
+-    file = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
++    file = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
++    H5Fclose(file);
++
++    fapl_id = H5Pcreate(H5P_FILE_ACCESS); 
++    H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
++    H5Pset_all_coll_metadata_ops(fapl_id, 1);
++    H5Pset_coll_metadata_write(fapl_id, 1);
++    log_vol_id = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
++    H5Pset_vol(fapl_id, log_vol_id, NULL);
++    file = H5Fopen(file_name, H5F_ACC_RDWR, fapl_id);
+ 
+     /*
+      * Modify dataset creation properties, i.e. enable chunking.
