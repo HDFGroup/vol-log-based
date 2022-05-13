@@ -64,7 +64,8 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * New test program
-  + none
+  + tests/testcases/multi_open
+    + Test opening a second handle to the same file without closing the first one.
 
 * Conformity with HDF5 library
   + none
