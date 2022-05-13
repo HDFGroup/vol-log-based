@@ -351,6 +351,10 @@ void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
 
     dp = std::make_unique<H5VL_log_dset_t> (op, H5I_DATASET, uo);
 
+    if (!op->fp->is_log_based_file) {
+        return (void *)(dp.release ());
+    }
+
     // Atts
     H5VL_logi_get_att (dp.get (), H5VL_LOG_DATASETI_ATTR_ID, H5T_NATIVE_INT32, &(dp->id), dxpl_id);
 
