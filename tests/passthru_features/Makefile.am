@@ -19,7 +19,7 @@ AM_CPPFLAGS += -DHDF5_PARALLEL
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
 # The following files will be downloaded from NetCDF4 library
-SEQ_SRCS = h5_attribute.c h5_group.c
+SEQ_SRCS = h5_attribute.c h5_group.c h5_extend_write.c h5_chunk_read.c
 
 
 TESTPROGRAMS = $(SEQ_SRCS:.c=)
@@ -38,8 +38,10 @@ $(SEQ_SRCS): %.c : $$(wildcard %.patch)
 check_PROGRAMS = $(TESTPROGRAMS)
 
 EXTRA_DIST = wrap_runs.sh parallel_run.sh \
-             h5_attribute.patch
+             h5_attribute.patch h5_group.patch h5_chunk_read.patch \
+			 h5_extend_write.patch
              
+h5_chunk_read.chkexe_: h5_extend_write.chkexe_
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead
