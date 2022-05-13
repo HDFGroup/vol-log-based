@@ -6,12 +6,10 @@
 
 # Exit immediately if a command exits with a non-zero status.
 set -e
-set -x
 
 outfile=`basename $1`
 outfile_regular="${TESTOUTDIR}/${outfile}_regular.h5"
 outfile_log="${TESTOUTDIR}/${outfile}_log.h5"
-
 
 # export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}" 
 # export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
@@ -20,9 +18,6 @@ outfile_log="${TESTOUTDIR}/${outfile}_log.h5"
 unset HDF5_VOL_CONNECTOR
 unset HDF5_PLUGIN_PATH
 
-# echo "Running command ${TESTSEQRUN}"
-# echo "Running arg $1"
-# mpirun -np 1 ./$1
 ${TESTSEQRUN} ./$1 ${outfile_regular} ${outfile_log}
 
 exit 0
