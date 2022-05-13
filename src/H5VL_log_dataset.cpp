@@ -376,17 +376,19 @@ err_out:;
 herr_t H5VL_log_dataset_get (void *dset, H5VL_dataset_get_args_t *args, hid_t dxpl_id, void **req) {
     herr_t err                = 0;
     H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
-    H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];  // Dataset info
+    H5VL_log_dset_info_t *dip = NULL;  // Dataset info
     // H5VL_log_req_t *rp;
     // void **ureqp, *ureq;
 
     try {
+        H5VL_LOGI_PROFILING_TIMER_START;
+
         if (!dp->fp->is_log_based_file) {
             err = H5VLdataset_get (dp->uo, dp->uvlid, args, dxpl_id, req);
             return err;
         }
 
-        H5VL_LOGI_PROFILING_TIMER_START;
+        dip = dp->fp->dsets_info[dp->id];
 
         switch (args->op_type) {
             /* H5Dget_space */
