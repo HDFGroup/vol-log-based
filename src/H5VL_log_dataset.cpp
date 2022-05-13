@@ -450,19 +450,18 @@ herr_t H5VL_log_dataset_specific (void *obj,
                                   void **req) {
     herr_t err                = 0;
     H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)obj;
-    H5VL_log_dset_info_t *dip = dp->fp->dsets_info[dp->id];  // Dataset info
+    H5VL_log_dset_info_t *dip = NULL;  // Dataset info
     // H5VL_log_req_t *rp;
     // void **ureqp, *ureq;
 
     try {
+        H5VL_LOGI_PROFILING_TIMER_START;
         if (!dp->fp->is_log_based_file) {
-            // TODO: Save copy of underlying VOL connector ID, in case of
-            // 'refresh' operation destroying the current object. Check H5VLpassthru.c.
             err = H5VLdataset_specific(dp->uo, dp->uvlid, args, dxpl_id, req);
             return err;
         }
 
-        H5VL_LOGI_PROFILING_TIMER_START;
+        dip = dp->fp->dsets_info[dp->id];
 
         switch (args->op_type) {
             case H5VL_DATASET_SET_EXTENT: { /* H5Dset_extent */
