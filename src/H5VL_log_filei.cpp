@@ -36,7 +36,8 @@
 #define DEFAULT_SIZE 209715200  // 200 MiB
 //#define DEFAULT_SIZE 10485760 // 10 MiB
 
-std::map<__ino_t, H5VL_log_file_t *> files;
+using stcrtstat = struct stat;
+std::map<decltype (stcrtstat::st_ino), H5VL_log_file_t *> files;
 H5VL_log_file_t *H5VL_log_filei_search (const char *path) {
     int err;
     struct stat s;
