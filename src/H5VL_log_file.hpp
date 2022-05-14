@@ -15,6 +15,7 @@
 #include <unordered_map>
 //
 #include <mpi.h>
+#include <sys/stat.h>
 //
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
@@ -31,6 +32,8 @@ typedef struct H5VL_log_contig_buffer_t {
 typedef struct H5VL_log_cord_t {
     MPI_Offset cord[H5S_MAX_RANK];
 } H5VL_log_cord_t;
+
+using stcrtstat = struct stat;
 
 /* The log VOL file object */
 typedef struct H5VL_log_file_t : H5VL_log_obj_t {
@@ -69,6 +72,8 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     int fd;     // POSIX fd to the target file for data and metadata (master file or subfile), only
                 // used in aligned write
     void *sfp;  // Under VOL object of the subfile
+    decltype (stcrtstat::st_ino) ino;  // Inode number, used to detect duplicate file open
+    bool has_ino;   // If ino is valid
 
     std::vector<H5VL_log_wreq_t *> wreqs;  // Queued write reqs
     int nflushed;  // # entry in wreqs with their data already flushed (metadata haven't)

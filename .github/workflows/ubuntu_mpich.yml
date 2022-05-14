@@ -68,7 +68,7 @@ jobs:
                         --enable-test-netcdf4=${WORKDIR}/.local/netcdf-c/4.7.4 \
                         --enable-test-openpmd \
                         --enable-test-hdf5-iotest \
-                        MPICC=mpicc MPICXX=mpicxx
+                        MPICC=mpicc MPICXX=mpicxx 
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
             make -j 4
             # Do NOT parallel build, cmake for external tests can fail
