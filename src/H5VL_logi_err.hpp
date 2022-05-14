@@ -28,7 +28,7 @@
     {}
 #endif
 
-#ifdef LOGVOL_DEBUG
+
 #define H5VL_LOGI_EXP_CATCH           \
     catch (H5VL_logi_exception & e) { \
         H5VL_logi_print_err (e);      \
@@ -49,17 +49,6 @@
         err = -1;                     \
         goto err_out;                 \
     }
-#else
-#define H5VL_LOGI_EXP_CATCH      \
-    catch (std::exception & e) { \
-        goto err_out;            \
-    }
-#define H5VL_LOGI_EXP_CATCH_ERR  \
-    catch (std::exception & e) { \
-        err = -1;                \
-        goto err_out;            \
-    }
-#endif
 
 inline bool H5VL_logi_debug_verbose () {
     char *val = getenv ("LOGVOL_VERBOSE_DEBUG");

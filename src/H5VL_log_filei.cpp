@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <memory>
 // Sys hdrs
 #include <dirent.h>
@@ -36,7 +37,6 @@
 #define DEFAULT_SIZE 209715200  // 200 MiB
 //#define DEFAULT_SIZE 10485760 // 10 MiB
 
-using stcrtstat = struct stat;
 std::map<decltype (stcrtstat::st_ino), H5VL_log_file_t *> files;
 H5VL_log_file_t *H5VL_log_filei_search (const char *path) {
     int err;
@@ -57,18 +57,20 @@ void H5VL_log_filei_register (H5VL_log_file_t *fp) {
     struct stat s;
 
     err = stat (fp->name.c_str (), &s);
-    CHECK_ERR
-
-    files[s.st_ino] = fp;
+    if (err == 0) {
+        fp->ino         = s.st_ino;
+        fp->has_ino     = true;
+        files[s.st_ino] = fp;
+    } else {
+        fp->has_ino = false;
+        if (!fp->rank) {
+            std::cout << "Warning: inode info not found, can't detect duplicate file open"
+                      << std::endl;
+        }
+    }
 }
 void H5VL_log_filei_rm (H5VL_log_file_t *fp) {
-    int err;
-    struct stat s;
-
-    err = stat (fp->name.c_str (), &s);
-    CHECK_ERR
-
-    files.erase (s.st_ino);
+    if (fp->has_ino) { files.erase (fp->ino); }
 }
 
 void H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf) {
