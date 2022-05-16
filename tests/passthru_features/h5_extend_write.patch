@@ -1,5 +1,5 @@
---- h5_extend_write_source.c	2022-05-12 23:21:00.946262482 -0500
-+++ h5_extend_write_passthru.c	2022-05-12 23:27:40.872422522 -0500
+--- h5_extend_write_source.c	2022-05-15 22:02:05.281398984 -0500
++++ h5_extend_write_passthru.c	2022-05-15 22:03:32.528646445 -0500
 @@ -19,6 +19,7 @@
   */
  
@@ -64,3 +64,15 @@
  
      /*
       * Modify dataset creation properties, i.e. enable chunking.
+@@ -174,6 +201,11 @@
+     H5Sclose(filespace);
+     H5Pclose(cparms);
+     H5Fclose(file);
++    
++    H5Pclose(fapl_id);
++    if (log_vol_id > 0) {
++        H5VLclose(log_vol_id);
++    } 
+ 
+     return 0;
+ }
