@@ -20,7 +20,7 @@ LDADD = $(top_builddir)/src/libH5VL_log.la
 
 # The following files will be downloaded from HDF5 library
 SEQ_SRCS = h5_attribute.c h5_group.c h5_extend_write.c \
-           h5_cmprss.c
+           h5_cmprss.c h5_subset.c
 
 
 TESTPROGRAMS = $(SEQ_SRCS:.c=)

@@ -1,0 +1,66 @@
+--- h5_subset_source.c	2022-05-15 22:08:54.094562596 -0500
++++ h5_subset_passthru.c	2022-05-15 22:12:54.721248138 -0500
+@@ -17,6 +17,7 @@
+  */
+ 
+ #include "hdf5.h"
++#include "H5VL_log.h"
+ 
+ #define FILE        "subset.h5"
+ #define DATASETNAME "IntArray"
+@@ -28,9 +29,23 @@
+ #define DIM0 8 /* size of dataset */
+ #define DIM1 10
+ 
+-int
+-main(void)
+-{
++int helper(const char *file_name);
++
++int main(int argc, char **argv) {
++    herr_t err = 0;
++    const char *file_name;
++    int rank;
++    
++    MPI_Init(&argc, &argv);
++    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
++    
++    file_name = FILE;
++
++    err = helper(file_name);
++    MPI_Finalize();
++    return err;
++}
++int helper(const char *file_name){
+     hsize_t dims[2], dimsm[2];
+     int     data[DIM0][DIM1];          /* data to write */
+     int     sdata[DIM0_SUB][DIM1_SUB]; /* subset to write */
+@@ -52,8 +67,17 @@
+      * Then create a dataset and write data to it and close the file *
+      * and dataset.                                                  *
+      *****************************************************************/
+-
+-    file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
++    hid_t fapl_id = H5P_DEFAULT, log_vol_id = 0;
++    file_id = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
++    H5Fclose(file_id);
++
++    fapl_id = H5Pcreate(H5P_FILE_ACCESS); 
++    H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
++    H5Pset_all_coll_metadata_ops(fapl_id, 1);
++    H5Pset_coll_metadata_write(fapl_id, 1);
++    log_vol_id = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
++    H5Pset_vol(fapl_id, log_vol_id, NULL);
++    file_id = H5Fopen(file_name, H5F_ACC_RDWR, fapl_id);
+ 
+     dims[0]      = DIM0;
+     dims[1]      = DIM1;
+@@ -87,7 +111,7 @@
+      * values to the dataset.
+      *****************************************************/
+ 
+-    file_id    = H5Fopen(FILE, H5F_ACC_RDWR, H5P_DEFAULT);
++    file_id    = H5Fopen(file_name, H5F_ACC_RDWR, fapl_id);
+     dataset_id = H5Dopen2(file_id, DATASETNAME, H5P_DEFAULT);
+ 
+     /* Specify size and shape of subset to write. */
