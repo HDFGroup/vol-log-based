@@ -1,0 +1,80 @@
+--- h5_cmprss_source.c	2022-05-15 21:55:07.436215417 -0500
++++ h5_cmprss_passthru.c	2022-05-15 21:57:35.693635359 -0500
+@@ -17,16 +17,31 @@
+  */
+ 
+ #include "hdf5.h"
++#include "H5VL_log.h"
+ 
+ #define FILE "cmprss.h5"
+ #define RANK 2
+ #define DIM0 100
+ #define DIM1 20
+ 
+-int
+-main()
+-{
++int helper(const char *file_name);
+ 
++int main(int argc, char **argv) {
++    herr_t err = 0;
++    const char *file_name;
++    int rank;
++    
++    MPI_Init(&argc, &argv);
++    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
++    
++    file_name = FILE;
++
++    err = helper(file_name);
++    MPI_Finalize();
++    return err;
++}
++
++int helper(const char *file_name) {
+     hid_t file_id, dataset_id, dataspace_id; /* identifiers */
+     hid_t plist_id;
+ 
+@@ -41,6 +56,7 @@
+     int i, j, numfilt;
+     int buf[DIM0][DIM1];
+     int rbuf[DIM0][DIM1];
++    hid_t fapl_id = H5P_DEFAULT, log_vol_id = 0;
+ 
+     /* Uncomment these variables to use SZIP compression
+     unsigned szip_options_mask;
+@@ -49,6 +65,14 @@
+ 
+     /* Create a file.  */
+     file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
++    H5Fclose(file_id);
++    fapl_id = H5Pcreate(H5P_FILE_ACCESS); 
++    H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
++    H5Pset_all_coll_metadata_ops(fapl_id, 1);
++    H5Pset_coll_metadata_write(fapl_id, 1);
++    log_vol_id = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
++    H5Pset_vol(fapl_id, log_vol_id, NULL);
++    file_id = H5Fopen(file_name, H5F_ACC_RDWR, fapl_id);
+ 
+     /* Create dataset "Compressed Data" in the group using absolute name.  */
+     dims[0]      = DIM0;
+@@ -88,7 +112,7 @@
+     status = H5Fclose(file_id);
+ 
+     /* Now reopen the file and dataset in the file. */
+-    file_id    = H5Fopen(FILE, H5F_ACC_RDWR, H5P_DEFAULT);
++    file_id    = H5Fopen(FILE, H5F_ACC_RDWR, fapl_id);
+     dataset_id = H5Dopen2(file_id, "Compressed_Data", H5P_DEFAULT);
+ 
+     /* Retrieve filter information. */
+@@ -118,4 +142,10 @@
+     status = H5Dclose(dataset_id);
+     status = H5Pclose(plist_id);
+     status = H5Fclose(file_id);
++
++    H5Pclose(fapl_id);
++    if (log_vol_id > 0) {
++        H5VLclose(log_vol_id);
++    }
++    return 0;
+ }
