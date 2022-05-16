@@ -1,5 +1,5 @@
---- h5_cmprss_source.c	2022-05-15 21:55:07.436215417 -0500
-+++ h5_cmprss_passthru.c	2022-05-15 21:57:35.693635359 -0500
+--- h5_cmprss_source.c	2022-05-15 22:13:31.508352944 -0500
++++ h5_cmprss_passthru.c	2022-05-15 22:14:11.145465878 -0500
 @@ -17,16 +17,31 @@
   */
  
@@ -43,10 +43,12 @@
  
      /* Uncomment these variables to use SZIP compression
      unsigned szip_options_mask;
-@@ -49,6 +65,14 @@
+@@ -48,7 +64,15 @@
+     */
  
      /* Create a file.  */
-     file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+-    file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
++    file_id = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 +    H5Fclose(file_id);
 +    fapl_id = H5Pcreate(H5P_FILE_ACCESS); 
 +    H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
@@ -63,7 +65,7 @@
  
      /* Now reopen the file and dataset in the file. */
 -    file_id    = H5Fopen(FILE, H5F_ACC_RDWR, H5P_DEFAULT);
-+    file_id    = H5Fopen(FILE, H5F_ACC_RDWR, fapl_id);
++    file_id    = H5Fopen(file_name, H5F_ACC_RDWR, fapl_id);
      dataset_id = H5Dopen2(file_id, "Compressed_Data", H5P_DEFAULT);
  
      /* Retrieve filter information. */
