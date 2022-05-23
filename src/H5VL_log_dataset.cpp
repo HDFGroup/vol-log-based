@@ -71,6 +71,7 @@ void *H5VL_log_dataset_create (void *obj,
     hid_t sid = -1;
     int ndim;
     htri_t is_var_type;
+    char *iname = NULL;  // Internal name of object
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
     // char lname[1024];
@@ -78,8 +79,8 @@ void *H5VL_log_dataset_create (void *obj,
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
 
-        /* Check arguments */
-        H5VL_LOGI_CHECK_NAME (name);
+        /* Rename user objects to avoid conflict with internal object */
+        iname = H5VL_logi_name_remap (name);
 
         // Logvol doesn't support variable len type
         is_var_type = H5Tis_variable_str (type_id);
@@ -105,7 +106,7 @@ void *H5VL_log_dataset_create (void *obj,
         dp->id = dp->fp->ndset;  // ID nees to be set before writing to attribute
 
         H5VL_LOGI_PROFILING_TIMER_START;
-        dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, name, lcpl_id, type_id, sid,
+        dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, iname, lcpl_id, type_id, sid,
                                      dcpl_id, dapl_id, dxpl_id, ureqp);
         H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_CREATE);
         CHECK_PTR (dp->uo)
@@ -191,6 +192,7 @@ err_out:;
         dp = NULL;
     }
 fn_exit:;
+    if (iname && iname != name) { free (iname); }
     return (void *)dp;
 } /* end H5VL_log_dataset_create() */
 
@@ -211,6 +213,7 @@ void *H5VL_log_dataset_open (void *obj,
                              hid_t dxpl_id,
                              void **req) {
     // herr_t err		   = 0;
+    char *iname        = NULL;  // Internal name of object
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
     void *uo           = NULL;
 
@@ -219,19 +222,21 @@ void *H5VL_log_dataset_open (void *obj,
         if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_dataset_open(%p, %s)\n", obj, name); }
 #endif
 
-        /* Check arguments */
-        H5VL_LOGI_CHECK_NAME (name);
+        /* Rename user objects to avoid conflict with internal object */
+        iname = H5VL_logi_name_remap (name);
 
         H5VL_LOGI_PROFILING_TIMER_START;
-        uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, name, dapl_id, dxpl_id, NULL);
+        uo = H5VLdataset_open (op->uo, loc_params, op->uvlid, iname, dapl_id, dxpl_id, NULL);
         CHECK_PTR (uo);
         H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLDATASET_OPEN);
 
+        if (iname && iname != name) { free (iname); }
         return H5VL_log_dataseti_open (op, uo, dxpl_id);
     }
     H5VL_LOGI_EXP_CATCH
 
 err_out:;
+    if (iname && iname != name) { free (iname); }
     return NULL;
 } /* end H5VL_log_dataset_open() */
 

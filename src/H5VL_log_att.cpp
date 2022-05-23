@@ -14,6 +14,7 @@
 #include "H5VL_log_obj.hpp"
 #include "H5VL_log_req.hpp"
 #include "H5VL_logi.hpp"
+#include "H5VL_logi_util.hpp"
 
 /********************* */
 /* Function prototypes */
@@ -52,13 +53,14 @@ void *H5VL_log_attr_create (void *obj,
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
     H5VL_log_obj_t *ap = NULL;
     H5VL_log_req_t *rp;
+    char *iname = NULL;  // Internal name of object
     void **ureqp, *ureq;
 
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
 
-        /* Check arguments */
-        H5VL_LOGI_CHECK_NAME (name);
+        /* Rename user objects to avoid conflict with internal object */
+        iname = H5VL_logi_name_remap (name);
 
         ap = new H5VL_log_obj_t (op, H5I_ATTR);
 
@@ -70,7 +72,7 @@ void *H5VL_log_attr_create (void *obj,
         }
 
         H5VL_LOGI_PROFILING_TIMER_START;
-        ap->uo = H5VLattr_create (op->uo, loc_params, op->uvlid, name, type_id, space_id, acpl_id,
+        ap->uo = H5VLattr_create (op->uo, loc_params, op->uvlid, iname, type_id, space_id, acpl_id,
                                   aapl_id, dxpl_id, ureqp);
         H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VLATT_CREATE);
         CHECK_PTR (ap->uo);
@@ -84,10 +86,12 @@ void *H5VL_log_attr_create (void *obj,
     }
     H5VL_LOGI_EXP_CATCH
 
+    if (iname && iname != name) { free (iname); }
     return (void *)ap;
 
 err_out:;
     if (ap) { delete ap; }
+    if (iname && iname != name) { free (iname); }
 
     return NULL;
 } /* end H5VL_log_attr_create() */
@@ -111,13 +115,14 @@ void *H5VL_log_attr_open (void *obj,
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
     H5VL_log_obj_t *ap = NULL;
     H5VL_log_req_t *rp;
+    char *iname = NULL;  // Internal name of object
     void **ureqp, *ureq;
 
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
 
-        /* Check arguments */
-        H5VL_LOGI_CHECK_NAME (name);
+        /* Rename user objects to avoid conflict with internal object */
+        iname = H5VL_logi_name_remap (name);
 
         ap = new H5VL_log_obj_t (op, H5I_ATTR);
 
@@ -129,7 +134,7 @@ void *H5VL_log_attr_open (void *obj,
         }
 
         H5VL_LOGI_PROFILING_TIMER_START;
-        ap->uo = H5VLattr_open (op->uo, loc_params, op->uvlid, name, aapl_id, dxpl_id, ureqp);
+        ap->uo = H5VLattr_open (op->uo, loc_params, op->uvlid, iname, aapl_id, dxpl_id, ureqp);
         H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VLATT_OPEN);
         CHECK_PTR (ap->uo);
 
@@ -142,10 +147,12 @@ void *H5VL_log_attr_open (void *obj,
     }
     H5VL_LOGI_EXP_CATCH
 
+    if (iname && iname != name) { free (iname); }
     return (void *)ap;
 
 err_out:;
     if (ap) { delete ap; }
+    if (iname && iname != name) { free (iname); }
 
     return NULL;
 } /* end H5VL_log_attr_open() */

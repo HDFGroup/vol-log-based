@@ -16,6 +16,7 @@
 #include "H5VL_log_req.hpp"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_err.hpp"
+#include "H5VL_logi_util.hpp"
 
 /********************* */
 /* Function prototypes */
@@ -51,14 +52,17 @@ void *H5VL_log_group_create (void *obj,
     H5VL_log_obj_t *gp = NULL;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
+    char *iname = NULL;  // Internal name of object
 
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
 
         /* Check arguments */
-        H5VL_LOGI_CHECK_NAME (name);
         if (loc_params->type != H5VL_OBJECT_BY_SELF)
             ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
+
+        /* Rename user objects to avoid conflict with internal object */
+        iname = H5VL_logi_name_remap (name);
 
         gp = new H5VL_log_obj_t (op, H5I_GROUP);
 
@@ -70,7 +74,7 @@ void *H5VL_log_group_create (void *obj,
         }
 
         H5VL_LOGI_PROFILING_TIMER_START;
-        gp->uo = H5VLgroup_create (op->uo, loc_params, op->uvlid, name, lcpl_id, gcpl_id, gapl_id,
+        gp->uo = H5VLgroup_create (op->uo, loc_params, op->uvlid, iname, lcpl_id, gcpl_id, gapl_id,
                                    dxpl_id, ureqp);
         CHECK_PTR (gp->uo)
         H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_CREATE);
@@ -84,10 +88,13 @@ void *H5VL_log_group_create (void *obj,
     }
     H5VL_LOGI_EXP_CATCH
 
+    if (iname && iname != name) { free (iname); }
+
     return (void *)gp;
 
 err_out:;
     if (gp) { delete gp; }
+    if (iname && iname != name) { free (iname); }
 
     return NULL;
 } /* end H5VL_log_group_create() */
@@ -112,14 +119,17 @@ void *H5VL_log_group_open (void *obj,
     H5VL_log_obj_t *gp = NULL;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
+    char *iname = NULL;  // Internal name of object
 
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
 
         /* Check arguments */
-        H5VL_LOGI_CHECK_NAME (name);
         if (loc_params->type != H5VL_OBJECT_BY_SELF)
             ERR_OUT ("loc_params->type is not H5VL_OBJECT_BY_SELF")
+
+        /* Rename user objects to avoid conflict with internal object */
+        iname = H5VL_logi_name_remap (name);
 
         gp = new H5VL_log_obj_t (op, H5I_GROUP);
 
@@ -131,7 +141,7 @@ void *H5VL_log_group_open (void *obj,
         }
 
         H5VL_LOGI_PROFILING_TIMER_START;
-        gp->uo = H5VLgroup_open (op->uo, loc_params, op->uvlid, name, gapl_id, dxpl_id, ureqp);
+        gp->uo = H5VLgroup_open (op->uo, loc_params, op->uvlid, iname, gapl_id, dxpl_id, ureqp);
         CHECK_PTR (gp->uo)
         H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLGROUP_OPEN);
 
@@ -144,9 +154,14 @@ void *H5VL_log_group_open (void *obj,
     }
     H5VL_LOGI_EXP_CATCH
 
+    if (iname && iname != name) { free (iname); }
+
     return (void *)gp;
+
 err_out:;
     if (gp) { delete gp; }
+    if (iname && iname != name) { free (iname); }
+
     return NULL;
 } /* end H5VL_log_group_open() */
 
