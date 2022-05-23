@@ -35,7 +35,8 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
     h5lreplay_copy_handler_arg *argp = (h5lreplay_copy_handler_arg *)op_data;
 
     // Skip unnamed and hidden object
-    if ((name == NULL) || (name[0] == '_') || (name[0] == '/' || (name[0] == '.'))) {
+    if ((name == NULL) || (name[0] == '_' && name[1] != '_') ||
+        (name[0] == '/' || (name[0] == '.'))) {
 #ifdef LOGVOL_DEBUG
         if (name[0] == '_') {
             std::cout << "Skip log-based VOL data objects " << name << std::endl;
@@ -43,6 +44,7 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
 #endif
         goto err_out;
     }
+    if (name[0] == '_') name++;
 
     try {
         // Copy a dataset
@@ -176,7 +178,7 @@ herr_t h5lreplay_attr_copy_handler (hid_t location_id,
     void *buf = NULL;
 
     // Skip unnamed and hidden object
-    if ((attr_name == NULL) || (attr_name[0] == '_') ||
+    if ((attr_name == NULL) || (attr_name[0] == '_' && attr_name[1] != '_') ||
         (attr_name[0] == '/' || (attr_name[0] == '.'))) {
 #ifdef LOGVOL_DEBUG
         if (attr_name[0] == '_') {
@@ -185,6 +187,7 @@ herr_t h5lreplay_attr_copy_handler (hid_t location_id,
 #endif
         goto err_out;
     }
+    if (attr_name[0] == '_') attr_name++;
 
     try {
 #ifdef LOGVOL_DEBUG

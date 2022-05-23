@@ -73,7 +73,7 @@ herr_t h5ldump_visit_handler (hid_t o_id,
     std::vector<H5VL_log_dset_info_t> *dsets = (std::vector<H5VL_log_dset_info_t> *)op_data;
 
     // Skip unnamed and hidden object
-    if ((name == NULL) || (name[0] == '_' && name[1] == '_') ||
+    if ((name == NULL) || (name[0] == '_' && name[1] != '_') ||
         (name[0] == '/' || (name[0] == '.'))) {
         goto err_out;
     }
