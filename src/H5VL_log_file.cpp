@@ -66,9 +66,6 @@ void *H5VL_log_file_create (
         }
 #endif
 
-        /* Check arguments */
-        H5VL_LOGI_CHECK_NAME (name);
-
         fp = H5VL_log_filei_search (name);
         if (fp) {
             fp = NULL;
@@ -277,9 +274,6 @@ void *H5VL_log_file_open (
             printf ("H5VL_log_file_open(%s, %u, fapl_id, dxpl_id, %p)\n", name, flags, req);
         }
 #endif
-
-        /* Check arguments */
-        H5VL_LOGI_CHECK_NAME (name);
 
         fp = H5VL_log_filei_search (name);
         if (fp) {
