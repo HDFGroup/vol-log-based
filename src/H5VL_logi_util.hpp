@@ -86,3 +86,21 @@ inline void H5VL_logi_lreverse (uint32_t *start, uint32_t *end) {
 inline void H5VL_logi_llreverse (uint64_t *start, uint64_t *end) {
     for (; start < end; start++) { H5VL_logi_llreverse (start); }
 }
+
+inline char *H5VL_logi_name_remap (const char *name) {
+    int n;
+    char *ret;
+
+    n == strlen (name);
+
+    if (n == 0) { ERR_OUT ("Object name cannot be empty") }
+    if (name[0] == '_') {
+        ret    = (char *)malloc (n + 2);
+        ret[0] = '_';
+        strncpy (ret + 1, name, n + 1);
+    } else {
+        ret = (char *)name;
+    }
+
+    return ret;
+}

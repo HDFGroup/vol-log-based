@@ -13,6 +13,7 @@
 #include "H5VL_log_obj.hpp"
 #include "H5VL_log_req.hpp"
 #include "H5VL_logi.hpp"
+#include "H5VL_logi_util.hpp"
 
 /* Datatype callbacks */
 const H5VL_datatype_class_t H5VL_log_datatype_g {
@@ -47,10 +48,11 @@ void *H5VL_log_datatype_commit (void *obj,
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
+    char *iname = NULL;  // Internal name of object
 
     try {
-        /* Check arguments */
-        H5VL_LOGI_CHECK_NAME (name);
+        /* Rename user objects to avoid conflict with internal object */
+        iname = H5VL_logi_name_remap (name);
 
         tp = new H5VL_log_obj_t (op, H5I_DATATYPE);
 
@@ -61,7 +63,7 @@ void *H5VL_log_datatype_commit (void *obj,
             ureqp = NULL;
         }
 
-        tp->uo = H5VLdatatype_commit (op->uo, loc_params, op->uvlid, name, type_id, lcpl_id,
+        tp->uo = H5VLdatatype_commit (op->uo, loc_params, op->uvlid, iname, type_id, lcpl_id,
                                       tcpl_id, tapl_id, dxpl_id, ureqp);
         CHECK_PTR (tp->uo);
 
@@ -72,9 +74,14 @@ void *H5VL_log_datatype_commit (void *obj,
     }
     H5VL_LOGI_EXP_CATCH
 
+    if (iname && iname != name) { free (iname); }
+
     return (void *)tp;
+
 err_out:;
     if (tp) { delete tp; }
+    if (iname && iname != name) { free (iname); }
+
     return NULL;
 } /* end H5VL_log_datatype_commit() */
 
@@ -98,10 +105,11 @@ void *H5VL_log_datatype_open (void *obj,
     H5VL_log_obj_t *tp = NULL;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
+    char *iname = NULL;  // Internal name of object
 
     try {
-        /* Check arguments */
-        H5VL_LOGI_CHECK_NAME (name);
+        /* Rename user objects to avoid conflict with internal object */
+        iname = H5VL_logi_name_remap (name);
 
         tp = new H5VL_log_obj_t (op, H5I_DATATYPE);
 
@@ -112,7 +120,7 @@ void *H5VL_log_datatype_open (void *obj,
             ureqp = NULL;
         }
 
-        tp->uo = H5VLdatatype_open (op->uo, loc_params, op->uvlid, name, tapl_id, dxpl_id, ureqp);
+        tp->uo = H5VLdatatype_open (op->uo, loc_params, op->uvlid, iname, tapl_id, dxpl_id, ureqp);
         CHECK_PTR (tp->uo);
 
         if (req) {
@@ -122,10 +130,13 @@ void *H5VL_log_datatype_open (void *obj,
     }
     H5VL_LOGI_EXP_CATCH
 
+    if (iname && iname != name) { free (iname); }
+
     return (void *)tp;
 
 err_out:;
     if (tp) { delete tp; }
+    if (iname && iname != name) { free (iname); }
 
     return NULL;
 } /* end H5VL_log_datatype_open() */
