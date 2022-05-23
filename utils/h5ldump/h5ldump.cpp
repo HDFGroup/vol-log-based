@@ -279,7 +279,7 @@ void h5ldump_file (std::string path,
         }
     } else {
         // Open the log group
-        lgid = H5Gopen2 (fid, "__LOG", H5P_DEFAULT);
+        lgid = H5Gopen2 (fid, H5VL_LOG_FILEI_GROUP_LOG, H5P_DEFAULT);
         CHECK_ID (lgid)
         if (lgid < 0) {
             std::cout << "Error: " << path << " is not a valid log-based VOL file." << std::endl;

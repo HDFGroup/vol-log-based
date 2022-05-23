@@ -91,7 +91,7 @@ inline char *H5VL_logi_name_remap (const char *name) {
     int n;
     char *ret;
 
-    n == strlen (name);
+    n = strlen (name);
 
     if (n == 0) { ERR_OUT ("Object name cannot be empty") }
     if (name[0] == '_') {
