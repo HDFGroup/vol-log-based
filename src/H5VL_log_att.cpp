@@ -347,11 +347,20 @@ herr_t H5VL_log_attr_specific (void *obj,
             args->args.iterate.op_data = ctx;
         }
 
-        if (args->op_type == H5VL_ATTR_EXISTS) {
-            /* Rename user objects to avoid conflict with internal object */
-            original_name_arg      = args->args.exists.name;
-            iname_arg              = H5VL_logi_name_remap (original_name_arg);
-            args->args.exists.name = iname_arg;
+        switch (args->op_type) {
+            case H5VL_ATTR_EXISTS:;
+                /* Rename user objects to avoid conflict with internal object */
+                original_name_arg      = args->args.exists.name;
+                iname_arg              = H5VL_logi_name_remap (original_name_arg);
+                args->args.exists.name = iname_arg;
+                break;
+            case H5VL_ATTR_DELETE:;
+                /* Rename user objects to avoid conflict with internal object */
+                original_name_arg   = args->args.del.name;
+                iname_arg           = H5VL_logi_name_remap (original_name_arg);
+                args->args.del.name = iname_arg;
+                break;
+            default:;
         }
 
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -382,7 +391,20 @@ err_out:;
     }
     if (iname_arg && iname_arg != original_name_arg) { free (iname_arg); }
     // Restore name in args
-    if (original_name_arg) { args->args.exists.name = original_name_arg; }
+    if (original_name_arg) {
+        switch (args->op_type) {
+            case H5VL_ATTR_EXISTS:;
+                args->args.exists.name = original_name_arg;
+                break;
+            case H5VL_ATTR_DELETE:;
+                args->args.del.name = original_name_arg;
+                break;
+            default:;
+#ifdef LOGVOL_DEBUG
+                RET_ERR ("Shouldn't reach here")
+#endif
+        }
+    }
     return err;
 } /* end H5VL_log_attr_specific() */
 
