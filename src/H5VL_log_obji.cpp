@@ -25,9 +25,11 @@ herr_t H5VL_log_obji_iterate_op (hid_t obj,
     // Skip internal objects
     if (name) {
         if (name[0] == '_') {
-            if (name[1] == '_') name++;
-        } else {
-            return 0;
+            if (name[1] == '_')
+                name++;
+            else {
+                return 0;
+            }
         }
         return ctx->op (obj, name, info, ctx->op_data);
     }

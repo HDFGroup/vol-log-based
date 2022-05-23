@@ -20,9 +20,11 @@ herr_t H5VL_log_atti_iterate_op (hid_t location_id,
     // Skip internal objects
     if (attr_name) {
         if (attr_name[0] == '_') {
-            if (attr_name[1] == '_') attr_name++;
-        } else {
-            return 0;
+            if (attr_name[1] == '_')
+                attr_name++;
+            else {
+                return 0;
+            }
         }
         return ctx->op (location_id, attr_name, ainfo, ctx->op_data);
     }
