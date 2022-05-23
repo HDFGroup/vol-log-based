@@ -44,7 +44,10 @@ void *H5VL_log_object_open (void *obj,
                             void **req) {
     // herr_t err = 0;
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
+    void *ret          = NULL;
     void *uo;
+    char *iname               = NULL;  // Internal name of object
+    const char *original_name = NULL;  // Original value in loc_params before being remapped
 
     try {
 #ifdef LOGVOL_DEBUG
@@ -53,19 +56,31 @@ void *H5VL_log_object_open (void *obj,
                     req);
         }
 #endif
+        /* Rename user objects to avoid conflict with internal object */
+        if (loc_params->type == H5VL_OBJECT_BY_NAME) {
+            original_name = loc_params->loc_data.loc_by_name.name;
+            iname         = H5VL_logi_name_remap (original_name);
+            ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
+        }
+
         uo = H5VLobject_open (op->uo, loc_params, op->uvlid, opened_type, dxpl_id, req);
         if (uo == NULL) { CHECK_PTR (uo); }
 
         if (*opened_type == H5I_DATASET) {
-            return H5VL_log_dataseti_open (obj, uo, dxpl_id);
+            ret = H5VL_log_dataseti_open (obj, uo, dxpl_id);
         } else {
-            return H5VL_log_obj_open_with_uo (obj, uo, *opened_type, loc_params);
+            ret = H5VL_log_obj_open_with_uo (obj, uo, *opened_type, loc_params);
         }
     }
     H5VL_LOGI_EXP_CATCH
 
 err_out:;
-    return NULL;
+    if (iname && iname != original_name) { free (iname); }
+    // Restore name in loc_param
+    if (original_name) {
+        ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = original_name;
+    }
+    return ret;
 } /* end H5VL_log_object_open() */
 
 /*-------------------------------------------------------------------------
@@ -88,9 +103,13 @@ herr_t H5VL_log_object_copy (void *src_obj,
                              hid_t lcpl_id,
                              hid_t dxpl_id,
                              void **req) {
-    herr_t err            = 0;
-    H5VL_log_obj_t *o_src = (H5VL_log_obj_t *)src_obj;
-    H5VL_log_obj_t *o_dst = (H5VL_log_obj_t *)dst_obj;
+    herr_t err                  = 0;
+    H5VL_log_obj_t *o_src       = (H5VL_log_obj_t *)src_obj;
+    H5VL_log_obj_t *o_dst       = (H5VL_log_obj_t *)dst_obj;
+    char *iname_s               = NULL;  // Internal name of object
+    const char *original_name_s = NULL;  // Original value in loc_params before being remapped
+    char *iname_d               = NULL;  // Internal name of object
+    const char *original_name_d = NULL;  // Original value in loc_params before being remapped
 
     try {
 #ifdef LOGVOL_DEBUG
@@ -102,12 +121,34 @@ herr_t H5VL_log_object_copy (void *src_obj,
 #endif
         ERR_OUT ("H5VL_log_object_copy Not Supported")
 
-        return H5VLobject_copy (o_src->uo, src_loc_params, src_name, o_dst->uo, dst_loc_params,
-                                dst_name, o_src->uvlid, ocpypl_id, lcpl_id, dxpl_id, req);
+        /* Rename user objects to avoid conflict with internal object */
+        if (src_loc_params->type == H5VL_OBJECT_BY_NAME) {
+            original_name_s = src_loc_params->loc_data.loc_by_name.name;
+            iname_s         = H5VL_logi_name_remap (original_name_s);
+            ((H5VL_loc_params_t *)src_loc_params)->loc_data.loc_by_name.name = iname_s;
+        }
+        if (dst_loc_params->type == H5VL_OBJECT_BY_NAME) {
+            original_name_d = dst_loc_params->loc_data.loc_by_name.name;
+            iname_d         = H5VL_logi_name_remap (original_name_d);
+            ((H5VL_loc_params_t *)dst_loc_params)->loc_data.loc_by_name.name = iname_d;
+        }
+
+        err = H5VLobject_copy (o_src->uo, src_loc_params, src_name, o_dst->uo, dst_loc_params,
+                               dst_name, o_src->uvlid, ocpypl_id, lcpl_id, dxpl_id, req);
     }
     H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
+    if (iname_s && iname_s != original_name_s) { free (iname_s); }
+    // Restore name in loc_param
+    if (original_name_s) {
+        ((H5VL_loc_params_t *)src_loc_params)->loc_data.loc_by_name.name = original_name_s;
+    }
+    if (iname_d && iname_d != original_name_d) { free (iname_d); }
+    // Restore name in loc_param
+    if (original_name_d) {
+        ((H5VL_loc_params_t *)dst_loc_params)->loc_data.loc_by_name.name = original_name_d;
+    }
     return err;
 } /* end H5VL_log_object_copy() */
 
