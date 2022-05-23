@@ -16,6 +16,7 @@
 #include "H5VL_log_obj.hpp"
 #include "H5VL_log_req.hpp"
 #include "H5VL_logi.hpp"
+#include "H5VL_logi_util.hpp"
 
 /********************* */
 /* Function prototypes */
@@ -215,6 +216,10 @@ herr_t H5VL_log_link_move (void *src_obj,
     herr_t err            = 0;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
+    char *iname1               = NULL;  // Internal name of object
+    const char *original_name1 = NULL;  // Original value in loc_params before being remapped
+    char *iname2               = NULL;  // Internal name of object
+    const char *original_name2 = NULL;  // Original value in loc_params before being remapped
 
     try {
 #ifdef LOGVOL_DEBUG
@@ -231,10 +236,10 @@ herr_t H5VL_log_link_move (void *src_obj,
         // Block access to internal objects
         switch (loc_params1->type) {
             case H5VL_OBJECT_BY_NAME:
-                if (!(loc_params1->loc_data.loc_by_name.name) ||
-                    loc_params1->loc_data.loc_by_name.name[0] == '_') {
-                    RET_ERR ("Access to internal objects denied")
-                }
+                /* Rename user objects to avoid conflict with internal object */
+                original_name1 = loc_params1->loc_data.loc_by_name.name;
+                iname1         = H5VL_logi_name_remap (original_name1);
+                ((H5VL_loc_params_t *)loc_params1)->loc_data.loc_by_name.name = iname1;
                 break;
             case H5VL_OBJECT_BY_SELF:
                 break;
@@ -245,10 +250,10 @@ herr_t H5VL_log_link_move (void *src_obj,
         }
         switch (loc_params2->type) {
             case H5VL_OBJECT_BY_NAME:
-                if (!(loc_params2->loc_data.loc_by_name.name) ||
-                    loc_params2->loc_data.loc_by_name.name[0] == '_') {
-                    RET_ERR ("Access to internal objects denied")
-                }
+                /* Rename user objects to avoid conflict with internal object */
+                original_name2 = loc_params2->loc_data.loc_by_name.name;
+                iname2         = H5VL_logi_name_remap (original_name2);
+                ((H5VL_loc_params_t *)loc_params2)->loc_data.loc_by_name.name = iname2;
                 break;
             case H5VL_OBJECT_BY_SELF:
                 break;
@@ -277,6 +282,16 @@ herr_t H5VL_log_link_move (void *src_obj,
     H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
+    if (iname1 && iname1 != original_name1) { free (iname1); }
+    // Restore name in loc_param
+    if (original_name1) {
+        ((H5VL_loc_params_t *)loc_params1)->loc_data.loc_by_name.name = original_name1;
+    }
+    if (iname2 && iname2 != original_name2) { free (iname2); }
+    // Restore name in loc_param
+    if (original_name2) {
+        ((H5VL_loc_params_t *)loc_params2)->loc_data.loc_by_name.name = original_name2;
+    }
     return err;
 } /* end H5VL_log_link_move() */
 
@@ -299,6 +314,8 @@ herr_t H5VL_log_link_get (void *obj,
     herr_t err        = 0;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
+    char *iname               = NULL;  // Internal name of object
+    const char *original_name = NULL;  // Original value in loc_params before being remapped
 
     try {
 #ifdef LOGVOL_DEBUG
@@ -315,10 +332,10 @@ herr_t H5VL_log_link_get (void *obj,
         // Block access to internal objects
         switch (loc_params->type) {
             case H5VL_OBJECT_BY_NAME:
-                if (!(loc_params->loc_data.loc_by_name.name) ||
-                    loc_params->loc_data.loc_by_name.name[0] == '_') {
-                    RET_ERR ("Access to internal objects denied")
-                }
+                /* Rename user objects to avoid conflict with internal object */
+                original_name = loc_params->loc_data.loc_by_name.name;
+                iname         = H5VL_logi_name_remap (original_name);
+                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
                 break;
             case H5VL_OBJECT_BY_SELF:
                 break;
@@ -339,6 +356,11 @@ herr_t H5VL_log_link_get (void *obj,
     H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
+    if (iname && iname != original_name) { free (iname); }
+    // Restore name in loc_param
+    if (original_name) {
+        ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = original_name;
+    }
     return err;
 } /* end H5VL_log_link_get() */
 
@@ -362,6 +384,8 @@ herr_t H5VL_log_link_specific (void *obj,
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
     H5VL_log_linki_iterate_op_data *ctx = NULL;
+    char *iname                         = NULL;  // Internal name of object
+    const char *original_name = NULL;  // Original value in loc_params before being remapped
 
     try {
 #ifdef LOGVOL_DEBUG
@@ -378,15 +402,10 @@ herr_t H5VL_log_link_specific (void *obj,
         // Block access to internal objects
         switch (loc_params->type) {
             case H5VL_OBJECT_BY_NAME:
-                if (!(loc_params->loc_data.loc_by_name.name) ||
-                    loc_params->loc_data.loc_by_name.name[0] == '_') {
-                    if (args->op_type == H5VL_LINK_EXISTS) {
-                        *args->args.exists.exists = false;
-                        goto err_out;
-                    } else {
-                        RET_ERR ("Access to internal objects denied")
-                    }
-                }
+                /* Rename user objects to avoid conflict with internal object */
+                original_name = loc_params->loc_data.loc_by_name.name;
+                iname         = H5VL_logi_name_remap (original_name);
+                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
                 break;
             case H5VL_OBJECT_BY_SELF:
                 break;
@@ -423,6 +442,11 @@ herr_t H5VL_log_link_specific (void *obj,
 
 err_out:;
     if (ctx) { free (ctx); }
+    if (iname && iname != original_name) { free (iname); }
+    // Restore name in loc_param
+    if (original_name) {
+        ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = original_name;
+    }
     return err;
 } /* end H5VL_log_link_specific() */
 
@@ -445,6 +469,8 @@ herr_t H5VL_log_link_optional (void *obj,
     herr_t err        = 0;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
+    char *iname               = NULL;  // Internal name of object
+    const char *original_name = NULL;  // Original value in loc_params before being remapped
 
     try {
 #ifdef LOGVOL_DEBUG
@@ -461,10 +487,10 @@ herr_t H5VL_log_link_optional (void *obj,
         // Block access to internal objects
         switch (loc_params->type) {
             case H5VL_OBJECT_BY_NAME:
-                if (!(loc_params->loc_data.loc_by_name.name) ||
-                    loc_params->loc_data.loc_by_name.name[0] == '_') {
-                    RET_ERR ("Access to internal objects denied")
-                }
+                /* Rename user objects to avoid conflict with internal object */
+                original_name = loc_params->loc_data.loc_by_name.name;
+                iname         = H5VL_logi_name_remap (original_name);
+                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
                 break;
             case H5VL_OBJECT_BY_SELF:
                 break;
@@ -485,5 +511,10 @@ herr_t H5VL_log_link_optional (void *obj,
     H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
+    if (iname && iname != original_name) { free (iname); }
+    // Restore name in loc_param
+    if (original_name) {
+        ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = original_name;
+    }
     return err;
 } /* end H5VL_log_link_optional() */

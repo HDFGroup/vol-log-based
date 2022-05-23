@@ -184,9 +184,11 @@ herr_t H5VL_log_filei_dset_visit (hid_t o_id,
     hid_t did  = -1;  // Target dataset ID
 
     // Skip unnamed and hidden object
-    if ((name == NULL) || (name[0] == '_') || (name[0] == '/' || (name[0] == '.'))) {
+    if ((name == NULL) || (name[0] == '_' && name[1] != '_') ||
+        (name[0] == '/' || (name[0] == '.'))) {
         goto err_out;
     }
+    if (name[0] == '_') name++;
 
     try {
         // Open the dataset so that the dset metadata is cached in the file

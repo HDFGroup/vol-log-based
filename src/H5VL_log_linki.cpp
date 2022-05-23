@@ -19,9 +19,11 @@ herr_t H5VL_log_linki_iterate_op (hid_t group,
     // Skip internal objects
     if (name) {
         if (name[0] == '_') {
-            if (name[1] == '_') name++;
-        } else {
-            return 0;
+            if (name[1] == '_')
+                name++;
+            else {
+                return 0;
+            }
         }
         return ctx->op (group, name, info, ctx->op_data);
     }

@@ -306,6 +306,10 @@ herr_t H5VL_log_attr_specific (void *obj,
     herr_t err         = 0;
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
+    char *iname                   = NULL;  // Internal name of object
+    const char *original_name     = NULL;  // Original value in loc_params before being remapped
+    char *iname_arg               = NULL;  // Internal name of object in args
+    const char *original_name_arg = NULL;  // Original value in args before being remapped
     H5VL_log_atti_iterate_op_data *ctx = NULL;
 
     try {
@@ -321,15 +325,10 @@ herr_t H5VL_log_attr_specific (void *obj,
         // Block access to internal objects
         switch (loc_params->type) {
             case H5VL_OBJECT_BY_NAME:
-                if (!(loc_params->loc_data.loc_by_name.name) ||
-                    loc_params->loc_data.loc_by_name.name[0] == '_') {
-                    if (args->op_type == H5VL_ATTR_EXISTS) {
-                        *args->args.exists.exists = false;
-                        goto err_out;
-                    } else {
-                        RET_ERR ("Access to internal objects denied")
-                    }
-                }
+                /* Rename user objects to avoid conflict with internal object */
+                original_name = loc_params->loc_data.loc_by_name.name;
+                iname         = H5VL_logi_name_remap (original_name);
+                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
                 break;
             case H5VL_OBJECT_BY_SELF:
                 break;
@@ -346,6 +345,13 @@ herr_t H5VL_log_attr_specific (void *obj,
             ctx->op_data               = args->args.iterate.op_data;
             args->args.iterate.op      = H5VL_log_atti_iterate_op;
             args->args.iterate.op_data = ctx;
+        }
+
+        if (args->op_type == H5VL_ATTR_EXISTS) {
+            /* Rename user objects to avoid conflict with internal object */
+            original_name_arg      = args->args.exists.name;
+            iname_arg              = H5VL_logi_name_remap (original_name_arg);
+            args->args.exists.name = iname_arg;
         }
 
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -369,6 +375,14 @@ herr_t H5VL_log_attr_specific (void *obj,
 
 err_out:;
     if (ctx) { free (ctx); }
+    if (iname && iname != original_name) { free (iname); }
+    // Restore name in loc_param
+    if (original_name) {
+        ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = original_name;
+    }
+    if (iname_arg && iname_arg != original_name_arg) { free (iname_arg); }
+    // Restore name in args
+    if (original_name_arg) { args->args.exists.name = original_name_arg; }
     return err;
 } /* end H5VL_log_attr_specific() */
 
