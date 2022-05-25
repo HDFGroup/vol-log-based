@@ -22,7 +22,6 @@
 /* Function prototypes */
 /********************* */
 const H5VL_link_class_t H5VL_log_link_g {
-    //   H5VL_log_link_create_reissue,                       /* create_reissue */
     H5VL_log_link_create,   /* create */
     H5VL_log_link_copy,     /* copy */
     H5VL_log_link_move,     /* move */
@@ -30,36 +29,6 @@ const H5VL_link_class_t H5VL_log_link_g {
     H5VL_log_link_specific, /* specific */
     H5VL_log_link_optional  /* optional */
 };
-
-/*-------------------------------------------------------------------------
- * Function:    H5VL_log_link_create_reissue
- *
- * Purpose:     Re-wrap vararg arguments into a va_list and reissue the
- *              link create callback to the underlying VOL connector.
- *
- * Return:      Success:    0
- *              Failure:    -1
- *
- *-------------------------------------------------------------------------
- */
-herr_t H5VL_log_link_create_reissue (H5VL_link_create_args_t *args,
-                                     void *obj,
-                                     const H5VL_loc_params_t *loc_params,
-                                     hid_t connector_id,
-                                     hid_t lcpl_id,
-                                     hid_t lapl_id,
-                                     hid_t dxpl_id,
-                                     void **req,
-                                     ...) {
-    va_list arguments;
-    herr_t err = 0;
-
-    va_start (arguments, req);
-    err = H5VLlink_create (args, obj, loc_params, connector_id, lcpl_id, lapl_id, dxpl_id, req);
-    va_end (arguments);
-
-    return err;
-} /* end H5VL_log_link_create_reissue() */
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_link_create
@@ -92,30 +61,20 @@ herr_t H5VL_log_link_create (H5VL_link_create_args_t *args,
 
         /* Fix up the link target object for hard link creation */
         if (H5VL_LINK_CREATE_HARD == args->op_type) {
-            void *cur_obj;
-            H5VL_loc_params_t cur_params;
+            void *cur_obj = args->args.hard.curr_obj;
 
-            /* Retrieve the object & loc params for the link target */
-            cur_obj    = args->args.hard.curr_obj;
-            cur_params = args->args.hard.curr_loc_params;
-
-            /* If it's a non-NULL pointer, find the 'under object' and re-set the property */
+            /* If cur_obj is a non-NULL pointer, find its 'under object' and update the pointer */
             if (cur_obj) {
-                /* Check if we still need the "under" VOL ID */
+                /* Check if we still haven't set the "under" VOL ID */
                 if (uvlid < 0) uvlid = ((H5VL_log_obj_t *)cur_obj)->uvlid;
 
-                /* Set the object for the link target */
-                cur_obj = ((H5VL_log_obj_t *)cur_obj)->uo;
+                /* Update the object for the link target */
+                args->args.hard.curr_obj = ((H5VL_log_obj_t *)cur_obj)->uo;
             } /* end if */
+        }     /* end if */
 
-            /* Re-issue 'link create' call, using the unwrapped pieces */
-            err =
-                H5VL_log_link_create_reissue (args, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id,
-                                              lapl_id, dxpl_id, req, cur_obj, cur_params);
-        } /* end if */
-        else
-            err = H5VLlink_create (args, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id, lapl_id,
-                                   dxpl_id, req);
+        err = H5VLlink_create (args, (o ? o->uo : NULL), loc_params, uvlid, lcpl_id, lapl_id,
+                               dxpl_id, req);
     }
     H5VL_LOGI_EXP_CATCH_ERR
 
