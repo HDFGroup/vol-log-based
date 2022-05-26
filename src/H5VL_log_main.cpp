@@ -56,7 +56,8 @@ H5PL_type_t H5PLget_plugin_type (void) { return H5PL_TYPE_VOL; }
 const void *H5PLget_plugin_info (void) { return &H5VL_log_g; }
 
 int mpi_inited;
-bool h5dwriten_registered = false;
+bool h5dwriten_registered  = false;
+hid_t H5VL_logi_zero_space = H5I_INVALID_HID;
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_init
@@ -73,6 +74,7 @@ bool h5dwriten_registered = false;
 herr_t H5VL_log_init (hid_t vipl_id) {
     herr_t err = 0;
     int mpierr;
+    hsize_t zero = 0;
     // H5VL_log_req_type_t blocking = false;
     // ssize_t infty = LOG_VOL_BSIZE_UNLIMITED;
     // htri_t exist;
@@ -91,6 +93,12 @@ herr_t H5VL_log_init (hid_t vipl_id) {
                                               &H5Dread_n_op_val);
             CHECK_ERR
             h5dwriten_registered = true;
+        }
+
+        // Create zero dataspace
+        if (H5VL_logi_zero_space == H5I_INVALID_HID) {
+            H5VL_logi_zero_space = H5Screate_simple (1, &zero, &zero);
+            CHECK_ID (H5VL_logi_zero_space)
         }
 
         /* SID no longer recognized at this stage, move to file close
@@ -146,6 +154,9 @@ herr_t H5VL_log_obj_term (void) {
                 H5VL_log_dataspace_contig=H5I_INVALID_HID;
         }
         */
+
+        // Free zero dataspace
+        if (H5VL_logi_zero_space != H5I_INVALID_HID) { H5Sclose (H5VL_logi_zero_space); }
 
         // Unregister H5Dwrite_n and H5Dread_n
         if (h5dwriten_registered) {

@@ -30,6 +30,7 @@ typedef struct H5VL_log_idx_search_ret_t {
     MPI_Offset fsize;          // File offset nad size of the filtered data
 
     bool operator< (const H5VL_log_idx_search_ret_t &rhs) const;
+    bool operator> (const H5VL_log_idx_search_ret_t &rhs) const;
 } H5VL_log_idx_search_ret_t;
 
 typedef struct H5VL_log_metaentry_t {

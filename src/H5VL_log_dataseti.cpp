@@ -99,9 +99,10 @@ void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> b
     int mpierr;
     int32_t i, j, k, l;
     int nblock = blocks.size ();  // Number of place to read
-    std::vector<bool> newgroup (nblock,
-                                0);  // Whether the current block interleave with previous block
-    int nt;                          // Number of sub-types in ftype and mtype
+    std::vector<bool> newgroup (
+        nblock,
+        0);      // Whether the current block does not interleave with the next block
+    int nt;      // Number of sub-types in ftype and mtype
     int nrow;    // Number of contiguous sections after breaking down a set of interleaving blocks
     int old_nt;  // Number of elements in foffs, moffs, and lens that has been sorted by foffs
     int *lens;   // array_of_blocklengths in MPI_Type_create_struct for ftype and mtype
@@ -146,16 +147,20 @@ void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> b
 
     std::sort (blocks.begin (), blocks.end ());
 
+    j = 0;
     for (i = 0; i < nblock - 1; i++) {
         if (blocks[i].zbuf) {
             newgroup[i] = true;
-        } else if ((blocks[i].foff == blocks[i + 1].foff) &&
-                   (blocks[i].doff == blocks[i + 1].doff) &&
-                   interleve (blocks[i].info->ndim, blocks[i].dstart, blocks[i].count,
+            j           = i + 1;
+        } else if ((blocks[j].foff == blocks[i + 1].foff) &&
+                   (blocks[j].doff == blocks[i + 1].doff) &&
+                   interleve (blocks[j].info->ndim, blocks[j].dstart, blocks[j].count,
                               blocks[i + 1].dstart)) {
+            if (blocks[i + 1] > blocks[j]) { j = i + 1; }
             newgroup[i] = false;
         } else {
             newgroup[i] = true;
+            j           = i + 1;
         }
     }
     newgroup[nblock - 1] = true;
@@ -249,8 +254,8 @@ void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> b
             } else {
                 old_nt = nt;
                 for (; j <= i; j++) {  // Breakdown each interleaving blocks
-                    fssize[blocks[i].info->ndim - 1] = 1;
-                    mssize[blocks[i].info->ndim - 1] = 1;
+                    fssize[blocks[i].info->ndim - 1] = blocks[j].info->esize;
+                    mssize[blocks[i].info->ndim - 1] = blocks[j].info->esize;
                     for (k = blocks[i].info->ndim - 2; k > -1; k--) {
                         fssize[k] = fssize[k + 1] * blocks[j].dsize[k + 1];
                         mssize[k] = mssize[k + 1] * blocks[j].msize[k + 1];
