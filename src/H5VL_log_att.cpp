@@ -124,6 +124,15 @@ void *H5VL_log_attr_open (void *obj,
         /* Rename user objects to avoid conflict with internal object */
         iname = H5VL_logi_name_remap (name);
 
+        // Skip internal attributes
+        if (loc_params->type == H5VL_OBJECT_BY_IDX) {
+            if (op->type == H5I_FILE) {
+                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_idx.n += 1;
+            } else if (op->type == H5I_DATASET) {
+                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_idx.n += 3;
+            }
+        }
+
         ap = new H5VL_log_obj_t (op, H5I_ATTR);
 
         if (req) {
@@ -137,6 +146,15 @@ void *H5VL_log_attr_open (void *obj,
         ap->uo = H5VLattr_open (op->uo, loc_params, op->uvlid, iname, aapl_id, dxpl_id, ureqp);
         H5VL_LOGI_PROFILING_TIMER_STOP (ap->fp, TIMER_H5VLATT_OPEN);
         CHECK_PTR (ap->uo);
+
+        // Revert arg changes
+        if (loc_params->type == H5VL_OBJECT_BY_IDX) {
+            if (op->type == H5I_FILE) {
+                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_idx.n -= 1;
+            } else if (op->type == H5I_DATASET) {
+                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_idx.n -= 3;
+            }
+        }
 
         if (req) {
             rp->append (ureq);
@@ -270,9 +288,67 @@ herr_t H5VL_log_attr_get (void *obj, H5VL_attr_get_args_t *args, hid_t dxpl_id, 
             ureqp = NULL;
         }
 
+        // Skip internal attributes
+        if (args->op_type == H5VL_ATTR_GET_INFO) {
+            if (args->args.get_info.loc_params.type == H5VL_OBJECT_BY_IDX) {
+                if (op->type == H5I_FILE) {
+                    args->args.get_info.loc_params.loc_data.loc_by_idx.n += 1;
+                } else if (op->type == H5I_DATASET) {
+                    args->args.get_info.loc_params.loc_data.loc_by_idx.n += 3;
+                }
+            }
+        } else if (args->op_type == H5VL_ATTR_GET_NAME) {
+            if (args->args.get_name.loc_params.type == H5VL_OBJECT_BY_IDX) {
+                if (op->type == H5I_FILE) {
+                    args->args.get_name.loc_params.loc_data.loc_by_idx.n += 1;
+                } else if (op->type == H5I_DATASET) {
+                    args->args.get_name.loc_params.loc_data.loc_by_idx.n += 3;
+                }
+            }
+        }
+
         H5VL_LOGI_PROFILING_TIMER_START;
         err = H5VLattr_get (op->uo, op->uvlid, args, dxpl_id, ureqp);
+        CHECK_ERR
         H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_GET);
+
+        // Revert changes to args
+        if (args->op_type == H5VL_ATTR_GET_INFO) {
+            if (args->args.get_info.loc_params.type == H5VL_OBJECT_BY_IDX) {
+                if (op->type == H5I_FILE) {
+                    args->args.get_info.loc_params.loc_data.loc_by_idx.n -= 1;
+                } else if (op->type == H5I_DATASET) {
+                    args->args.get_info.loc_params.loc_data.loc_by_idx.n -= 3;
+                }
+                // No need to increase n for dec order, previous run are for index bound check,
+                // rerun with correct n
+                if (args->args.get_info.loc_params.loc_data.loc_by_idx.order == H5_ITER_DEC) {
+                    H5VL_LOGI_PROFILING_TIMER_START;
+                    err = H5VLattr_get (op->uo, op->uvlid, args, dxpl_id, ureqp);
+                    H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_GET);
+                }
+            }
+            if (op->type == H5I_FILE) {
+                args->args.get_info.ainfo->corder -= 1;
+            } else if (op->type == H5I_DATASET) {
+                args->args.get_info.ainfo->corder -= 3;
+            }
+        } else if (args->op_type == H5VL_ATTR_GET_NAME) {
+            if (args->args.get_name.loc_params.type == H5VL_OBJECT_BY_IDX) {
+                if (op->type == H5I_FILE) {
+                    args->args.get_name.loc_params.loc_data.loc_by_idx.n -= 1;
+                } else if (op->type == H5I_DATASET) {
+                    args->args.get_name.loc_params.loc_data.loc_by_idx.n -= 3;
+                }
+                // No need to increase n for dec order, previous run are for index bound check,
+                // rerun with correct n
+                if (args->args.get_info.loc_params.loc_data.loc_by_idx.order == H5_ITER_DEC) {
+                    H5VL_LOGI_PROFILING_TIMER_START;
+                    err = H5VLattr_get (op->uo, op->uvlid, args, dxpl_id, ureqp);
+                    H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLATT_GET);
+                }
+            }
+        }
 
         if (req) {
             rp->append (ureq);

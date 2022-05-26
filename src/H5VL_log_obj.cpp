@@ -197,6 +197,15 @@ herr_t H5VL_log_object_get (void *obj,
 
         err = H5VLobject_get (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
         CHECK_ERR
+
+        // Deduct internal attirbutes from num_attrs
+        if (args->op_type == H5VL_OBJECT_GET_INFO) {
+            if (op->type == H5I_FILE) {
+                args->args.get_info.oinfo->num_attrs -= 1;
+            } else if (op->type == H5I_DATASET) {
+                args->args.get_info.oinfo->num_attrs -= 3;
+            }
+        }
     }
     H5VL_LOGI_EXP_CATCH_ERR
 
