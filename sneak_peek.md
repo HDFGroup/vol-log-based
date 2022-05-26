@@ -5,6 +5,7 @@ This is essentially a placeholder for the next release note ...
 
 * New features
   + none    
+
 * New optimization
   + none
 
@@ -27,7 +28,7 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * API semantics updates
-  + none
+  + Remove the restriction that does not allow user objects with a name starting with '_'
 
 * New error code precedence
   + none
@@ -55,7 +56,10 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Bug fixes
-  + none
+  + Fix a bug when reading interleaving regions within a log entry
+    + H5VL_log_dataset_readi_gen_rtypes produces an invalid file type due to interleaving read regions not being detected
+  + Fix a bug in H5VL_log_link_create that uses the calling convention of an older VOL interface
+  + Deduce internal attributes from attributes count in object info
 
 * New example programs
   + none
