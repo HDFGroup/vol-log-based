@@ -41,8 +41,9 @@ The G case writes one file.
 We evaluate log-based VOL using the I/O pattern recorded in a production run of E3SM high-resolution simulation.
 The properties of the output files and their configurations are shown below. 
 
-|     Number of processes                |     21600     |     21600    |     9600     |     1344       |     1344     |
+|     Output file                        |     F-H0      |     F-H1     |     G        |     I-H0       |     I-H1     |
 |----------------------------------------|---------------|--------------|--------------|----------------|--------------|
+|     Number of processes                |     21600     |     21600    |     9600     |     1344       |     1344     |
 |     Total size of data (GiB)           |     14.09     |     6.68     |     79.69    |     86.11      |     0.36     |
 |     Number of fixed sized variables    |     15        |     15       |     11       |     18         |     10       |
 |     Number of record variables         |     399       |     36       |     41       |     542        |     542      |
