@@ -1,7 +1,6 @@
 ## E3SM-I/O case study
 
-The E3SM I/O benchmark reproduces the I/O pattern of the E3SM simulation framework
-captured by the Scorpio library during the E3SM production runs.
+The [E3SM I/O benchmark](https://github.com/Parallel-NetCDF/E3SM-IO) reproduces the I/O pattern of the [E3SM simulation framework](https://github.com/E3SM-Project/E3SM) captured by the Scorpio library during the E3SM production runs.
 
 ### Building E3SM I/O
 * Prerequisite
@@ -23,39 +22,7 @@ captured by the Scorpio library during the E3SM production runs.
   ```
 
 ### Running E3SM I/O
-* Command-line options
-  ```
-    $ ./src/e3sm_io -h
-    Usage: ./src/e3sm_io [OPTION] FILE
-       [-h] Print this help message
-       [-v] Verbose mode
-       [-k] Keep the output files when program exits (default: deleted)
-       [-m] Run test using noncontiguous write buffer (default: contiguous)
-       [-f num] Output history files h0 or h1: 0 for h0 only, 1 for h1 only,
-                -1 for both. Affect only F and I cases. (default: -1)
-       [-r num] Number of time records/steps written in F case h1 file and I
-                case h0 file (default: 1)
-       [-y num] Data flush frequency. (1: flush every time step, the default,
-                and -1: flush once for all time steps. (No effect on ADIOS
-                and HDF5 blob I/O options, which always flushes at file close).
-       [-s num] Stride interval of ranks for selecting MPI processes to perform
-                I/O tasks (default: 1, i.e. all MPI processes).
-       [-g num] Number of subfiles, used by ADIOS I/O only (default: 1).
-       [-o path] Output file path (folder name when subfiling is used, file
-                 name otherwise).
-       [-a api]  I/O library name
-           pnetcdf:   PnetCDF library (default)
-           netcdf4:   NetCDF-4 library
-           hdf5:      HDF5 library
-           hdf5_log:  HDF5 library with Log-based VOL
-           adios:     ADIOS library using BP3 format
-       [-x strategy] I/O strategy
-           canonical: Store variables in the canonical layout (default).
-           log:       Store variables in the log-based storage layout.
-           blob:      Pack and store all data written locally in a contiguous
-                      block (blob), ignoring variable's canonical order.
-       FILE: Name of input file storing data decomposition maps.
-  ```
+* Details on running E3SM I/O can be found in the [E3SM I/O README file](https://github.com/Parallel-NetCDF/E3SM-IO/blob/master/README.md)
 * Running with HDF5 native VOL
   ```
     mpiexec -np 16 src/e3sm_io -a hdf5 -x canonical -k -o ${HOME}/e3sm_io_native datasets/f_case_866x72_16p.nc
@@ -65,17 +32,63 @@ captured by the Scorpio library during the E3SM production runs.
     mpiexec -np 16 src/e3sm_io -a hdf5_log -x log -k -o ${HOME}/e3sm_io_log datasets/f_case_866x72_16p.nc
   ```
 
+### E3SM I/O evaluation setup
+The E3SM I/O benchmark contains the I/O kernel of E3SM's three components - 
+the atmospheric component (F case), the oceanic component (G case), and the land component (I case).
+The F case and the I case writes two files - H0, and H1.
+The G case writes one file.
+
+We evaluate log-based VOL using the I/O pattern recorded in a production run of E3SM high-resolution simulation.
+The properties of the output files and their configurations are shown below. 
+
+|     Number of processes                |     21600     |     21600    |     9600     |     1344       |     1344     |
+|----------------------------------------|---------------|--------------|--------------|----------------|--------------|
+|     Total size of data (GiB)           |     14.09     |     6.68     |     79.69    |     86.11      |     0.36     |
+|     Number of fixed sized variables    |     15        |     15       |     11       |     18         |     10       |
+|     Number of record variables         |     399       |     36       |     41       |     542        |     542      |
+|     Number of records                  |     1         |     25       |     1        |     240        |     1        |
+|     Number of partitioned vars         |     25        |     27       |     11       |     14         |     14       |
+|     Number of non-partitioned vars     |     389       |     24       |     41       |     546        |     538      |
+|     Number of non-contig               |     174953    |     83261    |     20888    |     9248875    |     38650    |
+|     Number of attributes               |     1427      |     148      |     858      |     2789       |     2759     |
+
+We compare the performance between log-based VOL, [PnetCDF](https://github.com/Parallel-NetCDF/PnetCDF), and [ADIOS](https://adios2.readthedocs.io/en/latest/#).
+
+PnetCDF stores E3SM variables in a contiguous storage layout.
+Each process writes multiple non-contiguous blocks in a variable.
+To improve performance, the benchmark use PnetCDF's non-blocking API that aggregates all write requests in a timestep into a single MPI collective write request.
+
+E3SM uses ADIOS through its [SCORPIO](https://github.com/E3SM-Project/scorpio) module.
+The SCORPIO module rearranges the I/O pattern in which each process writes a contiguous block of data per variable.
+Processes stores the data in ADIOS's local variables.
+Local variables are only a collection of data blocks without any metadata describing their logical location.
+The logical location of the data as well as other metadata is managed by the SCORPIO module.
+
 ### Performance Results on Cori at NERSC
 Below shows the performance in execution times collected in September 2021 for
 log-based VOL on [Cori](https://docs.nersc.gov/systems/cori/) at
 [NERSC](https://www.nersc.gov).
+We run 64 processes per node on Cori.
+Should the number of processes does not divide the number of processes per node, we allow some nodes to host fewer processes.
+
+We build E3SM I/O, log-based VOL, and HDF5 using the default toolchain on Cori.
+We evaluate log-based VOL using Cori's KNL nodes and Lustre file system.
+For PnetCDF, the file system is configured to span across 128 OSTs with 16 MiB stripe sizes.
+ADIOS and log-based VOL creates one file per node, thus, the file system is configured to store the file on a single OST with a 16 MiB stripe size.
+
 <p align="center">
 <img align="center" src="e3sm_cori_wr.jpg" alt="Performance of log-based VOL on Cori" width="600">
 </p>
 
 ### Performance Results on Summit at OLCF
 Below shows the performance in execution times collected in September 2021 for
-log-based VOL on [Summit at OLCF](https://www.olcf.ornl.gov/summit/).
+log-based VOL on [Summit](https://www.olcf.ornl.gov/summit/) at [OLCF](https://www.olcf.ornl.gov/).
+We run 84 processes per node on Summit.
+Should the number of processes does not divide the number of processes per node, we allow some nodes to host fewer processes.
+
+We build E3SM I/O, log-based VOL, and HDF5 using the default toolchain on Summit.
+We evaluate log-based VOL on Summit's Spectrum file system (GPFS).
+
 <p align="center">
 <img align="center" src="e3sm_summit_wr.jpg" alt="Performance of log-based VOL on Summit" width="600">
 </p>
