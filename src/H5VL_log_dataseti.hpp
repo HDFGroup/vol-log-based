@@ -23,8 +23,6 @@ typedef struct H5VL_log_copy_ctx {
     size_t size;  // Size in byte to copy
 } H5VL_log_copy_ctx;
 
-extern hid_t H5VL_logi_zero_space;
-
 void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id);
 void *H5VL_log_dataseti_wrap (void *uo, H5VL_log_obj_t *cp);
 void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> blocks,

@@ -68,7 +68,7 @@ void *H5VL_log_dataset_create (void *obj,
     H5VL_log_dset_info_t *dip = NULL;  // Dataset info
     // H5VL_link_create_args_t args;
     // H5VL_loc_params_t loc;
-    hid_t sid = -1;
+    hid_t zero_space = -1;
     int ndim;
     htri_t is_var_type;
     char *iname = NULL;  // Internal name of object
@@ -104,11 +104,14 @@ void *H5VL_log_dataset_create (void *obj,
         dp->id = dp->fp->ndset;  // ID nees to be set before writing to attribute
 
         H5VL_LOGI_PROFILING_TIMER_START;
-        dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, iname, lcpl_id, type_id, H5VL_logi_zero_space,
+        zero_space = H5Screate(H5S_NULL);
+
+        dp->uo = H5VLdataset_create (op->uo, loc_params, op->uvlid, iname, lcpl_id, type_id, zero_space,
                                      dcpl_id, dapl_id, dxpl_id, ureqp);
         H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_CREATE);
         CHECK_PTR (dp->uo)
         if (req) { rp->append (ureq); }
+        H5Sclose(zero_space);
 
         // Construct new dataset info
         dip = new H5VL_log_dset_info_t ();
