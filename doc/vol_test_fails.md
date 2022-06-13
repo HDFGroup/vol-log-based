@@ -1,6 +1,15 @@
-## Log-based VOL API compatibility
+## Current Status of Testing with HDF5 VOL Tests
 
-This file lists all failed vol-tests by the current version of log-layout based VOL.
+This file summarize the result running [vol-tests](https://github.com/HDFGroup/vol-tests) using the current version of log-layout based VOL.
+The test ran on commit 3eb0a434fcede20673a53b0b1cd845f0a30e104b of vol-tests.
+
+| Number of cases tested | Passed | Failed |
+|------------------------|--------|--------|
+| 96                     | 83     | 13     |
+
+### Filed tests
+
+The table below lists all failed tests by the current version of log-layout based VOL.
 
 | Test program     | Category                 | Operation                                                      | Cause                                                                                       | Solution                                              |
 |------------------|--------------------------|----------------------------------------------------------------|---------------------------------------------------------------------------------------------|-------------------------------------------------------|
