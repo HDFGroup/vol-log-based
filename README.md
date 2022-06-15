@@ -1,4 +1,4 @@
-## Log-based VOL - an HDF5 VOL Plugin for storing datasets in a log-based layout
+## Log-layout based VOL - an HDF5 VOL Plugin for storing datasets in a log-based layout
 
 This software repository contains source codes implementing an
 [HDF5](https://www.hdfgroup.org) Virtual Object Layer
