@@ -28,7 +28,6 @@
     {}
 #endif
 
-
 #define H5VL_LOGI_EXP_CATCH           \
     catch (H5VL_logi_exception & e) { \
         H5VL_logi_print_err (e);      \
@@ -69,7 +68,7 @@ inline bool H5VL_logi_debug_verbose () {
         if (mpierr != MPI_SUCCESS) {                                          \
             int el = 256;                                                     \
             char errstr[256];                                                 \
-            MPI_Error_string (err, errstr, &el);                              \
+            MPI_Error_string (mpierr, errstr, &el);                           \
             throw H5VL_logi_exception (__FILE__, __LINE__, __func__, errstr); \
         }                                                                     \
     }
