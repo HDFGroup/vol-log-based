@@ -14,6 +14,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <vector>
 //
 #include <dirent.h>
@@ -155,6 +156,10 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
     int subrank;                       // rank within the node
     int subnp;                         // number of processes within the node
     MPI_Comm subcomm = MPI_COMM_NULL;  // communicator within the node
+#if ENABLE_PROFILING
+    double timers[5];  // profiling timers
+    double ts;         // start time of an operation
+#endif
     H5VL_logi_err_finally finally ([&] () -> void {
         if (faplid >= 0) { H5Pclose (faplid); }
         if (dxplid >= 0) { H5Pclose (dxplid); }
@@ -168,6 +173,12 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
         if (fout != MPI_FILE_NULL) { MPI_File_close (&fout); }
         if (subcomm != MPI_COMM_NULL) { MPI_Comm_free (&subcomm); }
     });
+
+#if ENABLE_PROFILING
+    memset (timers, 0, sizeof (timers));
+    MPI_Barrier (MPI_COMM_WORLD);
+    timers[0] = MPI_Wtime ();
+#endif
 
     // Open the input and output file
     nativevlid = H5VLpeek_connector_id_by_name ("native");
@@ -203,6 +214,11 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
     nmdset = att_buf[2];
     config = att_buf[3];
 
+#if ENABLE_PROFILING
+    MPI_Barrier (MPI_COMM_WORLD);
+    timers[1] = MPI_Wtime ();
+#endif
+
     // Copy attributes
     n   = 0;
     err = H5Aiterate2 (finid, H5_INDEX_NAME, H5_ITER_INC, &n, h5lreplay_attr_copy_handler,
@@ -215,6 +231,10 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
     err = H5Ovisit3 (finid, H5_INDEX_CRT_ORDER, H5_ITER_INC, h5lreplay_copy_handler, &copy_arg,
                      H5O_INFO_ALL);
     CHECK_ERR
+
+#if ENABLE_PROFILING
+    timers[1] = MPI_Wtime () - timers[1];
+#endif
 
     reqs.resize (ndset);
     if (config & H5VL_FILEI_CONFIG_SUBFILING) {
@@ -261,14 +281,35 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
                 CHECK_ID (lgid)
 
                 // Read the metadata
+#if ENABLE_PROFILING
+                MPI_Barrier (subcomm);
+                ts = MPI_Wtime ();
+#endif
                 h5lreplay_parse_meta (subrank, subnp, lgid, nmdset, copy_arg.dsets, reqs, config);
+#if ENABLE_PROFILING
+                timers[2] = MPI_Wtime () - ts;
+#endif
 
                 // Read the data
+#if ENABLE_PROFILING
+                MPI_Barrier (subcomm);
+                ts = MPI_Wtime ();
+#endif
                 h5lreplay_read_data (fsub, copy_arg.dsets, reqs);
+#if ENABLE_PROFILING
+                timers[3] = MPI_Wtime () - ts;
+#endif
             }
 
             // Write the data
+#if ENABLE_PROFILING
+            MPI_Barrier (MPI_COMM_WORLD);
+            ts = MPI_Wtime ();
+#endif
             h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
+#if ENABLE_PROFILING
+            timers[4] = MPI_Wtime () - ts;
+#endif
 
             if (i + subid < nsubfiles) {
                 // Close the subfile
@@ -288,12 +329,45 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
         CHECK_ID (lgid)
 
         // Read the metadata
+#if ENABLE_PROFILING
+        MPI_Barrier (MPI_COMM_WORLD);
+        ts = MPI_Wtime ();
+#endif
         h5lreplay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs, config);
+#if ENABLE_PROFILING
+        timers[2] = MPI_Wtime () - ts;
+#endif
 
         // Read the data
+#if ENABLE_PROFILING
+        MPI_Barrier (MPI_COMM_WORLD);
+        ts = MPI_Wtime ();
+#endif
         h5lreplay_read_data (fin, copy_arg.dsets, reqs);
+#if ENABLE_PROFILING
+        timers[3] = MPI_Wtime () - ts;
+#endif
 
         // Write the data
+#if ENABLE_PROFILING
+        MPI_Barrier (MPI_COMM_WORLD);
+        ts = MPI_Wtime ();
+#endif
         h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
+#if ENABLE_PROFILING
+        timers[4] = MPI_Wtime () - ts;
+#endif
     }
+
+#if ENABLE_PROFILING
+    timers[0] = MPI_Wtime () - timers[0];
+
+    MPI_Reduce (MPI_IN_PLACE, timers, 5, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+    printf ("h5lreplay: e2e_time: %lf\n", timers[0]);
+    printf ("h5lreplay: obj_cp_time: %lf\n", timers[1]);
+    printf ("h5lreplay: meta_read_time: %lf\n", timers[2]);
+    printf ("h5lreplay: data_read_time: %lf\n", timers[3]);
+    printf ("h5lreplay: data_write_time: %lf\n", timers[4]);
+#endif
 }
