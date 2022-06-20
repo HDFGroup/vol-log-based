@@ -89,9 +89,46 @@ err_out:;
     return err == 0 ? 0 : -1;
 }
 
+/*----< split_comm() >-------------------------------------------------------*/
+static int split_comm (MPI_Comm orig_comm, MPI_Comm *sub_comm, int *num_subfiles, int *subfile_ID) {
+    int mpierr, color, orig_rank, sub_nprocs, sub_rank, int_msg[2];
+    MPI_Comm comm_roots;
+
+    MPI_Comm_rank (orig_comm, &orig_rank);
+
+    /* split communicator to create one sub-communicator per compute node */
+    mpierr =
+        MPI_Comm_split_type (orig_comm, MPI_COMM_TYPE_SHARED, orig_rank, MPI_INFO_NULL, sub_comm);
+    CHECK_MPIERR
+
+    /* calculate subfile ID and take care of both process rank assignments:
+     * block-based (MPICH_RANK_REORDER_METHOD=1) or
+     * round-robin (MPICH_RANK_REORDER_METHOD=0)
+     */
+    MPI_Comm_size (*sub_comm, &sub_nprocs);
+    MPI_Comm_rank (*sub_comm, &sub_rank);
+    color  = (sub_rank == 0) ? 1 : 0;
+    mpierr = MPI_Comm_split (orig_comm, color, orig_rank, &comm_roots);
+    CHECK_MPIERR
+
+    MPI_Comm_size (comm_roots, num_subfiles);
+    MPI_Comm_rank (comm_roots, subfile_ID);
+    MPI_Comm_free (&comm_roots);
+
+    int_msg[0] = *num_subfiles;
+    int_msg[1] = *subfile_ID;
+    mpierr     = MPI_Bcast (int_msg, 2, MPI_INT, 0, *sub_comm);
+    CHECK_MPIERR
+    *num_subfiles = int_msg[0];
+    *subfile_ID   = int_msg[1];
+
+    return (mpierr != MPI_SUCCESS);
+}
+
 void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np) {
     herr_t err = 0;
     int mpierr;
+    int i;
     hid_t nativevlid;   // Native VOL ID
     hid_t finid  = -1;  // ID of the input file
     hid_t foutid = -1;  // ID of the output file
@@ -108,12 +145,16 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
     int att_buf[5];  // Temporary buffer for reading file attributes
     h5lreplay_copy_handler_arg copy_arg;  // File structure
     std::vector<h5lreplay_idx_t>
-        reqs;                       // Requests recorded in the current file (main file| subfile)
-    MPI_File fin  = MPI_FILE_NULL;  // file handle of the input file
-    MPI_File fout = MPI_FILE_NULL;  // file handle of the output file
-    MPI_File fsub = MPI_FILE_NULL;  // file handle of the subfile
-    DIR *subdir   = NULL;           // subfile dir
-    struct dirent *subfile;         // subfile entry in dir
+        reqs;                          // Requests recorded in the current file (main file| subfile)
+    MPI_File fin  = MPI_FILE_NULL;     // file handle of the input file
+    MPI_File fout = MPI_FILE_NULL;     // file handle of the output file
+    MPI_File fsub = MPI_FILE_NULL;     // file handle of the subfile
+    int nsubfiles;                     // number of subfiles
+    int nnode;                         // number of nodes replaying the file
+    int subid;                         // id of the node
+    int subrank;                       // rank within the node
+    int subnp;                         // number of processes within the node
+    MPI_Comm subcomm = MPI_COMM_NULL;  // communicator within the node
     H5VL_logi_err_finally finally ([&] () -> void {
         if (faplid >= 0) { H5Pclose (faplid); }
         if (dxplid >= 0) { H5Pclose (dxplid); }
@@ -125,7 +166,7 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
         if (foutid >= 0) { H5Fclose (foutid); }
         if (fin != MPI_FILE_NULL) { MPI_File_close (&fin); }
         if (fout != MPI_FILE_NULL) { MPI_File_close (&fout); }
-        if (subdir) { closedir (subdir); }
+        if (subcomm != MPI_COMM_NULL) { MPI_Comm_free (&subcomm); }
     });
 
     // Open the input and output file
@@ -179,68 +220,66 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
     if (config & H5VL_FILEI_CONFIG_SUBFILING) {
         std::string subpath;
 
+        // Split the communicator according to nodes
+        nsubfiles = att_buf[4];
+        err       = split_comm (MPI_COMM_WORLD, &subcomm, &nnode, &subrank);
+        CHECK_ERR
+        MPI_Comm_size (subcomm, &subnp);
+
         // Close attr in main file
         H5Aclose (aid);
         aid = -1;
 
         // Iterate subdir
-        subdir = opendir ((inpath + ".subfiles").c_str ());
-        CHECK_PTR (subdir)
-        while ((subfile = readdir (subdir))) {
-            subpath = std::string (subfile->d_name);
-            if (subpath.substr (subpath.size () - 2) == ".h5") {
-#ifdef LOGVOL_DEBUG
-                if (subfile->d_type != DT_REG) {  // Not all FS support d_type
-                    std::cout << "Warning: file type of " << subpath << " is unknown" << std::endl;
-                }
-#endif
-                // Open the subfile
+        for (i = 0; i < nsubfiles; i++) {
+            subpath = inpath + ".subfiles" + std::string (basename ((char *)(inpath.c_str ()))) +
+                      "." + std::to_string (i + subid);
+
+            // Clean up the index
+            for (auto &r : reqs) { r.clear (); }
+
+            // Open the subfile
+            if (i + subid < nsubfiles) {
                 fsubid = H5Fopen (subpath.c_str (), H5F_ACC_RDONLY, faplid);
-                if (fsubid >= 0) {
-                    mpierr = MPI_File_open (MPI_COMM_WORLD, subpath.c_str (), MPI_MODE_RDONLY,
-                                            MPI_INFO_NULL, &fsub);
-                    CHECK_MPIERR
+                CHECK_ID (fsubid)
 
-                    // Read file metadata
-                    aid = H5Aopen (fsubid, H5VL_LOG_FILEI_ATTR_INT,
-                                   H5P_DEFAULT);  // Open attr in subfile
-                    CHECK_ID (aid)
-                    err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
-                    CHECK_ERR
-                    // nldset = att_buf[1];
-                    nmdset = att_buf[2];
+                mpierr = MPI_File_open (subcomm, subpath.c_str (), MPI_MODE_RDONLY, MPI_INFO_NULL,
+                                        &fsub);
+                CHECK_MPIERR
 
-                    // Open the log group
-                    lgid = H5Gopen2 (fsubid, H5VL_LOG_FILEI_GROUP_LOG, H5P_DEFAULT);
-                    CHECK_ID (lgid)
+                // Read file metadata
+                aid = H5Aopen (fsubid, H5VL_LOG_FILEI_ATTR_INT,
+                               H5P_DEFAULT);  // Open attr in subfile
+                CHECK_ID (aid)
+                err = H5Aread (aid, H5T_NATIVE_INT, att_buf);
+                CHECK_ERR
+                // nldset = att_buf[1];
+                nmdset = att_buf[2];
 
-                    // Clean up the index
-                    for (auto &r : reqs) { r.clear (); }
+                // Open the log group
+                lgid = H5Gopen2 (fsubid, H5VL_LOG_FILEI_GROUP_LOG, H5P_DEFAULT);
+                CHECK_ID (lgid)
 
-                    // Read the metadata
-                    h5lreplay_parse_meta (rank, np, lgid, nmdset, copy_arg.dsets, reqs, config);
+                // Read the metadata
+                h5lreplay_parse_meta (subrank, subnp, lgid, nmdset, copy_arg.dsets, reqs, config);
 
-                    // Read the data
-                    h5lreplay_read_data (fsub, copy_arg.dsets, reqs);
+                // Read the data
+                h5lreplay_read_data (fsub, copy_arg.dsets, reqs);
+            }
 
-                    // Write the data
-                    h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
+            // Write the data
+            h5lreplay_write_data (foutid, copy_arg.dsets, reqs);
 
-                    // Close the subfile
-                    MPI_File_close (&fsub);
-                    fsub = MPI_FILE_NULL;
-                    H5Fclose (fsubid);
-                    fsubid = -1;
-                    H5Gclose (lgid);
-                    lgid = -1;
-                    H5Aclose (aid);
-                    aid = -1;
-                }
-#ifdef LOGVOL_DEBUG
-                else {
-                    std::cout << "Warning: cannot open subfile" << subpath << std::endl;
-                }
-#endif
+            if (i + subid < nsubfiles) {
+                // Close the subfile
+                MPI_File_close (&fsub);
+                fsub = MPI_FILE_NULL;
+                H5Fclose (fsubid);
+                fsubid = -1;
+                H5Gclose (lgid);
+                lgid = -1;
+                H5Aclose (aid);
+                aid = -1;
             }
         }
     } else {
