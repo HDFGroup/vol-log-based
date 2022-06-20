@@ -17,6 +17,7 @@
 #include "H5VL_log_req.hpp"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_util.hpp"
+#include "H5VL_log_file.hpp"
 
 /********************* */
 /* Function prototypes */

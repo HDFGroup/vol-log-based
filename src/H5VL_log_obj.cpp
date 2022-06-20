@@ -59,8 +59,10 @@ void *H5VL_log_object_open (void *obj,
         /* Rename user objects to avoid conflict with internal object */
         if (loc_params->type == H5VL_OBJECT_BY_NAME) {
             original_name = loc_params->loc_data.loc_by_name.name;
-            iname         = H5VL_logi_name_remap (original_name);
-            ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
+            if (op->fp->is_log_based_file) {
+                iname         = H5VL_logi_name_remap (original_name);
+                ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
+            }
         }
 
         uo = H5VLobject_open (op->uo, loc_params, op->uvlid, opened_type, dxpl_id, req);
@@ -130,12 +132,12 @@ herr_t H5VL_log_object_copy (void *src_obj,
         
 
         /* Rename user objects to avoid conflict with internal object */
-        if (src_loc_params->type == H5VL_OBJECT_BY_NAME) {
+        if (src_loc_params->type == H5VL_OBJECT_BY_NAME && o_src->fp->is_log_based_file) {
             original_name_s = src_loc_params->loc_data.loc_by_name.name;
             iname_s         = H5VL_logi_name_remap (original_name_s);
             ((H5VL_loc_params_t *)src_loc_params)->loc_data.loc_by_name.name = iname_s;
         }
-        if (dst_loc_params->type == H5VL_OBJECT_BY_NAME) {
+        if (dst_loc_params->type == H5VL_OBJECT_BY_NAME && o_dst->fp->is_log_based_file) {
             original_name_d = dst_loc_params->loc_data.loc_by_name.name;
             iname_d         = H5VL_logi_name_remap (original_name_d);
             ((H5VL_loc_params_t *)dst_loc_params)->loc_data.loc_by_name.name = iname_d;
