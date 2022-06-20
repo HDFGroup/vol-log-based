@@ -62,6 +62,8 @@ void *H5VL_log_attr_create (void *obj,
         /* Check arguments */
         if (op->fp->is_log_based_file) {
             iname = H5VL_logi_name_remap (name);
+        } else {
+            iname = (char*) name;
         }
 
         ap = new H5VL_log_obj_t (op, H5I_ATTR);
@@ -135,6 +137,8 @@ void *H5VL_log_attr_open (void *obj,
                     ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_idx.n += 3;
                 }
             }
+        } else {
+            iname = (char*) name;
         }
 
         ap = new H5VL_log_obj_t (op, H5I_ATTR);

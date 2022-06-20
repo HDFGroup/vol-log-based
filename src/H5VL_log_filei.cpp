@@ -556,6 +556,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     if (!fp->is_log_based_file) {
         H5VLfile_close (fp->uo, fp->uvlid, fp->dxplid, NULL);
         // Clean up
+        H5VL_log_filei_rm (fp);
         MPI_Comm_free (&(fp->comm));
         if (fp->info != MPI_INFO_NULL) { MPI_Info_free (&(fp->info)); }
         H5Pclose (fp->dxplid);
