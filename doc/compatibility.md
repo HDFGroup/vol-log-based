@@ -3,6 +3,8 @@
 Following tables contains list of log-based VOL's compatibility with HDF5 APIs.
 APIs not listed below is assumed to be unsupported.
 
+See [doc/vol_test_fails.md](./vol_test_fails.md) for a comprehensive test result of log-layout based VOL on all HDF5 features.
+
 ### Level of support
 * Full
   + The API is supported as long as the underlying VOL supports it.
