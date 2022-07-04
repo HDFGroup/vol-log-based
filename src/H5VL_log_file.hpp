@@ -42,7 +42,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     MPI_Comm comm;  // Global communicator
     MPI_Info info;  // Main file info
 
-    /* Aligned data layout */
+    /* Subfiling parameters */
     // Group is a set of processes sharing the same subfile or lustre stripe
     int group_id;         // ID of the group
     int group_rank;       // Rank in the group
@@ -53,7 +53,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     int target_ost;       // What OST should we write to in aligned data layout
     size_t ssize;         // Lustre striping size
     int scount;           // Lustre stripping count
-    MPI_Comm group_comm;  // Communicator among the processes sharing the same subfile
+    MPI_Comm group_comm;  // Communicator among the processes sharing the same subfile   
 
     int refcnt;     // Number of VOL objects holding reference to the file
     bool closing;   // If we are closing the file

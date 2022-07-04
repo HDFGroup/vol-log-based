@@ -38,12 +38,12 @@
 //#define DEFAULT_SIZE 10485760 // 10 MiB
 
 #define CHECK_LOG_INTERNAL_EXIST(EXISTS)   \
-do {                                        \
-    if (EXISTS == 0) {                      \
-        fp->is_log_based_file = false;      \
-        return;                             \
-    }                                       \
-} while(0)
+    do {                                   \
+        if (EXISTS == 0) {                 \
+            fp->is_log_based_file = false; \
+            return;                        \
+        }                                  \
+    } while (0)
 
 std::map<decltype (stcrtstat::st_ino), H5VL_log_file_t *> files;
 H5VL_log_file_t *H5VL_log_filei_search (const char *path) {
@@ -118,11 +118,11 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 
     // check for exisitence of __int_att, __LOG;
     // if inexists, mark as regular file and return directly.
-    exists = H5VL_logi_exists_att(fp, H5VL_LOG_FILEI_ATTR_INT, fp->dxplid);
-    CHECK_LOG_INTERNAL_EXIST(exists);
+    exists = H5VL_logi_exists_att (fp, H5VL_LOG_FILEI_ATTR_INT, fp->dxplid);
+    CHECK_LOG_INTERNAL_EXIST (exists);
 
-    exists  = H5VL_logi_exists_link(fp, H5VL_LOG_FILEI_GROUP_LOG, fp->dxplid);
-    CHECK_LOG_INTERNAL_EXIST(exists);
+    exists = H5VL_logi_exists_link (fp, H5VL_LOG_FILEI_GROUP_LOG, fp->dxplid);
+    CHECK_LOG_INTERNAL_EXIST (exists);
 
     // Att
     H5VL_logi_get_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_NATIVE_INT32, attbuf, fp->dxplid);
@@ -171,7 +171,7 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 
     fp->lgp = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
                               H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
-    
+
     CHECK_PTR (fp->lgp)
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
 
@@ -310,6 +310,18 @@ void H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
             fp->index_type = compact;
         } else {
             fp->index_type = list;
+        }
+    }
+
+    err = H5Pget_single_subfile_read (faplid, &ret);
+    CHECK_ERR
+    if (ret) { fp->config |= H5VL_FILEI_CONFIG_SINGLE_SUBFILE_READ; }
+    env = getenv ("H5VL_LOG_SINGLE_SUBFILE_READ");
+    if (env) {
+        if (strcmp (env, "1") == 0) {
+            fp->config |= H5VL_FILEI_CONFIG_SINGLE_SUBFILE_READ;
+        } else {
+            fp->config &= ~H5VL_FILEI_CONFIG_SINGLE_SUBFILE_READ;
         }
     }
 }
@@ -895,9 +907,7 @@ void H5VL_log_filei_inc_ref (H5VL_log_file_t *fp) { fp->refcnt++; }
 
 void H5VL_log_filei_dec_ref (H5VL_log_file_t *fp) {
     fp->refcnt--;
-    if (fp->refcnt == 0) { 
-        H5VL_log_filei_close (fp);
-    }
+    if (fp->refcnt == 0) { H5VL_log_filei_close (fp); }
 }
 
 H5VL_log_file_t::H5VL_log_file_t () {

@@ -527,19 +527,18 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
     // Collective ?
     err = H5Pget_dxpl_mpio (dxplid, &xfer_mode);
     CHECK_ERR
-    if (xfer_mode == H5FD_MPIO_COLLECTIVE) {
-        H5VL_log_nb_flush_write_reqs (fp, dxplid);
-    }
+    if (xfer_mode == H5FD_MPIO_COLLECTIVE) { H5VL_log_nb_flush_write_reqs (fp, dxplid); }
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
     // Iterate through all subfiles
-    group_id = fp->group_id;  // Backup group ID
-    for (i = 1; i <= fp->ngroup;
-         i++) {                // Process our own subfile last so wew don't need to reopen it
-        if (fp->ngroup > 1) {  // No need to reopen if no subfiles
+    if ((fp->ngroup <= 1) || (fp->config & H5VL_FILEI_CONFIG_SINGLE_SUBFILE_READ)) {
+        H5VL_log_nb_perform_read (fp, reqs, dxplid);
+    } else {
+        group_id = fp->group_id;  // Backup group ID
+        // Process our own subfile last so wew don't need to reopen it
+        for (i = 1; i <= fp->ngroup; i++) {
             H5VL_LOGI_PROFILING_TIMER_START;
-
             // Close the log group
             err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
             CHECK_ERR
@@ -570,8 +569,6 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
 
             H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS_SWITCH_SUBFILE);
         }
-
-        H5VL_log_nb_perform_read (fp, reqs, dxplid);
     }
 
     // Clear the request queue

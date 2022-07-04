@@ -653,3 +653,59 @@ herr_t H5Pget_subfiling (hid_t plist, hbool_t *subfiling) {
 err_out:;
     return err;
 }
+
+#define SINGLE_SUBFILE_READ_PROPERTY_NAME "H5VL_log_single_subfile_read"
+herr_t H5Pset_single_subfile_read (hid_t plist, hbool_t single_subfile_read) {
+    herr_t err = 0;
+    htri_t isfapl;
+    htri_t pexist;
+
+    try {
+        isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
+        CHECK_ID (isfapl)
+        if (isfapl == 0) ERR_OUT ("Not fcplid")
+
+        pexist = H5Pexist (plist, SINGLE_SUBFILE_READ_PROPERTY_NAME);
+        CHECK_ID (pexist)
+        if (!pexist) {
+            hbool_t f = false;
+            err = H5Pinsert2 (plist, SINGLE_SUBFILE_READ_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL,
+                              NULL, NULL, NULL, NULL);
+            CHECK_ERR
+        }
+
+        err = H5Pset (plist, SINGLE_SUBFILE_READ_PROPERTY_NAME, &single_subfile_read);
+        CHECK_ERR
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
+
+err_out:;
+    return err;
+}
+
+herr_t H5Pget_single_subfile_read (hid_t plist, hbool_t *single_subfile_read) {
+    herr_t err = 0;
+    htri_t isfapl, pexist;
+
+    try {
+        isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
+        CHECK_ID (isfapl)
+        if (isfapl == 0)
+            *single_subfile_read = false;  // Default property will not pass class check
+        else {
+            pexist = H5Pexist (plist, SINGLE_SUBFILE_READ_PROPERTY_NAME);
+            CHECK_ID (pexist)
+            if (pexist) {
+                err = H5Pget (plist, SINGLE_SUBFILE_READ_PROPERTY_NAME, single_subfile_read);
+                CHECK_ERR
+
+            } else {
+                *single_subfile_read = false;
+            }
+        }
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
+
+err_out:;
+    return err;
+}
