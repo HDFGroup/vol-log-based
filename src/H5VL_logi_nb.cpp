@@ -527,7 +527,9 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
     // Collective ?
     err = H5Pget_dxpl_mpio (dxplid, &xfer_mode);
     CHECK_ERR
-    if (xfer_mode == H5FD_MPIO_COLLECTIVE) { H5VL_log_nb_flush_write_reqs (fp, dxplid); }
+    if ((xfer_mode == H5FD_MPIO_COLLECTIVE) || fp->np == 1) {
+        H5VL_log_nb_flush_write_reqs (fp, dxplid);
+    }
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
