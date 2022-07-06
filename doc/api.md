@@ -164,4 +164,5 @@ The function `H5VL_log_register` register the log-based VOL connector and return
       H5Pset_vol (fapl_id, logvol_id, NULL);
       // ... some other codes
       hid_t err = H5VLclose (log_vol_id);
-    ```
+      ```
+
