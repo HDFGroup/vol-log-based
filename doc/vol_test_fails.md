@@ -3,6 +3,10 @@
 This file summarize the result running [vol-tests](https://github.com/HDFGroup/vol-tests) using the current version of log-layout based VOL.
 The test ran on commit 3eb0a434fcede20673a53b0b1cd845f0a30e104b of vol-tests.
 
+The test ran on Ubuntu 20.04.1 LTS with MPICH 3.3.2 and HDF5 1.13.0.
+gcc 9.3.0 was used to compile HDF5, log-layout based VOL, and the vol-tests suit.
+
+
 | Number of cases tested | Passed | Failed |
 |------------------------|--------|--------|
 | 96                     | 83     | 13     |

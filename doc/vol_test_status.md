@@ -2,6 +2,9 @@
 
 This file contains the current status of log-based VOL on the official hdf5 vol test suit.
 
+The test ran on Ubuntu 20.04.1 LTS with MPICH 3.3.2 and HDF5 1.13.0.
+gcc 9.3.0 was used to compile HDF5, log-layout based VOL, and the vol-tests suit.
+
 ### Status
 * Pass
   + vol-test suit reports no error in the section
