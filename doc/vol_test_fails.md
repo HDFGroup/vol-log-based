@@ -31,3 +31,4 @@ The table below lists all failed tests by the current version of log-layout base
 | h5_test_testhdf5 | ATTRIBUTES               | Test opening/closing attributes through different file handles | Log-based VOL allows only one opened file handle at a time.                                 | Implement support for multiple open to the same file. |
 | h5_test_testhdf5 | ATTRIBUTES               | Test duplicated IDs for dense attribute storage                | Logvol does not support locating objects by index                                           | Support *_by_idx APIs.                                |
 |                  |                          |                                                                |                                                                                             |                                                       |
+
