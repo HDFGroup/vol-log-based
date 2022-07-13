@@ -63,12 +63,12 @@ The I/O related information of our evaluations is provided in the table below.
 |     Output file                        |     F-H0      |     F-H1     |     G        |     I-H0       |     I-H1     |
 |----------------------------------------|---------------|--------------|--------------|----------------|--------------|
 |     Number of MPI processes            |     21600     |     21600    |     9600     |     1344       |     1344     |
-|     Total size of data (GiB)           |     14.09     |     6.68     |     79.69    |     86.11      |     0.36     |
+|     Total size of data written (GiB)   |     14.09     |     6.68     |     79.69    |     86.11      |     0.36     |
 |     Number of fixed sized variables    |     15        |     15       |     11       |     18         |     10       |
 |     Number of record variables         |     399       |     36       |     41       |     542        |     542      |
-|     Number of records                  |     1         |     25       |     1        |     240        |     1        |
-|     Number of partitioned vars         |     25        |     27       |     11       |     14         |     14       |
-|     Number of non-partitioned vars     |     389       |     24       |     41       |     546        |     538      |
+|     Number of time records             |     1         |     25       |     1        |     240        |     1        |
+|     Number of variables not partitioned|     27        |     27       |     11       |     14         |     14       |
+|     Number of variables partitioned    |     387       |     24       |     41       |     546        |     538      |
 |     Number of non-contig requests      |     174953    |     83261    |     20888    |     9248875    |     38650    |
 |     Number of attributes               |     1427      |     148      |     858      |     2789       |     2759     |
 
