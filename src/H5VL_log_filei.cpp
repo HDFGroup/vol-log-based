@@ -806,6 +806,11 @@ void H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
     for (i = 0; i < fp->rank; i++) {
         if (group_ranks[i] == 0) { fp->group_id++; }
     }
+    // Calculate number of groups
+    fp->ngroup = fp->group_id;
+    for (;i < fp->np; i++) {
+        if (group_ranks[i] == 0) { fp->ngroup++; }
+    }
     mpierr = MPI_Bcast (&(fp->group_id), 1, MPI_INT, 0, fp->group_comm);
     CHECK_MPIERR
 
