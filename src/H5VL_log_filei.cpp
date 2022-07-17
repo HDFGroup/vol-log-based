@@ -329,7 +329,6 @@ void H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
     herr_t err = 0;
     H5VL_log_data_layout_t layout;
-    hbool_t subfiling;
     char *env;
 
     err = H5Pget_data_layout (fcplid, &layout);
@@ -337,10 +336,6 @@ void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
     if (layout == H5VL_LOG_DATA_LAYOUT_CHUNK_ALIGNED) {
         fp->config |= H5VL_FILEI_CONFIG_DATA_ALIGN;
     }
-
-    err = H5Pget_subfiling (fcplid, &subfiling);
-    CHECK_ERR
-    if (subfiling == true) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
 
     env = getenv ("H5VL_LOG_DATA_LAYOUT");
     if (env) {
@@ -352,18 +347,19 @@ void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
         }
     }
 
+    err = H5Pget_subfiling (fcplid, &(fp->ngroup));
+    CHECK_ERR
     env = getenv ("H5VL_LOG_NSUBFILES");
     if (env) {
-        fp->config |= H5VL_FILEI_CONFIG_SUBFILING;
         if (strlen (env) > 0) {
             fp->ngroup = atoi (env);
-            if (fp->ngroup < 0) { fp->ngroup = 0; }
         } else {
             fp->ngroup = 0;
         }
     } else {
-        fp->config &= ~H5VL_FILEI_CONFIG_SUBFILING;
+        fp->ngroup = 1;
     }
+    if (fp->ngroup != H5VL_LOG_SUBFILING_OFF) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
 }
 
 H5VL_log_buffer_block_t *H5VL_log_filei_pool_new_block (size_t bsize) {

@@ -599,7 +599,7 @@ err_out:;
 }
 
 #define SUBFILING_PROPERTY_NAME "H5VL_log_subfiling"
-herr_t H5Pset_subfiling (hid_t plist, hbool_t subfiling) {
+herr_t H5Pset_subfiling (hid_t plist, int nsubfiles) {
     herr_t err = 0;
     htri_t isfapl;
     htri_t pexist;
@@ -612,13 +612,13 @@ herr_t H5Pset_subfiling (hid_t plist, hbool_t subfiling) {
         pexist = H5Pexist (plist, SUBFILING_PROPERTY_NAME);
         CHECK_ID (pexist)
         if (!pexist) {
-            hbool_t f = false;
-            err = H5Pinsert2 (plist, SUBFILING_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL,
-                              NULL, NULL, NULL, NULL);
+            int n = H5VL_LOG_SUBFILING_OFF;
+            err   = H5Pinsert2 (plist, SUBFILING_PROPERTY_NAME, sizeof (int), &n, NULL, NULL,
+                                NULL, NULL, NULL, NULL);
             CHECK_ERR
         }
 
-        err = H5Pset (plist, SUBFILING_PROPERTY_NAME, &subfiling);
+        err = H5Pset (plist, SUBFILING_PROPERTY_NAME, &nsubfiles);
         CHECK_ERR
     }
     H5VL_LOGI_EXP_CATCH_ERR
@@ -627,7 +627,7 @@ err_out:;
     return err;
 }
 
-herr_t H5Pget_subfiling (hid_t plist, hbool_t *subfiling) {
+herr_t H5Pget_subfiling (hid_t plist, int *nsubfiles) {
     herr_t err = 0;
     htri_t isfapl, pexist;
 
@@ -635,16 +635,16 @@ herr_t H5Pget_subfiling (hid_t plist, hbool_t *subfiling) {
         isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
         CHECK_ID (isfapl)
         if (isfapl == 0)
-            *subfiling = false;  // Default property will not pass class check
+            *nsubfiles = H5VL_LOG_SUBFILING_OFF;  // Default property will not pass class check
         else {
             pexist = H5Pexist (plist, SUBFILING_PROPERTY_NAME);
             CHECK_ID (pexist)
             if (pexist) {
-                err = H5Pget (plist, SUBFILING_PROPERTY_NAME, subfiling);
+                err = H5Pget (plist, SUBFILING_PROPERTY_NAME, nsubfiles);
                 CHECK_ERR
 
             } else {
-                *subfiling = false;
+                *nsubfiles = H5VL_LOG_SUBFILING_OFF;
             }
         }
     }
