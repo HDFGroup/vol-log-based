@@ -20,27 +20,27 @@ In the implementations, variables `uo` and `uvlid` are frequently used. An HDF5 
 * H5VL_log.cpp/h
   + Additional user APIs defined specifically by Log-based VOL
 * H5VL_log_att.cpp/hpp
-  + VOL callback functions related to attributes (`H5VL_attr_class_t`)
+  + VOL callback functions related to HDF5 attributes (`H5VL_attr_class_t`)
 * H5VL_log_atti.cpp/hpp
   + Internal helper functions used by `H5VL_log_att.cpp/hpp` to handle attribute operations.
 * H5VL_log_blob.cpp/hpp
-  + VOL callback functions related to BLOB (Binary Large Object) (`H5VL_blob_class_t`)
+  + VOL callback functions related to HDF5 BLOB (Binary Large Object) (`H5VL_blob_class_t`)
 * H5VL_log_dataset.cpp/hpp
-  + VOL callback functions related to datasets (`H5VL_dataset_class_t`).
+  + VOL callback functions related to HDF5 datasets (`H5VL_dataset_class_t`).
 * H5VL_log_dataseti.cpp/hpp
   + Internal helper functions used by `H5VL_log_dataset.cpp/hpp` to handle dataset operations
 * H5VL_log_datatype.cpp/hpp
-  + VOL callback functions related to datatypes (`H5VL_datatype_class_t`).
+  + VOL callback functions related to HDF5 datatypes (`H5VL_datatype_class_t`).
 * H5VL_log_datatypei.cpp/hpp
   + Internal helper functions used by `H5VL_log_datatype.cpp/hpp` to handle datatype operations
 * H5VL_log_file.cpp/hpp
-  + VOL callback functions related to file (`H5VL_file_class_t`).
+  + VOL callback functions related to HDF5 file objects (`H5VL_file_class_t`).
 * H5VL_log_filei.cpp/hpp
   + Internal helper functions used by `H5VL_log_file.cpp/hpp` to handle file operations
 * H5VL_log_filei_meta.cpp/hpp
   + Internal helper functions used by `H5VL_log_filei.cpp/hpp` to handle file metadata operations
 * H5VL_log_group.cpp/hpp
-  + VOL callback functions related to groups (`H5VL_group_class_t`)
+  + VOL callback functions related to HDF5 groups (`H5VL_group_class_t`)
 * H5VL_log_groupi.cpp/hpp
   + Not in use. Empty
 * H5VL_log_info.cpp/hpp
