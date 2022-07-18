@@ -6,13 +6,15 @@ The callback functions of each sub-class are implemented in separate source file
 Internal helper functions used by the callback function are also implemented in separate source files.
 
 The source files are named according to the purpose of their content.
-The file implementing callback functions for each VOL sub-class are named H5VL_log_<class_name>.cpp/hpp.
-For eaxmple, functions in the attribute sub-class (H5VL_attr_class_t) are implemeted in H5VL_log_att.cpp with their signatures defined in H5VL_log_att.hpp.
-The source files containing internal helper functions used by the callbacks are named H5VL_log_<class_name>i.cpp/hpp.
-The letter 'i' in the file name means internal.
-For example, H5VL_log_atti.cpp/hpp contain functions used by attribute callback functions. 
-Functions and componenets that is not related to a particular sub-class are placed in source files named H5VL_logi_<component_name>.cpp/hpp.
-For example, H5VL_logi_err.cpp/hpp contain functions for error checking and handling.
+The file implementing callback functions for each VOL sub-class are named `H5VL_log_<class_name>.cpp/hpp`.
+For eaxmple, functions in the attribute sub-class (H5VL_attr_class_t) are implemeted in `H5VL_log_att.cpp` with their signatures defined in `H5VL_log_att.hpp`. Callback functions defined in `H5VL_log_<class_name>.cpp/hpp` are functions required by HDF5 to implement any working VOL. 
+The source files containing internal helper functions used by the callbacks are named `H5VL_log_<class_name>i.cpp/hpp`.
+The letter 'i' in the file names means internal.
+For example, `H5VL_log_atti.cpp/hpp` contain functions used by attribute callback functions. 
+Functions and componenets that is not related to a particular sub-class are placed in source files named `H5VL_logi_<component_name>.cpp/hpp`.
+For example, `H5VL_logi_err.cpp/hpp` contain functions for error checking and handling.
+
+In the implementations, variables `uo` and `uvlid` are frequently used. An HDF5 VOL (log-based VOL or not) can be stacked upon another HDF5 VOL, and the log-based VOL must also be stacked upon another VOL (called "under VOL", e.g. the native HDF5 VOL). This means most of the log-based VOL callback functions need to pass a user's request to the "under VOL", whose `id` is specified `uvlid` (under VOL ID). `uo` is the corresponding object opened/used by the under VOL.
 
 ### List of source files
 * H5VL_log.cpp/h
