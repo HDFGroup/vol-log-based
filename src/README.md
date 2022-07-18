@@ -15,67 +15,66 @@ Functions and componenets that is not related to a particular sub-class are plac
 For example, H5VL_logi_err.cpp/hpp contain functions for error checking and handling.
 
 ### List of source files
-* H5VL_log.cpp/hpp
-  + Log-based VOL specific user APIs
-    + H5Dwrite_n/H5Dread_n
+* H5VL_log.cpp/h
+  + Additional user APIs defined specifically by Log-based VOL
 * H5VL_log_att.cpp/hpp
-  + H5VL_attr_class_t VOL callback functions
+  + VOL callback functions related to attributes (`H5VL_attr_class_t`)
 * H5VL_log_atti.cpp/hpp
-  + Helper functions for handling attributes
+  + Internal helper functions used by `H5VL_log_att.cpp/hpp` to handle attribute operations.
 * H5VL_log_blob.cpp/hpp
-  + H5VL_blob_class_t VOL callback functions
+  + VOL callback functions related to BLOB (Binary Large Object) (`H5VL_blob_class_t`)
 * H5VL_log_dataset.cpp/hpp
-  + H5VL_dataset_class_t VOL callback functions
+  + VOL callback functions related to datasets (`H5VL_dataset_class_t`).
 * H5VL_log_dataseti.cpp/hpp
-  + Internal functions used to handle dataset operations
+  + Internal helper functions used by `H5VL_log_dataset.cpp/hpp` to handle dataset operations
 * H5VL_log_datatype.cpp/hpp
-  + H5VL_datatype_class_t VOL callback functions
+  + VOL callback functions related to datatypes (`H5VL_datatype_class_t`).
 * H5VL_log_datatypei.cpp/hpp
-  + Internal functions related to datatype operations
+  + Internal helper functions used by `H5VL_log_datatype.cpp/hpp` to handle datatype operations
 * H5VL_log_file.cpp/hpp
-  + H5VL_file_class_t VOL callback functions
+  + VOL callback functions related to file (`H5VL_file_class_t`).
 * H5VL_log_filei.cpp/hpp
-  + Internal functions used to handle file operations
+  + Internal helper functions used by `H5VL_log_file.cpp/hpp` to handle file operations
 * H5VL_log_filei_meta.cpp/hpp
-  + Internal functions used to handle log metadata
+  + Internal helper functions used by `H5VL_log_filei.cpp/hpp` to handle file metadata operations
 * H5VL_log_group.cpp/hpp
-  + H5VL_group_class_t VOL callback functions
+  + VOL callback functions related to groups (`H5VL_group_class_t`)
 * H5VL_log_groupi.cpp/hpp
   + Not in use. Empty
 * H5VL_log_info.cpp/hpp
-  + H5VL_info_class_t VOL callback functions
+  + VOL callback functions related to HDF5 info (`H5VL_info_class_t`)
 * H5VL_log_introspect.cpp/hpp
-  + H5VL_introspect_class_t VOL callback functions
+  + VOL callback functions related to VOL connector introspection (`H5VL_introspect_class_t`)
 * H5VL_log_link.cpp/hpp
-  + H5VL_link_class_t VOL callback functions
+  + VOL callback functions related to HDF5 links (`H5VL_link_class_t`)
 * H5VL_log_linki.cpp/hpp
-  + Internal functions used to handle link operaations
+  + Internal functions used by `H5VL_log_link.cpp/hpp` to handle link operations
 * H5VL_log_main.cpp/hpp
   + Log-based VOL connector object and other VOL callback functions not bellonging to a sub-class
 * H5VL_log_obj.cpp/hpp
-  + H5VL_object_class_t VOL callback functions
+  + VOL callback functions related to HDF5 objects (`H5VL_object_class_t`)
 * H5VL_log_obji.cpp/hpp
-  + Internal functions used to handle HDF5 objects
+  + Internal functions used by `H5VL_log_obj.cpp/hpp` to handle HDF5 object operations.
 * H5VL_log_req.cpp/hpp
-  + H5VL_request_class_t VOL callback functions
+  + VOL callback functions related to aysnc operations (`H5VL_request_class_t`)
   + Not fully implemented
   + Log-based VOL does not support async operation
 * H5VL_log_reqi.cpp/hpp
-  + Internal functions used to handle HDF5 requests
+  + Internal functions used by `H5VL_log_reqi.cpp/hpp` to handle HDF5 requests
   + Not fully implemented
   + Log-based VOL does not support async operation
 * H5VL_log_token.cpp/hpp
   + H5VL_token_class_t VOL callback functions
 * H5VL_log_wrap.cpp/hpp
-  + H5VL_wrap_class_t VOL callback functions
+  + VOL callback functions related to wrapping/upwrapping objects and contexts when passing them up and down the VOL chain. (`H5VL_wrap_class_t`)
 * H5VL_logi.cpp/hpp
   + Definition of log-based VOL implementation of each VOL API sub-class
 * H5VL_logi_dataspace.cpp/hpp
   + Internal functions used to parse dataspace selections
 * H5VL_logi_debug.cpp/hpp
-  + Helper functions for debugging
+  + Internal helper functions for debugging
 * H5VL_logi_err.cpp/hpp
-  + Helper functions for error checking and handling
+  + Internal helper functions for error checking and handling
 * H5VL_logi_filter.cpp/hpp
   + Definition of log-based VOL filter class and filter pipeline
 * H5VL_logi_filter_deflate.cpp/hpp
@@ -87,9 +86,9 @@ For example, H5VL_logi_err.cpp/hpp contain functions for error checking and hand
 * H5VL_logi_idx_list.cpp/hpp
   + Array based metadata index
 * H5VL_logi_mem.cpp/hpp
-  + Helper functions for memory allocation
+  + Internal helper functions for memory allocation
 * H5VL_logi_meta.cpp/hpp
-  + Helper functions for encoding and decoding the metadata entries
+  + Internal helper functions for encoding and decoding the metadata entries
 * H5VL_logi_nb.cpp/hpp
   + Internal functions for flushing staged dataset read/write requests
 * H5VL_logi_profiling.m4/m4h
@@ -99,4 +98,4 @@ For example, H5VL_logi_err.cpp/hpp contain functions for error checking and hand
 * H5VL_logi_wrapper.cpp/hpp
   + Not in use
 * H5VL_logi_zip.cpp/hpp
-  + Helper functions for operating the zlib library
+  + Internal helper functions for operating the zlib library
