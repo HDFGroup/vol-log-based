@@ -144,6 +144,78 @@ The function `H5Pget_idx_buffer_size` gets the amount of memory that the log-bas
   + Returns:
     + This function returns `0` on success. Fail otherwise.
 
+### H5Pset_meta_share
+The function `H5Pset_meta_share` sets the whether to perform deduplication on metadata entries. If enabled, requests of the same I/O pattern will share the same metadata on dataspace selection to reduce metadata size.
+
+#### Usage:
+```c
+  herr_t H5Pset_meta_share (hid_t plist, hbool_t share);
+```
+  + Inputs:
+    + `plist`: the id of the file access property list to attach the setting.
+    + `share`: whether to deduplicate the metadata.
+        + `true`:
+          + Deduplicate the metadata
+        + `false`:
+          + Do not deduplicate the metadata
+          + Each metadata entry will contain its own dataspace selection information
+  + Returns:
+    + This function returns `0` on success. Fail otherwise.
+
+### H5Pget_meta_share 
+The function `H5Pget_meta_share` gets the metadata deduplication setting in a file access property list.
+
+#### Usage:
+```c
+  herr_t H5Pset_meta_share (hid_t plist, hbool_t &share);
+```
+  + Inputs:
+    + `plist`: the id of the dataset ransfer property list to retrieve the setting.
+  + Outputs:
+    + `share`: whether to deduplicate the metadata.
+        + `true`:
+          + Deduplicate on
+        + `false`:
+          + Deduplicate off
+  + Returns:
+    + This function returns `0` on success. Fail otherwise.
+
+### H5Pset_meta_zip
+The function `H5Pset_meta_zip` sets the whether to compress the metadata.
+
+#### Usage:
+```c
+  herr_t H5Pset_meta_zip (hid_t plist, hbool_t zip);
+```
+  + Inputs:
+    + `plist`: the id of the file access property list to attach the setting.
+    + `share`: whether to compress the metadata.
+        + `true`:
+          + Compress the metadata
+        + `false`:
+          + Do not compress the metadata
+          + Each metadata entry will contain its own dataspace selection information
+  + Returns:
+    + This function returns `0` on success. Fail otherwise.
+
+### H5Pget_meta_zip 
+The function `H5Pget_meta_zip` gets the metadata comrpession setting in a file access property list.
+
+#### Usage:
+```c
+  herr_t H5Pget_meta_zip (hid_t plist, hbool_t &zip);
+```
+  + Inputs:
+    + `plist`: the id of the dataset ransfer property list to retrieve the setting.
+  + Outputs:
+    + `share`: whether to compress the metadata.
+        + `true`:
+          + Compression on
+        + `false`:
+          + Compression off
+  + Returns:
+    + This function returns `0` on success. Fail otherwise.
+
 ## Misc
 ### H5VL_log_register
 The function `H5VL_log_register` register the log-based VOL connector and return its ID. The returned ID can be used to set the file access properties so that `HDF5` knows whether or not to use Log-Based Vol. The returned ID must be closed by calling `H5VLclose` before file close.
