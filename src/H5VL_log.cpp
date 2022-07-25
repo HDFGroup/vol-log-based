@@ -374,7 +374,7 @@ herr_t H5Pset_meta_share (hid_t plist, hbool_t share) {
 
     try {
         // TODO: Fix pclass problem
-        return 0;
+        //return 0;
 
         isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
         CHECK_ID (isfapl)
@@ -432,7 +432,7 @@ herr_t H5Pset_meta_zip (hid_t plist, hbool_t zip) {
 
     try {
         // TODO: Fix pclass problem
-        return 0;
+        //return 0;
 
         isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
         CHECK_ID (isfapl)
@@ -491,7 +491,7 @@ herr_t H5Pset_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t encoding) {
 
     try {
         // TODO: Fix pclass problem
-        return 0;
+        //return 0;
 
         isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
         CHECK_ID (isfapl)

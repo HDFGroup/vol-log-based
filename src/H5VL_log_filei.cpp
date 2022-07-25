@@ -362,6 +362,48 @@ void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
     if (fp->ngroup != H5VL_LOG_SUBFILING_OFF) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
 }
 
+// Under VOL does not recognize logvol-specific properties
+// Remove all logvol properties
+hid_t H5VL_log_filei_get_under_plist (hid_t faplid) {
+    herr_t err = 0;
+    htri_t pexist;
+    hid_t ret = H5I_INVALID_HID;
+    H5VL_logi_err_finally finally ([&ret, err] () -> void {
+        if (err != 0){
+            if (ret != H5I_INVALID_HID) H5Pclose (ret);
+        }
+    });
+    static std::string pnames[] = {
+        "H5VL_log_nb_buffer_size",
+        "H5VL_log_idx_buffer_size",
+        "H5VL_log_metadata_merge",
+        "H5VL_log_metadata_share",
+        "H5VL_log_metadata_zip",
+        "H5VL_log_sel_encoding",
+        "H5VL_log_data_layout", 
+        "H5VL_log_subfiling", 
+        "H5VL_log_single_subfile_read",
+    };
+
+    try {
+        ret = H5Pcopy(faplid);
+        CHECK_ID (ret)
+
+        for (auto &pname: pnames){
+            pexist = H5Pexist (ret, pname.c_str());
+            CHECK_ID (pexist)
+            if (pexist) {
+                err = H5Premove(ret, pname.c_str());
+                CHECK_ERR
+            }
+        }
+    }
+    H5VL_LOGI_EXP_CATCH_ERR
+
+err_out:;
+    return ret;
+}
+
 H5VL_log_buffer_block_t *H5VL_log_filei_pool_new_block (size_t bsize) {
     // herr_t err					= 0;
     std::unique_ptr<H5VL_log_buffer_block_t> bp;

@@ -60,6 +60,7 @@ extern void H5VL_log_filei_pool_finalize (H5VL_log_buffer_pool_t *p);
 
 extern void H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid);
 extern void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid);
+extern hid_t H5VL_log_filei_get_under_plist (hid_t faplid);
 
 extern void H5VL_log_filei_contig_buffer_init (H5VL_log_contig_buffer_t *bp, size_t init_size);
 extern void H5VL_log_filei_contig_buffer_free (H5VL_log_contig_buffer_t *bp);

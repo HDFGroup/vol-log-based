@@ -21,7 +21,8 @@ LDADD = $(top_builddir)/src/libH5VL_log.la
 check_PROGRAMS =    scalar \
                     null_req \
                     null_space \
-					multi_open
+					multi_open \
+					fapl
 
 EXTRA_DIST = wrap_runs.sh parallel_run.sh
 
