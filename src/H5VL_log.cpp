@@ -405,7 +405,7 @@ herr_t H5Pget_meta_share (hid_t plist, hbool_t *share) {
         isdxpl = H5Pisa_class (plist, H5P_FILE_ACCESS);
         CHECK_ID (isdxpl)
         if (isdxpl == 0)
-            *share = false;  // Default property will not pass class check
+            *share = true;  // Default property will not pass class check
         else {
             pexist = H5Pexist (plist, SHARE_META_NAME_PROPERTY_NAME);
             CHECK_ID (pexist)
@@ -414,7 +414,7 @@ herr_t H5Pget_meta_share (hid_t plist, hbool_t *share) {
                 CHECK_ERR
 
             } else {
-                *share = false;
+                *share = true;
             }
         }
     }
