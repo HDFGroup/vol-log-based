@@ -66,12 +66,12 @@ HDF5 environment variables.
      ```
 
 ### Enable log-based VOL subfiling feature
-Subfiling is a feature to mitigate the file lock conflict in a parallel file
-write operation. It divides MPI processes into groups disjointedly and creates
-one file per group, thus named subfiling. Each subfile is shared only among
-the processes in the same group and contains data written by those processes
+Subfiling is a feature to mitigate the file lock conflict in a parallel write
+operation to a shared file. It divides MPI processes into groups disjointedly
+and creates one file (named subfile) per group. Each subfile is accessible only
+to the processes in the same group and contains data written by those processes
 only. By reducing the number of MPI processes sharing a file, subfiling reduces
-the file access conflicts and hence effectively improves the degree of I/O
+the file access contentions, and hence effectively improves the degree of I/O
 parallelism.
 
 * Enabling subfiling through an environment variable
@@ -80,21 +80,26 @@ parallelism.
     ```
     % export H5VL_LOG_NSUBFILES=2
     ```
-  + If the environment variable is set without a value or with a non-positive value
-    , then the number of subfiles will be set to equal to the number of compute 
-    nodes allocated.
+  + If the environment variable is set without a value or with a non-positive
+    value, then the number of subfiles will be set to equal to the number of
+    compute nodes allocated.
     ```
     % export H5VL_LOG_NSUBFILES=
     ```
+  + If the environment variable is not set or set to 0, then the subfiling is
+    disabled.
 * Output file structure and naming scheme.
   * A master file (whose file name is supplied by the user to `H5Fcreate`)
-    + Stores user datasets, attributes ... etc.
-  * A directory containing all the subfiles.
+    contains:
+    + User attributes.
+    + User datasets as scalars. The contents of datasets are stored in the
+      subfiles.
+  * A new directory containing all the subfiles.
     + The directory is named `<master_file_name>.subfiles`.
   * Subfiles
     + Each subfile is named `<master_file_name>.id` where `id` is the ID
       starting from 0 to the number of subfiles minus one.
-    + Each subfile stores the log data.
+    + Each subfile stores the log data of all partitioned datasets.
 
 ### Differences from the native VOL
   * Buffered and non-buffered modes
