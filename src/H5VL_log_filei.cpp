@@ -347,17 +347,18 @@ void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
         }
     }
 
-    err = H5Pget_subfiling (fcplid, &(fp->ngroup));
-    CHECK_ERR
+    /* check if env H5VL_LOG_NSUBFILES is set. env has higher precedence */
     env = getenv ("H5VL_LOG_NSUBFILES");
     if (env) {
-        if (strlen (env) > 0) {
+        /* -1 is one subfile per node */
+        /*  0 disables subfiling */
+        fp->ngroup = -1;
+        if (strlen (env) > 0)
             fp->ngroup = atoi (env);
-        } else {
-            fp->ngroup = 0;
-        }
     } else {
-        fp->ngroup = 1;
+        /* env is not set, check if nsubfiles is set by H5Pset_subfiling */
+        err = H5Pget_subfiling (fcplid, &(fp->ngroup));
+        CHECK_ERR
     }
     if (fp->ngroup != H5VL_LOG_SUBFILING_OFF) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
 }
@@ -827,10 +828,13 @@ void H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
     group_ranks = (int *)malloc (sizeof (int) * fp->np);
     CHECK_PTR (group_ranks);
 
+    /* H5VL_FILEI_CONFIG_SUBFILING has been checked before entering this
+     * subroutine in H5VL_log_filei_post_open(). Thus fp->ngroup is not 0.
+     */
     if (fp->ngroup > 0) {
         mpierr =
             MPI_Comm_split (fp->comm, fp->rank * fp->ngroup / fp->np, fp->rank, &(fp->group_comm));
-    } else {
+    } else { /* fp->ngroup < 0 */
         mpierr = MPI_Comm_split_type (fp->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,
                                       &(fp->group_comm));
     }

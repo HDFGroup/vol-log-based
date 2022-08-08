@@ -28,18 +28,18 @@ This is essentially a placeholder for the next release note ...
   + H5Pget/set_subfiling property type changed to int
     + Signature
       ```
-        herr_t H5Pset_subfiling (hid_t plist, int nsubfiles);
-        herr_t H5Pget_subfiling (hid_t plist, int *nsubfiles);
+        herr_t H5Pset_subfiling (hid_t fcplid, int  nsubfiles);
+        herr_t H5Pget_subfiling (hid_t fcplid, int *nsubfiles);
       ```
-    + Allows setting number of subfiles in addition to enabling subfiling
-    + Meaning of argument "nsubfiles"
-      + 1 (H5VL_LOG_SUBFILING_OFF): Disable subfiling
-      + Non-positive values (H5VL_LOG_SUBFILING_FILE_PER_NODE): One subfile per node
-      + Positive value larger than 1: Create "nsubfiles" subfiles
+      `fcplid` is the file creation preperty list ID.
+    + Allows setting the number of subfiles including disabling/enabling subfiling.
+      + When nsubfiles is 0: disable subfiling.
+      + When nsubfiles is a negative values: one subfile per computer node.
+      + When nsubfiles is a positive value: create "nsubfiles" subfiles.
 
-* Run-time environment variables changes
-  + The meaning of H5VL_LOG_NSUBFILES is changed to match argument "nsubfiles" in H5Pget/set_subfiling
-    + See API syntax changes section for more information
+* Run-time environment variables
+  + Environment variable `H5VL_LOG_NSUBFILES` has been changed to match the
+    argument "nsubfiles" in API `H5Pget/set_subfiling` described above.
 
 * API semantics updates
   + Remove the restriction that does not allow user objects with a name starting with '_'

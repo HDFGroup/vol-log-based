@@ -642,7 +642,6 @@ herr_t H5Pget_subfiling (hid_t plist, int *nsubfiles) {
             if (pexist) {
                 err = H5Pget (plist, SUBFILING_PROPERTY_NAME, nsubfiles);
                 CHECK_ERR
-
             } else {
                 *nsubfiles = H5VL_LOG_SUBFILING_OFF;
             }
