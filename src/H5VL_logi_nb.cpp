@@ -534,7 +534,7 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
     H5VL_LOGI_PROFILING_TIMER_START;
 
     // Iterate through all subfiles
-    if ((fp->ngroup <= 1) || (fp->config & H5VL_FILEI_CONFIG_SINGLE_SUBFILE_READ)) {
+    if ((!(fp->config & H5VL_FILEI_CONFIG_SUBFILING)) || (fp->config & H5VL_FILEI_CONFIG_SINGLE_SUBFILE_READ)) {
         H5VL_log_nb_perform_read (fp, reqs, dxplid);
     } else {
         group_id = fp->group_id;  // Backup group ID
