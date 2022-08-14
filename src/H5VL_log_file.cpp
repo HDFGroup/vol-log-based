@@ -408,6 +408,12 @@ herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id,
         CHECK_ERR
         H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLFILE_GET);
 
+        if (args->op_type == H5VL_FILE_GET_FCPL){
+            if (op->fp->config & H5VL_FILEI_CONFIG_SUBFILING){
+                H5Pset_subfiling(args->args.get_fcpl.fcpl_id, op->fp->ngroup);
+            }
+        }
+
         H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_FILE_GET);
     }
     H5VL_LOGI_EXP_CATCH_ERR
