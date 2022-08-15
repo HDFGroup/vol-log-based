@@ -413,6 +413,20 @@ herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id,
                 H5Pset_subfiling(args->args.get_fcpl.fcpl_id, op->fp->ngroup);
             }
         }
+        else if (args->op_type == H5VL_FILE_GET_FAPL){
+            if (op->fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE){
+                H5Pset_meta_merge(args->args.get_fapl.fapl_id, true);
+            }
+            if (op->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE){
+                H5Pset_sel_encoding(args->args.get_fapl.fapl_id, H5VL_LOG_ENCODING_OFFSET);
+            }
+            if (op->fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE){
+                H5Pset_meta_zip(args->args.get_fapl.fapl_id, true);
+            }
+            if (op->fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE){
+                H5Pset_meta_share(args->args.get_fapl.fapl_id, true);
+            }
+        }
 
         H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VL_LOG_FILE_GET);
     }
