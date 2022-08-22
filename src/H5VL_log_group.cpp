@@ -64,7 +64,7 @@ void *H5VL_log_group_create (void *obj,
             /* Rename user objects to avoid conflict with internal object */
             iname = H5VL_logi_name_remap (name);
         } else {
-            iname = (char*) name;
+            iname = (char *)name;
         }
         gp = new H5VL_log_obj_t (op, H5I_GROUP);
 
@@ -133,7 +133,7 @@ void *H5VL_log_group_open (void *obj,
             /* Rename user objects to avoid conflict with internal object */
             iname = H5VL_logi_name_remap (name);
         } else {
-            iname = (char*) name;
+            iname = (char *)name;
         }
 
         gp = new H5VL_log_obj_t (op, H5I_GROUP);

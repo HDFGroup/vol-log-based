@@ -56,7 +56,7 @@ H5PL_type_t H5PLget_plugin_type (void) { return H5PL_TYPE_VOL; }
 const void *H5PLget_plugin_info (void) { return &H5VL_log_g; }
 
 int mpi_inited;
-bool h5dwriten_registered  = false;
+bool h5dwriten_registered = false;
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_init

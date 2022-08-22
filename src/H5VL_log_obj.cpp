@@ -60,7 +60,7 @@ void *H5VL_log_object_open (void *obj,
         if (loc_params->type == H5VL_OBJECT_BY_NAME) {
             original_name = loc_params->loc_data.loc_by_name.name;
             if (op->fp->is_log_based_file) {
-                iname         = H5VL_logi_name_remap (original_name);
+                iname = H5VL_logi_name_remap (original_name);
                 ((H5VL_loc_params_t *)loc_params)->loc_data.loc_by_name.name = iname;
             }
         }
@@ -77,7 +77,6 @@ void *H5VL_log_object_open (void *obj,
         } else {
             ret = uo;
         }
-        
     }
     H5VL_LOGI_EXP_CATCH
 
@@ -125,11 +124,10 @@ herr_t H5VL_log_object_copy (void *src_obj,
                 "H5VL_log_object_copy(%p, %p, %s, %p, %p, %s, ocpypl_id, lcpl_id, dxplid, %p)\n",
                 src_obj, src_loc_params, src_name, dst_obj, dst_loc_params, dst_name, req);
         }
-#endif  
+#endif
         if (o_src->fp->is_log_based_file || o_dst->fp->is_log_based_file) {
             ERR_OUT ("H5VL_log_object_copy Not Supported")
         }
-        
 
         /* Rename user objects to avoid conflict with internal object */
         if (src_loc_params->type == H5VL_OBJECT_BY_NAME && o_src->fp->is_log_based_file) {
@@ -354,7 +352,6 @@ herr_t H5VL_log_object_optional (void *obj,
                     break;
             }
         }
-        
 
         err = H5VLobject_optional (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
         CHECK_ERR

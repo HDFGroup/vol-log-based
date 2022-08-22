@@ -55,7 +55,7 @@ void *H5VL_log_datatype_commit (void *obj,
         if (op->fp->is_log_based_file) {
             iname = H5VL_logi_name_remap (name);
         } else {
-            iname = (char*) name;
+            iname = (char *)name;
         }
 
         tp = new H5VL_log_obj_t (op, H5I_DATATYPE);
@@ -116,7 +116,7 @@ void *H5VL_log_datatype_open (void *obj,
         if (op->fp->is_log_based_file) {
             iname = H5VL_logi_name_remap (name);
         } else {
-            iname = (char*) name;
+            iname = (char *)name;
         }
 
         tp = new H5VL_log_obj_t (op, H5I_DATATYPE);

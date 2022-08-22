@@ -11,13 +11,13 @@
 #include <cassert>
 
 #include "H5VL_log.h"
+#include "H5VL_log_file.hpp"
 #include "H5VL_log_link.hpp"
 #include "H5VL_log_linki.hpp"
 #include "H5VL_log_obj.hpp"
 #include "H5VL_log_req.hpp"
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_util.hpp"
-#include "H5VL_log_file.hpp"
 
 /********************* */
 /* Function prototypes */
@@ -294,7 +294,7 @@ herr_t H5VL_log_link_get (void *obj,
         }
 
         // Block access to internal objects
-        if (o->fp->is_log_based_file){
+        if (o->fp->is_log_based_file) {
             switch (loc_params->type) {
                 case H5VL_OBJECT_BY_NAME:
                     /* Rename user objects to avoid conflict with internal object */
@@ -310,7 +310,6 @@ herr_t H5VL_log_link_get (void *obj,
                     break;
             }
         }
-        
 
         err = H5VLlink_get (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
         CHECK_ERR
@@ -366,7 +365,7 @@ herr_t H5VL_log_link_specific (void *obj,
             ureqp = NULL;
         }
 
-        if (!o->fp->is_log_based_file){
+        if (!o->fp->is_log_based_file) {
             err = H5VLlink_specific (o->uo, loc_params, o->uvlid, args, dxpl_id, ureqp);
             CHECK_ERR
             if (req) {

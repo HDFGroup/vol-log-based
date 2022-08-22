@@ -200,16 +200,16 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                 CHECK_ERR
 
                 int is_stride_all_ones = true;
-                int is_count_all_ones = true;
-                int is_block_all_ones = true;
+                int is_count_all_ones  = true;
+                int is_block_all_ones  = true;
                 for (i = 0; i < ndim; i++) {
                     if (stride[i] != 1) is_stride_all_ones = false;
-                    if (count[i]  != 1) is_count_all_ones  = false;
-                    if (block[i]  != 1) is_block_all_ones  = false;
+                    if (count[i] != 1) is_count_all_ones = false;
+                    if (block[i] != 1) is_block_all_ones = false;
                 }
 
                 if ((is_stride_all_ones && is_block_all_ones) || is_count_all_ones) {
-                    this->nsel = 1;   /* there is only 1 block in this case */
+                    this->nsel = 1; /* there is only 1 block in this case */
                     this->alloc (1);
                     for (i = 0; i < ndim; i++) {
                         starts[0][i] = start[i];
@@ -319,7 +319,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                                     counts[nreq][k] = 1;
                                 }
                                 counts[nreq][ndim - 1] =
-                                    (hsize_t) (hends[j][ndim - 1] - hstarts[j][ndim - 1] + 1);
+                                    (hsize_t)(hends[j][ndim - 1] - hstarts[j][ndim - 1] + 1);
 
                                 for (l = 0; l < ndim; l++) {  // The lowest dimension that we
                                                               // haven't reach the end

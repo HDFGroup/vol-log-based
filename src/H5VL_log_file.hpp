@@ -47,13 +47,14 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     int group_id;         // ID of the group
     int group_rank;       // Rank in the group
     int group_np;         // Number of processes in the group
-    int ngroup;           // Number of groups. NOTE: This value is only valid when H5VL_FILEI_CONFIG_SUBFILING is set in config
+    int ngroup;           // Number of groups. NOTE: This value is only valid when
+                          // H5VL_FILEI_CONFIG_SUBFILING is set in config
     int prev_rank;        // We only start writing after prev_rank finishes writing
     int next_rank;        // We have to notify next_rank to start writing after we finish
     int target_ost;       // What OST should we write to in aligned data layout
     size_t ssize;         // Lustre striping size
     int scount;           // Lustre stripping count
-    MPI_Comm group_comm;  // Communicator among the processes sharing the same subfile   
+    MPI_Comm group_comm;  // Communicator among the processes sharing the same subfile
 
     int refcnt;     // Number of VOL objects holding reference to the file
     bool closing;   // If we are closing the file
@@ -73,7 +74,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
                 // used in aligned write
     void *sfp;  // Under VOL object of the subfile
     decltype (stcrtstat::st_ino) ino;  // Inode number, used to detect duplicate file open
-    bool has_ino;   // If ino is valid
+    bool has_ino;                      // If ino is valid
 
     std::vector<H5VL_log_wreq_t *> wreqs;  // Queued write reqs
     int nflushed;  // # entry in wreqs with their data already flushed (metadata haven't)
@@ -111,8 +112,9 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     int config;  // Config flags
     H5VL_log_idx_type_t
         index_type;  // What index to use for metadata entries (only used to handle read operations)
-    
-    bool is_log_based_file; // indicate if a file is a regular file (false) or a log-based file (false)
+
+    bool is_log_based_file;  // indicate if a file is a regular file (false) or a log-based file
+                             // (false)
 
 #ifdef ENABLE_PROFILING
 #ifndef REPLAY_BUILD

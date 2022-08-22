@@ -26,10 +26,10 @@ bool H5VL_log_zip_compress (void *in, int in_len, void *out, int *out_len) {
     defstream.zalloc   = Z_NULL;
     defstream.zfree    = Z_NULL;
     defstream.opaque   = Z_NULL;
-    defstream.avail_in = (uInt) (in_len);  // input size
-    defstream.next_in  = (Bytef *)in;      // input
+    defstream.avail_in = (uInt)(in_len);  // input size
+    defstream.next_in  = (Bytef *)in;     // input
     if (out_len != NULL) {
-        defstream.avail_out = (uInt) (*out_len);  // output buffer size
+        defstream.avail_out = (uInt)(*out_len);  // output buffer size
     } else {
         defstream.avail_out = (uInt)1000000000;  // Assume it is large enough
     }
@@ -72,10 +72,10 @@ void H5VL_log_zip_compress_alloc (void *in, int in_len, void **out, int *out_len
     defstream.zalloc    = Z_NULL;
     defstream.zfree     = Z_NULL;
     defstream.opaque    = Z_NULL;
-    defstream.avail_in  = (uInt) (in_len);  // input size
-    defstream.next_in   = (Bytef *)in;      // input
-    defstream.avail_out = (uInt) (bsize);   // output buffer size
-    defstream.next_out  = (Bytef *)buf;     // output buffer
+    defstream.avail_in  = (uInt)(in_len);  // input size
+    defstream.next_in   = (Bytef *)in;     // input
+    defstream.avail_out = (uInt)(bsize);   // output buffer size
+    defstream.next_out  = (Bytef *)buf;    // output buffer
 
     // Initialize deflat stream
     zerr = deflateInit (&defstream, Z_DEFAULT_COMPRESSION);
@@ -125,7 +125,7 @@ bool H5VL_log_zip_decompress (void *in, int in_len, void *out, int *out_len) {
     infstream.avail_in = (unsigned long)in_len;  // input size
     infstream.next_in  = (Bytef *)in;            // input
     if (out_len != NULL) {
-        infstream.avail_out = (uInt) (*out_len);  // output buffer size
+        infstream.avail_out = (uInt)(*out_len);  // output buffer size
     } else {
         infstream.avail_out = (uInt)1000000000;  // Assume it is large enough
     }
@@ -164,10 +164,10 @@ void H5VL_log_zip_decompress_alloc (void *in, int in_len, void **out, int *out_l
     infstream.zalloc    = Z_NULL;
     infstream.zfree     = Z_NULL;
     infstream.opaque    = Z_NULL;
-    infstream.avail_in  = (uInt) (in_len);  // input size
-    infstream.next_in   = (Bytef *)in;      // input
-    infstream.avail_out = (uInt) (bsize);   // output buffer size
-    infstream.next_out  = (Bytef *)buf;     // output buffer
+    infstream.avail_in  = (uInt)(in_len);  // input size
+    infstream.next_in   = (Bytef *)in;     // input
+    infstream.avail_out = (uInt)(bsize);   // output buffer size
+    infstream.next_out  = (Bytef *)buf;    // output buffer
 
     // Initialize deflat stream
     zerr = inflateInit (&infstream);

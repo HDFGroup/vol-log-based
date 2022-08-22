@@ -60,4 +60,3 @@ typedef struct H5VL_log_selection2 {
     MPI_Offset end;    // Count of selection
     size_t size;       // Size of the selection (bytes)
 } H5VL_log_selection2;
-

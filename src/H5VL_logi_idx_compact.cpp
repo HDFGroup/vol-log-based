@@ -125,7 +125,7 @@ void H5VL_logi_compact_idx_t::parse_block (char *block, size_t size) {
                 H5VL_logi_llreverse ((uint64_t *)(&roff));
 #endif
                 centry      = new H5VL_logi_compact_idx_entry_t (hdr_tmp->foff, hdr_tmp->fsize,
-                                                            bcache[bufp + roff]);
+                                                                 bcache[bufp + roff]);
                 centry->rec = (hssize_t)rec;
             } else {
                 H5VL_logi_metaentry_decode (*(fp->dsets_info[hdr_tmp->did]), bufp, entry);
