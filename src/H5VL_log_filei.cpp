@@ -87,7 +87,7 @@ void H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf) {
     // printf("Balloc %llu\n", size);
 
     if (fp->bsize != LOG_VOL_BSIZE_UNLIMITED) {
-        if (fp->bused + size > (size_t) (fp->bsize)) {
+        if (fp->bused + size > (size_t)(fp->bsize)) {
             *buf = NULL;
             ERR_OUT ("Out of buffer")
         }
@@ -296,7 +296,7 @@ void H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
     err = H5Pget_idx_buffer_size (faplid, &(fp->mbuf_size));
     CHECK_ERR
     env = getenv ("H5VL_LOG_IDX_BSIZE");
-    if (env) { fp->mbuf_size = (MPI_Offset) (atoll (env)); }
+    if (env) { fp->mbuf_size = (MPI_Offset)(atoll (env)); }
 
     /*
     err = H5Pget_sel_encoding (faplid, &encoding);
@@ -353,12 +353,34 @@ void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
         /* -1 is one subfile per node */
         /*  0 disables subfiling */
         fp->ngroup = -1;
-        if (strlen (env) > 0)
-            fp->ngroup = atoi (env);
+        if (strlen (env) > 0) fp->ngroup = atoi (env);
     } else {
         /* env is not set, check if nsubfiles is set by H5Pset_subfiling */
         err = H5Pget_subfiling (fcplid, &(fp->ngroup));
         CHECK_ERR
+    }
+    if (fp->ngroup != H5VL_LOG_SUBFILING_OFF) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
+
+    /* check if env H5VL_LOG_MASTER_PREFIX is set. env has higher precedence */
+    fp->split_master = false;
+    env              = getenv ("H5VL_LOG_MASTER_PREFIX");
+    if (env) {
+        /* -1 is one subfile per node */
+        /*  0 disables subfiling */
+        fp->mastername   = std::string (env);
+        fp->split_master = true;
+    } else {
+        /* env is not set, check if nsubfiles is set by H5Pget_master_file_prefix */
+        char *val;
+
+        err = H5Pget_master_file_prefix (fcplid, &val);
+        CHECK_ERR
+
+        if (val) {
+            fp->mastername   = std::string (val);
+            fp->split_master = true;
+            free (val);
+        }
     }
     if (fp->ngroup != H5VL_LOG_SUBFILING_OFF) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
 }
@@ -370,31 +392,26 @@ hid_t H5VL_log_filei_get_under_plist (hid_t faplid) {
     htri_t pexist;
     hid_t ret = H5I_INVALID_HID;
     H5VL_logi_err_finally finally ([&ret, err] () -> void {
-        if (err != 0){
+        if (err != 0) {
             if (ret != H5I_INVALID_HID) H5Pclose (ret);
         }
     });
     static std::string pnames[] = {
-        "H5VL_log_nb_buffer_size",
-        "H5VL_log_idx_buffer_size",
-        "H5VL_log_metadata_merge",
-        "H5VL_log_metadata_share",
-        "H5VL_log_metadata_zip",
-        "H5VL_log_sel_encoding",
-        "H5VL_log_data_layout", 
-        "H5VL_log_subfiling", 
-        "H5VL_log_single_subfile_read",
+        "H5VL_log_nb_buffer_size",     "H5VL_log_idx_buffer_size", "H5VL_log_metadata_merge",
+        "H5VL_log_metadata_share",     "H5VL_log_metadata_zip",    "H5VL_log_sel_encoding",
+        "H5VL_log_data_layout",        "H5VL_log_subfiling",       "H5VL_log_single_subfile_read",
+        "H5VL_log_master_file_prefix",
     };
 
     try {
-        ret = H5Pcopy(faplid);
+        ret = H5Pcopy (faplid);
         CHECK_ID (ret)
 
-        for (auto &pname: pnames){
-            pexist = H5Pexist (ret, pname.c_str());
+        for (auto &pname : pnames) {
+            pexist = H5Pexist (ret, pname.c_str ());
             CHECK_ID (pexist)
             if (pexist) {
-                err = H5Premove(ret, pname.c_str());
+                err = H5Premove (ret, pname.c_str ());
                 CHECK_ERR
             }
         }
@@ -436,7 +453,7 @@ void H5VL_log_filei_pool_alloc (H5VL_log_buffer_pool_t *p, ssize_t bsize, void *
                 bp             = p->free_blocks;
                 p->free_blocks = bp->next;
             } else {
-                bp = H5VL_log_filei_pool_new_block ((size_t) (p->bsize));
+                bp = H5VL_log_filei_pool_new_block ((size_t)(p->bsize));
             }
         }
 
@@ -458,7 +475,7 @@ void H5VL_log_filei_pool_init (H5VL_log_buffer_pool_t *p, ssize_t bsize) {
     }
 
     if (p->bsize) {
-        p->head = H5VL_log_filei_pool_new_block ((size_t) (p->bsize));
+        p->head = H5VL_log_filei_pool_new_block ((size_t)(p->bsize));
     } else {
         p->head = NULL;
     }
@@ -643,8 +660,10 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
             attbuf[2] = 0;
             attbuf[3] |= H5VL_FILEI_CONFIG_SUBFILING;  // Turn subfiling flag back on
         }
-        // Att in the main file
-        H5VL_logi_put_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_NATIVE_INT32, attbuf, fp->dxplid);
+        if ((fp->sfp != fp->uo) || (!(fp->config & H5VL_FILEI_CONFIG_SUBFILING))) {
+            // Att in the main file
+            H5VL_logi_put_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_NATIVE_INT32, attbuf, fp->dxplid);
+        }
     }
 
     // Close the log group
@@ -854,7 +873,7 @@ void H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
     }
     // Calculate number of groups
     fp->ngroup = fp->group_id;
-    for (;i < fp->np; i++) {
+    for (; i < fp->np; i++) {
         if (group_ranks[i] == 0) { fp->ngroup++; }
     }
     mpierr = MPI_Bcast (&(fp->group_id), 1, MPI_INT, 0, fp->group_comm);
