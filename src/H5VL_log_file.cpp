@@ -189,12 +189,57 @@ void *H5VL_log_file_create (
         }
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP_RANK);
 
+        // Create the master file with underlying VOL
+        H5VL_LOGI_PROFILING_TIMER_START;
+        if (fp->split_master) {
+            if (fp->group_id) {
+                if (fp->mastername.size ()) {
+                    // Add node id so shared PFS can be used
+                    fp->mastername += "." + std::to_string (fp->group_id);
+                }
+            } else {
+                // Node 0 still writes to original master file
+                fp->mastername = std::string (name);
+            }
+        } else {
+            fp->mastername = std::string (name);
+        }
+        fp->ufaplid = H5VL_log_filei_get_under_plist (fapl_id);
+        err         = H5Pset_vol (fp->ufaplid, uvlid, under_vol_info);
+        CHECK_ERR
+        err = H5Pset_all_coll_metadata_ops (fp->ufaplid, (hbool_t) false);
+        CHECK_ERR
+        err = H5Pset_coll_metadata_write (fp->ufaplid, (hbool_t) true);
+        CHECK_ERR
+        if (fp->mastername == "") {
+            fp->uo = NULL;
+        } else {
+            // err = H5Pset_alignment (fp->ufaplid, 4096, 4096);
+            // CHECK_ERR
+            ufcplid = H5VL_log_filei_get_under_plist (fcpl_id);
+            CHECK_ID (ufcplid)
+
+            if (fp->split_master) {
+                err = H5Pset_fapl_mpio (fp->ufaplid, fp->group_comm, fp->info);
+            }
+
+            H5VL_LOGI_PROFILING_TIMER_START;
+            fp->uo = H5VLfile_create (fp->mastername.c_str (), flags, ufcplid, fp->ufaplid, dxpl_id,
+                                      NULL);
+            CHECK_PTR (fp->uo)
+
+            H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
+        }
+        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
+
         H5VL_LOGI_PROFILING_TIMER_START;
         if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
             // Aligned write not supported in subfiles
             fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
 
             H5VL_log_filei_create_subfile (fp, flags, fp->ufaplid, dxpl_id);
+
+            if (fp->uo == NULL) { fp->uo = fp->sfp; }
         } else {
             fp->sfp     = fp->uo;
             fp->subname = fp->name;
@@ -226,13 +271,15 @@ void *H5VL_log_file_create (
         CHECK_MPIERR
 
         // Att
-        attbuf[0] = fp->ndset;
-        attbuf[1] = fp->nldset;
-        attbuf[2] = fp->nmdset;
-        attbuf[3] = fp->config;
-        attbuf[4] = fp->ngroup;
-        H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32, 5, attbuf,
-                           dxpl_id, NULL);
+        if ((fp->sfp != fp->uo) || (!(fp->config & H5VL_FILEI_CONFIG_SUBFILING))) {
+            attbuf[0] = fp->ndset;
+            attbuf[1] = fp->nldset;
+            attbuf[2] = fp->nmdset;
+            attbuf[3] = fp->config;
+            attbuf[4] = fp->ngroup;
+            H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32, 5,
+                               attbuf, dxpl_id, NULL);
+        }
 
         H5VL_log_filei_register (fp);
 
@@ -319,6 +366,7 @@ void *H5VL_log_file_open (
 
         // Init file obj
         fp                    = new H5VL_log_file_t (uvlid);
+        fp->split_master      = false;
         fp->flag              = flags;
         fp->config            = 0;
         fp->fd                = -1;
@@ -411,19 +459,6 @@ herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id,
         if (args->op_type == H5VL_FILE_GET_FCPL) {
             if (op->fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
                 H5Pset_subfiling (args->args.get_fcpl.fcpl_id, op->fp->ngroup);
-            }
-        } else if (args->op_type == H5VL_FILE_GET_FAPL) {
-            if (op->fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
-                H5Pset_meta_merge (args->args.get_fapl.fapl_id, true);
-            }
-            if (op->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
-                H5Pset_sel_encoding (args->args.get_fapl.fapl_id, H5VL_LOG_ENCODING_OFFSET);
-            }
-            if (op->fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
-                H5Pset_meta_zip (args->args.get_fapl.fapl_id, true);
-            }
-            if (op->fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
-                H5Pset_meta_share (args->args.get_fapl.fapl_id, true);
             }
         }
 

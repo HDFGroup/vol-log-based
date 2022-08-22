@@ -360,6 +360,29 @@ void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
         CHECK_ERR
     }
     if (fp->ngroup != H5VL_LOG_SUBFILING_OFF) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
+
+    /* check if env H5VL_LOG_MASTER_PREFIX is set. env has higher precedence */
+    fp->split_master = false;
+    env              = getenv ("H5VL_LOG_MASTER_PREFIX");
+    if (env) {
+        /* -1 is one subfile per node */
+        /*  0 disables subfiling */
+        fp->mastername   = std::string (env);
+        fp->split_master = true;
+    } else {
+        /* env is not set, check if nsubfiles is set by H5Pget_master_file_prefix */
+        char *val;
+
+        err = H5Pget_master_file_prefix (fcplid, &val);
+        CHECK_ERR
+
+        if (val) {
+            fp->mastername   = std::string (val);
+            fp->split_master = true;
+            free (val);
+        }
+    }
+    if (fp->ngroup != H5VL_LOG_SUBFILING_OFF) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
 }
 
 // Under VOL does not recognize logvol-specific properties
@@ -374,9 +397,10 @@ hid_t H5VL_log_filei_get_under_plist (hid_t faplid) {
         }
     });
     static std::string pnames[] = {
-        "H5VL_log_nb_buffer_size", "H5VL_log_idx_buffer_size", "H5VL_log_metadata_merge",
-        "H5VL_log_metadata_share", "H5VL_log_metadata_zip",    "H5VL_log_sel_encoding",
-        "H5VL_log_data_layout",    "H5VL_log_subfiling",       "H5VL_log_single_subfile_read",
+        "H5VL_log_nb_buffer_size",     "H5VL_log_idx_buffer_size", "H5VL_log_metadata_merge",
+        "H5VL_log_metadata_share",     "H5VL_log_metadata_zip",    "H5VL_log_sel_encoding",
+        "H5VL_log_data_layout",        "H5VL_log_subfiling",       "H5VL_log_single_subfile_read",
+        "H5VL_log_master_file_prefix",
     };
 
     try {
@@ -636,8 +660,10 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
             attbuf[2] = 0;
             attbuf[3] |= H5VL_FILEI_CONFIG_SUBFILING;  // Turn subfiling flag back on
         }
-        // Att in the main file
-        H5VL_logi_put_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_NATIVE_INT32, attbuf, fp->dxplid);
+        if ((fp->sfp != fp->uo) || (!(fp->config & H5VL_FILEI_CONFIG_SUBFILING))) {
+            // Att in the main file
+            H5VL_logi_put_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_NATIVE_INT32, attbuf, fp->dxplid);
+        }
     }
 
     // Close the log group
