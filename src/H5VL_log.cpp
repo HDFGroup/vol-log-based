@@ -148,8 +148,8 @@ herr_t H5Pset_buffered (hid_t plist, hbool_t nonblocking) {
         CHECK_ID (pexist)
         if (!pexist) {
             hbool_t blocking = false;
-            err = H5Pinsert2 (plist, NB_PROPERTY_NAME, sizeof (hbool_t), &blocking,
-                              NULL, NULL, NULL, NULL, NULL, NULL);
+            err = H5Pinsert2 (plist, NB_PROPERTY_NAME, sizeof (hbool_t), &blocking, NULL, NULL,
+                              NULL, NULL, NULL, NULL);
             CHECK_ERR
         }
 
@@ -374,7 +374,7 @@ herr_t H5Pset_meta_share (hid_t plist, hbool_t share) {
 
     try {
         // TODO: Fix pclass problem
-        //return 0;
+        // return 0;
 
         isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
         CHECK_ID (isfapl)
@@ -432,7 +432,7 @@ herr_t H5Pset_meta_zip (hid_t plist, hbool_t zip) {
 
     try {
         // TODO: Fix pclass problem
-        //return 0;
+        // return 0;
 
         isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
         CHECK_ID (isfapl)
@@ -491,7 +491,7 @@ herr_t H5Pset_sel_encoding (hid_t plist, H5VL_log_sel_encoding_t encoding) {
 
     try {
         // TODO: Fix pclass problem
-        //return 0;
+        // return 0;
 
         isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
         CHECK_ID (isfapl)
@@ -613,8 +613,8 @@ herr_t H5Pset_subfiling (hid_t plist, int nsubfiles) {
         CHECK_ID (pexist)
         if (!pexist) {
             int n = H5VL_LOG_SUBFILING_OFF;
-            err   = H5Pinsert2 (plist, SUBFILING_PROPERTY_NAME, sizeof (int), &n, NULL, NULL,
-                                NULL, NULL, NULL, NULL);
+            err   = H5Pinsert2 (plist, SUBFILING_PROPERTY_NAME, sizeof (int), &n, NULL, NULL, NULL,
+                                NULL, NULL, NULL);
             CHECK_ERR
         }
 
@@ -668,8 +668,8 @@ herr_t H5Pset_single_subfile_read (hid_t plist, hbool_t single_subfile_read) {
         CHECK_ID (pexist)
         if (!pexist) {
             hbool_t f = false;
-            err = H5Pinsert2 (plist, SINGLE_SUBFILE_READ_PROPERTY_NAME, sizeof (hbool_t), &f, NULL, NULL,
-                              NULL, NULL, NULL, NULL);
+            err = H5Pinsert2 (plist, SINGLE_SUBFILE_READ_PROPERTY_NAME, sizeof (hbool_t), &f, NULL,
+                              NULL, NULL, NULL, NULL, NULL);
             CHECK_ERR
         }
 
