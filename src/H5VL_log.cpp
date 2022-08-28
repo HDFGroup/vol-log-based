@@ -709,41 +709,27 @@ err_out:;
     return err;
 }
 
-#define MASTER_FILE_PREFIX_PROPERTY_NAME "H5VL_log_master_file_prefix"
-
-herr_t H5Pclose_master_file_prefix (const char *name, size_t size, void *value) {
-    if (!strcmp (name, MASTER_FILE_PREFIX_PROPERTY_NAME)) {
-        char *tmp = *((char **)value);
-        if (tmp) { free (tmp); }
-    }
-    return 0;
-}
-
-herr_t H5Pset_master_file_prefix (hid_t plist, char *prefix) {
+#define MASTER_SUBFILING_PROPERTY_NAME "H5VL_log_master_subfiling"
+herr_t H5Pset_master_subfiling (hid_t plist, hbool_t subfiling) {
     herr_t err = 0;
     htri_t isfapl;
     htri_t pexist;
-    char *tmp;
-    int len;
 
     try {
         isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
         CHECK_ID (isfapl)
         if (isfapl == 0) ERR_OUT ("Not fcplid")
 
-        pexist = H5Pexist (plist, MASTER_FILE_PREFIX_PROPERTY_NAME);
+        pexist = H5Pexist (plist, MASTER_SUBFILING_PROPERTY_NAME);
         CHECK_ID (pexist)
         if (!pexist) {
-            tmp = NULL;
-            err = H5Pinsert2 (plist, MASTER_FILE_PREFIX_PROPERTY_NAME, sizeof (char *), &tmp, NULL,
-                              NULL, NULL, NULL, NULL, H5Pclose_master_file_prefix);
+            hbool_t f = false;
+            err = H5Pinsert2 (plist, MASTER_SUBFILING_PROPERTY_NAME, sizeof (hbool_t), &f, NULL,
+                              NULL, NULL, NULL, NULL, NULL);
             CHECK_ERR
         }
 
-        len = strlen (prefix);
-        tmp = (char *)malloc (sizeof (char) * len);
-        strncpy (tmp, prefix, len);
-        err = H5Pset (plist, MASTER_FILE_PREFIX_PROPERTY_NAME, &tmp);
+        err = H5Pset (plist, MASTER_SUBFILING_PROPERTY_NAME, &subfiling);
         CHECK_ERR
     }
     H5VL_LOGI_EXP_CATCH_ERR
@@ -752,29 +738,24 @@ err_out:;
     return err;
 }
 
-herr_t H5Pget_master_file_prefix (hid_t plist, char **prefix) {
+herr_t H5Pget_master_subfiling (hid_t plist, hbool_t *subfiling) {
     herr_t err = 0;
     htri_t isfapl, pexist;
-    char *tmp;
-    int len;
 
     try {
         isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
         CHECK_ID (isfapl)
         if (isfapl == 0)
-            *prefix = NULL;  // Default property will not pass class check
+            *subfiling = false;  // Default property will not pass class check
         else {
-            pexist = H5Pexist (plist, MASTER_FILE_PREFIX_PROPERTY_NAME);
+            pexist = H5Pexist (plist, MASTER_SUBFILING_PROPERTY_NAME);
             CHECK_ID (pexist)
             if (pexist) {
-                err = H5Pget (plist, MASTER_FILE_PREFIX_PROPERTY_NAME, &tmp);
+                err = H5Pget (plist, MASTER_SUBFILING_PROPERTY_NAME, subfiling);
                 CHECK_ERR
 
-                len     = strlen (tmp);
-                *prefix = (char *)malloc (sizeof (char) * len);
-                strncpy (*prefix, tmp, len);
             } else {
-                *prefix = NULL;
+                *subfiling = false;
             }
         }
     }
