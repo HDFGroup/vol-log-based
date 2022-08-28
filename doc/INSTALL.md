@@ -1,7 +1,7 @@
 ## Log-based VOL - Build Instructions
 
 ### Software Requirements
-* [HDF5 1.13.0](https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz)
+* [HDF5 1.13.0](https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.2/src/hdf5-1.13.2.tar.gz)
   + Configured with parallel I/O support (--enable-parallel)
 * MPI C and C++ compilers
   + The plugin uses the constant initializer; a C++ compiler supporting std 17 is required
@@ -15,7 +15,7 @@
 * HDF5 1.13.0 and later (**required**)
   + Download HDF5 official release version 1.13.0.
     ```
-    % wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz
+    % wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.2/src/hdf5-1.13.2.tar.gz
     ```
   + Configure HDF5 with parallel I/O enabled.
     ```

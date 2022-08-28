@@ -53,9 +53,9 @@ jobs:
             rm -rf ${WORKDIR}/HDF5
             mkdir ${WORKDIR}/HDF5
             cd ${WORKDIR}/HDF5
-            wget -qc https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz
-            tar -zxf hdf5-1.13.0.tar.gz
-            cd hdf5-1.13.0
+            wget -qc https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.2/src/hdf5-1.13.2.tar.gz
+            tar -zxf hdf5-1.13.2.tar.gz
+            cd hdf5-1.13.2
             ./configure --prefix=${WORKDIR}/HDF5 \
                         --silent \
                         --disable-fortran \

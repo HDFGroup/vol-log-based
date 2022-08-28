@@ -26,10 +26,10 @@ jobs:
         - name: Install HDF5
           run: |
             WORKDIR=$(pwd)
-            rm -rf hdf5-1.13.0.tar.gz hdf5-1.13.0 ${WORKDIR}/.local/hdf5 qout
-            wget -qc https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/src/hdf5-1.13.0.tar.gz
-            tar -zxf hdf5-1.13.0.tar.gz
-            cd hdf5-1.13.0
+            rm -rf hdf5-1.13.2.tar.gz hdf5-1.13.2 ${WORKDIR}/.local/hdf5 qout
+            wget -qc https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.2/src/hdf5-1.13.2.tar.gz
+            tar -zxf hdf5-1.13.2.tar.gz
+            cd hdf5-1.13.2
             ./configure --prefix=${WORKDIR}/.local/hdf5/1.13.0 \
                         --silent \
                         --disable-fortran \
