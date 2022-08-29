@@ -178,9 +178,10 @@ void *H5VL_log_file_create (
         CHECK_ERR
         err = H5Pset_coll_metadata_write (fp->ufaplid, (hbool_t) true);
         CHECK_ERR
-        if ((fp->rank == 0) || (!(fp->config & H5VL_FILEI_CONFIG_MASTER_SUBFILING))) {
-            // err = H5Pset_alignment (fp->ufaplid, 4096, 4096);
-            // CHECK_ERR
+        // err = H5Pset_alignment (fp->ufaplid, 4096, 4096);
+        // CHECK_ERR
+
+        if ((fp->group_id == 0) || (!(fp->config & H5VL_FILEI_CONFIG_MASTER_SUBFILING))) {
             ufcplid = H5VL_log_filei_get_under_plist (fcpl_id);
             CHECK_ID (ufcplid)
 
@@ -191,7 +192,6 @@ void *H5VL_log_file_create (
             H5VL_LOGI_PROFILING_TIMER_START;
             fp->uo = H5VLfile_create (name, flags, ufcplid, fp->ufaplid, dxpl_id, NULL);
             CHECK_PTR (fp->uo)
-
             H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
         } else {
             fp->uo = NULL;
