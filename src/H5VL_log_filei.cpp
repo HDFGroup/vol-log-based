@@ -360,20 +360,18 @@ void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
         err = H5Pget_subfiling (fcplid, &(fp->ngroup));
         CHECK_ERR
     }
-    if (fp->ngroup != H5VL_LOG_SUBFILING_OFF) {
-        fp->config |= H5VL_FILEI_CONFIG_SUBFILING;
+    if (fp->ngroup != H5VL_LOG_SUBFILING_OFF) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
 
-        /* check if env H5VL_LOG_MASTER_SUBFILING is set. env has higher precedence */
-        err = H5Pget_master_subfiling (fcplid, &ret);
-        CHECK_ERR
-        if (ret) { fp->config |= H5VL_FILEI_CONFIG_MASTER_SUBFILING; }
-        env = getenv ("H5VL_LOG_MASTER_SUBFILING");
-        if (env) {
-            if (strcmp (env, "1") == 0) {
-                fp->config |= H5VL_FILEI_CONFIG_MASTER_SUBFILING;
-            } else {
-                fp->config &= ~H5VL_FILEI_CONFIG_MASTER_SUBFILING;
-            }
+    /* check if env H5VL_LOG_MASTER_SUBFILING is set. env has higher precedence */
+    err = H5Pget_master_subfiling (fcplid, &ret);
+    CHECK_ERR
+    if (ret) { fp->config |= H5VL_FILEI_CONFIG_MASTER_SUBFILING; }
+    env = getenv ("H5VL_LOG_MASTER_SUBFILING");
+    if (env) {
+        if (strcmp (env, "1") == 0) {
+            fp->config |= H5VL_FILEI_CONFIG_MASTER_SUBFILING;
+        } else {
+            fp->config &= ~H5VL_FILEI_CONFIG_MASTER_SUBFILING;
         }
     }
 }
