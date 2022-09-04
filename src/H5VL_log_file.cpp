@@ -52,11 +52,13 @@ void *H5VL_log_file_create (
     hid_t uvlid;
     hid_t fdid;  // VFL driver ID
     hid_t ufcplid = H5I_INVALID_HID;
+    hid_t ufaplid = H5I_INVALID_HID;
     void *under_vol_info;
     MPI_Comm comm    = MPI_COMM_SELF;
     MPI_Info mpiinfo = MPI_INFO_NULL;
     int attbuf[5];
-    H5VL_logi_err_finally finally ([&ufcplid] () -> void {
+    H5VL_logi_err_finally finally ([&ufcplid, &ufaplid, &fp] () -> void {
+        if (fp && (ufaplid != H5I_INVALID_HID) && (ufaplid != fp->ufaplid)) H5Pclose (ufaplid);
         if (ufcplid != H5I_INVALID_HID) H5Pclose (ufcplid);
     });
 
@@ -152,9 +154,21 @@ void *H5VL_log_file_create (
         // CHECK_ERR
         ufcplid = H5VL_log_filei_get_under_plist (fcpl_id);
         CHECK_ID (ufcplid)
+        if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
+            ufaplid = H5Pcopy (fp->ufaplid);
+            CHECK_ID (ufaplid)
+
+            H5Pset_fapl_mpio (ufaplid, MPI_COMM_SELF, MPI_INFO_NULL);
+            if (fp->rank) {
+                err = H5Pset_fapl_core (ufaplid, 16 * 1048576, false);
+                CHECK_ERR
+            }
+        } else {
+            ufaplid = fp->ufaplid;
+        }
 
         H5VL_LOGI_PROFILING_TIMER_START;
-        fp->uo = H5VLfile_create (name, flags, ufcplid, fp->ufaplid, dxpl_id, NULL);
+        fp->uo = H5VLfile_create (name, flags, ufcplid, ufaplid, dxpl_id, NULL);
         CHECK_PTR (fp->uo)
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
