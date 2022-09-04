@@ -90,6 +90,8 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
     std::string name;     // File name
     std::string subname;  // Name of the target subfile
+    std::string mastername; // Name of master file
+    bool split_master;
 
     // H5VL_log_buffer_pool_t data_buf;
     // H5VL_log_contig_buffer_t meta_buf;

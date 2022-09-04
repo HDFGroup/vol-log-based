@@ -18,7 +18,6 @@
 #define H5VL_FILEI_CONFIG_SUBFILING  0x200
 // Read only the subfile matching the rank of the process
 #define H5VL_FILEI_CONFIG_SINGLE_SUBFILE_READ 0x400
-#define H5VL_FILEI_CONFIG_MASTER_SUBFILING 0x800
 
 #define H5VL_LOG_FILEI_GROUP_LOG "_LOG"
 #define H5VL_LOG_FILEI_ATTR_INT  "_int_att"

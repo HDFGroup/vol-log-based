@@ -329,7 +329,6 @@ void H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
 void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
     herr_t err = 0;
     H5VL_log_data_layout_t layout;
-    hbool_t ret;
     char *env;
 
     err = H5Pget_data_layout (fcplid, &layout);
@@ -362,18 +361,28 @@ void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
     }
     if (fp->ngroup != H5VL_LOG_SUBFILING_OFF) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
 
-    /* check if env H5VL_LOG_MASTER_SUBFILING is set. env has higher precedence */
-    err = H5Pget_master_subfiling (fcplid, &ret);
-    CHECK_ERR
-    if (ret) { fp->config |= H5VL_FILEI_CONFIG_MASTER_SUBFILING; }
-    env = getenv ("H5VL_LOG_MASTER_SUBFILING");
+    /* check if env H5VL_LOG_MASTER_PREFIX is set. env has higher precedence */
+    fp->split_master = false;
+    env              = getenv ("H5VL_LOG_MASTER_PREFIX");
     if (env) {
-        if (strcmp (env, "1") == 0) {
-            fp->config |= H5VL_FILEI_CONFIG_MASTER_SUBFILING;
-        } else {
-            fp->config &= ~H5VL_FILEI_CONFIG_MASTER_SUBFILING;
+        /* -1 is one subfile per node */
+        /*  0 disables subfiling */
+        fp->mastername   = std::string (env);
+        fp->split_master = true;
+    } else {
+        /* env is not set, check if nsubfiles is set by H5Pget_master_file_prefix */
+        char *val;
+
+        err = H5Pget_master_file_prefix (fcplid, &val);
+        CHECK_ERR
+
+        if (val) {
+            fp->mastername   = std::string (val);
+            fp->split_master = true;
+            free (val);
         }
     }
+    if (fp->ngroup != H5VL_LOG_SUBFILING_OFF) { fp->config |= H5VL_FILEI_CONFIG_SUBFILING; }
 }
 
 // Under VOL does not recognize logvol-specific properties

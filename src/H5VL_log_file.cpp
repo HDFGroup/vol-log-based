@@ -139,6 +139,26 @@ void *H5VL_log_file_create (
 
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_INIT);
 
+        // Create the file with underlying VOL
+        H5VL_LOGI_PROFILING_TIMER_START;
+        fp->ufaplid = H5VL_log_filei_get_under_plist (fapl_id);
+        err         = H5Pset_vol (fp->ufaplid, uvlid, under_vol_info);
+        CHECK_ERR
+        err = H5Pset_all_coll_metadata_ops (fp->ufaplid, (hbool_t) false);
+        CHECK_ERR
+        err = H5Pset_coll_metadata_write (fp->ufaplid, (hbool_t) true);
+        CHECK_ERR
+        // err = H5Pset_alignment (fp->ufaplid, 4096, 4096);
+        // CHECK_ERR
+        ufcplid = H5VL_log_filei_get_under_plist (fcpl_id);
+        CHECK_ID (ufcplid)
+
+        H5VL_LOGI_PROFILING_TIMER_START;
+        fp->uo = H5VLfile_create (name, flags, ufcplid, fp->ufaplid, dxpl_id, NULL);
+        CHECK_PTR (fp->uo)
+        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
+        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
+
         // Figure out lustre configuration
         H5VL_LOGI_PROFILING_TIMER_START;
         if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
@@ -171,6 +191,19 @@ void *H5VL_log_file_create (
 
         // Create the master file with underlying VOL
         H5VL_LOGI_PROFILING_TIMER_START;
+        if (fp->split_master) {
+            if (fp->group_id) {
+                if (fp->mastername.size ()) {
+                    // Add node id so shared PFS can be used
+                    fp->mastername += "." + std::to_string (fp->group_id);
+                }
+            } else {
+                // Node 0 still writes to original master file
+                fp->mastername = std::string (name);
+            }
+        } else {
+            fp->mastername = std::string (name);
+        }
         fp->ufaplid = H5VL_log_filei_get_under_plist (fapl_id);
         err         = H5Pset_vol (fp->ufaplid, uvlid, under_vol_info);
         CHECK_ERR
@@ -178,23 +211,24 @@ void *H5VL_log_file_create (
         CHECK_ERR
         err = H5Pset_coll_metadata_write (fp->ufaplid, (hbool_t) true);
         CHECK_ERR
-        if ((fp->rank == 0) || (!(fp->config & H5VL_FILEI_CONFIG_MASTER_SUBFILING))) {
+        if (fp->mastername == "") {
+            fp->uo = NULL;
+        } else {
             // err = H5Pset_alignment (fp->ufaplid, 4096, 4096);
             // CHECK_ERR
             ufcplid = H5VL_log_filei_get_under_plist (fcpl_id);
             CHECK_ID (ufcplid)
 
-            if (fp->config & H5VL_FILEI_CONFIG_MASTER_SUBFILING) {
+            if (fp->split_master) {
                 err = H5Pset_fapl_mpio (fp->ufaplid, fp->group_comm, fp->info);
             }
 
             H5VL_LOGI_PROFILING_TIMER_START;
-            fp->uo = H5VLfile_create (name, flags, ufcplid, fp->ufaplid, dxpl_id, NULL);
+            fp->uo = H5VLfile_create (fp->mastername.c_str (), flags, ufcplid, fp->ufaplid, dxpl_id,
+                                      NULL);
             CHECK_PTR (fp->uo)
 
             H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
-        } else {
-            fp->uo = NULL;
         }
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
 
@@ -332,6 +366,7 @@ void *H5VL_log_file_open (
 
         // Init file obj
         fp                    = new H5VL_log_file_t (uvlid);
+        fp->split_master      = false;
         fp->flag              = flags;
         fp->config            = 0;
         fp->fd                = -1;

@@ -125,8 +125,8 @@ herr_t H5Pget_subfiling (hid_t plist, int *nsubfiles);
 herr_t H5Pset_single_subfile_read (hid_t plist, hbool_t single_subfile_read);
 herr_t H5Pget_single_subfile_read (hid_t plist, hbool_t *single_subfile_read);
 
-herr_t H5Pset_master_subfiling (hid_t plist, hbool_t subfiling);
-herr_t H5Pget_master_subfiling (hid_t plist, hbool_t *subfiling);
+herr_t H5Pset_master_file_prefix (hid_t plist, char *prefix);
+herr_t H5Pget_master_file_prefix (hid_t plist, char **prefix);
 
 #ifdef __cplusplus
 }
