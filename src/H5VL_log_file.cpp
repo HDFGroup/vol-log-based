@@ -154,11 +154,10 @@ void *H5VL_log_file_create (
         // CHECK_ERR
         ufcplid = H5VL_log_filei_get_under_plist (fcpl_id);
         CHECK_ID (ufcplid)
-        if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
-            ufaplid = H5Pcopy (fp->ufaplid);
-            CHECK_ID (ufaplid)
 
-            H5Pset_fapl_mpio (ufaplid, MPI_COMM_SELF, MPI_INFO_NULL);
+        if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
+            ufaplid = H5Pcreate (H5P_FILE_ACCESS);
+            CHECK_ID (ufaplid)
             if (fp->rank) {
                 err = H5Pset_fapl_core (ufaplid, 16 * 1048576, false);
                 CHECK_ERR
@@ -166,7 +165,6 @@ void *H5VL_log_file_create (
         } else {
             ufaplid = fp->ufaplid;
         }
-
         H5VL_LOGI_PROFILING_TIMER_START;
         fp->uo = H5VLfile_create (name, flags, ufcplid, ufaplid, dxpl_id, NULL);
         CHECK_PTR (fp->uo)
@@ -405,8 +403,8 @@ fn_exit:;
  *-------------------------------------------------------------------------
  */
 herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id, void **req) {
-    herr_t err         = 0;
-    H5VL_log_obj_t *op = (H5VL_log_obj_t *)file;
+    herr_t err          = 0;
+    H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
 
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -418,25 +416,30 @@ herr_t H5VL_log_file_get (void *file, H5VL_file_get_args_t *args, hid_t dxpl_id,
 #endif
 
         H5VL_LOGI_PROFILING_TIMER_START;
-        err = H5VLfile_get (op->uo, op->uvlid, args, dxpl_id, req);
+        if (args->op_type == H5VL_FILE_GET_FAPL) {
+            err = H5VLfile_get (fp->sfp, fp->uvlid, args, dxpl_id, req);
+
+        } else {
+            err = H5VLfile_get (fp->uo, fp->uvlid, args, dxpl_id, req);
+        }
         CHECK_ERR
-        H5VL_LOGI_PROFILING_TIMER_STOP (op->fp, TIMER_H5VLFILE_GET);
+        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_GET);
 
         if (args->op_type == H5VL_FILE_GET_FCPL) {
-            if (op->fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
-                H5Pset_subfiling (args->args.get_fcpl.fcpl_id, op->fp->ngroup);
+            if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
+                H5Pset_subfiling (args->args.get_fcpl.fcpl_id, fp->ngroup);
             }
         } else if (args->op_type == H5VL_FILE_GET_FAPL) {
-            if (op->fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
+            if (fp->config & H5VL_FILEI_CONFIG_METADATA_MERGE) {
                 H5Pset_meta_merge (args->args.get_fapl.fapl_id, true);
             }
-            if (op->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
+            if (fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE) {
                 H5Pset_sel_encoding (args->args.get_fapl.fapl_id, H5VL_LOG_ENCODING_OFFSET);
             }
-            if (op->fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
+            if (fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
                 H5Pset_meta_zip (args->args.get_fapl.fapl_id, true);
             }
-            if (op->fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
+            if (fp->config & H5VL_FILEI_CONFIG_METADATA_SHARE) {
                 H5Pset_meta_share (args->args.get_fapl.fapl_id, true);
             }
         }
