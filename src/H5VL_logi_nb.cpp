@@ -770,7 +770,7 @@ void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
             printf("Mspace: %u\n", H5Sget_select_npoints(mspace_id));
             printf("dxplid: %u\n", dxplid);
 
-            err = H5VLdataset_write(ldp, fp->uvlid, H5T_STD_B8LE, mspace_id, ldsid, dxplid, (void*)min_addr, NULL);
+            err = H5VLdataset_write(ldp, fp->uvlid, H5T_STD_B8LE, mspace_id, ldsid, H5P_DATASET_XFER_DEFAULT, (void*)min_addr, NULL);
             CHECK_ERR;
 
             H5VL_LOGI_PROFILING_TIMER_START;
