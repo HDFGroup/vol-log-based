@@ -738,39 +738,31 @@ void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
             H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_CREATE);
 
             // mem space
-            hsize_t max_addr = 0, temp, min_addr=(hsize_t)moffs[0];
+            hsize_t max_addr = 0, temp, min_addr = (hsize_t)moffs[0];
             for (int i = 0; i < cnt; i++) {
                 temp = (hsize_t)moffs[i] + (hsize_t)mlens[i];
-                if (temp > max_addr) {
-                    max_addr = temp;
-                }
-                if ((hsize_t)moffs[i] < min_addr) {
-                    min_addr = (hsize_t)moffs[i];
-                }
+                if (temp > max_addr) { max_addr = temp; }
+                if ((hsize_t)moffs[i] < min_addr) { min_addr = (hsize_t)moffs[i]; }
             }
-            temp = max_addr - min_addr;
+            temp            = max_addr - min_addr;
             hid_t mspace_id = H5Screate_simple (1, &temp, &temp);
-            H5Sselect_none(mspace_id);
+            H5Sselect_none (mspace_id);
             hsize_t mstart, mcount = 1, mbsize;
             for (int i = 0; i < cnt; i++) {
                 mstart = (hsize_t)moffs[i] - min_addr;
                 mbsize = (hsize_t)mlens[i];
-                err = H5Sselect_hyperslab (mspace_id, H5S_SELECT_OR, &mstart, NULL, &mcount, &mbsize);
+                err =
+                    H5Sselect_hyperslab (mspace_id, H5S_SELECT_OR, &mstart, NULL, &mcount, &mbsize);
                 CHECK_ERR;
             }
 
             // file space:
-            mstart = (hsize_t) foff_group;
-            mbsize = (hsize_t) fsize_local;
+            mstart = (hsize_t)foff_group;
+            mbsize = (hsize_t)fsize_local;
             H5Sselect_hyperslab (ldsid, H5S_SELECT_SET, &mstart, NULL, &mcount, &mbsize);
 
-
-            printf("Before write:\n");
-            printf("Fspace: %u\n", H5Sget_select_npoints(ldsid));
-            printf("Mspace: %u\n", H5Sget_select_npoints(mspace_id));
-            printf("dxplid: %u\n", dxplid);
-
-            err = H5VLdataset_write(ldp, fp->uvlid, H5T_STD_B8LE, mspace_id, ldsid, H5P_DATASET_XFER_DEFAULT, (void*)min_addr, NULL);
+            err = H5VLdataset_write (ldp, fp->uvlid, H5T_STD_B8LE, mspace_id, ldsid,
+                                     H5P_DATASET_XFER_DEFAULT, (void *)min_addr, NULL);
             CHECK_ERR;
 
             H5VL_LOGI_PROFILING_TIMER_START;
@@ -814,12 +806,14 @@ void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
             // H5VL_LOGI_PROFILING_TIMER_START;
             // // Write the data
             // if (mtype == MPI_DATATYPE_NULL) {
-            //     mpierr = MPI_File_write_at_all (fp->fh, foff_group + doff, MPI_BOTTOM, 0, MPI_INT,
+            //     mpierr = MPI_File_write_at_all (fp->fh, foff_group + doff, MPI_BOTTOM, 0,
+            //     MPI_INT,
             //                                     &stat);
             //     CHECK_MPIERR
             // } else {
             //     mpierr =
-            //         MPI_File_write_at_all (fp->fh, foff_group + doff, MPI_BOTTOM, 1, mtype, &stat);
+            //         MPI_File_write_at_all (fp->fh, foff_group + doff, MPI_BOTTOM, 1, mtype,
+            //         &stat);
             //     CHECK_MPIERR
             // }
             // H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
@@ -827,8 +821,7 @@ void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
             // Close the dataset
             err = H5VLdataset_close (ldp, fp->uvlid, dxplid, NULL);
             CHECK_ERR;
-            H5VL_log_Sclose(mspace_id);
-
+            H5VL_log_Sclose (mspace_id);
 
             // Update metadata in requests
             for (i = fp->nflushed; i < (int)(fp->wreqs.size ()); i++) {
