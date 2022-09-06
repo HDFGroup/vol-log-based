@@ -105,7 +105,6 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
         lens[nentry] = (int)rp->hdr->meta_size;
         mdsize += lens[nentry++];
     }
-
     if (nentry) {
         mpierr = MPI_Type_create_hindexed (nentry, lens, offs, MPI_BYTE, &mmtype);
         CHECK_MPIERR
@@ -218,6 +217,27 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
         }
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_CREATE);
 
+        hsize_t mstart = (hsize_t)rbuf[0], mbsize = (hsize_t)mdsize, one = 1;
+        // file space:
+        err = H5Sselect_hyperslab (mdsid, H5S_SELECT_SET, &mstart, NULL, &one, &mbsize);
+        CHECK_ERR;
+
+        // mem space
+        char *mbuff = (char *)malloc (mdsize);
+        for (int i = 0, mstart = 0; i < nentry; i++) {
+            memcpy (mbuff + mstart, (void *)offs[i], lens[i]);
+            mstart += lens[i];
+        }
+        hid_t mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
+
+        H5VL_LOGI_PROFILING_TIMER_START;
+        err = H5VLdataset_write (mdp, fp->uvlid, H5T_STD_B8LE, mspace_id, mdsid,
+                                 H5P_DATASET_XFER_DEFAULT, (void *)mbuff, NULL);
+        CHECK_ERR;
+        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
+        free (mbuff);
+        H5VL_log_Sclose (mspace_id);
+
         // Close the metadata dataset
         H5VL_LOGI_PROFILING_TIMER_START;
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -226,16 +246,18 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CLOSE);
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_CLOSE);
 
-        // Write metadata
-        H5VL_LOGI_PROFILING_TIMER_START;  // TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE
-        if (nentry) {
-            mpierr = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 1, mmtype, &stat);
-        } else {
-            mpierr = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 0, MPI_INT, &stat);
-        }
-        CHECK_MPIERR
+        // // Write metadata
+        // H5VL_LOGI_PROFILING_TIMER_START;  // TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE
+        // if (nentry) {
+        //     mpierr = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 1, mmtype,
+        //     &stat);
+        // } else {
+        //     mpierr = MPI_File_write_at_all (fp->fh, mdoff + rbuf[0], MPI_BOTTOM, 0, MPI_INT,
+        //     &stat);
+        // }
+        // CHECK_MPIERR
 
-        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
+        // H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
 
         H5VL_LOGI_PROFILING_TIMER_START;
         // This barrier is required to ensure no process read metadata before everyone finishes
