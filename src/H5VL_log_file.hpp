@@ -73,6 +73,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     int fd;     // POSIX fd to the target file for data and metadata (master file or subfile), only
                 // used in aligned write
     void *sfp;  // Under VOL object of the subfile
+    void *wrapped_obj;
     decltype (stcrtstat::st_ino) ino;  // Inode number, used to detect duplicate file open
     bool has_ino;                      // If ino is valid
 

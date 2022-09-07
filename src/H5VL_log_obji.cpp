@@ -80,12 +80,16 @@ H5VL_log_obj_t::H5VL_log_obj_t (struct H5VL_log_obj_t *pp, H5I_type_t type, void
     this->uo = uo;
 }
 H5VL_log_obj_t::~H5VL_log_obj_t () {
+    hid_t err_id;
+
     if (this->fp && (this->fp != this)) { H5VL_log_filei_dec_ref (this->fp); }
     if (this->uvlid >= 0) {
 #ifdef LOGVOL_DEBUG
         this->ext_ref--;
         assert (this->ext_ref >= 0);
 #endif
+        err_id = H5Eget_current_stack ();
         H5VL_logi_dec_ref (this->uvlid);
+        H5Eset_current_stack (err_id);
     }
 }
