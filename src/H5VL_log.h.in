@@ -33,6 +33,11 @@ extern "C" {
 #define H5VL_LOG_SUBFILING_OFF           0
 #define H5VL_LOG_SUBFILING_FILE_PER_NODE 0
 
+typedef struct H5VL_log_info_t {
+    hid_t uvlid;          /* VOL ID for under VOL */
+    void *under_vol_info; /* VOL info for under VOL */
+} H5VL_log_info_t;
+
 typedef enum H5VL_log_req_type_t {
     H5VL_LOG_REQ_BLOCKING    = 0,  // Default
     H5VL_LOG_REQ_NONBLOCKING = 1
