@@ -793,9 +793,9 @@ void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
                                      H5P_DATASET_XFER_DEFAULT, (void *)mbuff, NULL);
             CHECK_ERR;
             H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
-            free (mbuff);
-            H5VL_log_Sclose (mspace_id);
 
+            H5VL_log_Sclose (mspace_id);
+            free (mbuff);
             // H5VL_LOGI_PROFILING_TIMER_START;
             // // Write the data
             // if (mtype == MPI_DATATYPE_NULL) {

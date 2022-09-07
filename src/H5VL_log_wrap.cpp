@@ -77,6 +77,8 @@ herr_t H5VL_log_get_wrap_ctx (const void *obj, void **wrap_ctx) {
         CHECK_PTR (ctx)
 
         /* Increment reference count on underlying VOL ID, and copy the VOL info */
+        ctx->uvlid = op->uvlid;
+        H5Iinc_ref (ctx->uvlid);
         err = H5VLget_wrap_ctx (op->uo, op->uvlid, &(ctx->uo));
         CHECK_ERR
 
@@ -122,7 +124,8 @@ void *H5VL_log_wrap_object (void *obj, H5I_type_t type, void *_wrap_ctx) {
             if (type == H5I_DATASET) {
                 wop = (H5VL_log_obj_t *)H5VL_log_dataseti_wrap (uo, ctx);
             } else if (type == H5I_FILE) {
-                wop = (H5VL_log_obj_t *)H5VL_log_filei_wrap (uo, ctx);
+                wop                  = (H5VL_log_obj_t *)H5VL_log_filei_wrap (uo, ctx);
+                wop->fp->wrapped_obj = obj;
             } else {
                 wop = new H5VL_log_obj_t (ctx, type, uo);
             }
@@ -154,21 +157,15 @@ void *H5VL_log_unwrap_object (void *obj) {
         if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_unwrap_object(%p)\n", obj); }
 #endif
 
-        /* Unrap the object with the underlying VOL */
-        uo = H5VLunwrap_object (op->uo, op->uvlid);
-
         if (!op->fp->is_log_based_file) {
             uo = H5VLunwrap_object (op->uo, op->uvlid);
             if (op->fp != op) delete op;
         }
-        else if (uo) {
-            hid_t err_id;
-
-            err_id = H5Eget_current_stack ();
-            if (op->fp != op) {  // Files are shadow copy
-                delete op;
-            }
-            H5Eset_current_stack (err_id);
+        else if (op->fp != op) {
+            uo = H5VLunwrap_object (op->uo, op->uvlid);
+            delete op;
+        } else {
+            uo = op->fp->wrapped_obj;
         }
     }
     H5VL_LOGI_EXP_CATCH
