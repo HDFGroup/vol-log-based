@@ -321,6 +321,18 @@ void H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
             fp->config &= ~H5VL_FILEI_CONFIG_SINGLE_SUBFILE_READ;
         }
     }
+
+    err = H5Pget_passthru_read_write (faplid, &ret);
+    CHECK_ERR
+    if (ret) { fp->config |= H5VL_FILEI_CONFIG_PASSTHRU_READ_WRITE; }
+    env = getenv ("H5VL_LOG_PASSTHRU_READ_WRITE");
+    if (env) {
+        if (strcmp (env, "1") == 0) {
+            fp->config |= H5VL_FILEI_CONFIG_PASSTHRU_READ_WRITE;
+        } else {
+            fp->config &= ~H5VL_FILEI_CONFIG_PASSTHRU_READ_WRITE;
+        }
+    }
 }
 
 void H5VL_log_filei_parse_fcpl (H5VL_log_file_t *fp, hid_t fcplid) {
@@ -371,9 +383,17 @@ hid_t H5VL_log_filei_get_under_plist (hid_t faplid) {
         }
     });
     static std::string pnames[] = {
+<<<<<<< HEAD
         "H5VL_log_nb_buffer_size", "H5VL_log_idx_buffer_size", "H5VL_log_metadata_merge",
         "H5VL_log_metadata_share", "H5VL_log_metadata_zip",    "H5VL_log_sel_encoding",
         "H5VL_log_data_layout",    "H5VL_log_subfiling",       "H5VL_log_single_subfile_read",
+=======
+        "H5VL_log_nb_buffer_size",     "H5VL_log_idx_buffer_size", "H5VL_log_metadata_merge",
+        "H5VL_log_metadata_share",     "H5VL_log_metadata_zip",    "H5VL_log_sel_encoding",
+        "H5VL_log_data_layout",        "H5VL_log_subfiling",       "H5VL_log_single_subfile_read",
+        "H5VL_log_master_file_prefix",
+        "H5VL_log_passthru_read_write",
+>>>>>>> e87228d (feat: user can enable/disable passthru feature)
     };
 
     try {
