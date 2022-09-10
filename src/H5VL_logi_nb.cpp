@@ -620,7 +620,8 @@ void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
     haddr_t doff;  // File offset of the log dataset
     H5VL_loc_params_t loc;
     char dname[16];  // Name of the log dataset
-    H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+    H5VL_log_file_t *fp       = (H5VL_log_file_t *)file;
+    bool perform_write_in_mpi = true;
     H5VL_logi_err_finally finally ([&mtype, &ldsid, &dcplid, &mlens, &moffs] () -> void {
         if (mtype != MPI_DATATYPE_NULL) MPI_Type_free (&mtype);
         H5VL_log_Sclose (ldsid);
@@ -630,6 +631,12 @@ void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
         H5VL_log_free (mlens);
         H5VL_log_free (moffs);
     });
+
+    if (fp->config & H5VL_FILEI_CONFIG_PASSTHRU_READ_WRITE) {
+        perform_write_in_mpi = false;
+    } else {
+        perform_write_in_mpi = true;
+    }
 
     H5VL_LOGI_PROFILING_TIMER_START;
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -666,10 +673,13 @@ void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
             fsize_local += fp->wreqs[i]->hdr->fsize;
         }
 
-        // mpierr = MPI_Type_create_hindexed (cnt, mlens, moffs, MPI_BYTE, &mtype);
-        // CHECK_MPIERR
-        // mpierr = MPI_Type_commit (&mtype);
-        // CHECK_MPIERR
+        if (perform_write_in_mpi) {
+            mpierr = MPI_Type_create_hindexed (cnt, mlens, moffs, MPI_BYTE, &mtype);
+            CHECK_MPIERR
+            mpierr = MPI_Type_commit (&mtype);
+            CHECK_MPIERR
+        }
+
     } else {
         mtype = MPI_DATATYPE_NULL;
     }
@@ -775,41 +785,43 @@ void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
             }
             H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_OPTIONAL);
 
-            hsize_t mstart = (hsize_t)foff_group, mbsize = (hsize_t)fsize_local, one = 1;
-            // file space:
-            err = H5Sselect_hyperslab (ldsid, H5S_SELECT_SET, &mstart, NULL, &one, &mbsize);
-            CHECK_ERR;
+            // Write data
+            if (perform_write_in_mpi) {
+                H5VL_LOGI_PROFILING_TIMER_START;
+                // Write the data
+                if (mtype == MPI_DATATYPE_NULL) {
+                    mpierr = MPI_File_write_at_all (fp->fh, foff_group + doff, MPI_BOTTOM, 0,
+                                                    MPI_INT, &stat);
+                    CHECK_MPIERR
+                } else {
+                    mpierr = MPI_File_write_at_all (fp->fh, foff_group + doff, MPI_BOTTOM, 1, mtype,
+                                                    &stat);
+                    CHECK_MPIERR
+                }
+                H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
+            } else {
+                hsize_t mstart = (hsize_t)foff_group, mbsize = (hsize_t)fsize_local, one = 1;
 
-            // mem space
-            char *mbuff = (char *)malloc (mbsize);
-            for (int i = 0, mstart = 0; i < cnt; i++) {
-                memcpy (mbuff + mstart, (void *)moffs[i], mlens[i]);
-                mstart += mlens[i];
+                // file space:
+                err = H5Sselect_hyperslab (ldsid, H5S_SELECT_SET, &mstart, NULL, &one, &mbsize);
+                CHECK_ERR;
+
+                // mem space
+                char *mbuff = (char *)malloc (mbsize);
+                for (int i = 0, mstart = 0; i < cnt; i++) {
+                    memcpy (mbuff + mstart, (void *)moffs[i], mlens[i]);
+                    mstart += mlens[i];
+                }
+                hid_t mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
+
+                H5VL_LOGI_PROFILING_TIMER_START;
+                err = H5VLdataset_write (ldp, fp->uvlid, H5T_STD_B8LE, mspace_id, ldsid,
+                                         H5P_DATASET_XFER_DEFAULT, (void *)mbuff, NULL);
+                CHECK_ERR;
+                H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
+                free (mbuff);
+                H5VL_log_Sclose (mspace_id);
             }
-            hid_t mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
-
-            H5VL_LOGI_PROFILING_TIMER_START;
-            err = H5VLdataset_write (ldp, fp->uvlid, H5T_STD_B8LE, mspace_id, ldsid,
-                                     H5P_DATASET_XFER_DEFAULT, (void *)mbuff, NULL);
-            CHECK_ERR;
-            H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
-
-            H5VL_log_Sclose (mspace_id);
-            free (mbuff);
-            // H5VL_LOGI_PROFILING_TIMER_START;
-            // // Write the data
-            // if (mtype == MPI_DATATYPE_NULL) {
-            //     mpierr = MPI_File_write_at_all (fp->fh, foff_group + doff, MPI_BOTTOM, 0,
-            //     MPI_INT,
-            //                                     &stat);
-            //     CHECK_MPIERR
-            // } else {
-            //     mpierr =
-            //         MPI_File_write_at_all (fp->fh, foff_group + doff, MPI_BOTTOM, 1, mtype,
-            //         &stat);
-            //     CHECK_MPIERR
-            // }
-            // H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
 
             // Close the dataset
             err = H5VLdataset_close (ldp, fp->uvlid, dxplid, NULL);
