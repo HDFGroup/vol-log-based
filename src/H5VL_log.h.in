@@ -130,6 +130,9 @@ herr_t H5Pget_subfiling (hid_t plist, int *nsubfiles);
 herr_t H5Pset_single_subfile_read (hid_t plist, hbool_t single_subfile_read);
 herr_t H5Pget_single_subfile_read (hid_t plist, hbool_t *single_subfile_read);
 
+herr_t H5Pget_passthru_read_write (hid_t faplid, hbool_t *enable);
+herr_t H5Pset_passthru_read_write (hid_t faplid, hbool_t enable);
+
 #ifdef __cplusplus
 }
 #endif
