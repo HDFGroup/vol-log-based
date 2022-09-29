@@ -78,12 +78,14 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
             H5Aclose (aid);
             aid = -1;
             // Read max dims
+            /*
             aid = H5Aopen (src_id, H5VL_LOG_DATASETI_ATTR_MDIMS, H5P_DEFAULT);
             CHECK_ID (aid)
             err = H5Aread (aid, H5T_NATIVE_INT64, mdims);
             CHECK_ERR
             H5Aclose (aid);
             aid = -1;
+            */
             // Read dataset ID
             aid = H5Aopen (src_id, H5VL_LOG_DATASETI_ATTR_ID, H5P_DEFAULT);
             CHECK_ID (aid)
@@ -98,7 +100,7 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
             // Create dst dataset
             err = H5Pset_layout (dcplid, H5D_CONTIGUOUS);
             CHECK_ERR
-            sid = H5Screate_simple (ndim, dims, mdims);
+            sid = H5Screate_simple (ndim, dims, dims);
             CHECK_ID (sid)
             dst_id = H5Dcreate2 (argp->fid, name, tid, sid, H5P_DEFAULT, dcplid, H5P_DEFAULT);
             CHECK_ID (dst_id)
@@ -187,7 +189,6 @@ herr_t h5lreplay_attr_copy_handler (hid_t location_id,
 #endif
         goto err_out;
     }
-    if (attr_name[0] == '_') attr_name++;
 
     try {
 #ifdef LOGVOL_DEBUG
@@ -214,6 +215,8 @@ herr_t h5lreplay_attr_copy_handler (hid_t location_id,
         bsize *= esize;
         buf = malloc (bsize);
         CHECK_PTR (buf)
+
+        if (attr_name[0] == '_') attr_name++;
 
         // Read attr
         err = H5Aread (src_aid, tid, buf);
