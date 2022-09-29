@@ -155,9 +155,11 @@ void h5lreplay_write_data (hid_t foutid,
                 }
                 err = H5Sselect_hyperslab (msid, H5S_SELECT_SET, &zero, NULL, one, &msize);
                 CHECK_ERR
-                err = H5Sselect_hyperslab (dsid, H5S_SELECT_SET, req.sels[k].start, NULL, one,
-                                           req.sels[k].count);
-                CHECK_ERR
+                if (dsets[i].ndim) {
+                    err = H5Sselect_hyperslab (dsid, H5S_SELECT_SET, req.sels[k].start, NULL, one,
+                                               req.sels[k].count);
+                    CHECK_ERR
+                }
                 err = H5Dwrite (dsets[i].id, dsets[i].dtype, msid, dsid, H5P_DEFAULT, req.bufs[k]);
                 CHECK_ERR
             }
