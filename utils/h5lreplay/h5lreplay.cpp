@@ -233,7 +233,7 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
 
         // Iterate subdir
         for (i = 0; i < nsubfiles; i++) {
-            subpath = inpath + ".subfiles" + std::string (basename ((char *)(inpath.c_str ()))) +
+            subpath = inpath + ".subfiles/" + std::string (basename ((char *)(inpath.c_str ()))) +
                       "." + std::to_string (i + subid);
 
             // Clean up the index
