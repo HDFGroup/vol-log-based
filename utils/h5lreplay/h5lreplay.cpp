@@ -275,12 +275,12 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
                 // Close the subfile
                 MPI_File_close (&fsub);
                 fsub = MPI_FILE_NULL;
-                H5Fclose (fsubid);
-                fsubid = -1;
                 H5Gclose (lgid);
                 lgid = -1;
                 H5Aclose (aid);
                 aid = -1;
+                H5Fclose (fsubid);
+                fsubid = -1;
             }
         }
     } else {
