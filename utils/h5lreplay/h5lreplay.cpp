@@ -18,9 +18,9 @@
 //
 #include <dirent.h>
 #include <hdf5.h>
+#include <libgen.h>
 #include <mpi.h>
 #include <unistd.h>
-#include <libgen.h>
 //
 #include "H5VL_log_file.hpp"
 #include "H5VL_log_filei.hpp"
@@ -98,8 +98,12 @@ static int split_comm (MPI_Comm orig_comm, MPI_Comm *sub_comm, int *num_subfiles
     MPI_Comm_rank (orig_comm, &orig_rank);
 
     /* split communicator to create one sub-communicator per compute node */
-    mpierr =
-        MPI_Comm_split_type (orig_comm, MPI_COMM_TYPE_SHARED, orig_rank, MPI_INFO_NULL, sub_comm);
+    //mpierr =
+    //    MPI_Comm_split_type (orig_comm, MPI_COMM_TYPE_SHARED, orig_rank, MPI_INFO_NULL, sub_comm);
+    //CHECK_MPIERR
+
+        mpierr =
+        MPI_Comm_split (orig_comm, orig_rank & 1, orig_rank, sub_comm);
     CHECK_MPIERR
 
     /* calculate subfile ID and take care of both process rank assignments:
@@ -223,16 +227,17 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
 
         // Split the communicator according to nodes
         nsubfiles = att_buf[4];
-        err       = split_comm (MPI_COMM_WORLD, &subcomm, &nnode, &subrank);
+        err       = split_comm (MPI_COMM_WORLD, &subcomm, &nnode, &subid);
         CHECK_ERR
         MPI_Comm_size (subcomm, &subnp);
+        MPI_Comm_rank (subcomm, &subrank);
 
         // Close attr in main file
         H5Aclose (aid);
         aid = -1;
 
         // Iterate subdir
-        for (i = 0; i < nsubfiles; i++) {
+        for (i = 0; i < nsubfiles; i += nnode) {
             subpath = inpath + ".subfiles/" + std::string (basename ((char *)(inpath.c_str ()))) +
                       "." + std::to_string (i + subid);
 
