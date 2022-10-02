@@ -158,6 +158,8 @@ void *H5VL_log_file_create (
         if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
             ufaplid = H5Pcreate (H5P_FILE_ACCESS);
             CHECK_ID (ufaplid)
+            err = H5Pset_vol (ufaplid, uvlid, under_vol_info);
+            CHECK_ERR
             if (fp->rank) {
                 err = H5Pset_fapl_core (ufaplid, 16 * 1048576, false);
                 CHECK_ERR
@@ -218,8 +220,8 @@ void *H5VL_log_file_create (
         loc.obj_type = H5I_FILE;
         loc.type     = H5VL_OBJECT_BY_SELF;
         fp->lgp      = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
-                                         H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,
-                                         H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
+                                    H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,
+                                    H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
         CHECK_PTR (fp->lgp)
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
 
