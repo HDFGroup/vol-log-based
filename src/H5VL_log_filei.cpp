@@ -629,7 +629,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
         // Att in the subfile
         if (fp->sfp && fp->sfp != fp->uo) {
             attbuf[3] =
-                fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
+                fp->config & (~(H5VL_FILEI_CONFIG_SUBFILING));  // No subfiling flag in a subfile
             H5VL_logi_put_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR_INT,
                                H5T_NATIVE_INT32, attbuf, fp->dxplid);
             attbuf[1] = 0;  // No data and metadata in the main file
