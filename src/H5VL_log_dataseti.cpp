@@ -487,9 +487,11 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
                     if (r->hdr->flag & H5VL_LOGI_META_FLAG_REC) {
                         // If same record, we can remove the record field and make it a full
                         // reference
-                        if (*((MPI_Offset *)(r->hdr + 1)) ==
-                            *((MPI_Offset *)(ret->second->hdr + 1))) {
-                            r->sel_buf -= sizeof (MPI_Offset);
+                        if (ret->second->hdr->flag & H5VL_LOGI_META_FLAG_REC){
+                            if (*((MPI_Offset *)(r->hdr + 1)) ==
+                                *((MPI_Offset *)(ret->second->hdr + 1))) {
+                                r->sel_buf -= sizeof (MPI_Offset);
+                            }
                         }
                     }
                     *((MPI_Offset *)(r->sel_buf)) =
