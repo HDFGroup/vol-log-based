@@ -175,7 +175,7 @@ void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> b
             } else {
                 for (; j <= i; j++) {  // Breakdown
                     nrow = 1;
-                    for (k = 0; k < (int32_t)(blocks[i].info->ndim) - 1; k++) {
+                    for (k = 0; k < (int32_t) (blocks[i].info->ndim) - 1; k++) {
                         nrow *= blocks[j].count[k];
                     }
                     nt += nrow;
@@ -200,7 +200,7 @@ void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> b
                     if (blocks[j].fsize >
                         0) {  // Don't need to read if read by other intersections already
                         foffs[nt]  = blocks[j].foff;
-                        moffs[nt]  = (MPI_Aint)(blocks[j].zbuf);
+                        moffs[nt]  = (MPI_Aint) (blocks[j].zbuf);
                         lens[nt]   = blocks[j].fsize;
                         ftypes[nt] = MPI_BYTE;
                         mtypes[nt] = MPI_BYTE;
@@ -246,7 +246,7 @@ void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> b
                     }
 
                     foffs[nt] = blocks[j].foff + blocks[j].doff;
-                    moffs[nt] = (MPI_Offset)(blocks[j].xbuf);
+                    moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
                     nt++;
                 }
 
@@ -270,8 +270,9 @@ void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> b
                             lens[nt] = blocks[j].info->esize;
                         }
                         foffs[nt] = blocks[j].foff + blocks[j].doff;
-                        moffs[nt] = (MPI_Offset)(blocks[j].xbuf);
-                        for (k = 0; k < (int32_t)(blocks[i].info->ndim); k++) {  // Calculate offset
+                        moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
+                        for (k = 0; k < (int32_t) (blocks[i].info->ndim);
+                             k++) {  // Calculate offset
                             foffs[nt] += fssize[k] * (blocks[j].dstart[k] + ctr[k]);
                             moffs[nt] += mssize[k] * (blocks[j].mstart[k] + ctr[k]);
                         }
@@ -299,10 +300,10 @@ void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> b
                         if (foffs[k] + lens[k] > foffs[l]) {  // Adjust for overlap
                             // Record a memory copy req that copy the result from the former read to
                             // cover the later one
-                            ctx.dst = (char *)moffs[l];
-                            ctx.size =
-                                std::min ((size_t)lens[l], (size_t)(foffs[k] - foffs[l] + lens[k]));
-                            ctx.src = (char *)(moffs[k] - ctx.size + lens[k]);
+                            ctx.dst  = (char *)moffs[l];
+                            ctx.size = std::min ((size_t)lens[l],
+                                                 (size_t) (foffs[k] - foffs[l] + lens[k]));
+                            ctx.src  = (char *)(moffs[k] - ctx.size + lens[k]);
                             overlaps.push_back (ctx);
 
                             // Trim off the later one
@@ -487,7 +488,7 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
                     if (r->hdr->flag & H5VL_LOGI_META_FLAG_REC) {
                         // If same record, we can remove the record field and make it a full
                         // reference
-                        if (ret->second->hdr->flag & H5VL_LOGI_META_FLAG_REC){
+                        if (ret->second->hdr->flag & H5VL_LOGI_META_FLAG_REC) {
                             if (*((MPI_Offset *)(r->hdr + 1)) ==
                                 *((MPI_Offset *)(ret->second->hdr + 1))) {
                                 r->sel_buf -= sizeof (MPI_Offset);
@@ -543,7 +544,7 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 #endif
 
         // Resize metadata buffer
-        if (r->hdr->meta_size > (int32_t)(r->sel_buf + selsize - r->meta_buf)) {
+        if (r->hdr->meta_size > (int32_t) (r->sel_buf + selsize - r->meta_buf)) {
             r->resize (r->sel_buf - r->meta_buf + selsize);
         }
     }
@@ -565,7 +566,7 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
         CHECK_ID (esize)
 
         // HDF5 type conversion is in place, allocate for whatever larger
-        H5VL_log_filei_balloc (dp->fp, db.size * std::max (esize, (size_t)(dip->esize)),
+        H5VL_log_filei_balloc (dp->fp, db.size * std::max (esize, (size_t) (dip->esize)),
                                (void **)(&(db.xbuf)));
         // err = H5VL_log_filei_pool_alloc (&(dp->fp->data_buf),
         //								 db.size * std::max (esize,
@@ -720,7 +721,7 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
         CHECK_ID (esize)
 
         // HDF5 type conversion is in place, allocate for whatever larger
-        H5VL_log_filei_balloc (dp->fp, r->rsize * std::max (esize, (size_t)(dip->esize)),
+        H5VL_log_filei_balloc (dp->fp, r->rsize * std::max (esize, (size_t) (dip->esize)),
                                (void **)(&(r->xbuf)));
 
         // Need packing
