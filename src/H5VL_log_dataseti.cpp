@@ -492,6 +492,7 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
                             if (*((MPI_Offset *)(r->hdr + 1)) ==
                                 *((MPI_Offset *)(ret->second->hdr + 1))) {
                                 r->sel_buf -= sizeof (MPI_Offset);
+                                r->hdr->flag &= ~(H5VL_LOGI_META_FLAG_REC);
                             }
                         }
                     }
