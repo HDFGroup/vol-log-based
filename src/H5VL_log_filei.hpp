@@ -19,10 +19,11 @@
 // Read only the subfile matching the rank of the process
 #define H5VL_FILEI_CONFIG_SINGLE_SUBFILE_READ 0x400
 
-#define H5VL_LOG_FILEI_GROUP_LOG "_LOG"
-#define H5VL_LOG_FILEI_ATTR_INT  "_int_att"
-#define H5VL_LOG_FILEI_DSET_META "_md"
-#define H5VL_LOG_FILEI_DSET_DATA "_ld"
+#define H5VL_LOG_FILEI_GROUP_LOG  "_LOG"
+#define H5VL_LOG_FILEI_ATTR_INT   "_int_att"
+#define H5VL_LOG_FILEI_N_ATTR_INT 5
+#define H5VL_LOG_FILEI_DSET_META  "_md"
+#define H5VL_LOG_FILEI_DSET_DATA  "_ld"
 
 // File internals
 

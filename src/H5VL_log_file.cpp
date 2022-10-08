@@ -245,8 +245,8 @@ void *H5VL_log_file_create (
         attbuf[2] = fp->nmdset;
         attbuf[3] = fp->config;
         attbuf[4] = fp->ngroup;
-        H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32, 5, attbuf,
-                           dxpl_id, NULL);
+        H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32,
+                           H5VL_LOG_FILEI_N_ATTR_INT, attbuf, dxpl_id, NULL);
 
         H5VL_log_filei_register (fp);
 

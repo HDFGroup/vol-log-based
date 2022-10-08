@@ -87,7 +87,7 @@ void H5VL_log_filei_balloc (H5VL_log_file_t *fp, size_t size, void **buf) {
     // printf("Balloc %llu\n", size);
 
     if (fp->bsize != LOG_VOL_BSIZE_UNLIMITED) {
-        if (fp->bused + size > (size_t)(fp->bsize)) {
+        if (fp->bused + size > (size_t) (fp->bsize)) {
             *buf = NULL;
             ERR_OUT ("Out of buffer")
         }
@@ -112,7 +112,7 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     H5VL_loc_params_t loc;
     H5VL_object_specific_args_t args;
     hbool_t exists;
-    int attbuf[5];
+    int attbuf[H5VL_LOG_FILEI_N_ATTR_INT];
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -296,7 +296,7 @@ void H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
     err = H5Pget_idx_buffer_size (faplid, &(fp->mbuf_size));
     CHECK_ERR
     env = getenv ("H5VL_LOG_IDX_BSIZE");
-    if (env) { fp->mbuf_size = (MPI_Offset)(atoll (env)); }
+    if (env) { fp->mbuf_size = (MPI_Offset) (atoll (env)); }
 
     /*
     err = H5Pget_sel_encoding (faplid, &encoding);
@@ -429,7 +429,7 @@ void H5VL_log_filei_pool_alloc (H5VL_log_buffer_pool_t *p, ssize_t bsize, void *
                 bp             = p->free_blocks;
                 p->free_blocks = bp->next;
             } else {
-                bp = H5VL_log_filei_pool_new_block ((size_t)(p->bsize));
+                bp = H5VL_log_filei_pool_new_block ((size_t) (p->bsize));
             }
         }
 
@@ -451,7 +451,7 @@ void H5VL_log_filei_pool_init (H5VL_log_buffer_pool_t *p, ssize_t bsize) {
     }
 
     if (p->bsize) {
-        p->head = H5VL_log_filei_pool_new_block ((size_t)(p->bsize));
+        p->head = H5VL_log_filei_pool_new_block ((size_t) (p->bsize));
     } else {
         p->head = NULL;
     }
@@ -766,7 +766,7 @@ void H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
     attbuf[3] = fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
     attbuf[4] = fp->ngroup;
     H5VL_logi_add_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE,
-                       H5T_NATIVE_INT32, 5, attbuf, dxpl_id, NULL);
+                       H5T_NATIVE_INT32, H5VL_LOG_FILEI_N_ATTR_INT, attbuf, dxpl_id, NULL);
 }
 
 void H5VL_log_filei_open_subfile (H5VL_log_file_t *fp,
