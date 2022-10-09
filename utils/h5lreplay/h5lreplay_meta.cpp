@@ -137,7 +137,8 @@ void h5lreplay_parse_meta (int rank,
             CHECK_ERR
             sec.buf = (char *)malloc (count);
             err     = H5Dread (did, H5T_NATIVE_B8, msid, dsid, H5P_DEFAULT, sec.buf);
-
+            CHECK_ERR
+            
             // Close the metadata dataset
             H5Sclose (dsid);
             dsid = -1;
