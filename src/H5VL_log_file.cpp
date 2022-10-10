@@ -56,7 +56,7 @@ void *H5VL_log_file_create (
     void *under_vol_info;
     MPI_Comm comm    = MPI_COMM_SELF;
     MPI_Info mpiinfo = MPI_INFO_NULL;
-    int attbuf[5];
+    int attbuf[H5VL_LOG_FILEI_NATTR];
     H5VL_logi_err_finally finally ([&ufcplid, &ufaplid, &fp] () -> void {
         if (fp && (ufaplid != H5I_INVALID_HID) && (ufaplid != fp->ufaplid)) H5Pclose (ufaplid);
         if (ufcplid != H5I_INVALID_HID) H5Pclose (ufcplid);
@@ -245,8 +245,8 @@ void *H5VL_log_file_create (
         attbuf[2] = fp->nmdset;
         attbuf[3] = fp->config;
         attbuf[4] = fp->ngroup;
-        H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR_INT, H5T_STD_I32LE, H5T_NATIVE_INT32,
-                           H5VL_LOG_FILEI_N_ATTR_INT, attbuf, dxpl_id, NULL);
+        H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR, H5T_STD_I32LE, H5T_NATIVE_INT32,
+                           H5VL_LOG_FILEI_NATTR, attbuf, dxpl_id, NULL);
 
         H5VL_log_filei_register (fp);
 

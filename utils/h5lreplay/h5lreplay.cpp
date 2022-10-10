@@ -145,9 +145,9 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
     hsize_t n;  // Attr iterate idx position
     int ndset;  // # dataset in the input file
     // int nldset;		 // # data dataset in the current file (main file| subfile)
-    int nmdset;      // # metadata dataset in the current file (main file| subfile)
-    int config;      // Config flags of the input file
-    int att_buf[5];  // Temporary buffer for reading file attributes
+    int nmdset;  // # metadata dataset in the current file (main file| subfile)
+    int config;  // Config flags of the input file
+    int att_buf[H5VL_LOG_FILEI_NATTR];    // Temporary buffer for reading file attributes
     h5lreplay_copy_handler_arg copy_arg;  // File structure
     std::vector<h5lreplay_idx_t>
         reqs;                          // Requests recorded in the current file (main file| subfile)
@@ -195,7 +195,7 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
     CHECK_MPIERR
 
     // Read file metadata
-    aid = H5Aopen (finid, H5VL_LOG_FILEI_ATTR_INT, H5P_DEFAULT);
+    aid = H5Aopen (finid, H5VL_LOG_FILEI_ATTR, H5P_DEFAULT);
     CHECK_ID (aid)
 
     dxplid = H5Pcreate (H5P_DATASET_XFER);
@@ -258,7 +258,7 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
                 CHECK_MPIERR
 
                 // Read file metadata
-                aid = H5Aopen (fsubid, H5VL_LOG_FILEI_ATTR_INT,
+                aid = H5Aopen (fsubid, H5VL_LOG_FILEI_ATTR,
                                H5P_DEFAULT);  // Open attr in subfile
                 CHECK_ID (aid)
                 err = H5Aread (aid, H5T_NATIVE_INT, att_buf);

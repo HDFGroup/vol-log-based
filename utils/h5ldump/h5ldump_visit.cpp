@@ -26,11 +26,11 @@
 
 void h5ldump_visit (std::string path, std::vector<H5VL_log_dset_info_t> &dsets) {
     herr_t err       = 0;
-    hid_t fid        = -1;  // File ID
-    hid_t aid        = -1;  // ID of file attribute
-    hid_t faplid     = -1;  // File access property ID
-    hid_t nativevlid = -1;  // Native VOL ID
-    int att_buf[5];         // Temporary buffer for reading file attributes
+    hid_t fid        = -1;              // File ID
+    hid_t aid        = -1;              // ID of file attribute
+    hid_t faplid     = -1;              // File access property ID
+    hid_t nativevlid = -1;              // Native VOL ID
+    int att_buf[H5VL_LOG_FILEI_NATTR];  // Temporary buffer for reading file attributes
     H5VL_logi_err_finally finally ([&] () -> void {
         if (aid >= 0) { H5Aclose (aid); }
         if (fid >= 0) { H5Fclose (fid); }
@@ -47,7 +47,7 @@ void h5ldump_visit (std::string path, std::vector<H5VL_log_dset_info_t> &dsets) 
     CHECK_ID (fid)
 
     // Read file metadata
-    aid = H5Aopen (fid, H5VL_LOG_FILEI_ATTR_INT, H5P_DEFAULT);
+    aid = H5Aopen (fid, H5VL_LOG_FILEI_ATTR, H5P_DEFAULT);
     CHECK_ID (aid)
 
     err = H5Aread (aid, H5T_NATIVE_INT, att_buf);

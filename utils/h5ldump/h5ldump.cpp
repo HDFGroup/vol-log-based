@@ -58,7 +58,7 @@ inline std::string get_file_signature (std::string &path) {
             fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, faplid);
             CHECK_ID (fid)
 
-            islog = H5Aexists (fid, H5VL_LOG_FILEI_ATTR_INT);
+            islog = H5Aexists (fid, H5VL_LOG_FILEI_ATTR);
             isnc4 = H5Aexists (fid, "_NCProperties");
 
             if (islog) {
@@ -195,17 +195,17 @@ void h5ldump_file (std::string path,
     int mpierr;
     int i;
     MPI_File fh      = MPI_FILE_NULL;
-    hid_t fid        = -1;  // File ID
-    hid_t faplid     = -1;  // File access property ID
-    hid_t nativevlid = -1;  // Native VOL ID
-    hid_t lgid       = -1;  // Log group ID
-    hid_t aid        = -1;  // File attribute ID
-    int ndset;              // Number of user datasets
-    int nldset;             // Number of data datasets
-    int nmdset;             // Number of metadata datasets
-    int nsubfile;           // Number of subfiles
-    int config;             // File config flags
-    int att_buf[5];         // attirbute buffer
+    hid_t fid        = -1;              // File ID
+    hid_t faplid     = -1;              // File access property ID
+    hid_t nativevlid = -1;              // Native VOL ID
+    hid_t lgid       = -1;              // Log group ID
+    hid_t aid        = -1;              // File attribute ID
+    int ndset;                          // Number of user datasets
+    int nldset;                         // Number of data datasets
+    int nmdset;                         // Number of metadata datasets
+    int nsubfile;                       // Number of subfiles
+    int config;                         // File config flags
+    int att_buf[H5VL_LOG_FILEI_NATTR];  // attirbute buffer
     H5VL_logi_err_finally finally ([&] () -> void {
         if (fh != MPI_FILE_NULL) { MPI_File_close (&fh); }
         if (aid >= 0) { H5Aclose (aid); }
@@ -230,7 +230,7 @@ void h5ldump_file (std::string path,
     }
 
     // Read file metadata
-    aid = H5Aopen (fid, H5VL_LOG_FILEI_ATTR_INT, H5P_DEFAULT);
+    aid = H5Aopen (fid, H5VL_LOG_FILEI_ATTR, H5P_DEFAULT);
     if (!aid) {
         std::cout << "Error: " << path << " is not a valid log-based VOL file." << std::endl;
         std::cout << "Use h5dump in HDF5 utilities to read traditional HDF5 files." << std::endl;
