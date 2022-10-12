@@ -17,7 +17,7 @@ This case study uses [the Weather Research and Forecasting (WRF) Model](https://
   + zlib-1.2.7 or higher
 * Clone WRF from its github repository:
   ```
-    git clone https://github.com/wrf-model/WRF.git
+    git clone https://github.com/wrf-model/WRF/releases/download/v4.4.1/v4.4.1.tar.gz
   ```  
 * Setup environment variables for configuring WRF
   ```
