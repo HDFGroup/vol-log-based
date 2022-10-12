@@ -45,7 +45,7 @@ This case study uses [the Weather Research and Forecasting (WRF) Model](https://
     export LD_LIBRARY_PATH="$HDF5/lib:$NETCDF/lib:$LD_LIBRARY_PATH"
     export PATH="$HDF5_DIR/bin:$NETCDF_DIR/bin:$PATH"
   ```
-* Configure E3SM-IO with NetCDF4 features enabled.
+* Configure WRF with NetCDF4 features enabled.
   ```
     cd WRF
     ./clean -a
