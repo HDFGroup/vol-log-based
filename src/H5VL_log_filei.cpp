@@ -154,7 +154,7 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
         // Aligned write not supported in subfiles
         fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
 
-        H5VL_log_filei_open_subfile (fp, fp->flag, fp->uvlid, fp->dxplid);
+        H5VL_log_filei_open_subfile (fp, fp->flag, fp->ufaplid, fp->dxplid);
     } else {
         fp->sfp     = fp->uo;
         fp->subname = std::string (fp->name);
