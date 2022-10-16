@@ -116,12 +116,9 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
-    // check for exisitence of __int_att, __LOG;
+    // check for exisitence of __int_att;
     // if inexists, mark as regular file and return directly.
     exists = H5VL_logi_exists_att (fp, H5VL_LOG_FILEI_ATTR, fp->dxplid);
-    CHECK_LOG_INTERNAL_EXIST (exists);
-
-    exists = H5VL_logi_exists_link (fp, H5VL_LOG_FILEI_GROUP_LOG, fp->dxplid);
     CHECK_LOG_INTERNAL_EXIST (exists);
 
     // Att
