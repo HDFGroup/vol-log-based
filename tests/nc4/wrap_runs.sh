@@ -7,6 +7,8 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
+H5LREPLAY=${top_builddir}/utils/h5lreplay/h5lreplay
+
 # overwrite srcdir, as some netcdf4 test program use it
 export srcdir=.
 
@@ -26,6 +28,7 @@ if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
    echo "Error: Output file $outfile is not Log VOL, but ${FILE_KIND}"
    err=1
 else
+   ${H5LREPLAY} -i ${outfile} -o ${outfile}_replay.h5
    echo "Success: Output file $outfile is ${FILE_KIND}"
 fi
 exit $err
