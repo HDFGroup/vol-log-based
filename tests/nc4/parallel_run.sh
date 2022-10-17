@@ -7,8 +7,6 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-H5LREPLAY=${top_builddir}/utils/h5lreplay/h5lreplay
-
 MPIRUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 # echo "MPIRUN = ${MPIRUN}"
 # echo "check_PROGRAMS=${check_PROGRAMS}"
@@ -28,7 +26,6 @@ for p in ${PAR_TESTS} ; do
        echo "Error: Output file $outfile is not Log VOL, but ${FILE_KIND}"
        err=1
     else
-       ${MPIRUN} ${H5LREPLAY} -i ${outfile} -o ${outfile}_replay.h5
        echo "Success: Output file $outfile is ${FILE_KIND}"
     fi
 done
