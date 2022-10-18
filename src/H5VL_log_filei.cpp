@@ -383,17 +383,10 @@ hid_t H5VL_log_filei_get_under_plist (hid_t faplid) {
         }
     });
     static std::string pnames[] = {
-<<<<<<< HEAD
-        "H5VL_log_nb_buffer_size", "H5VL_log_idx_buffer_size", "H5VL_log_metadata_merge",
-        "H5VL_log_metadata_share", "H5VL_log_metadata_zip",    "H5VL_log_sel_encoding",
-        "H5VL_log_data_layout",    "H5VL_log_subfiling",       "H5VL_log_single_subfile_read",
-=======
         "H5VL_log_nb_buffer_size",     "H5VL_log_idx_buffer_size", "H5VL_log_metadata_merge",
         "H5VL_log_metadata_share",     "H5VL_log_metadata_zip",    "H5VL_log_sel_encoding",
         "H5VL_log_data_layout",        "H5VL_log_subfiling",       "H5VL_log_single_subfile_read",
-        "H5VL_log_master_file_prefix",
         "H5VL_log_passthru_read_write",
->>>>>>> e87228d (feat: user can enable/disable passthru feature)
     };
 
     try {
