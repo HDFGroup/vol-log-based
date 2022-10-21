@@ -24,6 +24,7 @@ check_PROGRAMS =    file \
                     dset \
                     dwrite \
                     dread \
+                    fill \
                     memsel
                 #   noclose
                 #   test
