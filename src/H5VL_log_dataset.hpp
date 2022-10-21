@@ -26,6 +26,7 @@ typedef struct H5VL_log_dset_info_t {
     hsize_t mdims[H5S_MAX_RANK];      // Max size along each dimension
     MPI_Offset dsteps[H5S_MAX_RANK];  // Number of elements in the subspace below each dimension
     std::vector<H5VL_log_filter_t> filters;  // Declared filters
+    char *fill;                              // Fill value
 } H5VL_log_dset_info_t;
 
 /* The log VOL dataset object */

@@ -74,6 +74,7 @@ void *H5VL_log_dataset_create (void *obj,
     char *iname = NULL;  // Internal name of object
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
+    H5D_fill_value_t stat;
     // char lname[1024];
 
     try {
@@ -129,6 +130,16 @@ void *H5VL_log_dataset_create (void *obj,
         CHECK_ID (dip->dtype)
         dip->esize = H5Tget_size (type_id);
         CHECK_ID (dip->esize)
+
+        err = H5Pfill_value_defined (dcpl_id, &stat);
+        if (stat == H5D_FILL_VALUE_DEFAULT || stat == H5D_FILL_VALUE_USER_DEFINED) {
+            dip->fill = (char *)malloc (dip->esize);
+            CHECK_PTR (dip->fill)
+            err = H5Pget_fill_value (dcpl_id, type_id, dip->fill);
+            CHECK_ERR
+        } else {
+            dip->fill = NULL;
+        }
 
         // NOTE: I don't know if it work for scalar dataset, can we create zero sized attr?
         ndim = H5Sget_simple_extent_dims (space_id, dip->dims, dip->mdims);
@@ -469,7 +480,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
                 const hsize_t *new_sizes = args->args.set_extent.size;
 
                 // Adjust dim
-                for (i = 0; i < (int32_t)(dip->ndim); i++) {
+                for (i = 0; i < (int32_t) (dip->ndim); i++) {
                     if (dip->mdims[i] != H5S_UNLIMITED && new_sizes[i] > dip->mdims[i]) {
                         err = -1;
                         ERR_OUT ("size cannot exceed max size")

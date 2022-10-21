@@ -262,10 +262,10 @@ void H5VL_log_merged_wreq_t::reserve (size_t size) {
             this->meta_size_alloc <<= H5VL_LOGI_MERGED_REQ_SEL_MUL;
         }
 
-        this->sel_buf -= (size_t)(this->meta_buf);
+        this->sel_buf -= (size_t) (this->meta_buf);
         this->meta_buf = (char *)realloc (this->meta_buf, this->meta_size_alloc);
         CHECK_PTR (this->meta_buf);
-        this->sel_buf += (size_t)(this->meta_buf);
+        this->sel_buf += (size_t) (this->meta_buf);
         this->hdr   = (H5VL_logi_meta_hdr *)(this->meta_buf);
         this->mbufp = this->meta_buf + this->hdr->meta_size;
         this->mbufe = this->meta_buf + this->meta_size_alloc;
@@ -523,6 +523,7 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
     H5FD_mpio_xfer_t xfer_mode;
     H5VL_loc_params_t loc;
     H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+    H5VL_log_dset_info_t *dip;
 
     // Collective ?
     err = H5Pget_dxpl_mpio (dxplid, &xfer_mode);
@@ -532,6 +533,17 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
     }
 
     H5VL_LOGI_PROFILING_TIMER_START;
+
+    // Fill up user buffer if fillval is set
+    for (auto &r : reqs) {
+        dip = fp->dsets_info[r->hdr.did];
+        if (dip->fill) {
+            char *ptr = r->xbuf;
+            for (ptr = r->xbuf; ptr < r->xbuf + r->rsize * r->esize; ptr += r->esize) {
+                memcpy (ptr, dip->fill, dip->esize);
+            }
+        }
+    }
 
     // Iterate through all subfiles
     if ((!(fp->config & H5VL_FILEI_CONFIG_SUBFILING)) ||
@@ -563,7 +575,7 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
             loc.obj_type = H5I_FILE;
             loc.type     = H5VL_OBJECT_BY_SELF;
             fp->lgp      = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
-                                           H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
+                                      H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
             CHECK_PTR (fp->lgp)
             // Open the file with MPI
             mpierr = MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, fp->info,
@@ -879,7 +891,7 @@ void H5VL_log_nb_ost_write (void *file, off_t doff, off_t off, int cnt, int *mle
         mlen = mlens[i];
         mbuf = (char *)(moffs[i]);
         while (mlen > 0) {
-            if ((size_t)(be - bp) <= mlen) {
+            if ((size_t) (be - bp) <= mlen) {
                 memcpy (bp, mbuf, be - bp);
 
                 // flush
@@ -973,7 +985,7 @@ void H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
     // The max size among OSTs
     dsize = 0;
     for (i = 0; i < fp->scount; i++) {
-        if ((hsize_t)(fsize_all[i]) > dsize) dsize = fsize_all[i];
+        if ((hsize_t) (fsize_all[i]) > dsize) dsize = fsize_all[i];
     }
 
     // Create log dataset
@@ -990,8 +1002,8 @@ void H5VL_log_nb_flush_write_reqs_align (void *file, hid_t dxplid) {
         loc.obj_type = H5I_GROUP;
         loc.type     = H5VL_OBJECT_BY_SELF;
         ldp          = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, dname, H5P_LINK_CREATE_DEFAULT,
-                                           H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
-                                           H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
+                                  H5T_STD_B8LE, ldsid, H5P_DATASET_CREATE_DEFAULT,
+                                  H5P_DATASET_ACCESS_DEFAULT, dxplid, NULL);
         CHECK_PTR (ldp);
 
         H5VL_LOGI_PROFILING_TIMER_START;
