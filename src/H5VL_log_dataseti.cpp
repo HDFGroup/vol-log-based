@@ -339,10 +339,12 @@ void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> b
  */
 void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
     int i;
+    herr_t err         = 0;
     hid_t dcpl_id      = -1;
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
     std::unique_ptr<H5VL_log_dset_t> dp;        // Dataset handle
     std::unique_ptr<H5VL_log_dset_info_t> dip;  // Dataset info
+    H5D_fill_value_t stat;
     H5VL_logi_err_finally finally ([&dcpl_id] () -> void {
         if (dcpl_id >= 0) { H5Pclose (dcpl_id); }
     });
@@ -384,6 +386,18 @@ void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
         dcpl_id = H5VL_logi_dataset_get_dcpl (dp->fp, dp->uo, dp->uvlid, dxpl_id);
         CHECK_ID (dcpl_id)
         H5VL_logi_get_filters (dcpl_id, dip->filters);
+
+        // Fill value
+        err = H5Pfill_value_defined (dcpl_id, &stat);
+        if (stat == H5D_FILL_VALUE_DEFAULT || stat == H5D_FILL_VALUE_USER_DEFINED) {
+            dip->fill = (char *)malloc (dip->esize);
+            CHECK_PTR (dip->fill)
+            err = H5Pget_fill_value (dcpl_id, dip->dtype, dip->fill);
+            CHECK_ERR
+        } else {
+            dip->fill = NULL;
+        }
+        
         // Record metadata in fp
         dp->fp->dsets_info[dp->id] = dip.release ();
         // dp->fp->mreqs[dp->id]	   = new H5VL_log_merged_wreq_t (dp, 1);
