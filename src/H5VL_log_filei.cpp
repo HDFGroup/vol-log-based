@@ -669,8 +669,10 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
 
     // Free dataset info
     for (auto info : fp->dsets_info) {
-        if (info->fill) { free (info->fill); }
-        delete info;
+        if (info){
+            if (info->fill) { free (info->fill); }
+            delete info;
+        }
     }
 
     // Free read index
