@@ -77,8 +77,6 @@ herr_t H5VL_log_get_wrap_ctx (const void *obj, void **wrap_ctx) {
         CHECK_PTR (ctx)
 
         /* Increment reference count on underlying VOL ID, and copy the VOL info */
-        ctx->uvlid = op->uvlid;
-        H5Iinc_ref (ctx->uvlid);
         err = H5VLget_wrap_ctx (op->uo, op->uvlid, &(ctx->uo));
         CHECK_ERR
 
@@ -116,7 +114,6 @@ void *H5VL_log_wrap_object (void *obj, H5I_type_t type, void *_wrap_ctx) {
 
         /* Wrap the object with the underlying VOL */
         uo = H5VLwrap_object (obj, type, ctx->uvlid, ctx->uo);
-
         if (!ctx->fp->is_log_based_file) {
             wop = new H5VL_log_obj_t (ctx, type, uo);
         }
@@ -156,7 +153,6 @@ void *H5VL_log_unwrap_object (void *obj) {
 #ifdef LOGVOL_DEBUG
         if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_unwrap_object(%p)\n", obj); }
 #endif
-
         if (!op->fp->is_log_based_file) {
             uo = H5VLunwrap_object (op->uo, op->uvlid);
             if (op->fp != op) delete op;
