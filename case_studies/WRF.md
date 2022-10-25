@@ -2,8 +2,7 @@
 
 * [Build Instructions](#build-instructions)
 * [Run Instructions](#run-instructions)
-* [Three cases from E3SM production runs](#three-cases-from-e3sm-production-runs)
-* [Performance Results](#performance-results)
+* [Example Results](#example-results)
 
 This case study uses [the Weather Research and Forecasting (WRF) Model](https://github.com/wrf-model/WRF) to demonstrate the usage of HDF5 log-layout based VOL. WRF can choose to use NetCDF4 I/O option which can perform underlying I/O using parallel HDF5. Enabling  log-layout based VOL for this case is easy since all we need to do is to set up several environment variables.
 
@@ -81,7 +80,7 @@ This case study uses [the Weather Research and Forecasting (WRF) Model](https://
 
 ## Example Results
 We provide some example results running WRF with NetCDF4 via HDF5, with
-the log-layout based VOL enabled and disabled.
+the log-layout based VOL enabled
 
 WRF write two kinds of outputs: restart files and history files. An history file contains the
 simulatioin results for the user selected simulation timesteps. And a restart file serves as
@@ -93,15 +92,14 @@ There are 202 variables for an history file's timestep, and there are 565 variab
 restart file's timestep. Each (large) variable is evenly partitioned among all MPI processes.
 WRF makes one write request per variable.
 
+This history file is 103G and restart file is 34G.
 
 ### Example Results on Cori at NERSC
-Performance chart below shows the execution time, collected in Sep/2022, on
+Performance chart below shows the execution time, collected in Oct/2022, on
 [Cori](https://docs.nersc.gov/systems/cori/) at [NERSC](https://www.nersc.gov).
 All runs were on the KNL nodes, with 64 MPI processes allocated per node.
 
-If log-layout based VOL is not enabled, the Lustre file system is configured to use striping count of 64 OSTs
-and striping size of 1 MiB.
-If log-layout based VOL is enabled, the Lustre file system is configured to use striping count of 8 OSTs
+The Lustre file system is configured to use striping count of 8 OSTs
 and striping size of 1 MiB.
 
 
