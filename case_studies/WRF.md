@@ -85,14 +85,16 @@ the log-layout based VOL enabled
 WRF write two kinds of outputs: restart files and history files. An history file contains the
 simulatioin results for the user selected simulation timesteps. And a restart file serves as
 a check point and contains all the necessary information to restart the WRF simulation from a
-certain timestep. In our experiments, we produce one history file with 13 timesteps and one
-restart file with 1 timestep.
+certain timestep. Each history file or restart file may contain multiple time steps.
 
-There are 202 variables for an history file's timestep, and there are 565 variables for an
-restart file's timestep. Each (large) variable is evenly partitioned among all MPI processes.
-WRF makes one write request per variable.
+In our experiments, we use the COUNS2.5 run case and produce one history file and one restart file.
 
-This history file is 103G and restart file is 34G.
+The following table summarizes the information for the history and restart file in our experiment.
+
+| file type | grid size (e\_we x e\_sn) | num time steps | num variables | file size (GB) |
+|---|---|---|---|---|
+| history | 1900 x 1300 | 13 | 202 | 103 |
+| restart | 1900 x 1300 | 1 | 565 | 34 |
 
 ### Example Results on Cori at NERSC
 Performance chart below shows the execution time, collected in Oct/2022, on
