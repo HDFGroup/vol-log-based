@@ -102,6 +102,10 @@ All runs were on the KNL nodes, with 64 MPI processes allocated per node.
 The Lustre file system is configured to use striping count of 8 OSTs
 and striping size of 1 MiB.
 
-
-![Example Results of WRF on Cori](./wrf_cori.png)
+| num nodes | num MPI processes | timing history (sec) | timing restart (sec) |
+|---|---|---|---|
+| 4 | 256 | 9.25 | 4.05 |
+| 8 | 512 | 7.94 | 3.78 |
+| 16 | 1024 | 7.83 | 3.75 |
+| 32 | 2048 | 8.28 | 3.83 |
 
