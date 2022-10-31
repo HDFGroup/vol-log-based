@@ -114,7 +114,11 @@ void *H5VL_log_wrap_object (void *obj, H5I_type_t type, void *_wrap_ctx) {
 
         /* Wrap the object with the underlying VOL */
         uo = H5VLwrap_object (obj, type, ctx->uvlid, ctx->uo);
-        if (uo) {
+
+        if (!ctx->fp->is_log_based_file) {
+            wop = new H5VL_log_obj_t (ctx, type, uo);
+        }
+        else if (uo) {
             if (type == H5I_DATASET) {
                 wop = (H5VL_log_obj_t *)H5VL_log_dataseti_wrap (uo, ctx);
             } else if (type == H5I_FILE) {
@@ -153,7 +157,11 @@ void *H5VL_log_unwrap_object (void *obj) {
         /* Unrap the object with the underlying VOL */
         uo = H5VLunwrap_object (op->uo, op->uvlid);
 
-        if (uo) {
+        if (!op->fp->is_log_based_file) {
+            uo = H5VLunwrap_object (op->uo, op->uvlid);
+            if (op->fp != op) delete op;
+        }
+        else if (uo) {
             hid_t err_id;
 
             err_id = H5Eget_current_stack ();
