@@ -196,7 +196,7 @@ herr_t H5VL_log_str_to_info (const char *str, void **_info) {
         under_vol_info_str = (char *)malloc ((size_t)(under_vol_info_end - under_vol_info_start));
         memcpy (under_vol_info_str, under_vol_info_start + 1,
                 (size_t)((under_vol_info_end - under_vol_info_start) - 1));
-        *(under_vol_info_str + (under_vol_info_end - under_vol_info_start)) = '\0';
+        *(under_vol_info_str + (under_vol_info_end - under_vol_info_start) - 1) = '\0';
 
         H5VLconnector_str_to_info (under_vol_info_str, uvlid, &under_vol_info);
 
