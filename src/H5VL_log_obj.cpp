@@ -75,7 +75,7 @@ void *H5VL_log_object_open (void *obj,
                 ret = H5VL_log_obj_open_with_uo (obj, uo, *opened_type, loc_params);
             }
         } else {
-            ret = uo;
+            ret = new H5VL_log_obj_t (op, *opened_type, uo);
         }
     }
     H5VL_LOGI_EXP_CATCH
