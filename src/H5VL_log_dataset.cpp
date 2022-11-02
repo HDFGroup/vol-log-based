@@ -278,45 +278,52 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_dataset_read (void *dset,
-                              hid_t mem_type_id,
-                              hid_t mem_space_id,
-                              hid_t file_space_id,
+herr_t H5VL_log_dataset_read (size_t count,
+                              void *dset[],
+                              hid_t mem_type_id[],
+                              hid_t mem_space_id[],
+                              hid_t file_space_id[],
                               hid_t plist_id,
-                              void *buf,
+                              void *buf[],
                               void **req) {
-    herr_t err                = 0;
-    H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
+    herr_t err = 0;
+    hid_t dsid, msid; // Dataset space id; Memory space id
+    size_t i;
+    H5VL_log_dset_t *dp       = NULL;
     H5VL_log_dset_info_t *dip = NULL;  // Dataset info
-    hid_t dsid;                        // Dataset space id
     H5VL_log_selections *dsel = NULL;  // Selection blocks
 
-    try {
-        if (!dp->fp->is_log_based_file) {
-            return H5VLdataset_read (dp->uo, dp->uvlid, mem_type_id, mem_space_id, file_space_id,
-                                     plist_id, buf, NULL);
+    for (int i = 0; i < count; i++) {
+        dp = (H5VL_log_dset_t *)dset[i];
+        try {
+            if (!dp->fp->is_log_based_file) {
+                err = H5VLdataset_read(1, &(dp->uo), dp->uvlid, &mem_type_id[i], &mem_space_id[i], &file_space_id[i], plist_id, &buf[i], NULL);
+                CHECK_ERR;
+                continue;
+            }
+            dip = dp->fp->dsets_info[dp->id];
+            H5VL_LOGI_PROFILING_TIMER_START;
+            if (file_space_id[i] == H5S_ALL) {
+                dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
+                CHECK_ID (dsid);
+            } else {
+                dsid = file_space_id[i];
+            }
+            dsel = new H5VL_log_selections (dsid);
+            H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
+
+            // H5S_All means using file space
+            msid = mem_space_id[i];
+            if (msid == H5S_ALL) msid = dsid;
+
+            H5VL_log_dataseti_read (dp, mem_type_id[i], msid, dsel, plist_id, buf[i], req);
         }
-        dip = dp->fp->dsets_info[dp->id];
-        H5VL_LOGI_PROFILING_TIMER_START;
-        if (file_space_id == H5S_ALL) {
-            dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
-            CHECK_ID (dsid);
-        } else {
-            dsid = file_space_id;
-        }
-        dsel = new H5VL_log_selections (dsid);
-        H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
-
-        // H5S_All means using file space
-        if (mem_space_id == H5S_ALL) mem_space_id = dsid;
-
-        H5VL_log_dataseti_read (dp, mem_type_id, mem_space_id, dsel, plist_id, buf, req);
-    }
-    H5VL_LOGI_EXP_CATCH_ERR
-
+        H5VL_LOGI_EXP_CATCH_ERR
 err_out:;
-    // Note: dsel should be freed when the read request is deleted
-    if (dsid != file_space_id) { H5Sclose (dsid); }
+        // Note: dsel should be freed when the read request is deleted
+        if (dsid != file_space_id[i]) { H5Sclose (dsid); }
+        if (err < 0) return err;
+    }
     return err;
 } /* end H5VL_log_dataset_read() */
 
@@ -330,47 +337,53 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_dataset_write (void *dset,
-                               hid_t mem_type_id,
-                               hid_t mem_space_id,
-                               hid_t file_space_id,
+herr_t H5VL_log_dataset_write (size_t count,
+                               void *dset[],
+                               hid_t mem_type_id[],
+                               hid_t mem_space_id[],
+                               hid_t file_space_id[],
                                hid_t plist_id,
-                               const void *buf,
+                               const void *buf[],
                                void **req) {
-    herr_t err          = 0;
-    H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
-
+    herr_t err = 0;
+    hid_t dsid, msid;  // Data space id; Memory space if
+    size_t i;
+    H5VL_log_dset_t *dp       = NULL;
     H5VL_log_dset_info_t *dip = NULL;  // Dataset info
-    hid_t dsid;                        // Dataset space id
     H5VL_log_selections *dsel = NULL;  // Selection blocks
 
-    try {
-        if (!dp->fp->is_log_based_file) {
-            return H5VLdataset_write (dp->uo, dp->uvlid, mem_type_id, mem_space_id, file_space_id,
-                                      plist_id, buf, NULL);
+    for (i = 0; i < count; i++) {
+        dp = (H5VL_log_dset_t *)dset[i];
+        try {
+            if (!dp->fp->is_log_based_file) {
+                err = H5VLdataset_write(1, &(dp->uo), dp->uvlid, &mem_type_id[i], &mem_space_id[i], &file_space_id[i], plist_id, &buf[i], NULL);
+                CHECK_ERR;
+                continue;
+            }
+            dip = dp->fp->dsets_info[dp->id];
+            H5VL_LOGI_PROFILING_TIMER_START;
+            if (file_space_id[i] == H5S_ALL) {
+                dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
+                CHECK_ID (dsid);
+            } else {
+                dsid = file_space_id[i];
+            }
+            dsel = new H5VL_log_selections (dsid);
+            H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
+            CHECK_PTR (dsel)
+
+            // H5S_All means using file space
+            msid = mem_space_id[i];
+            if (msid == H5S_ALL) msid = dsid;
+
+            H5VL_log_dataseti_write (dp, mem_type_id[i], msid, dsel, plist_id, buf[i], req);
         }
-        dip = dp->fp->dsets_info[dp->id];
-        H5VL_LOGI_PROFILING_TIMER_START;
-        if (file_space_id == H5S_ALL) {
-            dsid = H5Screate_simple (dip->ndim, dip->dims, dip->mdims);
-            CHECK_ID (dsid);
-        } else {
-            dsid = file_space_id;
-        }
-        dsel = new H5VL_log_selections (dsid);
-        H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
-        CHECK_PTR (dsel)
-
-        // H5S_All means using file space
-        if (mem_space_id == H5S_ALL) mem_space_id = dsid;
-
-        H5VL_log_dataseti_write (dp, mem_type_id, mem_space_id, dsel, plist_id, buf, req);
-    }
-    H5VL_LOGI_EXP_CATCH_ERR
-
+        H5VL_LOGI_EXP_CATCH_ERR
 err_out:;
-    if (dsel) { delete dsel; }
-    if (dsid != file_space_id) { H5Sclose (dsid); }
+        if (dsel) { delete dsel; dsel = NULL;}
+        if (dsid != file_space_id[i]) { H5Sclose (dsid); }
+        if (err < 0) return err;
+    }
     return err;
 } /* end H5VL_log_dataset_write() */
 
