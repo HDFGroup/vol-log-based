@@ -330,17 +330,16 @@ void H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
     hsize_t start, count, one = 1;
     char *buf = NULL;             // Buffer for raw metadata
     int ndim;                     // metadata dataset dimensions (should be 1)
-    MPI_Offset *nsec = NULL;              // Number of sections in current metadata dataset
+    MPI_Offset nsec;              // Number of sections in current metadata dataset
+    void *nsec_ptr = &nsec;       // The pointer pointing to nsec
     H5VL_logi_metaentry_t block;  // Buffer of decoded metadata entry
     std::map<char *, std::vector<H5VL_logi_metasel_t>> bcache;  // Cache for linked metadata entry
     char mdname[16];
-    H5VL_logi_err_finally finally ([&mdsid, &mmsid, &buf, &nsec] () -> void {
+    H5VL_logi_err_finally finally ([&mdsid, &mmsid, &buf] () -> void {
         if (mdsid >= 0) H5Sclose (mdsid);
         if (mmsid >= 0) H5Sclose (mmsid);
         if (buf) { H5VL_log_free (buf); }
-        if (nsec) { H5VL_log_free (nsec); }
     });
-    nsec = (MPI_Offset*) malloc(sizeof(MPI_Offset));
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -377,11 +376,11 @@ void H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
         CHECK_ERR
         err = H5Sselect_hyperslab (mdsid, H5S_SELECT_SET, &start, NULL, &one, &count);
         CHECK_ERR
-        err = H5VLdataset_read (1, &mdp, fp->uvlid, &H5T_NATIVE_B8, &mmsid, &mdsid, fp->dxplid, (void**) &nsec, NULL);
+        err = H5VLdataset_read (1, &mdp, fp->uvlid, &H5T_NATIVE_B8, &mmsid, &mdsid, fp->dxplid, &nsec_ptr, NULL);
         CHECK_ERR
 
         // Allocate buffer for raw metadata
-        start = sizeof (MPI_Offset) * (nsec[0] + 1);
+        start = sizeof (MPI_Offset) * (nsec + 1);
         count = mdsize - start;
         buf   = (char *)malloc (sizeof (char) * count);
 
@@ -427,19 +426,17 @@ void H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
     hsize_t start, count, one = 1;
     char *buf = NULL;             // Buffer for raw metadata
     int ndim;                     // metadata dataset dimensions (should be 1)
-    MPI_Offset *nsec;              // Number of sections in current metadata dataset
+    MPI_Offset nsec;              // Number of sections in current metadata dataset
+    void *nsec_ptr = &nsec;       // The pointer pointing to nsec
     MPI_Offset *offs;             // Section end offset array
     H5VL_logi_metaentry_t block;  // Buffer of decoded metadata entry
     std::map<char *, std::vector<H5VL_logi_metasel_t>> bcache;  // Cache for linked metadata entry
     char mdname[16];
-    H5VL_logi_err_finally finally ([&mdsid, &mmsid, &buf, &nsec] () -> void {
+    H5VL_logi_err_finally finally ([&mdsid, &mmsid, &buf] () -> void {
         if (mdsid >= 0) H5Sclose (mdsid);
         if (mmsid >= 0) H5Sclose (mmsid);
         if (buf) { H5VL_log_free (buf); }
-        if (nsec) { H5VL_log_free (nsec); }
     });
-
-    nsec = (MPI_Offset*) malloc(sizeof(MPI_Offset));
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -472,11 +469,11 @@ void H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
     CHECK_ERR
     err = H5Sselect_hyperslab (mdsid, H5S_SELECT_SET, &start, NULL, &one, &count);
     CHECK_ERR
-    err = H5VLdataset_read (1, &mdp, fp->uvlid, &H5T_NATIVE_B8, &mmsid, &mdsid, fp->dxplid, (void**) &nsec, NULL);
+    err = H5VLdataset_read (1, &mdp, fp->uvlid, &H5T_NATIVE_B8, &mmsid, &mdsid, fp->dxplid, &nsec_ptr, NULL);
     CHECK_ERR
 
     // Get the ending offset of each section (next 8 * nsec bytes)
-    count = sizeof (MPI_Offset) * nsec[0];
+    count = sizeof (MPI_Offset) * nsec;
     offs  = (MPI_Offset *)malloc (count);
     err   = H5Sselect_hyperslab (mmsid, H5S_SELECT_SET, &start, NULL, &one, &count);
     CHECK_ERR
@@ -487,13 +484,13 @@ void H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
     CHECK_ERR
 
     // Determine #sec to fit
-    if (sec >= nsec[0]) { RET_ERR ("Invalid section") }
+    if (sec >= nsec) { RET_ERR ("Invalid section") }
     if (sec == 0) {  // First section always starts after the sections offset array
-        start = sizeof (MPI_Offset) * (nsec[0] + 1);
+        start = sizeof (MPI_Offset) * (nsec + 1);
     } else {
         start = offs[sec - 1];
     }
-    for (i = sec + 1; i < nsec[0]; i++) {
+    for (i = sec + 1; i < nsec; i++) {
         if (offs[i] - start > (size_t)(fp->mbuf_size)) { break; }
     }
     if (i <= sec) { RET_ERR ("OOM") }  // At least 1 section should fit into buffer limit
@@ -501,7 +498,7 @@ void H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
 
     // Advance sec and md
     sec = i;
-    if (sec >= nsec[0]) {
+    if (sec >= nsec) {
         sec = 0;
         md++;
     }
