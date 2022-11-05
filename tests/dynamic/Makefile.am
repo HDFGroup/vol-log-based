@@ -21,7 +21,8 @@ LDADD = $(top_builddir)/src/libH5VL_log.la
 check_PROGRAMS = 
 
 if ENABLE_SHARED
-    check_PROGRAMS += dynamic 
+    check_PROGRAMS += dynamic  \
+                      setenv
 endif
 
 EXTRA_DIST = wrap_runs.sh parallel_run.sh
