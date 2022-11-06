@@ -20,6 +20,8 @@ export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
 
 ${TESTSEQRUN} $1 $outfile
 
+${NCDUMP} ${outfile} > ${outfile}.dump
+
 err=0
 unset HDF5_VOL_CONNECTOR
 unset HDF5_PLUGIN_PATH
@@ -31,4 +33,5 @@ else
    ${H5LREPLAY} -i ${outfile} -o ${outfile}_replay.h5
    echo "Success: Output file $outfile is ${FILE_KIND}"
 fi
+
 exit $err

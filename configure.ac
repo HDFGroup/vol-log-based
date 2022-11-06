@@ -486,6 +486,11 @@ AC_ARG_ENABLE([test-netcdf4],
 ])
 AM_CONDITIONAL(ENABLE_NETCDF4, [test "x$have_netcdf4" = xyes])
 
+if test "x$have_netcdf4" = xyes ; then
+   AC_PATH_PROG([nc_dump],[ncdump],,[$netcdf4_bindir])
+   AC_SUBST(NCDUMP, [$nc_dump])
+fi
+
 AC_ARG_ENABLE([zlib],
    [AS_HELP_STRING([--enable-zlib],
                    [Enable zlib compression method support. @<:@default: disabled@:>@])],

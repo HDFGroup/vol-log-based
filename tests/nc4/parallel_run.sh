@@ -19,6 +19,8 @@ for p in ${PAR_TESTS} ; do
     export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
     ${MPIRUN} ./${p} ${outfile}
 
+    ${NCDUMP} ${outfile} > ${outfile}.dump
+
     unset HDF5_VOL_CONNECTOR
     unset HDF5_PLUGIN_PATH
     FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k $outfile`
