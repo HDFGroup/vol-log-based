@@ -10,7 +10,8 @@ This is essentially a placeholder for the next release note ...
     files in log layout. See PR #15.
 
 * New optimization
-  + none
+  + Master file opened by rank 0 only when subfiling is enabled
+    + Improves native VOL file close time
 
 * New Limitations
   + none
@@ -86,6 +87,9 @@ This is essentially a placeholder for the next release note ...
       interleaving read regions not being detected
   + Fix a bug in H5VL_log_link_create that uses the calling convention of an
     older VOL interface
+  + Fix a bug in H5VL_log_filei_close that fails to update file attributes property when subfiling is enabled.
+  + Fix a bug in encoding and decoding of deduplicated metadata entries.
+  + Fix a bug in encoding and decoding of deduplicated metadata entries.
   + Deduce internal attributes from attributes count in object info
 
 * New example programs
