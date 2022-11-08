@@ -4,6 +4,25 @@
  */
 /* $Id$ */
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ * This program creates two files. Before creating the second file, the 
+ * environment variable for default VOL is changed to pass_through (built-in 
+ * pass through VOL) by the setenv function.
+ * 
+ * HDF5 checks the default environment variable at library initialization time,
+ * so changing the environment variables should have no effect on the default 
+ * VOL used on the second file. Reset all plugin paths and turn the VOL plugin 
+ * off and on does not make any difference.
+ *
+ * The compile and run commands are given below.
+ *
+ *    % mpicxx -g -o setenv setenv.cpp -I../ -lhdf5 
+ *
+ *    % mpiexec -l -n 1 setenv setenv.nc
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 #include <hdf5.h>
 #include <mpi.h>
 #include <stdio.h>
@@ -19,6 +38,9 @@
 int main (int argc, char **argv) {
 	int err, nerrs = 0;
 	int rank, np;
+	unsigned int nidx;
+	int i;
+	char buf[1024];
 	const char *file_name;
 	hid_t fid	   = -1;  // File ID
 	hid_t faplid   = -1;
@@ -59,6 +81,27 @@ int main (int argc, char **argv) {
 
 	// Change env
 	setenv ("HDF5_VOL_CONNECTOR", "pass_through under_vol=0;under_info={}", 1);
+
+	// Reset all plugin path
+	err = H5PLsize (&nidx);
+	CHECK_ERR (err)
+	for (i = 0; i < nidx; i++) {
+		err = H5PLget (i, buf, 1024);
+		CHECK_ERR (err)
+		err = H5PLreplace (buf, i);
+		CHECK_ERR (err)
+	}
+
+	// Turn VOL plugin off and on
+	err= H5PLget_loading_state(&nidx);
+	CHECK_ERR(err)
+
+	nidx &=~(H5PL_VOL_PLUGIN);
+	err= H5PLset_loading_state(nidx&(~(H5PL_VOL_PLUGIN)));
+	CHECK_ERR(err)
+
+	err= H5PLset_loading_state(nidx);
+	CHECK_ERR(err)
 
 	// Open file
 	fid = H5Fopen (file_name, H5F_ACC_RDONLY, faplid);
