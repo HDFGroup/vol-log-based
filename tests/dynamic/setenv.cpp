@@ -20,6 +20,7 @@
  *    % mpicxx -g -o setenv setenv.cpp -I../ -lhdf5 
  *
  *    % mpiexec -l -n 1 setenv setenv.nc
+ *    % *** TESTING CXX    setenv: Changing VOL environment variable ---- pass
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
