@@ -138,7 +138,7 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 
         // Dsteps
         if (flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) {
-            memcpy (bufp, dip->dsteps, sizeof (MPI_Offset) * (encdim - 1));
+            memcpy (bufp, dip->dsteps + (dip->ndim - encdim), sizeof (MPI_Offset) * (encdim - 1));
             bufp += sizeof (MPI_Offset) * (encdim - 1);
         }
 
