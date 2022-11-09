@@ -22,7 +22,7 @@ check_PROGRAMS =
 
 if ENABLE_SHARED
     check_PROGRAMS += dynamic  \
-                      setenv
+                      test_env
 endif
 
 EXTRA_DIST = wrap_runs.sh parallel_run.sh

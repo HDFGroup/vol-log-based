@@ -217,6 +217,10 @@ void h5ldump_mdsec (
             }
             bsize *= dsets[block.hdr.did].esize;
 
+            if (block.hdr.fsize > bsize){
+                abort();
+            }
+
             if (dbsize < bsize) {
                 dbsize = bsize;
                 dbuf   = (uint8_t *)realloc (dbuf, dbsize);
