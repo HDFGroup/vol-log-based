@@ -75,9 +75,11 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
         if ((encdim > 1) && (dp->fp->config & H5VL_FILEI_CONFIG_SEL_ENCODE)) {
             flag |= H5VL_LOGI_META_FLAG_SEL_ENCODE;
         }
+#ifdef ENABLE_ZLIB
         if (dp->fp->config & H5VL_FILEI_CONFIG_SEL_DEFLATE) {
             flag |= H5VL_LOGI_META_FLAG_SEL_DEFLATE;
         }
+#endif
     }
 
     // Allocate metadata buffer
