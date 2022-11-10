@@ -18,7 +18,7 @@ for vol_type in "terminal" "passthru"; do
     outfile_regular="${TESTOUTDIR}/${outfile}-${vol_type}-native.h5"
     outfile_log="${TESTOUTDIR}/${outfile}-${vol_type}-logvol.h5"
 
-    if test "x${vol_type}" == xterminal ; then
+    if test "x${vol_type}" = xterminal ; then
         unset H5VL_LOG_PASSTHRU_READ_WRITE
     else
         export H5VL_LOG_PASSTHRU_READ_WRITE=1
@@ -41,7 +41,7 @@ for vol_type in "terminal" "passthru"; do
     fi
 
     h5diff_result=`${H5DIFF_PATH} -q ${outfile_regular} ${outfile_log}`
-    if test "x${h5diff_result}" == x ; then
+    if test "x${h5diff_result}" = x ; then
         echo "Success: (as $vol_type vol) ${outfile_regular} and ${outfile_log} are same"
     else
         echo "Success: (as $vol_type vol) ${outfile_regular} and ${outfile_log} are not same"
