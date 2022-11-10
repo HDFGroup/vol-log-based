@@ -1,6 +1,6 @@
---- h5_subset_source.c	2022-05-15 22:08:54.094562596 -0500
-+++ h5_subset_passthru.c	2022-05-15 22:12:54.721248138 -0500
-@@ -17,6 +17,7 @@
+--- h5_subset.c.orig	2022-11-09 16:07:16.418326572 -0600
++++ h5_subset.c	2022-11-09 17:35:28.755673612 -0600
+@@ -16,6 +16,7 @@
   */
  
  #include "hdf5.h"
@@ -8,34 +8,48 @@
  
  #define FILE        "subset.h5"
  #define DATASETNAME "IntArray"
-@@ -28,9 +29,23 @@
+@@ -27,9 +28,37 @@
  #define DIM0 8 /* size of dataset */
  #define DIM1 10
  
 -int
 -main(void)
 -{
-+int helper(const char *file_name);
++int helper(const char *file_name, bool use_log_vol);
 +
 +int main(int argc, char **argv) {
 +    herr_t err = 0;
-+    const char *file_name;
++    const char *file_name_base;
++    const char *file_name_use_log;
 +    int rank;
 +    
 +    MPI_Init(&argc, &argv);
 +    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 +    
-+    file_name = FILE;
++    if (argc > 3) {
++        if (!rank) printf ("Usage: %s [filename1] [filename2]\n", argv[0]);
++        MPI_Finalize ();
++        return 1;
++    } else if (argc > 2) {
++        file_name_base = argv[1];
++        file_name_use_log = argv[2];
++    } else {
++        file_name_base = "regular.h5";
++        file_name_use_log = "log.h5";
++    }
 +
-+    err = helper(file_name);
++    err = helper(file_name_base, false);
++    if (err == 0) {
++        err = helper(file_name_use_log, true);
++    }
 +    MPI_Finalize();
 +    return err;
 +}
-+int helper(const char *file_name){
++int helper(const char *file_name, bool use_log_vol) {
      hsize_t dims[2], dimsm[2];
      int     data[DIM0][DIM1];          /* data to write */
      int     sdata[DIM0_SUB][DIM1_SUB]; /* subset to write */
-@@ -52,8 +67,17 @@
+@@ -51,8 +80,20 @@
       * Then create a dataset and write data to it and close the file *
       * and dataset.                                                  *
       *****************************************************************/
@@ -45,17 +59,20 @@
 +    file_id = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 +    H5Fclose(file_id);
 +
-+    fapl_id = H5Pcreate(H5P_FILE_ACCESS); 
-+    H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
-+    H5Pset_all_coll_metadata_ops(fapl_id, 1);
-+    H5Pset_coll_metadata_write(fapl_id, 1);
-+    log_vol_id = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
-+    H5Pset_vol(fapl_id, log_vol_id, NULL);
++    fapl_id = H5Pcreate(H5P_FILE_ACCESS);
++
++    if (use_log_vol) {
++        H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
++        H5Pset_all_coll_metadata_ops(fapl_id, 1);
++        H5Pset_coll_metadata_write(fapl_id, 1);
++        log_vol_id = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
++        H5Pset_vol(fapl_id, log_vol_id, NULL);
++    }
 +    file_id = H5Fopen(file_name, H5F_ACC_RDWR, fapl_id);
  
      dims[0]      = DIM0;
      dims[1]      = DIM1;
-@@ -87,7 +111,7 @@
+@@ -86,7 +127,7 @@
       * values to the dataset.
       *****************************************************/
  
@@ -64,3 +81,13 @@
      dataset_id = H5Dopen2(file_id, DATASETNAME, H5P_DEFAULT);
  
      /* Specify size and shape of subset to write. */
+@@ -138,4 +179,9 @@
+     status = H5Sclose(dataspace_id);
+     status = H5Dclose(dataset_id);
+     status = H5Fclose(file_id);
++
++    H5Pclose(fapl_id);
++    if (log_vol_id > 0) {
++        H5VLclose(log_vol_id);
++    }
+ }
