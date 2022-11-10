@@ -107,7 +107,8 @@ inline char *H5VL_logi_name_remap (const char *name) {
     if (name[0] == '_') {
         ret    = (char *)malloc (n + 2);
         ret[0] = '_';
-        strncpy (ret + 1, name, n + 1);
+        memcpy (ret + 1, name, n);
+        ret[n+1] = '\0';
     } else {
         ret = (char *)name;
     }
