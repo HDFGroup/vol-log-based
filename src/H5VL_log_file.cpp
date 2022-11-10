@@ -75,7 +75,7 @@ void *H5VL_log_file_create (
         fp = H5VL_log_filei_search (name);
         if (fp) {
             fp = NULL;
-            RET_ERR ("File already exist")
+            RET_ERR ("The same file has been opened. Log VOL currently does not support multiple opens.")
         }
 
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -300,7 +300,7 @@ void *H5VL_log_file_open (
         fp = H5VL_log_filei_search (name);
         if (fp) {
             fp = NULL;
-            RET_ERR ("File already exist")
+            RET_ERR ("The same file has been opened. Log VOL currently does not support multiple opens.")
         }
 
         // Try get info about under VOL
