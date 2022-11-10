@@ -710,7 +710,6 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
 } /* end H5VL_log_file_close() */
 
 void H5VL_log_filei_parse_strip_info (H5VL_log_file_t *fp) {
-    herr_t err    = 0;
     MPI_Info info = MPI_INFO_NULL;
     int mpierr;
     int exist;

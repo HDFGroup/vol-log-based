@@ -22,7 +22,6 @@ int main (int argc, char **argv) {
     hid_t faplid   = -1;
     hid_t faplid_custom   = H5I_INVALID_HID;
     hid_t log_vlid = -1;  // Logvol ID
-    hbool_t ret;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_size (MPI_COMM_WORLD, &np);

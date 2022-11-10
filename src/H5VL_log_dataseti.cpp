@@ -95,7 +95,6 @@ void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> b
                                         MPI_Datatype *ftype,
                                         MPI_Datatype *mtype,
                                         std::vector<H5VL_log_copy_ctx> &overlaps) {
-    herr_t err = 0;
     int mpierr;
     int32_t i, j, k, l;
     int nblock = blocks.size ();  // Number of place to read

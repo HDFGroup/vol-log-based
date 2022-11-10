@@ -52,7 +52,7 @@ herr_t h5lreplay_copy_handler (hid_t o_id,
             int id;
             int ndim;
             hsize_t hndim;
-            hsize_t dims[H5S_MAX_RANK], mdims[H5S_MAX_RANK];
+            hsize_t dims[H5S_MAX_RANK]; // mdims[H5S_MAX_RANK];
 
 #ifdef LOGVOL_DEBUG
             std::cout << "Reconstructing user dataset " << name << std::endl;

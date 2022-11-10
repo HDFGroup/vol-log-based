@@ -64,8 +64,7 @@
 int main (int argc, char **argv) {
     int err, nerrs = 0;
     int rank, np;
-    unsigned int nidx;
-    int i;
+    unsigned int i, nidx;
     char buf[1024];
     char *env;
     const char *file_name;
@@ -169,7 +168,6 @@ int main (int argc, char **argv) {
 
     assert (std::string (name1) == std::string (name2));
 
-err_out:
     if (fid >= 0) H5Fclose (fid);
     if (faplid >= 0) H5Pclose (faplid);
     if (log_vlid >= 00) H5VLclose (log_vlid);

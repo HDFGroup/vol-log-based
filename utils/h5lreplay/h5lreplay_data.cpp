@@ -36,7 +36,6 @@ typedef struct hidx {
 void h5lreplay_read_data (MPI_File fin,
                           std::vector<dset_info> &dsets,
                           std::vector<h5lreplay_idx_t> &reqs) {
-    herr_t err = 0;
     int mpierr;
     int i, j;
     size_t bsize;   // Data buffer size of a req

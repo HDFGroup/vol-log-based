@@ -171,7 +171,6 @@ inline void h5ldump_print_data (uint8_t *buf, size_t nelem, size_t esize, hid_t 
 
 void h5ldump_mdsec (
     uint8_t *buf, size_t len, std::vector<H5VL_log_dset_info_t> &dsets, MPI_File fh, int indent) {
-    herr_t err = 0;
     int mpierr;
     int i;
     uint8_t *bufp = buf;              // Current decoding location in buf
@@ -217,7 +216,7 @@ void h5ldump_mdsec (
             }
             bsize *= dsets[block.hdr.did].esize;
 
-            if (block.hdr.fsize > bsize){
+            if (block.hdr.fsize > (MPI_Offset)bsize){
                 abort();
             }
 

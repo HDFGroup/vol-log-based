@@ -549,7 +549,6 @@ void H5VL_log_selections::convert_to_deep () {
 }
 
 void H5VL_log_selections::get_mpi_type (size_t esize, MPI_Datatype *type) {
-    herr_t err = 0;
     int mpierr;
     int i, j;
     bool derived_etype;

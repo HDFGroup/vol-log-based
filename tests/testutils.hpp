@@ -31,7 +31,7 @@
     {                                                                                           \
         if (A != B) {                                                                           \
             nerrs++;                                                                            \
-            printf ("Error at line %d in %s: expecting %d but got %d\n", __LINE__, __FILE__, A, \
+            printf ("Error at line %d in %s: expecting %ld but got %d\n", __LINE__, __FILE__, A, \
                     B);                                                                         \
             goto err_out;                                                                       \
         }                                                                                       \
