@@ -1,6 +1,6 @@
---- h5_cmprss_source.c	2022-05-15 22:13:31.508352944 -0500
-+++ h5_cmprss_passthru.c	2022-05-15 22:14:11.145465878 -0500
-@@ -17,16 +17,31 @@
+--- h5_cmprss.c.orig	2022-11-09 16:07:15.956324190 -0600
++++ h5_cmprss.c	2022-11-09 17:28:01.080362350 -0600
+@@ -16,16 +16,45 @@
   */
  
  #include "hdf5.h"
@@ -14,28 +14,42 @@
 -int
 -main()
 -{
-+int helper(const char *file_name);
++int helper(const char *file_name, bool use_log_vol);
  
 +int main(int argc, char **argv) {
 +    herr_t err = 0;
-+    const char *file_name;
++    const char *file_name_base;
++    const char *file_name_use_log;
 +    int rank;
 +    
 +    MPI_Init(&argc, &argv);
 +    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 +    
-+    file_name = FILE;
++    if (argc > 3) {
++        if (!rank) printf ("Usage: %s [filename1] [filename2]\n", argv[0]);
++        MPI_Finalize ();
++        return 1;
++    } else if (argc > 2) {
++        file_name_base = argv[1];
++        file_name_use_log = argv[2];
++    } else {
++        file_name_base = "regular.h5";
++        file_name_use_log = "log.h5";
++    }
 +
-+    err = helper(file_name);
++    err = helper(file_name_base, false);
++    if (err == 0) {
++        err = helper(file_name_use_log, true);
++    }
 +    MPI_Finalize();
 +    return err;
 +}
 +
-+int helper(const char *file_name) {
++int helper(const char *file_name, bool use_log_vol) {
      hid_t file_id, dataset_id, dataspace_id; /* identifiers */
      hid_t plist_id;
  
-@@ -41,6 +56,7 @@
+@@ -40,6 +69,7 @@
      int i, j, numfilt;
      int buf[DIM0][DIM1];
      int rbuf[DIM0][DIM1];
@@ -43,24 +57,27 @@
  
      /* Uncomment these variables to use SZIP compression
      unsigned szip_options_mask;
-@@ -48,7 +64,15 @@
+@@ -47,7 +77,18 @@
      */
  
      /* Create a file.  */
 -    file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 +    file_id = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 +    H5Fclose(file_id);
-+    fapl_id = H5Pcreate(H5P_FILE_ACCESS); 
-+    H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
-+    H5Pset_all_coll_metadata_ops(fapl_id, 1);
-+    H5Pset_coll_metadata_write(fapl_id, 1);
-+    log_vol_id = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
-+    H5Pset_vol(fapl_id, log_vol_id, NULL);
++
++    fapl_id = H5Pcreate(H5P_FILE_ACCESS);
++    if (use_log_vol) {
++        H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
++        H5Pset_all_coll_metadata_ops(fapl_id, 1);
++        H5Pset_coll_metadata_write(fapl_id, 1);
++        log_vol_id = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT); 
++        H5Pset_vol(fapl_id, log_vol_id, NULL);
++    }
 +    file_id = H5Fopen(file_name, H5F_ACC_RDWR, fapl_id);
  
      /* Create dataset "Compressed Data" in the group using absolute name.  */
      dims[0]      = DIM0;
-@@ -88,7 +112,7 @@
+@@ -87,7 +128,7 @@
      status = H5Fclose(file_id);
  
      /* Now reopen the file and dataset in the file. */
@@ -69,7 +86,7 @@
      dataset_id = H5Dopen2(file_id, "Compressed_Data", H5P_DEFAULT);
  
      /* Retrieve filter information. */
-@@ -118,4 +142,10 @@
+@@ -117,4 +158,10 @@
      status = H5Dclose(dataset_id);
      status = H5Pclose(plist_id);
      status = H5Fclose(file_id);
