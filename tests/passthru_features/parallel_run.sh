@@ -9,23 +9,45 @@ set -e
 
 MPIRUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/1/g"`
 
-# echo "check_PROGRAMS=${check_PROGRAMS}"
-
-# export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}" 
-# export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
-
 # ensure these 2 environment variables are not set
 unset HDF5_VOL_CONNECTOR
 unset HDF5_PLUGIN_PATH
 
 for p in ${check_PROGRAMS} ; do
-    outfile="${TESTOUTDIR}/${p}.h5"
-    outfile_regular="${TESTOUTDIR}/${p}_regular.h5"
-    outfile_log="${TESTOUTDIR}/${p}_log.h5"
-    ${MPIRUN} ./${p} ${outfile_regular} ${outfile_log}
-    # if [ "${p}" == "read_from_regular_write_to_log_regular" ]; then
-    #     h5diff $outfile_log $outfile_regular
-    # fi
+    for vol_type in "terminal" "passthru"; do
+        outfile_regular="${TESTOUTDIR}/${p}-${vol_type}-native.h5"
+        outfile_log="${TESTOUTDIR}/${p}-${vol_type}-logvol.h5"
+
+        if test "x${vol_type}" == xterminal ; then
+            unset H5VL_LOG_PASSTHRU_READ_WRITE
+        else
+            export H5VL_LOG_PASSTHRU_READ_WRITE=1
+        fi
+
+        ${MPIRUN} ./${p} ${outfile_regular} ${outfile_log} > ${p}-${vol_type}.stdout.log
+        unset H5VL_LOG_PASSTHRU_READ_WRITE
+
+        FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k ${outfile_log}`
+        if test "x${FILE_KIND}" != xHDF5 ; then
+            echo "Error: (as $vol_type vol) Output file ${outfile_log} is not HDF5, but ${FILE_KIND}"
+            err=1
+            continue
+        fi
+        FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k ${outfile_regular}`
+        if test "x${FILE_KIND}" != xHDF5 ; then
+            echo "Error: (as $vol_type vol) Output file ${outfile_regular} is not HDF5, but ${FILE_KIND}"
+            err=1
+            continue
+        fi
+
+        h5diff_result=`${H5DIFF_PATH} -q ${outfile_regular} ${outfile_log}`
+        if test "x${h5diff_result}" == x ; then
+            echo "Success: (as $vol_type vol) ${outfile_regular} and ${outfile_log} are same"
+        else
+            echo "Success: (as $vol_type vol) ${outfile_regular} and ${outfile_log} are not same"
+            err=1
+        fi
+    done
 done
 exit 0
 
