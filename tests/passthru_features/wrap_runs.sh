@@ -8,39 +8,47 @@
 set -e
 
 outfile=`basename $1`
-outfile_regular="${TESTOUTDIR}/${outfile}_regular.h5"
-outfile_log="${TESTOUTDIR}/${outfile}_log.h5"
-
-# export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}" 
-# export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
 
 # ensure these 2 environment variables are not set
 unset HDF5_VOL_CONNECTOR
 unset HDF5_PLUGIN_PATH
 
-${TESTSEQRUN} ./$1 ${outfile_regular} ${outfile_log}
+err=0
+for vol_type in "terminal" "passthru"; do
+    outfile_regular="${TESTOUTDIR}/${outfile}-${vol_type}-native.h5"
+    outfile_log="${TESTOUTDIR}/${outfile}-${vol_type}-logvol.h5"
 
-exit 0
-# err=0
-# FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k $outfile_regular`
-# if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
-#    echo "Error: Output file $outfile_regular is not Log VOL, but ${FILE_KIND}"
-#    err=1
-# else
-#    echo "Success: Output file $outfile_regular is ${FILE_KIND}"
-# fi
+    if test "x${vol_type}" == xterminal ; then
+        unset H5VL_LOG_PASSTHRU_READ_WRITE
+    else
+        export H5VL_LOG_PASSTHRU_READ_WRITE=1
+    fi
 
-# FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k $outfile_log`
-# if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
-#    echo "Error: Output file $outfile_log is not Log VOL, but ${FILE_KIND}"
-#    err=1
-# else
-#    echo "Success: Output file $outfile_log is ${FILE_KIND}"
-# fi
+    ${TESTSEQRUN} ./$1 ${outfile_regular} ${outfile_log} > ${outfile}-${vol_type}.stdout.log
+    unset H5VL_LOG_PASSTHRU_READ_WRITE
 
-# if $outfile_regular != "read_from_regular_write_to_log_regular.h5"; then
-    # h5diff $outfile_log $outfile_regular
-# fi
+    FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k ${outfile_log}`
+    if test "x${FILE_KIND}" != xHDF5 ; then
+        echo "Error: (as $vol_type vol) Output file ${outfile_log} is not HDF5, but ${FILE_KIND}"
+        err=1
+        continue
+    fi
+    FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k ${outfile_regular}`
+    if test "x${FILE_KIND}" != xHDF5 ; then
+        echo "Error: (as $vol_type vol) Output file ${outfile_regular} is not HDF5, but ${FILE_KIND}"
+        err=1
+        continue
+    fi
 
-# exit $err
+    h5diff_result=`${H5DIFF_PATH} -q ${outfile_regular} ${outfile_log}`
+    if test "x${h5diff_result}" == x ; then
+        echo "Success: (as $vol_type vol) ${outfile_regular} and ${outfile_log} are same"
+    else
+        echo "Success: (as $vol_type vol) ${outfile_regular} and ${outfile_log} are not same"
+        err=1
+    fi
+
+done
+exit $err
+
 
