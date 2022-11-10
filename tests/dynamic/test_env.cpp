@@ -35,6 +35,7 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include <libgen.h> /* basename() */
 #include <hdf5.h>
 #include <mpi.h>
 
