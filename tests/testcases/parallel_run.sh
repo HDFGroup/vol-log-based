@@ -16,7 +16,7 @@ unset HDF5_PLUGIN_PATH
 err=0
 for p in ${check_PROGRAMS} ; do
    for vol_type in "terminal" "passthru"; do
-      if test "x${vol_type}" == xterminal ; then
+      if test "x${vol_type}" = xterminal ; then
          outfile="${TESTOUTDIR}/${p}.h5"
          unset H5VL_LOG_PASSTHRU_READ_WRITE
       else

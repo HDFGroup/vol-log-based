@@ -12,7 +12,7 @@ for vol_type in "terminal" "passthru"; do
 
    export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}" 
    export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
-   if test "x${vol_type}" == xterminal ; then
+   if test "x${vol_type}" = xterminal ; then
       outfile="${TESTOUTDIR}/$outfile.h5"
       unset H5VL_LOG_PASSTHRU_READ_WRITE
    else

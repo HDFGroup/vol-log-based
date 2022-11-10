@@ -14,7 +14,7 @@ unset HDF5_PLUGIN_PATH
 for vol_type in "terminal" "passthru"; do
    outfile=`basename $1`
 
-   if test "x${vol_type}" == xterminal ; then
+   if test "x${vol_type}" = xterminal ; then
       outfile="${TESTOUTDIR}/$outfile.h5"
       unset H5VL_LOG_PASSTHRU_READ_WRITE
    else
