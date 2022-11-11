@@ -91,6 +91,7 @@ This is essentially a placeholder for the next release note ...
   + Fix a bug in H5VL_log_filei_close that fails to update file attributes property when subfiling is enabled. See 79e91ec.
   + Fix a bug in encoding and decoding of deduplicated metadata entries. See 99d3fda.
   + Fix a bug in H5VL_log_file_create that does not set underlying VOL when subfiling is enabled. See 2532553.
+  + Fix a bug in metadata encoding for record writes. See 8b68e0f.
   + Deduce internal attributes from attributes count in object info
 
 * New example programs
@@ -102,6 +103,10 @@ This is essentially a placeholder for the next release note ...
 * New test program
   + tests/testcases/multi_open
     + Test opening a second handle to the same file without closing the first one.
+  + tests/basic/fill
+    + Test the fill mode feature on datasets.
+  + tests/dynamic/test_env
+    + Test changing the VOL environment variable between file create/open.
 
 * Conformity with HDF5 library
   + none
