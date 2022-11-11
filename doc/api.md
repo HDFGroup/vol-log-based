@@ -257,6 +257,41 @@ The function `H5Pget_subfiling` gets the subfiling setting in a file create prop
   + Returns:
     + This function returns `0` on success. Fail otherwise.
 
+### H5Pset_passthru_read_write
+The function `H5Pset_passthru_read_write` makes Log VOL perform as a terminal VOL if `enable` is set to `false` and makes Log VOL perform as a passthrough VOL if `enable` is set to `true`. As a terminal VOL, Log VOL
+performs all writes using MPI-IO. As a passthrough VOL, Log VOL uses the underlying VOL to perform all writes.
+If users do not specify the underlying VOL, then the native VOL is used by default.
+
+#### Usage:
+```c
+herr_t H5Pset_passthru_read_write (hid_t faplid, hbool_t enable)
+```
+  + Inputs:
+    + `faplid`: the id of the file access property list to set the setting.
+    + `enable`: whether passthrough VOL should be used.
+      + `ture`: Log VOL behaves as a passthrough VOL.
+      + `false`: Log VOL behaves as a terminal VOL.
+  + Returns:
+    + This function returns `0` on success. Fail otherwise.
+  
+### H5Pget_passthru_read_write
+The function `H5Pget_passthru_read_write` gets the setting of Log VOL on
+whether it perform as a terminal VOL or a passthrough VOL. As a terminal VOL, Log VOL
+performs all writes using MPI-IO. As a passthrough VOL, Log VOL uses the underlying VOL to perform all writes.
+
+#### Usage:
+```c
+herr_t H5Pget_passthru_read_write (hid_t faplid, hbool_t *enable);
+```
+  + Inputs:
+    + `faplid`: the id of the file access property list to retrieve the setting.
+  + Outputs:
+    + `enable`: whether passthrough VOL is used.
+      + `ture`: Log VOL behaves as a passthrough VOL.
+      + `false`: Log VOL behaves as a terminal VOL.
+  + Returns:
+    + This function returns `0` on success. Fail otherwise.
+
 ## Misc
 ### H5VL_log_register
 The function `H5VL_log_register` register the log-based VOL connector and return its ID. The returned ID can be used to set the file access properties so that `HDF5` knows whether or not to use Log-Based Vol. The returned ID must be closed by calling `H5VLclose` before file close.
