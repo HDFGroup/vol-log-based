@@ -15,7 +15,7 @@ This is essentially a placeholder for the next release note ...
     + See 99f813a.
 
 * New Limitations
-  + none
+  + Log VOL currently does not support multiple opens of the same file.
 
 * Update configure options
   + none
