@@ -29,6 +29,7 @@ back.
 ### Developers
 * Wei-keng Liao <<wkliao@northwestern.edu>>
 * Kai-yuan Hou <<kai-yuanhou2020@u.northwestern.edu>>
+* Zanhua Huang <<zanhua@u.northwestern.edu>>
 
 Copyright (C) 2022, Northwestern University.
 See [COPYRIGHT](COPYRIGHT) notice in top-level directory.
