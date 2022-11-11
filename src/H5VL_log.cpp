@@ -10,6 +10,7 @@
 
 #include "H5VL_log.h"
 #include "H5VL_log_dataset.hpp"
+#include "H5VL_log_dataseti.hpp"
 #include "H5VL_log_info.hpp"
 #include "H5VL_logi.hpp"
 

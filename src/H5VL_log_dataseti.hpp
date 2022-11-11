@@ -17,6 +17,14 @@
 #define H5VL_LOG_DATASETI_ATTR_MDIMS "_mdims"
 #define H5VL_LOG_DATASETI_ATTR_ID    "_ID"
 
+typedef struct H5VL_log_dio_n_arg_t {
+    hid_t mem_type_id;
+    int n;
+    hsize_t **starts;
+    hsize_t **counts;
+    void *buf;
+} H5VL_log_dio_n_arg_t;
+
 typedef struct H5VL_log_copy_ctx {
     char *src;    // Copy from
     char *dst;    // Copy to

@@ -48,14 +48,6 @@ typedef enum H5VL_log_sel_encoding_t {
     H5VL_LOG_ENCODING_CANONICAL = 1
 } H5VL_log_sel_encoding_t;
 
-typedef struct H5VL_log_dio_n_arg_t {
-    hid_t mem_type_id;
-    int n;
-    hsize_t **starts;
-    hsize_t **counts;
-    void *buf;
-} H5VL_log_dio_n_arg_t;
-
 typedef enum H5VL_log_data_layout_t {
     H5VL_LOG_DATA_LAYOUT_CONTIG        = 0,  // Default
     H5VL_LOG_DATA_LAYOUT_CHUNK_ALIGNED = 1
