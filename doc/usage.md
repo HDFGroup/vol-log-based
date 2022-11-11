@@ -101,6 +101,39 @@ parallelism.
       starting from 0 to the number of subfiles minus one.
     + Each subfile stores the log data of all partitioned datasets.
 
+### Enable log-based VOL as a passthrough VOL
+Log VOL can perform as a terminal VOL or perform as a passthrough VOL. As a terminal VOL, Log VOL
+performs all writes using MPI-IO. As a passthrough VOL, Log VOL uses the specified underlying VOL to perform all writes. If users do not specify the underlying VOL, then the native VOL is used by default.
+
+Log VOL performs as a terminal VOL by default.
+
++ Enable Log VOL as a passthrough VOL through an environment variable
+  + Set the environment variable `H5VL_LOG_PASSTHRU_READ_WRITE` to `1`
+    ```shell
+    % export H5VL_LOG_PASSTHRU_READ_WRITE=1
+    ```
++ Enable Log VOL as a passthrough VOL programmatically
+  + Use the function `H5Pset_passthru_read_write`
+    ```c
+    herr_t err = H5Pset_passthru_read_write (faplid, true);
+    ```
++ Specify the underlying VOL through an environment variable
+  + Set the environment variable `HDF5_VOL_CONNECTOR`
+    ```shell
+    export HDF5_VOL_CONNECTOR="LOG under_vol=[under_vol_id];under_info={[under_vol_info_str]}"
+    ```
+    Replace `[under_vol_id]` and `[under_vol_info_str]` with the actual values.
++ Specify the underlying VOL programmatically
+  + Use the function `H5Pset_vol`
+    ```c
+    H5VL_log_info_t underly;
+    underly.uvlid=[some value]; // specify VOL ID for underlying VOL
+    underly.under_vol_info=[some value]; // specify VOL info for underlying VOL
+
+    hid_t log_vol_id = H5VLregister_connector(&H5VL_log_g, H5P_DEFAULT);  // register Log VOL plugin
+    hid_t faplid = H5Pcreate(H5P_FILE_ACCESS);  // create new file access property list id
+    herr_t err = H5Pset_vol(faplid, log_vol_id, &underly);
+    ```
 ### Differences from the native VOL
   * Buffered and non-buffered modes
     + H5Dwrite can be called in either buffered or non-buffered mode.
