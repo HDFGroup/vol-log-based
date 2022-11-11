@@ -52,8 +52,10 @@ int main (int argc, char **argv) {
     CHECK_ERR (fid)
 
     // Open the same file, should fiail
-    fid2 = H5Fopen (file_name, H5F_ACC_RDONLY, faplid);
-    EXP_ERR (fid2, H5I_INVALID_HID)
+    H5E_BEGIN_TRY {
+        fid2 = H5Fopen (file_name, H5F_ACC_RDONLY, faplid);
+        EXP_ERR (fid2, H5I_INVALID_HID)
+    } H5E_END_TRY;
 
     err = H5Fclose (fid);
     CHECK_ERR (err)
