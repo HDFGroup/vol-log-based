@@ -216,6 +216,47 @@ The function `H5Pget_meta_zip` gets the metadata comrpession setting in a file a
   + Returns:
     + This function returns `0` on success. Fail otherwise.
 
+### H5Pset_subfiling
+The function `H5Pset_subfiling` enables subfiling.
+
+#### Usage:
+```c
+  herr_t H5Pset_subfiling (hid_t plist, int nsubfiles);
+```
+  + Inputs:
+    + `plist`: the id of the file create property list to attach the setting.
+    + `nsubfiles`: number of subfiles.
+        + `-1`:
+          + One subfile per compute node.
+        + `0`:
+          + Disable subfiling.
+        + `N`:
+          + Creatae N subfiles.
+          + N must be a positive integer.
+  + Returns:
+    + This function returns `0` on success. Fail otherwise.
+
+### H5Pget_subfiling 
+The function `H5Pget_subfiling` gets the subfiling setting in a file create property list.
+
+#### Usage:
+```c
+  herr_t H5Pget_subfiling (hid_t plist, int *nsubfiles);
+```
+  + Inputs:
+    + `plist`: the id of the file create property list to retrieve the setting.
+  + Outputs:
+    + `nsubfiles`: number of subfiles.
+        + `-1`:
+          + One subfile per compute node.
+        + `0`:
+          + Subfiling disabled.
+        + `N`:
+          + Number of subfiles used.
+          + N is a positive integer.
+  + Returns:
+    + This function returns `0` on success. Fail otherwise.
+
 ## Misc
 ### H5VL_log_register
 The function `H5VL_log_register` register the log-based VOL connector and return its ID. The returned ID can be used to set the file access properties so that `HDF5` knows whether or not to use Log-Based Vol. The returned ID must be closed by calling `H5VLclose` before file close.
