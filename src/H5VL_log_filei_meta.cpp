@@ -258,8 +258,8 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
             hid_t mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
 
             H5VL_LOGI_PROFILING_TIMER_START;
-            err = H5VLdataset_write (mdp, fp->uvlid, H5T_STD_B8LE, mspace_id, mdsid,
-                                     H5P_DATASET_XFER_DEFAULT, (void *)mbuff, NULL);
+            err = H5VLdataset_write (1, &mdp, fp->uvlid, &H5T_STD_B8LE, &mspace_id, &mdsid,
+                                     H5P_DATASET_XFER_DEFAULT, (const void **)&mbuff, NULL);
             CHECK_ERR;
             H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
             free (mbuff);
