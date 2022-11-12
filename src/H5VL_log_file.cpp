@@ -217,12 +217,24 @@ void *H5VL_log_file_create (
 
         // Create the LOG group
         H5VL_LOGI_PROFILING_TIMER_START;
-        loc.obj_type = H5I_FILE;
-        loc.type     = H5VL_OBJECT_BY_SELF;
-        fp->lgp      = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
-                                    H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,
-                                    H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
-        CHECK_PTR (fp->lgp)
+        {
+            void *lib_state;
+            // Reset hdf5 context to allow group operations within a file operation
+            H5VLretrieve_lib_state (&lib_state);
+            H5VLstart_lib_state ();
+            H5VLrestore_lib_state (lib_state);
+
+            loc.obj_type = H5I_FILE;
+            loc.type     = H5VL_OBJECT_BY_SELF;
+            fp->lgp      = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
+                                        H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,
+                                        H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
+            CHECK_PTR (fp->lgp)
+            
+            H5VLfinish_lib_state();
+            H5VLrestore_lib_state(lib_state);
+            H5VLfree_lib_state(lib_state);
+        }
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
 
         if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {

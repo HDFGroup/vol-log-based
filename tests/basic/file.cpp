@@ -53,13 +53,6 @@ int main (int argc, char **argv) {
     CHECK_ERR (err)
     fid = -1;
 
-    // Open file
-    fid = H5Fopen (file_name, H5F_ACC_RDONLY, faplid);
-    CHECK_ERR (fid)
-    err = H5Fclose (fid);
-    CHECK_ERR (err)
-    fid = -1;
-
 err_out:
     if (fid >= 0) H5Fclose (fid);
     if (faplid >= 0) H5Pclose (faplid);

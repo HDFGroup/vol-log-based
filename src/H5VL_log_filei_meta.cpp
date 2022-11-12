@@ -68,6 +68,7 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
     MPI_Status stat;                          // Status of MPI I/O
     H5VL_loc_params_t loc;
     bool perform_write_in_mpi = true;
+    void *lib_state;
     H5VL_logi_err_finally finally ([&offs, &lens, &mdoffs, &mdsid, &dcplid, &mmtype] () -> void {
         H5VL_log_free (offs);
         H5VL_log_free (lens);
@@ -83,8 +84,12 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
         perform_write_in_mpi = true;
     }
 
-    H5VL_LOGI_PROFILING_TIMER_START;
+    // Reset hdf5 context to allow dset operations within other HDF5 API calls
+    H5VLretrieve_lib_state (&lib_state);
+    H5VLstart_lib_state ();
+    H5VLrestore_lib_state (lib_state);
 
+    H5VL_LOGI_PROFILING_TIMER_START;
     H5VL_LOGI_PROFILING_TIMER_START;
 
     // Create memory datatype
@@ -304,6 +309,10 @@ sizeof(H5VL_logi_meta_hdr)));
     fp->wreq_hash.clear ();
 
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
+
+    H5VLfinish_lib_state();
+    H5VLrestore_lib_state(lib_state);
+    H5VLfree_lib_state(lib_state);
 }
 
 /*
