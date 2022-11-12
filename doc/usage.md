@@ -1,6 +1,12 @@
-## Using the Log-based VOL
+## User Guide of Log-layout Based HDF5 VOL
+* [Enable Log-layout Based VOL in HDF5 applications](#enable-log-layout-based-vol-in-hdf5-applications)
+* [Subfiling Feature](#subfiling-feature)
+* [Use Log-layout Based VOL as A Passthrough VOL](#use-log-layout-based-vol-as-a-passthrough-vol)
+* [Differences from the HDF5 Native VOL](#differences-from-the-hdf5-native-vol)
+* [Current Limitations](#current-limitations)
 
-### Enable log-based VOL in HDF5 applications
+
+### Enable Log-layout Based VOL in HDF5 applications
 There are two ways to use the log-based VOL plugin. One is by modifying the
 application source codes to add a few function calls. The other is by setting
 HDF5 environment variables.
@@ -65,7 +71,7 @@ HDF5 environment variables.
      % source ${HOME}/Log_IO_VOL/bin/h5lenv.bash
      ```
 
-### Enable log-based VOL subfiling feature
+### Subfiling Feature
 Subfiling is a feature to mitigate the file lock conflict in a parallel write
 operation to a shared file. It divides MPI processes into groups disjointedly
 and creates one file (named subfile) per group. Each subfile is accessible only
@@ -101,7 +107,7 @@ parallelism.
       starting from 0 to the number of subfiles minus one.
     + Each subfile stores the log data of all partitioned datasets.
 
-### Enable log-based VOL as a passthrough VOL
+### Use Log-layout Based VOL as A Passthrough VOL
 Log VOL can perform as a terminal VOL or perform as a passthrough VOL. As a terminal VOL, Log VOL
 performs all writes using MPI-IO. As a passthrough VOL, Log VOL uses the specified underlying VOL to perform all writes. If users do not specify the underlying VOL, then the native VOL is used by default.
 
@@ -134,7 +140,7 @@ Log VOL performs as a terminal VOL by default.
     hid_t faplid = H5Pcreate(H5P_FILE_ACCESS);  // create new file access property list id
     herr_t err = H5Pset_vol(faplid, log_vol_id, &underly);
     ```
-### Differences from the native VOL
+### Differences from the HDF5 Native VOL
   * Buffered and non-buffered modes
     + H5Dwrite can be called in either buffered or non-buffered mode.
     + The mode can be set in the dataset transfer property list through API
@@ -154,7 +160,7 @@ Log VOL performs as a terminal VOL by default.
     + Even after the call to `H5Dread()` returns, the data is not read into the
       user buffer until the call to `H5Fflush()` returns.
 
-### Current limitations
+### Current Limitations
   * Blocking read operations must be collective.
     + H5Dread must be called collectively.
     + Calling H5Dread automatically triggers a flush.
