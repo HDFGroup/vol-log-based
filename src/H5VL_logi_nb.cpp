@@ -555,9 +555,12 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
         void *lib_state;
 
         // Reset hdf5 context to allow file operations within a dataset operation
-        H5VLretrieve_lib_state (&lib_state);
-        H5VLstart_lib_state ();
-        H5VLrestore_lib_state (lib_state);
+        err = H5VLretrieve_lib_state (&lib_state);
+        CHECK_ERR
+        err = H5VLstart_lib_state ();
+        CHECK_ERR
+        err = H5VLrestore_lib_state (lib_state);
+        CHECK_ERR
 
         group_id = fp->group_id;  // Backup group ID
         // Process our own subfile last so wew don't need to reopen it
@@ -594,9 +597,12 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
             H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS_SWITCH_SUBFILE);
         }
 
-        H5VLfinish_lib_state();
-        H5VLrestore_lib_state(lib_state);
-        H5VLfree_lib_state(lib_state);
+        err = H5VLfinish_lib_state ();
+        CHECK_ERR
+        err = H5VLrestore_lib_state (lib_state);
+        CHECK_ERR
+        err = H5VLfree_lib_state (lib_state);
+        CHECK_ERR
     }
 
     // Clear the request queue
@@ -652,9 +658,12 @@ void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 
 
     // Reset hdf5 context to allow file operations within a dataset operation
-    H5VLretrieve_lib_state (&lib_state);
-    H5VLstart_lib_state ();
-    H5VLrestore_lib_state (lib_state);
+    err = H5VLretrieve_lib_state (&lib_state);
+    CHECK_ERR
+    err = H5VLstart_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
 
     H5VL_LOGI_PROFILING_TIMER_START;
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -901,9 +910,12 @@ void H5VL_log_nb_flush_write_reqs (void *file, hid_t dxplid) {
 
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS);
         
-    H5VLfinish_lib_state();
-    H5VLrestore_lib_state(lib_state);
-    H5VLfree_lib_state(lib_state);
+    err = H5VLfinish_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
+    err = H5VLfree_lib_state (lib_state);
+    CHECK_ERR
 }
 
 inline void H5VL_log_nb_flush_posix_write (int fd, char *buf, size_t count) {

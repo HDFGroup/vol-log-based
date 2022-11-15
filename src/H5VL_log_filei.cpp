@@ -168,18 +168,24 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     {
         void *lib_state;
         // Reset hdf5 context to allow group operations within a file operation
-        H5VLretrieve_lib_state (&lib_state);
-        H5VLstart_lib_state ();
-        H5VLrestore_lib_state (lib_state);
+        err = H5VLretrieve_lib_state (&lib_state);
+        CHECK_ERR
+        err = H5VLstart_lib_state ();
+        CHECK_ERR
+        err = H5VLrestore_lib_state (lib_state);
+        CHECK_ERR
 
         fp->lgp = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
                                   H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
 
         CHECK_PTR (fp->lgp)
 
-        H5VLfinish_lib_state();
-        H5VLrestore_lib_state(lib_state);
-        H5VLfree_lib_state(lib_state);
+        err = H5VLfinish_lib_state ();
+        CHECK_ERR
+        err = H5VLrestore_lib_state (lib_state);
+        CHECK_ERR
+        err = H5VLfree_lib_state (lib_state);
+        CHECK_ERR
     }
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
 
@@ -195,9 +201,12 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
         {
         void *lib_state;
         // Reset hdf5 context to allow dataset operations within a file operation
-        H5VLretrieve_lib_state (&lib_state);
-        H5VLstart_lib_state ();
-        H5VLrestore_lib_state (lib_state);
+        err = H5VLretrieve_lib_state (&lib_state);
+        CHECK_ERR
+        err = H5VLstart_lib_state ();
+        CHECK_ERR
+        err = H5VLrestore_lib_state (lib_state);
+        CHECK_ERR
 
         args.op_type             = H5VL_OBJECT_VISIT;
         args.args.visit.idx_type = H5_INDEX_CRT_ORDER;
@@ -208,9 +217,12 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
         err = H5VLobject_specific (fp->uo, &loc, fp->uvlid, &args, fp->dxplid, NULL);
         CHECK_ERR
 
-        H5VLfinish_lib_state();
-        H5VLrestore_lib_state(lib_state);
-        H5VLfree_lib_state(lib_state);
+        err = H5VLfinish_lib_state ();
+        CHECK_ERR
+        err = H5VLrestore_lib_state (lib_state);
+        CHECK_ERR
+        err = H5VLfree_lib_state (lib_state);
+        CHECK_ERR
     }
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
 }
@@ -644,9 +656,12 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     H5VL_LOGI_PROFILING_TIMER_START;
 
     // Reset hdf5 context to allow file operations within other object close operations
-    H5VLretrieve_lib_state (&lib_state);
-    H5VLstart_lib_state ();
-    H5VLrestore_lib_state (lib_state);
+    err = H5VLretrieve_lib_state (&lib_state);
+    CHECK_ERR
+    err = H5VLstart_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
 
     if (fp->flag != H5F_ACC_RDONLY) {
         // Flush write requests
@@ -750,9 +765,12 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
 
     delete fp;
 
-    H5VLfinish_lib_state();
-    H5VLrestore_lib_state(lib_state);
-    H5VLfree_lib_state(lib_state);
+    err = H5VLfinish_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
+    err = H5VLfree_lib_state (lib_state);
+    CHECK_ERR
 } /* end H5VL_log_file_close() */
 
 void H5VL_log_filei_parse_strip_info (H5VL_log_file_t *fp) {
