@@ -85,12 +85,9 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
     }
 
     // Reset hdf5 context to allow dset operations within other HDF5 API calls
-    err = H5VLretrieve_lib_state (&lib_state);
-    CHECK_ERR
-    err = H5VLstart_lib_state ();
-    CHECK_ERR
-    err = H5VLrestore_lib_state (lib_state);
-    CHECK_ERR
+    H5VLretrieve_lib_state (&lib_state);
+    H5VLstart_lib_state ();
+    H5VLrestore_lib_state (lib_state);
 
     H5VL_LOGI_PROFILING_TIMER_START;
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -313,12 +310,9 @@ sizeof(H5VL_logi_meta_hdr)));
 
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH);
 
-    err = H5VLfinish_lib_state ();
-    CHECK_ERR
-    err = H5VLrestore_lib_state (lib_state);
-    CHECK_ERR
-    err = H5VLfree_lib_state (lib_state);
-    CHECK_ERR
+    H5VLfinish_lib_state();
+    H5VLrestore_lib_state(lib_state);
+    H5VLfree_lib_state(lib_state);
 }
 
 /*

@@ -220,12 +220,9 @@ void *H5VL_log_file_create (
         {
             void *lib_state;
             // Reset hdf5 context to allow group operations within a file operation
-            err = H5VLretrieve_lib_state (&lib_state);
-            CHECK_ERR
-            err = H5VLstart_lib_state ();
-            CHECK_ERR
-            err = H5VLrestore_lib_state (lib_state);
-            CHECK_ERR
+            H5VLretrieve_lib_state (&lib_state);
+            H5VLstart_lib_state ();
+            H5VLrestore_lib_state (lib_state);
 
             loc.obj_type = H5I_FILE;
             loc.type     = H5VL_OBJECT_BY_SELF;
@@ -234,12 +231,9 @@ void *H5VL_log_file_create (
                                         H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
             CHECK_PTR (fp->lgp)
             
-            err = H5VLfinish_lib_state ();
-            CHECK_ERR
-            err = H5VLrestore_lib_state (lib_state);
-            CHECK_ERR
-            err = H5VLfree_lib_state (lib_state);
-            CHECK_ERR
+            H5VLfinish_lib_state();
+            H5VLrestore_lib_state(lib_state);
+            H5VLfree_lib_state(lib_state);
         }
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
 
