@@ -109,7 +109,7 @@ The Lustre striping configuration is set to striping count of 8 and striping
 size of 1 MiB.
 
 <p align="center">
-<img align="center" src="e3sm_cori_wr.jpg" alt="Performance of E3SM-IO on Cori" width="400">
+<img align="center" src="e3sm_cori_wr.jpg" alt="Performance of E3SM-IO on Cori" width="800">
 </p>
 
 ### Evaluation on Summit at OLCF
@@ -119,5 +119,5 @@ All runs allocated 84 MPI processes per node.
 Summit's parallel file system, Spectrum file system (GPFS), was used.
 
 <p align="center">
-<img align="center" src="e3sm_summit_wr.jpg" alt="Performance of E3SM-IO on Summit" width="400">
+<img align="center" src="e3sm_summit_wr.jpg" alt="Performance of E3SM-IO on Summit" width="800">
 </p>
