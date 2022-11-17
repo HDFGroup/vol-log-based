@@ -5,7 +5,7 @@
 * [Three cases from E3SM production runs](#three-cases-from-e3sm-production-runs)
 * [Performance Results](#performance-results)
 
-This case study uses [E3SM-IO](https://github.com/Parallel-NetCDF/E3SM-IO) to evaluet the
+This case study uses [E3SM-IO](https://github.com/Parallel-NetCDF/E3SM-IO) to evaluate the
 performance of the HDF5 log-layout based VOL, compared with methods using other I/O libraries.
 E3SM-IO is an I/O benchmark suite that measures the performance I/O kernel of
 [E3SM](https://github.com/E3SM-Project/E3SM), a state-of-the-science Earth system modeling,
@@ -77,14 +77,14 @@ The performance numbers presented here compare three I/O methods used in E3SM-IO
 the log-layout based VOL, [PnetCDF](https://github.com/Parallel-NetCDF/PnetCDF),
 and [ADIOS](https://github.com/ornladios/ADIOS2).
 
-The PnetCDF method stores E3SM variables in files in a cononical storage layout.
+The PnetCDF method stores E3SM variables in files in a canonical storage layout.
 For each partitioned variable, each process writes multiple non-contiguous requests.
 The PnetCDF's non-blocking APIs are used to enabled request aggregation to improve
 performance.
-However, storing data in the canonical order requireses inter-process communications
+However, storing data in the canonical order requires inter-process communications
 in MPI collective I/O, which can be expensive.
 Given E3SM's data partitioning patterns containing large numbers of noncontiguous write
-requests, the commincation cost can be very expensive.
+requests, the communication cost can be very expensive.
 Therefor, it is expected the PnetCDF method performs slower than the log-layout based
 VOL, which stores data in the log layout, requiring no inter-process communications.
 
@@ -103,12 +103,10 @@ Performance chart below shows the execution time, collected in September 2021, o
 [Cori](https://docs.nersc.gov/systems/cori/) at [NERSC](https://www.nersc.gov).
 All runs were on the KNL nodes, with 64 MPI processes allocated per node.
 
-For PnetCDF, the Lustre file system is configured to use striping count of 128 OSTs
-and striping size of 16 MiB.
 Both Log-layout based VOL and ADIOS runs enabled their subfiling feature, which
 creates one file per compute node.
-The Lustre striping configuration is set to striping count of 1 OST and striping
-size of 16 MiB
+The Lustre striping configuration is set to striping count of 8 and striping
+size of 1 MiB.
 
 <p align="center">
 <img align="center" src="e3sm_cori_wr.jpg" alt="Performance of E3SM-IO on Cori" width="400">

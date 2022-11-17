@@ -26,6 +26,10 @@ back.
 * [doc/design.md](doc/design.md) outlines the design of log-based VOL.
 * [doc/api.md](doc/api.md) describes the new APIs introduced in this VOL.
 
+### Applicaton Case Studies and Experimental Results
+* [E3SM I/O case study](case_studies/E3SM_IO.md), [Energy Exascale Earth System Model](https://github.com/wrf-model/WRF).
+* [WRF I/O case study](case_studies/WRF.md), [Weather Research and Forecasting Model](https://github.com/wrf-model/WRF).
+
 ### Developers
 * Wei-keng Liao <<wkliao@northwestern.edu>>
 * Kai-yuan Hou <<kai-yuanhou2020@u.northwestern.edu>>
