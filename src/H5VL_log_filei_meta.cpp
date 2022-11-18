@@ -62,18 +62,20 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
     void *mdp;                                // under VOL object of the metadata dataset
     hid_t mdsid  = -1;                        // metadata dataset data space ID
     hid_t dcplid = -1;                        // metadata dataset creation property ID
+    hid_t dxplid = -1;                        // metadata dataset transfer property ID
     hsize_t dsize;                            // Size of the metadata dataset = mdsize_all
     haddr_t mdoff;                            // File offset of the metadata dataset
     MPI_Datatype mmtype = MPI_DATATYPE_NULL;  // Memory datatype for writing the metadata
     MPI_Status stat;                          // Status of MPI I/O
     H5VL_loc_params_t loc;
     bool perform_write_in_mpi = true;
-    H5VL_logi_err_finally finally ([&offs, &lens, &mdoffs, &mdsid, &dcplid, &mmtype] () -> void {
+    H5VL_logi_err_finally finally ([&offs, &lens, &mdoffs, &mdsid, &dcplid, &dxplid, &mmtype] () -> void {
         H5VL_log_free (offs);
         H5VL_log_free (lens);
         H5VL_log_free (mdoffs);
         H5VL_log_Sclose (mdsid);
         H5VL_log_Pclose (dcplid);
+        H5VL_log_Pclose (dxplid);
         if (mmtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mmtype); }
     });
 
@@ -176,41 +178,46 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
         CHECK_ID (dcplid)
         err = H5Pset_alloc_time (dcplid, H5D_ALLOC_TIME_EARLY);
 
+        // set up transfer property list; using collective MPI IO
+        dxplid = H5Pcreate(H5P_DATASET_XFER);
+        CHECK_ID(dxplid);
+        H5Pset_dxpl_mpio(dxplid, H5FD_MPIO_COLLECTIVE);
+
         // Create dataset with under VOL
         sprintf (mdname, "%s_%d", H5VL_LOG_FILEI_DSET_META, fp->nmdset);
         H5VL_LOGI_PROFILING_TIMER_START;
         mdp = H5VLdataset_create (fp->lgp, &loc, fp->uvlid, mdname, H5P_LINK_CREATE_DEFAULT,
                                   H5T_STD_B8LE, mdsid, dcplid, H5P_DATASET_ACCESS_DEFAULT,
-                                  fp->dxplid, NULL);
+                                  dxplid, NULL);
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CREATE);
         CHECK_PTR (mdp);
         fp->nmdset++;
 
         // Get metadata dataset file offset
-        H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, fp->dxplid, &mdoff);
+        H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, dxplid, &mdoff);
 
         // If not allocated, flush the file and reopen the dataset
         if (mdoff == HADDR_UNDEF) {
             H5VL_file_specific_args_t arg;
 
             // Close the dataset
-            err = H5VLdataset_close (mdp, fp->uvlid, fp->dxplid, NULL);
+            err = H5VLdataset_close (mdp, fp->uvlid, dxplid, NULL);
             CHECK_ERR
 
             // Flush the file
             arg.op_type             = H5VL_FILE_FLUSH;
             arg.args.flush.scope    = H5F_SCOPE_GLOBAL;
             arg.args.flush.obj_type = H5I_FILE;
-            err                     = H5VLfile_specific (fp->uo, fp->uvlid, &arg, fp->dxplid, NULL);
+            err                     = H5VLfile_specific (fp->uo, fp->uvlid, &arg, dxplid, NULL);
             CHECK_ERR
 
             // Reopen the dataset
             mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, mdname, H5P_DATASET_ACCESS_DEFAULT,
-                                    fp->dxplid, NULL);
+                                    dxplid, NULL);
             CHECK_PTR (mdp);
 
             // Get dataset file offset
-            H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, fp->dxplid, &mdoff);
+            H5VL_logi_dataset_get_foff (fp, mdp, fp->uvlid, dxplid, &mdoff);
 
             // Still don't work, discard the data
             if (mdoff == HADDR_UNDEF) {
@@ -253,7 +260,7 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
             H5VL_LOGI_PROFILING_TIMER_START;
             err = H5VLdataset_write (mdp, fp->uvlid, H5T_STD_B8LE, mspace_id, mdsid,
-                                     H5P_DATASET_XFER_DEFAULT, (void *)mbuff, NULL);
+                                     dxplid, (void *)mbuff, NULL);
             CHECK_ERR;
             H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
             free (mbuff);
@@ -263,7 +270,7 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
         // Close the metadata dataset
         H5VL_LOGI_PROFILING_TIMER_START;
         H5VL_LOGI_PROFILING_TIMER_START;
-        err = H5VLdataset_close (mdp, fp->uvlid, fp->dxplid, NULL);
+        err = H5VLdataset_close (mdp, fp->uvlid, dxplid, NULL);
         CHECK_ERR
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLDATASET_CLOSE);
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_CLOSE);
