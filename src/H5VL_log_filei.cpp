@@ -113,7 +113,10 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     H5VL_object_specific_args_t args;
     hbool_t exists;
     int attbuf[H5VL_LOG_FILEI_NATTR];
-    void *lib_state;
+    void *lib_state = NULL;
+    H5VL_logi_err_finally finally ([&lib_state] () -> void {
+        H5VL_logi_restore_lib_stat(lib_state);
+    });
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -163,12 +166,7 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN_SUBFILE);
 
     // Reset hdf5 context to allow group operations within a file operation
-    err = H5VLretrieve_lib_state (&lib_state);
-    CHECK_ERR
-    err = H5VLstart_lib_state ();
-    CHECK_ERR
-    err = H5VLrestore_lib_state (lib_state);
-    CHECK_ERR
+    H5VL_logi_reset_lib_stat(lib_state);
 
     // Open the LOG group
     loc.obj_type = H5I_FILE;
@@ -198,12 +196,6 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     err = H5VLobject_specific (fp->uo, &loc, fp->uvlid, &args, fp->dxplid, NULL);
     CHECK_ERR
 
-    err = H5VLfinish_lib_state ();
-    CHECK_ERR
-    err = H5VLrestore_lib_state (lib_state);
-    CHECK_ERR
-    err = H5VLfree_lib_state (lib_state);
-    CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
 }
 
@@ -615,7 +607,10 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     herr_t err = 0;
     int mpierr;
     int attbuf[5];
-    void *lib_state;
+    void *lib_state = NULL;
+    H5VL_logi_err_finally finally ([&lib_state] () -> void {
+        H5VL_logi_restore_lib_stat(lib_state);
+    });
 
 #ifdef LOGVOL_DEBUG
     if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_filei_close(%p, ...)\n", fp); }
@@ -636,9 +631,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     H5VL_LOGI_PROFILING_TIMER_START;
 
     // Reset hdf5 context to allow file operations within other object close operations
-    H5VLretrieve_lib_state (&lib_state);
-    H5VLstart_lib_state ();
-    H5VLrestore_lib_state (lib_state);
+    H5VL_logi_reset_lib_stat(lib_state);
 
     if (fp->flag != H5F_ACC_RDONLY) {
         // Flush write requests
@@ -677,12 +670,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_CLOSE);
 
-    err = H5VLfinish_lib_state ();
-    CHECK_ERR
-    err = H5VLrestore_lib_state (lib_state);
-    CHECK_ERR
-    err = H5VLfree_lib_state (lib_state);
-    CHECK_ERR
+    H5VL_logi_restore_lib_stat(lib_state);
 
 #ifdef LOGVOL_PROFILING
     {
