@@ -9,10 +9,12 @@ This is essentially a placeholder for the next release note ...
     variables `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH` to write data to
     files in log layout. See PR #15.
   + Support using Log VOL as a Pass-through VOL.
-    * When the Pass-through VOL is enabled, all writes are performed using the
-      underlying VOL.
-    * This feature enables the support of opening and operating an existing
+    * This feature adds the support of opening and operating an existing
       regular HDF5 file.
+    * This feature adds the option of performing all writes using the
+      underlying VOL.
+    * When the Pass-through VOL is enabled, it uses collective MPI I/O to
+      perform file writes. See PR #42.
     * For its usage, refer to the User Guide in doc/usage.md.
     * See PR #33.
 
@@ -24,10 +26,6 @@ This is essentially a placeholder for the next release note ...
   + Log VOL currently does not support multiple opens of the same file.
   + Log VOL currently does not support HDF5 1.13.3 due to an attribute error.
     See [HDF5 issue 2220](https://github.com/HDFGroup/hdf5/issues/2220).
-  + When using Log VOL as a Pass-through VOL, independent MPI I/O will be used
-    to preform file writes, due to an
-    [issue](https://forum.hdfgroup.org/t/vol-unable-to-write-a-dataset-at-file-close-time/10378)
-    related to HDF5 library states.
 
 * Update configure options
   + none
