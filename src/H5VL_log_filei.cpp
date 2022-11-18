@@ -114,9 +114,8 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     hbool_t exists;
     int attbuf[H5VL_LOG_FILEI_NATTR];
     void *lib_state = NULL;
-    H5VL_logi_err_finally finally ([&lib_state] () -> void {
-        H5VL_logi_restore_lib_stat(lib_state);
-    });
+    H5VL_logi_err_finally finally (
+        [&lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -166,14 +165,14 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN_SUBFILE);
 
     // Reset hdf5 context to allow group operations within a file operation
-    H5VL_logi_reset_lib_stat(lib_state);
+    H5VL_logi_reset_lib_stat (lib_state);
 
     // Open the LOG group
     loc.obj_type = H5I_FILE;
     loc.type     = H5VL_OBJECT_BY_SELF;
-    H5VL_LOGI_PROFILING_TIMER_START 
+    H5VL_LOGI_PROFILING_TIMER_START
     fp->lgp = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
-                                H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
+                              H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
 
     CHECK_PTR (fp->lgp)
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
@@ -389,9 +388,9 @@ hid_t H5VL_log_filei_get_under_plist (hid_t faplid) {
         }
     });
     static std::string pnames[] = {
-        "H5VL_log_nb_buffer_size",     "H5VL_log_idx_buffer_size", "H5VL_log_metadata_merge",
-        "H5VL_log_metadata_share",     "H5VL_log_metadata_zip",    "H5VL_log_sel_encoding",
-        "H5VL_log_data_layout",        "H5VL_log_subfiling",       "H5VL_log_single_subfile_read",
+        "H5VL_log_nb_buffer_size",      "H5VL_log_idx_buffer_size", "H5VL_log_metadata_merge",
+        "H5VL_log_metadata_share",      "H5VL_log_metadata_zip",    "H5VL_log_sel_encoding",
+        "H5VL_log_data_layout",         "H5VL_log_subfiling",       "H5VL_log_single_subfile_read",
         "H5VL_log_passthru_read_write",
     };
 
@@ -608,9 +607,8 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     int mpierr;
     int attbuf[5];
     void *lib_state = NULL;
-    H5VL_logi_err_finally finally ([&lib_state] () -> void {
-        H5VL_logi_restore_lib_stat(lib_state);
-    });
+    H5VL_logi_err_finally finally (
+        [&lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
 
 #ifdef LOGVOL_DEBUG
     if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_filei_close(%p, ...)\n", fp); }
@@ -631,7 +629,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     H5VL_LOGI_PROFILING_TIMER_START;
 
     // Reset hdf5 context to allow file operations within other object close operations
-    H5VL_logi_reset_lib_stat(lib_state);
+    H5VL_logi_reset_lib_stat (lib_state);
 
     if (fp->flag != H5F_ACC_RDONLY) {
         // Flush write requests
@@ -670,7 +668,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_CLOSE);
 
-    H5VL_logi_restore_lib_stat(lib_state);
+    H5VL_logi_restore_lib_stat (lib_state);
 
 #ifdef LOGVOL_PROFILING
     {
@@ -698,7 +696,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
 
     // Free dataset info
     for (auto info : fp->dsets_info) {
-        if (info){
+        if (info) {
             if (info->fill) { free (info->fill); }
             delete info;
         }

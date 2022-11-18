@@ -96,7 +96,7 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
         CHECK_PTR (mdoffs)
         mdoffs_snd = mdoffs + fp->group_np + 1;
 
-        offs[0] = (MPI_Aint)(mdoffs);
+        offs[0] = (MPI_Aint) (mdoffs);
         lens[0] = (int)(sizeof (MPI_Offset) * (fp->group_np + 1));
 
         nentry = 1;
@@ -165,7 +165,7 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
     loc.obj_type = H5I_GROUP;
 
     dsize = (hsize_t)rbuf[1];
-    if (dsize > (hsize_t)(sizeof (MPI_Offset) * (fp->group_np + 1))) {
+    if (dsize > (hsize_t) (sizeof (MPI_Offset) * (fp->group_np + 1))) {
         // Create metadata dataset
         H5VL_LOGI_PROFILING_TIMER_START;
         mdsid = H5Screate_simple (1, &dsize, &dsize);
@@ -481,7 +481,7 @@ void H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
         start = offs[sec - 1];
     }
     for (i = sec + 1; i < nsec; i++) {
-        if (offs[i] - start > (size_t)(fp->mbuf_size)) { break; }
+        if (offs[i] - start > (size_t) (fp->mbuf_size)) { break; }
     }
     if (i <= sec) { RET_ERR ("OOM") }  // At least 1 section should fit into buffer limit
     count = offs[i - 1] - start;

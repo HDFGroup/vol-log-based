@@ -109,7 +109,7 @@ inline char *H5VL_logi_name_remap (const char *name) {
         ret    = (char *)malloc (n + 2);
         ret[0] = '_';
         memcpy (ret + 1, name, n);
-        ret[n+1] = '\0';
+        ret[n + 1] = '\0';
     } else {
         ret = (char *)name;
     }
