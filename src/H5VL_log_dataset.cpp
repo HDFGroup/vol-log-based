@@ -75,11 +75,11 @@ void *H5VL_log_dataset_create (void *obj,
     H5VL_log_req_t *rp;
     void **ureqp, *ureq;
     H5D_fill_value_t stat;
+    void *lib_state;
     // char lname[1024];
 
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
-
         /* Check arguments */
         if (op->fp->is_log_based_file) { iname = H5VL_logi_name_remap (name); }
 
@@ -157,6 +157,14 @@ void *H5VL_log_dataset_create (void *obj,
         // Filters
         H5VL_logi_get_filters (dcpl_id, dip->filters);
 
+        // Reset hdf5 context to allow attr operations within a dataset operation
+        err = H5VLretrieve_lib_state (&lib_state);
+        CHECK_ERR
+        err = H5VLstart_lib_state ();
+        CHECK_ERR
+        err = H5VLrestore_lib_state (lib_state);
+        CHECK_ERR
+
         // Record dataset metadata as attributes
         H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_STD_I64LE, H5T_NATIVE_INT64,
                            dip->ndim, dip->dims, dxpl_id, ureqp);
@@ -170,6 +178,13 @@ void *H5VL_log_dataset_create (void *obj,
             rp->append (ureq);
             *req = rp;
         }
+        
+        err = H5VLfinish_lib_state ();
+        CHECK_ERR
+        err = H5VLrestore_lib_state (lib_state);
+        CHECK_ERR
+        err = H5VLfree_lib_state (lib_state);
+        CHECK_ERR
 
         // Append dataset to the file
         LOG_VOL_ASSERT (dp->fp->ndset == (int)(dp->fp->dsets_info.size ()))
@@ -193,7 +208,6 @@ void *H5VL_log_dataset_create (void *obj,
                                                    H5P_LINK_ACCESS_DEFAULT, dp->fp->dxplid, req);
         CHECK_ERR
         */
-
         H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_CREATE);
 
 #ifdef LOGVOL_DEBUG

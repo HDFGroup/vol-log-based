@@ -113,6 +113,7 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     H5VL_object_specific_args_t args;
     hbool_t exists;
     int attbuf[H5VL_LOG_FILEI_NATTR];
+    void *lib_state;
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -161,26 +162,22 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     }
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN_SUBFILE);
 
+    // Reset hdf5 context to allow group operations within a file operation
+    err = H5VLretrieve_lib_state (&lib_state);
+    CHECK_ERR
+    err = H5VLstart_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
+
     // Open the LOG group
     loc.obj_type = H5I_FILE;
     loc.type     = H5VL_OBJECT_BY_SELF;
     H5VL_LOGI_PROFILING_TIMER_START 
-    {
-        void *lib_state;
-        // Reset hdf5 context to allow group operations within a file operation
-        H5VLretrieve_lib_state (&lib_state);
-        H5VLstart_lib_state ();
-        H5VLrestore_lib_state (lib_state);
+    fp->lgp = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
+                                H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
 
-        fp->lgp = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
-                                  H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
-
-        CHECK_PTR (fp->lgp)
-
-        H5VLfinish_lib_state();
-        H5VLrestore_lib_state(lib_state);
-        H5VLfree_lib_state(lib_state);
-    }
+    CHECK_PTR (fp->lgp)
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
 
     // Open the file with MPI
@@ -192,26 +189,21 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     CHECK_MPIERR
 
     // Visit all dataasets for info
-        {
-        void *lib_state;
-        // Reset hdf5 context to allow dataset operations within a file operation
-        H5VLretrieve_lib_state (&lib_state);
-        H5VLstart_lib_state ();
-        H5VLrestore_lib_state (lib_state);
+    args.op_type             = H5VL_OBJECT_VISIT;
+    args.args.visit.idx_type = H5_INDEX_CRT_ORDER;
+    args.args.visit.order    = H5_ITER_INC;
+    args.args.visit.op       = H5VL_log_filei_dset_visit;
+    args.args.visit.op_data  = NULL;
+    args.args.visit.fields   = H5O_INFO_ALL;
+    err = H5VLobject_specific (fp->uo, &loc, fp->uvlid, &args, fp->dxplid, NULL);
+    CHECK_ERR
 
-        args.op_type             = H5VL_OBJECT_VISIT;
-        args.args.visit.idx_type = H5_INDEX_CRT_ORDER;
-        args.args.visit.order    = H5_ITER_INC;
-        args.args.visit.op       = H5VL_log_filei_dset_visit;
-        args.args.visit.op_data  = NULL;
-        args.args.visit.fields   = H5O_INFO_ALL;
-        err = H5VLobject_specific (fp->uo, &loc, fp->uvlid, &args, fp->dxplid, NULL);
-        CHECK_ERR
-
-        H5VLfinish_lib_state();
-        H5VLrestore_lib_state(lib_state);
-        H5VLfree_lib_state(lib_state);
-    }
+    err = H5VLfinish_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
+    err = H5VLfree_lib_state (lib_state);
+    CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
 }
 
@@ -685,6 +677,13 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_CLOSE);
 
+    err = H5VLfinish_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
+    err = H5VLfree_lib_state (lib_state);
+    CHECK_ERR
+
 #ifdef LOGVOL_PROFILING
     {
         MPI_Info info;
@@ -749,10 +748,6 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     H5Pclose (fp->ufaplid);
 
     delete fp;
-
-    H5VLfinish_lib_state();
-    H5VLrestore_lib_state(lib_state);
-    H5VLfree_lib_state(lib_state);
 } /* end H5VL_log_file_close() */
 
 void H5VL_log_filei_parse_strip_info (H5VL_log_file_t *fp) {
