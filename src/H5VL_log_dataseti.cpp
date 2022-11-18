@@ -344,11 +344,19 @@ void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
     std::unique_ptr<H5VL_log_dset_t> dp;        // Dataset handle
     std::unique_ptr<H5VL_log_dset_info_t> dip;  // Dataset info
     H5D_fill_value_t stat;
+    void *lib_state;
     H5VL_logi_err_finally finally ([&dcpl_id] () -> void {
         if (dcpl_id >= 0) { H5Pclose (dcpl_id); }
     });
-
     H5VL_LOGI_PROFILING_TIMER_START;
+
+    // Reset hdf5 context to allow file operations within a dataset operation
+    err = H5VLretrieve_lib_state (&lib_state);
+    CHECK_ERR
+    err = H5VLstart_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
 
     dp = std::make_unique<H5VL_log_dset_t> (op, H5I_DATASET, uo);
 
@@ -402,6 +410,12 @@ void *H5VL_log_dataseti_open (void *obj, void *uo, hid_t dxpl_id) {
         // dp->fp->mreqs[dp->id]	   = new H5VL_log_merged_wreq_t (dp, 1);
     }
 
+    err = H5VLfinish_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
+    err = H5VLfree_lib_state (lib_state);
+    CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_OPEN);
 
     return (void *)(dp.release ());
@@ -452,8 +466,8 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
 #ifdef ENABLE_ZLIB
     int clen, inlen;  // Compressed size; Size of data to be compressed
 #endif
+    void *lib_state;
     H5VL_logi_err_finally finally ([&ptype] () -> void { H5VL_log_type_free (ptype); });
-
     H5VL_LOGI_PROFILING_TIMER_START;
 
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -472,6 +486,14 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
     if (dsel->nsel == 0) return;  // No elements selected
     if (!buf) ERR_OUT ("user buffer can't be NULL");
     H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_INIT);
+
+    // Reset hdf5 context to allow file operations within a dataset operation
+    err = H5VLretrieve_lib_state (&lib_state);
+    CHECK_ERR
+    err = H5VLstart_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
 
     if (dp->fp->config ^ H5VL_FILEI_CONFIG_METADATA_MERGE) {
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -660,6 +682,12 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
     }
     H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_FINALIZE);
 
+    err = H5VLfinish_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
+    err = H5VLfree_lib_state (lib_state);
+    CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE);
 } /* end H5VL_log_dataseti_write() */
 
@@ -687,6 +715,7 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     H5VL_log_rreq_t *r;   // Request entry
     H5S_sel_type mstype;  // Type of selection in mem_space_id
     hbool_t rtype;        // Non-blocking?
+    void *lib_state;
     H5VL_LOGI_PROFILING_TIMER_START;
 
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -694,6 +723,14 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     if (dsel->nsel == 0) return;
     if (!buf) ERR_OUT ("user buffer can't be NULL");
     H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_READ_INIT);
+
+    // Reset hdf5 context to allow file operations within a dataset operation
+    err = H5VLretrieve_lib_state (&lib_state);
+    CHECK_ERR
+    err = H5VLstart_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
 
     // Check mem space selection
     if (mem_space_id == H5S_ALL)
@@ -761,5 +798,12 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     } else {
         dp->fp->rreqs.push_back (r);
     }
+
+    err = H5VLfinish_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (lib_state);
+    CHECK_ERR
+    err = H5VLfree_lib_state (lib_state);
+    CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_READ);
 } /* end H5VL_log_dataseti_read() */
