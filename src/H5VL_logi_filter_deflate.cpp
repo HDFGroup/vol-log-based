@@ -25,10 +25,10 @@ void H5VL_logi_filter_deflate (
     defstream.zalloc    = Z_NULL;
     defstream.zfree     = Z_NULL;
     defstream.opaque    = Z_NULL;
-    defstream.avail_in  = (uInt)(in_len);    // input size
-    defstream.next_in   = (Bytef *)in;       // input
-    defstream.avail_out = (uInt)(*out_len);  // output buffer size
-    defstream.next_out  = (Bytef *)out;      // output buffer
+    defstream.avail_in  = (uInt) (in_len);    // input size
+    defstream.next_in   = (Bytef *)in;        // input
+    defstream.avail_out = (uInt) (*out_len);  // output buffer size
+    defstream.next_out  = (Bytef *)out;       // output buffer
 
     // the actual compression work.
     zerr = deflateInit (&defstream, Z_DEFAULT_COMPRESSION);
@@ -78,10 +78,10 @@ void H5VL_logi_filter_deflate_alloc (
     }
 
     // The actual compression work
-    defstream.avail_in  = (uInt)(in_len);  // input size
-    defstream.next_in   = (Bytef *)in;     // input
-    defstream.avail_out = (uInt)(bsize);   // output buffer size
-    defstream.next_out  = (Bytef *)buf;    // output buffer
+    defstream.avail_in  = (uInt) (in_len);  // input size
+    defstream.next_in   = (Bytef *)in;      // input
+    defstream.avail_out = (uInt) (bsize);   // output buffer size
+    defstream.next_out  = (Bytef *)buf;     // output buffer
 
     zerr = deflate (&defstream, Z_FINISH);
     if (zerr != Z_STREAM_END) { ERR_OUT ("deflate fail") }
@@ -109,7 +109,7 @@ void H5VL_logi_filter_inflate (
     infstream.opaque    = Z_NULL;
     infstream.avail_in  = (unsigned long)in_len;  // input size
     infstream.next_in   = (Bytef *)in;            // input
-    infstream.avail_out = (uInt)(*out_len);       // output buffer size
+    infstream.avail_out = (uInt) (*out_len);      // output buffer size
     infstream.next_out  = (Bytef *)out;           // buffer size
 
     // the actual decompression work.
@@ -152,10 +152,10 @@ void H5VL_logi_filter_inflate_alloc (
     infstream.zalloc    = Z_NULL;
     infstream.zfree     = Z_NULL;
     infstream.opaque    = Z_NULL;
-    infstream.avail_in  = (uInt)(in_len);  // input size
-    infstream.next_in   = (Bytef *)in;     // input
-    infstream.avail_out = (uInt)(bsize);   // output buffer size
-    infstream.next_out  = (Bytef *)buf;    // output buffer
+    infstream.avail_in  = (uInt) (in_len);  // input size
+    infstream.next_in   = (Bytef *)in;      // input
+    infstream.avail_out = (uInt) (bsize);   // output buffer size
+    infstream.next_out  = (Bytef *)buf;     // output buffer
 
     // Initialize deflat stream
     zerr = inflateInit (&infstream);

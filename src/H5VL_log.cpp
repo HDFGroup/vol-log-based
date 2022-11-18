@@ -615,7 +615,7 @@ herr_t H5Pset_subfiling (hid_t plist, int nsubfiles) {
         if (!pexist) {
             int n = H5VL_LOG_SUBFILING_OFF;
             err   = H5Pinsert2 (plist, SUBFILING_PROPERTY_NAME, sizeof (int), &n, NULL, NULL, NULL,
-                                NULL, NULL, NULL);
+                              NULL, NULL, NULL);
             CHECK_ERR
         }
 

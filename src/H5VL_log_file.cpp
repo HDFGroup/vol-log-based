@@ -61,7 +61,7 @@ void *H5VL_log_file_create (
     H5VL_logi_err_finally finally ([&ufcplid, &ufaplid, &fp, &lib_state] () -> void {
         if (fp && (ufaplid != H5I_INVALID_HID) && (ufaplid != fp->ufaplid)) H5Pclose (ufaplid);
         if (ufcplid != H5I_INVALID_HID) H5Pclose (ufcplid);
-        H5VL_logi_restore_lib_stat(lib_state);
+        H5VL_logi_restore_lib_stat (lib_state);
     });
 
     try {
@@ -77,7 +77,8 @@ void *H5VL_log_file_create (
         fp = H5VL_log_filei_search (name);
         if (fp) {
             fp = NULL;
-            RET_ERR ("The same file has been opened. Log VOL currently does not support multiple opens.")
+            RET_ERR (
+                "The same file has been opened. Log VOL currently does not support multiple opens.")
         }
 
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -176,7 +177,7 @@ void *H5VL_log_file_create (
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
 
         // Reset hdf5 context to allow group and attr operations within a file operation
-        H5VL_logi_reset_lib_stat(lib_state);
+        H5VL_logi_reset_lib_stat (lib_state);
 
         // Figure out lustre configuration
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -304,7 +305,8 @@ void *H5VL_log_file_open (
         fp = H5VL_log_filei_search (name);
         if (fp) {
             fp = NULL;
-            RET_ERR ("The same file has been opened. Log VOL currently does not support multiple opens.")
+            RET_ERR (
+                "The same file has been opened. Log VOL currently does not support multiple opens.")
         }
 
         // Try get info about under VOL
@@ -474,10 +476,9 @@ herr_t H5VL_log_file_specific (void *file,
                                void **req) {
     herr_t err          = 0;
     H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
-    void *lib_state = NULL;
-    H5VL_logi_err_finally finally ([&lib_state] () -> void {
-        H5VL_logi_restore_lib_stat(lib_state);
-    });
+    void *lib_state     = NULL;
+    H5VL_logi_err_finally finally (
+        [&lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
 
     try {
 #ifdef LOGVOL_DEBUG
@@ -526,7 +527,7 @@ herr_t H5VL_log_file_specific (void *file,
                 H5VL_LOGI_PROFILING_TIMER_START;
                 if (fp->is_log_based_file) {
                     // Reset hdf5 context to allow dataset operations within a file operation
-                    H5VL_logi_reset_lib_stat(lib_state);
+                    H5VL_logi_reset_lib_stat (lib_state);
 
                     H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
                 } else {

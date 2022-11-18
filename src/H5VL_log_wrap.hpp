@@ -12,8 +12,8 @@
 
 /* The log VOL wrapper context */
 typedef struct H5VL_log_wrap_ctx_t {
-    hid_t uvlid;                /* VOL ID for under VOL */
-    void *uo;                   /* Object wrapping context for under VOL */
+    hid_t uvlid; /* VOL ID for under VOL */
+    void *uo;    /* Object wrapping context for under VOL */
     H5VL_log_file_t *fp;
 } H5VL_log_wrap_ctx_t;
 

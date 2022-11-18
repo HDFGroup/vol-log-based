@@ -319,7 +319,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                                     counts[nreq][k] = 1;
                                 }
                                 counts[nreq][ndim - 1] =
-                                    (hsize_t)(hends[j][ndim - 1] - hstarts[j][ndim - 1] + 1);
+                                    (hsize_t) (hends[j][ndim - 1] - hstarts[j][ndim - 1] + 1);
 
                                 for (l = 0; l < ndim; l++) {  // The lowest dimension that we
                                                               // haven't reach the end
