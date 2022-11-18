@@ -569,7 +569,7 @@ void H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid) {
         if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
             H5VL_log_nb_flush_write_reqs_align (fp, dxplid);
         } else {
-            H5VL_log_nb_flush_write_reqs (fp, dxplid);
+            H5VL_log_nb_flush_write_reqs (fp);
         }
     }
 
@@ -636,7 +636,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
         if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
             H5VL_log_nb_flush_write_reqs_align (fp, fp->dxplid);
         } else {
-            H5VL_log_nb_flush_write_reqs (fp, fp->dxplid);
+            H5VL_log_nb_flush_write_reqs (fp);
         }
 
         // Generate metadata table

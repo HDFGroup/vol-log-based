@@ -529,7 +529,7 @@ herr_t H5VL_log_file_specific (void *file,
                     // Reset hdf5 context to allow dataset operations within a file operation
                     H5VL_logi_reset_lib_stat (lib_state);
 
-                    H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
+                    H5VL_log_nb_flush_write_reqs (fp);
                 } else {
                     err = H5VLfile_specific (fp->uo, fp->uvlid, args, dxpl_id, req);
                 }
