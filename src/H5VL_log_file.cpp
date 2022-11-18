@@ -57,10 +57,11 @@ void *H5VL_log_file_create (
     MPI_Comm comm    = MPI_COMM_SELF;
     MPI_Info mpiinfo = MPI_INFO_NULL;
     int attbuf[H5VL_LOG_FILEI_NATTR];
-    void *lib_state;
-    H5VL_logi_err_finally finally ([&ufcplid, &ufaplid, &fp] () -> void {
+    void *lib_state = NULL;
+    H5VL_logi_err_finally finally ([&ufcplid, &ufaplid, &fp, &lib_state] () -> void {
         if (fp && (ufaplid != H5I_INVALID_HID) && (ufaplid != fp->ufaplid)) H5Pclose (ufaplid);
         if (ufcplid != H5I_INVALID_HID) H5Pclose (ufcplid);
+        H5VL_logi_restore_lib_stat(lib_state);
     });
 
     try {
@@ -175,12 +176,7 @@ void *H5VL_log_file_create (
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
 
         // Reset hdf5 context to allow group and attr operations within a file operation
-        err = H5VLretrieve_lib_state (&lib_state);
-        CHECK_ERR
-        err = H5VLstart_lib_state ();
-        CHECK_ERR
-        err = H5VLrestore_lib_state (lib_state);
-        CHECK_ERR
+        H5VL_logi_reset_lib_stat(lib_state);
 
         // Figure out lustre configuration
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -256,14 +252,6 @@ void *H5VL_log_file_create (
         attbuf[4] = fp->ngroup;
         H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR, H5T_STD_I32LE, H5T_NATIVE_INT32,
                            H5VL_LOG_FILEI_NATTR, attbuf, dxpl_id, NULL);
-
-        err = H5VLfinish_lib_state ();
-        CHECK_ERR
-        err = H5VLrestore_lib_state (lib_state);
-        CHECK_ERR
-        err = H5VLfree_lib_state (lib_state);
-        CHECK_ERR
-        
         H5VL_log_filei_register (fp);
 
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE);
@@ -486,6 +474,10 @@ herr_t H5VL_log_file_specific (void *file,
                                void **req) {
     herr_t err          = 0;
     H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
+    void *lib_state = NULL;
+    H5VL_logi_err_finally finally ([&lib_state] () -> void {
+        H5VL_logi_restore_lib_stat(lib_state);
+    });
 
     try {
 #ifdef LOGVOL_DEBUG
@@ -533,23 +525,10 @@ herr_t H5VL_log_file_specific (void *file,
             case H5VL_FILE_FLUSH: {
                 H5VL_LOGI_PROFILING_TIMER_START;
                 if (fp->is_log_based_file) {
-                    void *lib_state;
                     // Reset hdf5 context to allow dataset operations within a file operation
-                    err = H5VLretrieve_lib_state (&lib_state);
-                    CHECK_ERR
-                    err = H5VLstart_lib_state ();
-                    CHECK_ERR
-                    err = H5VLrestore_lib_state (lib_state);
-                    CHECK_ERR
+                    H5VL_logi_reset_lib_stat(lib_state);
 
                     H5VL_log_nb_flush_write_reqs (fp, dxpl_id);
-
-                    err = H5VLfinish_lib_state ();
-                    CHECK_ERR
-                    err = H5VLrestore_lib_state (lib_state);
-                    CHECK_ERR
-                    err = H5VLfree_lib_state (lib_state);
-                    CHECK_ERR
                 } else {
                     err = H5VLfile_specific (fp->uo, fp->uvlid, args, dxpl_id, req);
                 }

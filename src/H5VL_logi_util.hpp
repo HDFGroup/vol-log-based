@@ -7,6 +7,7 @@
 #pragma once
 
 #include <H5VLconnector.h>
+#include <hdf5.h>
 #include <mpi.h>
 
 #include "H5VL_log_obj.hpp"
@@ -114,4 +115,27 @@ inline char *H5VL_logi_name_remap (const char *name) {
     }
 
     return ret;
+}
+
+inline void H5VL_logi_reset_lib_stat (void *&stat) {
+    herr_t err = 0;
+    err        = H5VLretrieve_lib_state (&stat);
+    CHECK_ERR
+    err = H5VLstart_lib_state ();
+    CHECK_ERR
+    err = H5VLrestore_lib_state (stat);
+    CHECK_ERR
+}
+
+inline void H5VL_logi_restore_lib_stat (void *&stat) {
+    herr_t err = 0;
+    if (stat) {
+        err = H5VLfinish_lib_state ();
+        CHECK_ERR
+        err = H5VLrestore_lib_state (stat);
+        CHECK_ERR
+        err = H5VLfree_lib_state (stat);
+        CHECK_ERR
+    }
+    stat = NULL;
 }
