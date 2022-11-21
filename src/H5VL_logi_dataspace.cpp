@@ -296,7 +296,6 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                 }
 
                 // Allocate buffer
-                this->nsel = nreq;
                 this->alloc (nreq);
 
                 // Fill up selections
@@ -364,13 +363,13 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                         }
                     }
                 }
+                this->nsel = nreq;
             }
         } break;
         case H5S_SEL_POINTS: {
             nblock = H5Sget_select_elem_npoints (dsid);
             CHECK_ID (nblock)
 
-            this->nsel = nblock;
             this->alloc (nblock);
 
             if (nblock) {
@@ -395,6 +394,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                 std::sort (starts, starts + nblock, comp);
                 merge_blocks<false> (ndim, nblock, starts, counts);
             }
+            this->nsel = nblock;
         } break;
         case H5S_SEL_ALL: {
             hsize_t dims[32];
