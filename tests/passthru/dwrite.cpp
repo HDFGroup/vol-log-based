@@ -9,7 +9,7 @@
 #define CHECK_ERR(A)                                                           \
   {                                                                            \
     if (A < 0) {                                                               \
-      printf("Error at line %d: code %d\n", __LINE__, A);                      \
+      printf("Error at line %d: code %ld\n", __LINE__, (long) A);              \
       goto err_out;                                                            \
       nerrs++;                                                                 \
     }                                                                          \
