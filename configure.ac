@@ -749,7 +749,8 @@ AC_CONFIG_FILES(Makefile \
                 tests/basic/Makefile \
                 tests/dynamic/Makefile \
                 tests/external/Makefile \
-                tests/passthru_features/Makefile \
+                tests/passthru/Makefile \
+                tests/read_regular/Makefile \
                 tests/external/hdf5_iotest/config.sh \
                 tests/external/hdf5_iotest/Makefile \
                 tests/external/openpmd/config.sh \
