@@ -5,9 +5,9 @@ This is essentially a placeholder for the next release note ...
 
 * New features
   + Support fill mode. See commit 8aee024
-  + Support NetCDF4. NetCDF4 users now can set the two VOL environment
-    variables `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH` to write data to
-    files in log layout. See PR #15.
+  + Support NetCDF4. By setting the two VOL environment variables
+    `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH`, NetCDF4 programs now can write
+    data to files in log layout through Log VOL. See PR #15.
   + Support using Log VOL as a Pass-through VOL.
     * This feature adds the support of opening and operating an existing
       regular HDF5 file.
@@ -74,7 +74,8 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Updated error strings
-  + When the same file is opened more than once, the following error string will be printed. See PR #38.
+  + When the same file is opened more than once, the following error string
+    will be printed. See PR #38.
     ```
     The same file has been opened. Log VOL currently does not support multiple opens.
     ```
@@ -92,11 +93,12 @@ This is essentially a placeholder for the next release note ...
   + `h5ldump` and `h5lreplay` now return error code on failure. See PR #16.
 
 * Other updates:
+  + Wrap calls to HDF5 VOL lib state APIs around attribute APIs. See PR #41.
   + Add a new use case of E3SM in case_studies/E3SM_IO.md. See commit 1803b11.
   + Add a new use case of WRF in case_studies/WRF.md. See PR #34.
   + Allow user object name starts with '_'. See PR #29.
-  + Support checking multiple file opens to the same file. An error will return instead of
-  corrupting the file. See PR #28.
+  + Support checking multiple file opens to the same file. An error will return
+    instead of corrupting the file. See PR #28.
   + Error messages are printed only in debug mode. See PR #39.
 
 * Bug fixes
@@ -110,9 +112,12 @@ This is essentially a placeholder for the next release note ...
       interleaving read regions not being detected
   + Fix a bug in H5VL_log_link_create that uses the calling convention of an
     older VOL interface
-  + Fix a bug in H5VL_log_filei_close that fails to update file attributes property when subfiling is enabled. See commit 79e91ec.
-  + Fix a bug in encoding and decoding of deduplicated metadata entries. See commit 99d3fda.
-  + Fix a bug in H5VL_log_file_create that does not set underlying VOL when subfiling is enabled. See commit 2532553.
+  + Fix a bug in H5VL_log_filei_close that fails to update file attributes
+    property when subfiling is enabled. See commit 79e91ec.
+  + Fix a bug in encoding and decoding of de-duplicated metadata entries. See
+    commit 99d3fda.
+  + Fix a bug in H5VL_log_file_create that does not set underlying VOL when
+    subfiling is enabled. See commit 2532553.
   + Fix a bug in metadata encoding for record writes. See commit 8b68e0f.
   + Deduce internal attributes from attributes count in object info.
   + Fix a memory bug in H5VL_log_str_to_info. See commit b832b3c.
@@ -125,7 +130,8 @@ This is essentially a placeholder for the next release note ...
 
 * New test program
   + tests/testcases/multi_open
-    + Test opening a second handle to the same file without closing the first one.
+    + Test opening a second handle to the same file without closing the first
+      one.
   + tests/basic/fill
     + Test the fill mode feature on datasets.
   + tests/dynamic/test_env
@@ -133,9 +139,9 @@ This is essentially a placeholder for the next release note ...
   + tests/passthru_features
     + Test opening and operating an existing regular HDF5 file.
   + test Log VOL as a Pass-through VOL
-    + Testing Log VOL's behavior as a Pass-through VOL is done by setting/unsetting
-      relevant envrionment varibales in all the wrap_runs.sh and parallel_run.sh
-      scripts under tests folder.
+    + Testing Log VOL's behavior as a Pass-through VOL is done by
+      setting/unsetting relevant envrionment varibales in all the wrap_runs.sh
+      and parallel_run.sh scripts under tests folder.
 
 * Conformity with HDF5 library
   + none
