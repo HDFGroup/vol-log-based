@@ -27,8 +27,10 @@ int main (int argc, char **argv) {
     char *env;                                    // HDF5_VOL_CONNECTOR environment variable
     hsize_t ones[2] = {1, 1}, dims[2] = {10, 10}; /* dataspace dim sizes */
     hsize_t start[2], count[2];
+    int provided;
 
-    MPI_Init (&argc, &argv);
+    err = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    CHECK_ERR (err)
     MPI_Comm_size (MPI_COMM_WORLD, &np);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 

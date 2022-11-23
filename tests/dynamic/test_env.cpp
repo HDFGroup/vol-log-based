@@ -73,8 +73,10 @@ int main (int argc, char **argv) {
     hid_t log_vlid = -1;  // Logvol ID
     char name1[64];
     char name2[64];
+    int provided;
 
-    MPI_Init (&argc, &argv);
+    err = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    assert (err == MPI_SUCCESS);
     MPI_Comm_size (MPI_COMM_WORLD, &np);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 

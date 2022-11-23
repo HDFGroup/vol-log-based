@@ -564,6 +564,144 @@ if test "x$enable_zlib" = "xyes" ; then
    AC_DEFINE(ENABLE_ZLIB)
 fi
 
+AC_ARG_ENABLE([test-cache-vol],
+   [AS_HELP_STRING([--enable-test-cache-vol],
+                   [Test using cache VOL as underlying VOL. @<:@default: disabled@:>@])],
+   [enable_tcachevol=${enableval}], [enable_tcachevol=no]
+)
+# Check HDF5 async
+if test "x$enable_tcachevol" = "xyes" ; then  
+   have_h5async=no
+   AC_MSG_CHECKING(HDF5 async feature)
+   AC_SEARCH_LIBS([H5TSmutex_release], [hdf5], [have_h5async=yes], [have_h5async=no])
+   AC_SEARCH_LIBS([H5ESget_requests], [hdf5], [], [have_h5async=no])
+
+   if test "x${have_h5async}" = xno; then
+      AC_MSG_WARN([
+         ------------------------------------------------------------
+         Async option was not enabled in this HDF build. 
+         Disable cache vol test.
+         ------------------------------------------------------------])
+      enable_tcachevol=no
+   fi
+fi
+
+# Check for Argobot
+if test "x$enable_tcachevol" = "xyes" ; then  
+   ABT_INSTALL=""
+   AC_ARG_WITH(abt,
+       [AS_HELP_STRING([--with-abt=/path/to/implementation],
+                       [installation prefix for argobot implementation])],
+       if test "x${withval}" = xyes; then
+          AC_MSG_ERROR(--with-abt is set but the value is NULL)
+       else
+          ABT_INSTALL=${withval}
+       fi
+   )
+   
+   ABT_LDFLAGS=
+   ABT_LIBS=" -labt"
+   if test "x${ABT_INSTALL}" != x ; then
+      CPPFLAGS+=" -I${ABT_INSTALL}/include"
+      LDFLAGS+=" -L${ABT_INSTALL}/lib"
+      LIBS+=" -labt"
+      ABT_LDFLAGS+=" -L${ABT_INSTALL}/lib"
+   fi
+
+   have_abt=no
+   AC_MSG_CHECKING(Argobot)
+   AC_SEARCH_LIBS([ABT_init], [abt], [have_abt=yes], [have_abt=no])
+
+   if test "x${have_abt}" = xno; then
+      AC_MSG_WARN([
+         ------------------------------------------------------------
+         Argobot not found. Disable cache vol test.
+         ------------------------------------------------------------])
+      enable_tcachevol=no
+   fi
+fi
+
+# Check for Async VOL
+if test "x$enable_tcachevol" = "xyes" ; then  
+   ASYNCVOL_INSTALL=""
+   AC_ARG_WITH(asyncvol,
+       [AS_HELP_STRING([--with-asyncvol=/path/to/implementation],
+                       [installation prefix for asyncvol implementation])],
+       if test "x${withval}" = xyes; then
+          AC_MSG_ERROR(--with-asyncvol is set but the value is NULL)
+       else
+          ASYNCVOL_INSTALL=${withval}
+       fi
+   )
+   
+   ASYNCVOL_LDFLAGS=
+   ASYNCVOL_LIBS=" -lh5async"
+   if test "x${ASYNCVOL_INSTALL}" != x ; then
+      CPPFLAGS+=" -I${ASYNCVOL_INSTALL}/include"
+      LDFLAGS+=" -L${ASYNCVOL_INSTALL}/lib"
+      LIBS+=" -lh5async"
+      ASYNCVOL_LDFLAGS+=" -L${ASYNCVOL_INSTALL}/lib"
+   fi
+
+   have_asyncvol=no
+   AC_MSG_CHECKING(Async VOL)
+   AC_SEARCH_LIBS([H5VL_async_start], [h5async], [have_asyncvol=yes], [have_asyncvol=no])
+
+   if test "x${have_asyncvol}" = xno; then
+      AC_MSG_WARN([
+         ------------------------------------------------------------
+         Async VOL not found. Disable cache vol test.
+         ------------------------------------------------------------])
+      enable_tcachevol=no
+   fi
+fi
+
+# Check for Cache VOL
+if test "x$enable_tcachevol" = "xyes" ; then  
+   CACHEVOL_INSTALL=""
+   AC_ARG_WITH(cachevol,
+       [AS_HELP_STRING([--with-cachevol=/path/to/implementation],
+                       [installation prefix for cachevol implementation])],
+       if test "x${withval}" = xyes; then
+          AC_MSG_ERROR(--with-cachevol is set but the value is NULL)
+       else
+          CACHEVOL_INSTALL=${withval}
+       fi
+   )
+   
+   CACHEVOL_LDFLAGS=
+   CACHEVOL_LIBS=" -lh5cache_vol"
+   if test "x${CACHEVOL_INSTALL}" != x ; then
+      CPPFLAGS+=" -I${CACHEVOL_INSTALL}/include"
+      LDFLAGS+=" -L${CACHEVOL_INSTALL}/lib"
+      LIBS+=" -lh5cache_vol -lh5async"
+      CACHEVOL_LDFLAGS+=" -L${CACHEVOL_INSTALL}/lib"
+   fi
+
+   have_cachevol=no
+   AC_MSG_CHECKING(Cache VOL)
+   AC_SEARCH_LIBS([H5VL_cache_ext_register], [h5cache_vol], [have_cachevol=yes], [have_cachevol=no])
+
+   if test "x${have_cachevol}" = xno; then
+      AC_MSG_WARN([
+         ------------------------------------------------------------
+         Cache VOL not found. Disable cache vol test.
+         ------------------------------------------------------------])
+      enable_tcachevol=no
+   fi
+fi
+
+ENABLE_TCACHEVOL=0
+if test "x$enable_tcachevol" = "xyes" ; then
+   ENABLE_TCACHEVOL=1
+   AC_SUBST(CACHE_LIBS, ${CACHEVOL_INSTALL}/lib)
+   AC_SUBST(ASYNC_LIBS, ${ASYNCVOL_INSTALL}/lib)
+   AC_SUBST(ABT_LIBS, ${ABT_INSTALL}/lib)
+fi
+AC_SUBST(ENABLE_TCACHEVOL)
+AM_CONDITIONAL(ENABLE_TCACHEVOL, [test x$enable_tcachevol = xyes])
+
+
 AM_CONDITIONAL(ENABLE_SHARED, [test x$enable_shared = xyes])
 
 AC_LANG_POP(C++)
