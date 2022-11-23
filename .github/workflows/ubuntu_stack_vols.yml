@@ -171,6 +171,8 @@ jobs:
             cd ${WORKDIR}/tests/passthru
             make clean
             make tests
+            export ABT_DIR=${WORKDIR}/Argobots
+            export ASYNC_DIR=${WORKDIR}/Async
             export CACHE_DIR=${WORKDIR}/Cache
             export HDF5_DIR=${WORKDIR}/HDF5
             export LOGVOL_DIR=${WORKDIR}/log_vol_install
