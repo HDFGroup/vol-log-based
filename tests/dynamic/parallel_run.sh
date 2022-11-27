@@ -39,5 +39,29 @@ for p in ${check_PROGRAMS} ; do
       fi
    done
 done
+
+if test "x${TCACHEVOL}" = "xyes" ; then
+   export HDF5_PLUGIN_PATH="${CACHE_LIBS}:${ASYNC_LIBS}:${top_builddir}/src/.libs"
+   export LD_LIBRARY_PATH="${ABT_LIBS}:${HDF5_PLUGIN_PATH}:${LD_LIBRARY_PATH}"
+	export HDF5_VOL_CONNECTOR="LOG under_vol=513;under_info={config=cache_1.cfg;under_vol=512;under_info={under_vol=0;under_info={}}}"
+   export H5VL_LOG_PASSTHRU_READ_WRITE=1
+
+   ${TESTSEQRUN} ./$1 $outfile
+
+   unset HDF5_VOL_CONNECTOR
+   unset HDF5_PLUGIN_PATH
+   unset H5VL_LOG_PASSTHRU_READ_WRITE
+   
+   err=0
+   FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k $outfile`
+   if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
+      echo "Error: (as $vol_type vol) Output file $outfile is not Log VOL, but ${FILE_KIND}"
+      err=1
+      break
+   else
+      echo "Success: (as $vol_type vol) Output file $outfile is ${FILE_KIND}"
+   fi
+fi
+
 exit $err
 
