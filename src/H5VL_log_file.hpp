@@ -41,6 +41,7 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     int np;         // Number of processes
     MPI_Comm comm;  // Global communicator
     MPI_Info info;  // Main file info
+    bool is_new;    // If the file was just created
 
     /* Subfiling parameters */
     // Group is a set of processes sharing the same subfile or lustre stripe

@@ -57,11 +57,9 @@ void *H5VL_log_file_create (
     MPI_Comm comm    = MPI_COMM_SELF;
     MPI_Info mpiinfo = MPI_INFO_NULL;
     int attbuf[H5VL_LOG_FILEI_NATTR];
-    void *lib_state = NULL;
-    H5VL_logi_err_finally finally ([&ufcplid, &ufaplid, &fp, &lib_state] () -> void {
+    H5VL_logi_err_finally finally ([&ufcplid, &ufaplid, &fp] () -> void {
         if (fp && (ufaplid != H5I_INVALID_HID) && (ufaplid != fp->ufaplid)) H5Pclose (ufaplid);
         if (ufcplid != H5I_INVALID_HID) H5Pclose (ufcplid);
-        H5VL_logi_restore_lib_stat (lib_state);
     });
 
     try {
@@ -120,6 +118,7 @@ void *H5VL_log_file_create (
         fp->zbsize            = 0;
         fp->zbuf              = NULL;
         fp->is_log_based_file = true;
+        fp->is_new            = true;
         mpierr                = MPI_Comm_dup (comm, &(fp->comm));
         CHECK_MPIERR
         if (mpiinfo != MPI_INFO_NULL) {
@@ -175,86 +174,6 @@ void *H5VL_log_file_create (
         CHECK_PTR (fp->uo)
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
-
-        // Reset hdf5 context to allow group and attr operations within a file operation
-        H5VL_logi_reset_lib_stat (lib_state);
-
-        // Figure out lustre configuration
-        H5VL_LOGI_PROFILING_TIMER_START;
-        if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
-            H5VL_log_filei_parse_strip_info (fp);
-            // Dummy stripe setting for debugging without lustre
-            // fp->scount=2;
-            // fp->ssize=8388608;
-            if ((fp->scount <= 0) || (fp->ssize <= 0)) {
-                fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
-                if (fp->rank == 0) {
-                    printf (
-                        "Warning: Cannot retrive stripping info, disable aligned data layout\n");
-                }
-            }
-        }
-        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_STRIPE);
-
-        H5VL_LOGI_PROFILING_TIMER_START;
-        if ((fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) ||
-            (fp->config & H5VL_FILEI_CONFIG_SUBFILING)) {
-            H5VL_log_filei_calc_node_rank (fp);
-        } else {
-            fp->group_rank = fp->rank;
-            fp->group_np   = fp->np;
-            fp->group_comm = fp->comm;
-            fp->group_id   = 0;
-            fp->ngroup     = 1;
-        }
-        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP_RANK);
-
-        H5VL_LOGI_PROFILING_TIMER_START;
-        if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
-            // Aligned write not supported in subfiles
-            fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
-
-            H5VL_log_filei_create_subfile (fp, flags, fp->ufaplid, dxpl_id);
-        } else {
-            fp->sfp     = fp->uo;
-            fp->subname = fp->name;
-        }
-        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_SUBFILE);
-
-        // Create the LOG group
-        H5VL_LOGI_PROFILING_TIMER_START;
-        loc.obj_type = H5I_FILE;
-        loc.type     = H5VL_OBJECT_BY_SELF;
-        fp->lgp      = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
-                                    H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,
-                                    H5P_GROUP_CREATE_DEFAULT, dxpl_id, NULL);
-        CHECK_PTR (fp->lgp)
-        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
-
-        if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
-            fp->fd = open (name, O_RDWR);
-            if (fp->fd < 0) { ERR_OUT ("open fail") }
-        } else {
-            fp->fd = -1;
-        }
-
-        // Open the file with MPI
-        H5VL_LOGI_PROFILING_TIMER_START;
-        mpierr =
-            MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, mpiinfo, &(fp->fh));
-        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FH);
-        CHECK_MPIERR
-
-        // Att
-        attbuf[0] = fp->ndset;
-        attbuf[1] = fp->nldset;
-        attbuf[2] = fp->nmdset;
-        attbuf[3] = fp->config;
-        attbuf[4] = fp->ngroup;
-        H5VL_logi_add_att (fp, H5VL_LOG_FILEI_ATTR, H5T_STD_I32LE, H5T_NATIVE_INT32,
-                           H5VL_LOG_FILEI_NATTR, attbuf, dxpl_id, NULL);
-        H5VL_log_filei_register (fp);
-
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE);
     }
     H5VL_LOGI_EXP_CATCH
@@ -348,6 +267,7 @@ void *H5VL_log_file_open (
         fp->zbsize            = 0;
         fp->zbuf              = NULL;
         fp->is_log_based_file = true;
+        fp->is_new            = false;
         mpierr                = MPI_Comm_dup (comm, &(fp->comm));
         CHECK_MPIERR
         if (mpiinfo != MPI_INFO_NULL) {
@@ -581,7 +501,10 @@ herr_t H5VL_log_file_optional (void *file, H5VL_optional_args_t *args, hid_t dxp
 
         if (fp->is_log_based_file) {
             if (args->op_type == H5VL_NATIVE_FILE_POST_OPEN) {
-                if (!(fp->lgp)) {  // Log group is already set for file create
+                if (fp->is_new) {  // Post create
+                    H5VL_log_filei_post_create (fp);
+                }
+                else{   // Post open
                     H5VL_log_filei_post_open (fp);
                 }
             }

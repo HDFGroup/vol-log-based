@@ -44,6 +44,7 @@ inline void H5VL_log_filei_init_idx (H5VL_log_file_t *fp) {
 }
 
 extern void H5VL_log_filei_post_open (H5VL_log_file_t *fp);
+extern void H5VL_log_filei_post_create (H5VL_log_file_t *fp);
 extern herr_t H5VL_log_filei_dset_visit (hid_t o_id,
                                          const char *name,
                                          const H5O_info_t *object_info,
