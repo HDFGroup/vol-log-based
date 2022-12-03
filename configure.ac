@@ -359,10 +359,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
    ]])], [hdf5_ge_1_13_3=no], [hdf5_ge_1_13_3=yes])
 AC_MSG_RESULT([$hdf5_ge_1_13_3])
 if test x$hdf5_ge_1_13_3 = xyes; then
-   AC_MSG_ERROR([
-   -----------------------------------------------------------------------
-     H5VL_log $H5VL_LOG_VERSION does not support HDF5 1.13.3. Abort.
-   -----------------------------------------------------------------------])
+   AC_DEFINE(HDF5_GE_1133, 1, ["HDF5 version greater than 1.13.3"])
 fi
 AC_MSG_CHECKING([whether HDF5 parallel I/O is enabled])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
