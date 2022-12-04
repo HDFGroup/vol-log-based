@@ -17,6 +17,10 @@ This is essentially a placeholder for the next release note ...
       perform file writes. See PR #42.
     * For its usage, refer to the User Guide in doc/usage.md.
     * See PR #33.
+  + Support VOL connector interface version 3.
+    * HDF5 1.13.3 requires a version 3 connector.
+    * Log VOL will expose the version 3 interface when the HDF5 version 
+      is 1.13.3 and above.
 
 * New optimization
   + Master file opened by rank 0 only when subfiling is enabled. This
@@ -24,8 +28,6 @@ This is essentially a placeholder for the next release note ...
 
 * New Limitations
   + Log VOL currently does not support multiple opens of the same file.
-  + Log VOL currently does not support HDF5 1.13.3 due to an attribute error.
-    See [HDF5 issue 2220](https://github.com/HDFGroup/hdf5/issues/2220).
 
 * Update configure options
   + none
@@ -100,6 +102,9 @@ This is essentially a placeholder for the next release note ...
   + Support checking multiple file opens to the same file. An error will return
     instead of corrupting the file. See PR #28.
   + Error messages are printed only in debug mode. See PR #39.
+  + Move Log VOL data object creation to post open stage.
+    + HDF5 1.13.3 and above does not allow creating data objects in the file_create 
+      callback.
 
 * Bug fixes
   + Fix a bug for allowing to run ncdump when the two VOL environment variables
