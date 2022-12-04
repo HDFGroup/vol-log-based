@@ -20,13 +20,14 @@ jobs:
     build:
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v3
         - name: Set up dependencies
           run: |
             sudo apt-get update
             sudo apt-get install automake autoconf libtool libtool-bin m4
             # mpi
             sudo apt-get install openmpi-bin
+            which mpicc
             # zlib
             sudo apt-get install zlib1g-dev
         - name: Install HDF5
@@ -37,7 +38,6 @@ jobs:
             tar -zxf hdf5-1.13.2.tar.gz
             cd hdf5-1.13.2
             ./configure --prefix=${WORKDIR}/.local/hdf5/1.13.0 \
-                        --silent \
                         --disable-fortran \
                         --disable-tests \
                         --enable-parallel \
@@ -45,6 +45,10 @@ jobs:
                         CC=mpicc
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
             make -s -j 4 distclean >> qout 2>&1
+        - name: Dump config.log if HDF5 fails to build
+          if: ${{ failure() }}
+          run: |
+            cat config.log
         - name: Install NetCDF
           run: |
             WORKDIR=$(pwd)
