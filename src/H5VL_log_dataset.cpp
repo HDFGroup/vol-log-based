@@ -282,13 +282,13 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_dataset_read (void *dset,
-                              hid_t mem_type_id,
-                              hid_t mem_space_id,
-                              hid_t file_space_id,
-                              hid_t plist_id,
-                              void *buf,
-                              void **req) {
+herr_t H5VL_log_dataset_read_1 (void *dset,
+                                hid_t mem_type_id,
+                                hid_t mem_space_id,
+                                hid_t file_space_id,
+                                hid_t plist_id,
+                                void *buf,
+                                void **req) {
     herr_t err                = 0;
     H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
     H5VL_log_dset_info_t *dip = NULL;  // Dataset info
@@ -297,7 +297,7 @@ herr_t H5VL_log_dataset_read (void *dset,
 
     try {
         if (!dp->fp->is_log_based_file) {
-            return H5VLdataset_read (dp->uo, dp->uvlid, mem_type_id, mem_space_id, file_space_id,
+            return H5VL_log_under_dataset_read (dp->uo, dp->uvlid, mem_type_id, mem_space_id, file_space_id,
                                      plist_id, buf, NULL);
         }
         dip = dp->fp->dsets_info[dp->id];
@@ -334,13 +334,13 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_dataset_write (void *dset,
-                               hid_t mem_type_id,
-                               hid_t mem_space_id,
-                               hid_t file_space_id,
-                               hid_t plist_id,
-                               const void *buf,
-                               void **req) {
+herr_t H5VL_log_dataset_write_1 (void *dset,
+                                 hid_t mem_type_id,
+                                 hid_t mem_space_id,
+                                 hid_t file_space_id,
+                                 hid_t plist_id,
+                                 const void *buf,
+                                 void **req) {
     herr_t err          = 0;
     H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 
@@ -350,7 +350,7 @@ herr_t H5VL_log_dataset_write (void *dset,
 
     try {
         if (!dp->fp->is_log_based_file) {
-            return H5VLdataset_write (dp->uo, dp->uvlid, mem_type_id, mem_space_id, file_space_id,
+            return H5VL_log_under_dataset_write (dp->uo, dp->uvlid, mem_type_id, mem_space_id, file_space_id,
                                       plist_id, buf, NULL);
         }
         dip = dp->fp->dsets_info[dp->id];
@@ -377,6 +377,48 @@ err_out:;
     if (dsid != file_space_id) { H5Sclose (dsid); }
     return err;
 } /* end H5VL_log_dataset_write() */
+
+herr_t H5VL_log_dataset_read_2 (size_t count,
+                                void *dset[],
+                                hid_t mem_type_id[],
+                                hid_t mem_space_id[],
+                                hid_t file_space_id[],
+                                hid_t plist_id,
+                                void *buf[],
+                                void **req) {
+    herr_t err = 0;
+    size_t i;
+
+    for (i = 0; i < count; i++) {
+        err = H5VL_log_dataset_read_1 (dset[i], mem_type_id[i], mem_space_id[i], file_space_id[i],
+                                       plist_id, buf[i], NULL);
+        CHECK_ERR
+    }
+
+err_out:;
+    return err;
+}
+
+herr_t H5VL_log_dataset_write_2 (size_t count,
+                                 void *dset[],
+                                 hid_t mem_type_id[],
+                                 hid_t mem_space_id[],
+                                 hid_t file_space_id[],
+                                 hid_t plist_id,
+                                 const void *buf[],
+                                 void **req) {
+    herr_t err = 0;
+    size_t i;
+
+    for (i = 0; i < count; i++) {
+        err = H5VL_log_dataset_write_1 (dset[i], mem_type_id[i], mem_space_id[i], file_space_id[i],
+                                        plist_id, buf[i], NULL);
+        CHECK_ERR
+    }
+
+err_out:;
+    return err;
+}
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_dataset_get
@@ -484,7 +526,7 @@ herr_t H5VL_log_dataset_specific (void *obj,
                 const hsize_t *new_sizes = args->args.set_extent.size;
 
                 // Adjust dim
-                for (i = 0; i < (int32_t) (dip->ndim); i++) {
+                for (i = 0; i < (int32_t)(dip->ndim); i++) {
                     if (dip->mdims[i] != H5S_UNLIMITED && new_sizes[i] > dip->mdims[i]) {
                         err = -1;
                         ERR_OUT ("size cannot exceed max size")

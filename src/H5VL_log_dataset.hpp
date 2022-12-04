@@ -17,6 +17,14 @@
 #define LOGVOL_SELCTION_TYPE_POINTS     0x02
 #define LOGVOL_SELCTION_TYPE_OFFSETS    0x04
 
+#ifdef HDF5_GE_1133
+#define H5VL_log_dataset_read  H5VL_log_dataset_read_2
+#define H5VL_log_dataset_write H5VL_log_dataset_write_2
+#else
+#define H5VL_log_dataset_read  H5VL_log_dataset_read_1
+#define H5VL_log_dataset_write H5VL_log_dataset_write_1
+#endif
+
 /* The log VOL dataset object */
 typedef struct H5VL_log_dset_info_t {
     hsize_t ndim;                     // Number of dimensions
@@ -54,20 +62,36 @@ void *H5VL_log_dataset_open (void *obj,
                              hid_t dapl_id,
                              hid_t dxpl_id,
                              void **req);
-herr_t H5VL_log_dataset_read (void *dset,
-                              hid_t mem_type_id,
-                              hid_t mem_space_id,
-                              hid_t file_space_id,
-                              hid_t plist_id,
-                              void *buf,
-                              void **req);
-herr_t H5VL_log_dataset_write (void *dset,
-                               hid_t mem_type_id,
-                               hid_t mem_space_id,
-                               hid_t file_space_id,
-                               hid_t plist_id,
-                               const void *buf,
-                               void **req);
+herr_t H5VL_log_dataset_read_1 (void *dset,
+                                hid_t mem_type_id,
+                                hid_t mem_space_id,
+                                hid_t file_space_id,
+                                hid_t plist_id,
+                                void *buf,
+                                void **req);
+herr_t H5VL_log_dataset_write_1 (void *dset,
+                                 hid_t mem_type_id,
+                                 hid_t mem_space_id,
+                                 hid_t file_space_id,
+                                 hid_t plist_id,
+                                 const void *buf,
+                                 void **req);
+herr_t H5VL_log_dataset_read_2 (size_t count,
+                                void *dset[],
+                                hid_t mem_type_id[],
+                                hid_t mem_space_id[],
+                                hid_t file_space_id[],
+                                hid_t plist_id,
+                                void *buf[],
+                                void **req);
+herr_t H5VL_log_dataset_write_2 (size_t count,
+                                 void *dset[],
+                                 hid_t mem_type_id[],
+                                 hid_t mem_space_id[],
+                                 hid_t file_space_id[],
+                                 hid_t plist_id,
+                                 const void *buf[],
+                                 void **req);
 herr_t H5VL_log_dataset_get (void *dset, H5VL_dataset_get_args_t *args, hid_t dxpl_id, void **req);
 herr_t H5VL_log_dataset_specific (void *obj,
                                   H5VL_dataset_specific_args_t *args,
