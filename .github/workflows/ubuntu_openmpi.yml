@@ -25,52 +25,79 @@ jobs:
           run: |
             sudo apt-get update
             sudo apt-get install automake autoconf libtool libtool-bin m4
-            # mpi
-            sudo apt-get install openmpi-bin
-            which mpicc
             # zlib
             sudo apt-get install zlib1g-dev
+            # mpi
+            sudo apt-get install openmpi-bin
+            echo "---- location of OpenMPI C compiler ----"
+            which mpicc
         - name: Install HDF5
           run: |
-            WORKDIR=$(pwd)
-            rm -rf hdf5-1.13.2.tar.gz hdf5-1.13.2 ${WORKDIR}/.local/hdf5 qout
-            wget -qc https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.2/src/hdf5-1.13.2.tar.gz
-            tar -zxf hdf5-1.13.2.tar.gz
-            cd hdf5-1.13.2
-            ./configure --prefix=${WORKDIR}/.local/hdf5/1.13.0 \
-                        --disable-fortran \
-                        --disable-tests \
+            cd ${GITHUB_WORKSPACE}
+            echo "Install HDF5 on ${GITHUB_WORKSPACE}/HDF5"
+            rm -rf HDF5
+            mkdir HDF5
+            cd HDF5
+            VERSION=1.13.2
+            wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-${VERSION}/src/hdf5-${VERSION}.tar.gz
+            tar -zxf hdf5-${VERSION}.tar.gz
+            cd hdf5-${VERSION}
+            ./configure --prefix=${GITHUB_WORKSPACE}/HDF5 \
+                        --silent \
+                        --enable-hl \
                         --enable-parallel \
                         --enable-build-mode=production \
+                        --disable-doxygen-doc \
+                        --disable-doxygen-man \
+                        --disable-doxygen-html \
+                        --disable-hltools \
+                        --disable-tools \
+                        --disable-tests \
+                        --disable-shared \
+                        --disable-fortran \
                         CC=mpicc
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
             make -s -j 4 distclean >> qout 2>&1
         - name: Dump config.log if HDF5 fails to build
           if: ${{ failure() }}
           run: |
-            cat config.log
+            VERSION=1.13.2
+            cat ${GITHUB_WORKSPACE}/HDF5/hdf5-${VERSION}/config.log
         - name: Install NetCDF
           run: |
-            WORKDIR=$(pwd)
-            rm -rf v4.7.4.tar.gz netcdf-c-4.7.4 ${WORKDIR}/.local/netcdf-c qout
-            wget -qc https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.7.4.tar.gz
-            tar -zxf v4.7.4.tar.gz
-            cd netcdf-c-4.7.4
-            ./configure --prefix=${WORKDIR}/.local/netcdf-c/4.7.4 \
+            cd ${GITHUB_WORKSPACE}
+            echo "Install NetCDF-C on ${GITHUB_WORKSPACE}/NetCDF"
+            rm -rf NetCDF
+            mkdir NetCDF
+            cd NetCDF
+            VERSION=4.9.0
+            wget -cq https://github.com/Unidata/netcdf-c/archive/refs/tags/v${VERSION}.tar.gz
+            tar -zxf v${VERSION}.tar.gz
+            cd netcdf-c-${VERSION}
+            ./configure --prefix=${GITHUB_WORKSPACE}/NetCDF \
                         --silent \
                         --disable-dap \
+                        --disable-nczarr \
+                        --disable-nczarr-filters \
+                        --disable-filter-testing \
+                        --disable-shared \
                         CC=mpicc \
-                        CPPFLAGS="-I${WORKDIR}/.local/hdf5/1.13.0/include" \
-                        LDFLAGS="-L${WORKDIR}/.local/hdf5/1.13.0/lib" \
+                        CPPFLAGS="-I${GITHUB_WORKSPACE}/HDF5/include" \
+                        LDFLAGS="-L${GITHUB_WORKSPACE}/HDF5/lib" \
                         LIBS="-lhdf5"
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
             make -s -j 4 distclean >> qout 2>&1
+        - name: Dump config.log if NetCDF4 fails to build
+          if: ${{ failure() }}
+          run: |
+            VERSION=4.9.0
+            cat ${GITHUB_WORKSPACE}/NetCDF/netcdf-c-${VERSION}/config.log            
         - name: Test log VOL
           run: |
-            WORKDIR=$(pwd)
+            cd ${GITHUB_WORKSPACE}
             autoreconf -i
-            ./configure --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 \
-                        --enable-test-netcdf4=${WORKDIR}/.local/netcdf-c/4.7.4 \
+            ./configure --with-hdf5=${GITHUB_WORKSPACE}/HDF5 \
+                        --enable-test-netcdf4=${GITHUB_WORKSPACE}/NetCDF \
                         --enable-test-openpmd \
                         --enable-test-hdf5-iotest \
                         TESTMPIRUN="mpiexec --oversubscribe -n NP"
@@ -84,15 +111,14 @@ jobs:
         - name: Print log
           if: ${{ always() }}
           run: |
-            WORKDIR=$(pwd)
-            cat ${WORKDIR}/config.log
-            cat ${WORKDIR}/tests/basic/*.log
-            cat ${WORKDIR}/tests/dynamic/*.log
-            cat ${WORKDIR}/tests/testcases/*.log
-            cat ${WORKDIR}/tests/nc4/*.log
-            cat ${WORKDIR}/tests/external/hdf5_iotest/*.log
-            cat ${WORKDIR}/tests/external/openpmd/*.log
-            cat ${WORKDIR}/examples/*.log
-            cat ${WORKDIR}/examples/hdf5_examples/*.log
-            cat ${WORKDIR}/utils/*/*.log
+            cat ${GITHUB_WORKSPACE}/config.log
+            cat ${GITHUB_WORKSPACE}/tests/basic/*.log
+            cat ${GITHUB_WORKSPACE}/tests/dynamic/*.log
+            cat ${GITHUB_WORKSPACE}/tests/testcases/*.log
+            cat ${GITHUB_WORKSPACE}/tests/nc4/*.log
+            cat ${GITHUB_WORKSPACE}/tests/external/hdf5_iotest/*.log
+            cat ${GITHUB_WORKSPACE}/tests/external/openpmd/*.log
+            cat ${GITHUB_WORKSPACE}/examples/*.log
+            cat ${GITHUB_WORKSPACE}/examples/hdf5_examples/*.log
+            cat ${GITHUB_WORKSPACE}/utils/*/*.log
 
