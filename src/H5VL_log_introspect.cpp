@@ -54,7 +54,11 @@ herr_t H5VL_log_introspect_get_conn_cls (void *obj,
  *
  *-------------------------------------------------------------------------
  */
+#ifdef HDF5_GE_1133
+herr_t H5VL_log_introspect_get_cap_flags (const void *info, uint64_t *cap_flags) {
+#else
 herr_t H5VL_log_introspect_get_cap_flags (const void *info, unsigned *cap_flags) {
+#endif
     herr_t err          = 0;
     H5VL_log_info_t *ip = (H5VL_log_info_t *)info;
 

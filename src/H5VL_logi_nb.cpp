@@ -822,8 +822,8 @@ void H5VL_log_nb_flush_write_reqs (void *file) {
                 hid_t mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
 
                 H5VL_LOGI_PROFILING_TIMER_START;
-                err = H5VLdataset_write (ldp, fp->uvlid, H5T_STD_B8LE, mspace_id, ldsid,
-                                         dxplid, (void *)mbuff, NULL);
+                err = H5VL_log_under_dataset_write (ldp, fp->uvlid, H5T_STD_B8LE, mspace_id, ldsid,
+                                         dxplid, mbuff, NULL);
                 CHECK_ERR;
                 H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
                 free (mbuff);

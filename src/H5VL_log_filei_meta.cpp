@@ -259,8 +259,8 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
             hid_t mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
 
             H5VL_LOGI_PROFILING_TIMER_START;
-            err = H5VLdataset_write (mdp, fp->uvlid, H5T_STD_B8LE, mspace_id, mdsid,
-                                     dxplid, (void *)mbuff, NULL);
+            err = H5VL_log_under_dataset_write (mdp, fp->uvlid, H5T_STD_B8LE, mspace_id, mdsid,
+                                     dxplid, mbuff, NULL);
             CHECK_ERR;
             H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
             free (mbuff);
@@ -372,8 +372,9 @@ void H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
         CHECK_ERR
         err = H5Sselect_hyperslab (mdsid, H5S_SELECT_SET, &start, NULL, &one, &count);
         CHECK_ERR
+        MPI_Offset *nsecp = &nsec;
         err =
-            H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, &nsec, NULL);
+            H5VL_log_under_dataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, nsecp, NULL);
         CHECK_ERR
 
         // Allocate buffer for raw metadata
@@ -387,7 +388,7 @@ void H5VL_log_filei_metaupdate (H5VL_log_file_t *fp) {
         start = 0;
         err   = H5Sselect_hyperslab (mmsid, H5S_SELECT_SET, &start, NULL, &one, &count);
         CHECK_ERR
-        err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, buf, NULL);
+        err = H5VL_log_under_dataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, buf, NULL);
         CHECK_ERR
 
         // Close the metadata dataset
@@ -466,7 +467,8 @@ void H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
     CHECK_ERR
     err = H5Sselect_hyperslab (mdsid, H5S_SELECT_SET, &start, NULL, &one, &count);
     CHECK_ERR
-    err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, &nsec, NULL);
+    MPI_Offset *nsecp = &nsec;
+    err = H5VL_log_under_dataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, nsecp, NULL);
     CHECK_ERR
 
     // Get the ending offset of each section (next 8 * nsec bytes)
@@ -477,7 +479,7 @@ void H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
     start = sizeof (MPI_Offset);
     err   = H5Sselect_hyperslab (mdsid, H5S_SELECT_SET, &start, NULL, &one, &count);
     CHECK_ERR
-    err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, offs, NULL);
+    err = H5VL_log_under_dataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, offs, NULL);
     CHECK_ERR
 
     // Determine #sec to fit
@@ -510,7 +512,7 @@ void H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
     start = 0;
     err   = H5Sselect_hyperslab (mmsid, H5S_SELECT_SET, &start, NULL, &one, &count);
     CHECK_ERR
-    err = H5VLdataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, buf, NULL);
+    err = H5VL_log_under_dataset_read (mdp, fp->uvlid, H5T_NATIVE_B8, mmsid, mdsid, fp->dxplid, buf, NULL);
     CHECK_ERR
 
     // Close the metadata dataset

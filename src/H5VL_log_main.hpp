@@ -11,8 +11,11 @@
 /* Characteristics of the pass-through VOL connector */
 #define H5VL_log_NAME   "LOG"
 #define H5VL_log_REGID  514 /* VOL connector ID */
+#ifdef HDF5_GE_1133
+#define H5VL_log_APIVER 3   // Verion of VOL interface used by logvol
+#else
 #define H5VL_log_APIVER 2   // Verion of VOL interface used by logvol
-
+#endif
 /********************* */
 /* Function prototypes */
 /********************* */
