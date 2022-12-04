@@ -50,10 +50,7 @@ jobs:
                         --disable-doxygen-doc \
                         --disable-doxygen-man \
                         --disable-doxygen-html \
-                        --disable-hltools \
-                        --disable-tools \
                         --disable-tests \
-                        --disable-shared \
                         --disable-fortran \
                         CC=mpicc
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
