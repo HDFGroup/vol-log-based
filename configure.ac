@@ -678,7 +678,7 @@ if test "x${have_openpmd}" = xyes; then
    mkdir -p tests/external/openpmd
    cd tests/external/openpmd
    rm -rf ./openPMD-api
-   openpmd_version=0.14.4
+   openpmd_version=0.14.5
    rm -f openPMD-api.tar.gz
    ${download_cmd} https://github.com/openPMD/openPMD-api/archive/refs/tags/${openpmd_version}.tar.gz -O openPMD-api.tar.gz
    AC_MSG_RESULT([${openpmd_version}.tar.gz])
