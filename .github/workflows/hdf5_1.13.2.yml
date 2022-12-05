@@ -54,7 +54,7 @@ jobs:
             rm -rf ${WORKDIR}/HDF5
             mkdir ${WORKDIR}/HDF5
             cd ${WORKDIR}/HDF5
-            VERSION=1.13.3
+            VERSION=1.13.2
             wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-${VERSION}/src/hdf5-${VERSION}.tar.gz
             tar -zxf hdf5-${VERSION}.tar.gz
             cd hdf5-${VERSION}
