@@ -88,6 +88,8 @@
   + Move Log VOL data object creation to post open stage.
     + HDF5 1.13.3 and above does not allow creating data objects in the file_create 
       callback.
+  + OpenPMD test temporarily disabled in git action script due to a bug in OpenPMD.
+    + See https://github.com/openPMD/openPMD-api/issues/1342
 
 * Bug fixes
   + Fix a bug for allowing to run ncdump when the two VOL environment variables
