@@ -9,7 +9,7 @@ dnl
 
 dnl autoconf v2.69 was released in 2012-04-24
 AC_PREREQ([2.69])
-AC_INIT([H5VL_log],[1.3.0],[],[H5VL_log],[])
+AC_INIT([H5VL_log],[1.4.0],[],[H5VL_log],[])
 
 AM_EXTRA_RECURSIVE_TARGETS([tests])
 
@@ -729,7 +729,7 @@ AC_ARG_ENABLE(versioning,
 dnl For libtool ABI versioning rules see:
 dnl http://www.gnu.org/software/libtool/manual/libtool.html#Updating-version-info
 dnl Update the version information only immediately before a public release.
-ABIVERSION="2:0:0"
+ABIVERSION="3:0:0"
 AC_SUBST(ABIVERSION)
 if test "$enable_versioning" = "yes" ; then
    ABIVERSIONFLAGS="-version-info \$(ABIVERSION)"
