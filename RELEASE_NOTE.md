@@ -20,6 +20,12 @@
     * Log VOL will expose the version 3 interface when the HDF5 version 
       is 1.13.3 and above.
 
+* Experimental features
+  + Use cache VOL and async VOL as the underlying VOL.
+    * User may see some error messages when using the cache and async VOL underneath. 
+      + It is due to a limitation of HDF5's lib state APIs
+    * The error message can be ignored and should not affect the application
+
 * New optimization
   + Master file opened by rank 0 only when subfiling is enabled. This
     significantly improves the file close time. See commit 99f813a.
