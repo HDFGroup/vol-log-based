@@ -119,7 +119,7 @@ jobs:
           run: |
             cat ${GITHUB_WORKSPACE}/config.log
             ls -laht ${GITHUB_WORKSPACE}
-            [ -f ${GITHUB_WORKSPACE}/H5VL_log-1.3.0/_build/sub/config.log ] && cat ${GITHUB_WORKSPACE}/H5VL_log-1.3.0/_build/sub/config.log
+            [ -f ${GITHUB_WORKSPACE}/H5VL_log-1.4.0/_build/sub/config.log ] && cat ${GITHUB_WORKSPACE}/H5VL_log-1.4.0/_build/sub/config.log
             cat ${GITHUB_WORKSPACE}/tests/basic/*.log
             cat ${GITHUB_WORKSPACE}/tests/dynamic/*.log
             cat ${GITHUB_WORKSPACE}/tests/testcases/*.log

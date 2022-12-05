@@ -119,7 +119,7 @@ jobs:
             WORKDIR=$(pwd)
             cat ${WORKDIR}/config.log
             ls -laht ${WORKDIR}
-            [ -f ${WORKDIR}/H5VL_log-1.3.0/_build/sub/config.log ] && cat ${WORKDIR}/H5VL_log-1.3.0/_build/sub/config.log
+            [ -f ${WORKDIR}/H5VL_log-1.4.0/_build/sub/config.log ] && cat ${WORKDIR}/H5VL_log-1.4.0/_build/sub/config.log
             cat ${WORKDIR}/tests/basic/*.log
             cat ${WORKDIR}/tests/dynamic/*.log
             cat ${WORKDIR}/tests/testcases/*.log
