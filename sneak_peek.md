@@ -4,30 +4,13 @@ This is essentially a placeholder for the next release note ...
 (Copy the contents below to RELEASE_NOTE.md when making an official release.)
 
 * New features
-  + Support fill mode. See commit 8aee024
-  + Support NetCDF4. By setting the two VOL environment variables
-    `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH`, NetCDF4 programs now can write
-    data to files in log layout through Log VOL. See PR #15.
-  + Support using Log VOL as a Pass-through VOL.
-    * This feature adds the support of opening and operating an existing
-      regular HDF5 file.
-    * This feature adds the option of performing all writes using the
-      underlying VOL.
-    * When the Pass-through VOL is enabled, it uses collective MPI I/O to
-      perform file writes. See PR #42.
-    * For its usage, refer to the User Guide in doc/usage.md.
-    * See PR #33.
-  + Support VOL connector interface version 3.
-    * HDF5 1.13.3 requires a version 3 connector.
-    * Log VOL will expose the version 3 interface when the HDF5 version 
-      is 1.13.3 and above.
+  + none
 
 * New optimization
-  + Master file opened by rank 0 only when subfiling is enabled. This
-    significantly improves the file close time. See commit 99f813a.
+  + none
 
 * New Limitations
-  + Log VOL currently does not support multiple opens of the same file.
+  + none
 
 * Update configure options
   + none
@@ -36,38 +19,10 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * New APIs
-  + H5Pget_passthru_read_write. See PR #33.
-    + Signature
-      ```c
-      herr_t H5Pget_passthru_read_write (hid_t faplid, hbool_t *enable);
-      ```
-  + H5Pset_passthru_read_write. See PR #33.
-    + Signature
-      ```c
-      herr_t H5Pget_passthru_read_write (hid_t faplid, hbool_t *enable);
-      ```
+  + none
 
 * API syntax changes
-  + H5Pget/set_subfiling property type changed to int
-    + Signature
-      ```c
-        herr_t H5Pset_subfiling (hid_t fcplid, int  nsubfiles);
-        herr_t H5Pget_subfiling (hid_t fcplid, int *nsubfiles);
-      ```
-      `fcplid` is the file creation preperty list ID.
-    + Allows setting the number of subfiles including disabling/enabling
-      subfiling. See PR ##32.
-      + When nsubfiles is 0: disable subfiling.
-      + When nsubfiles is a negative values: one subfile per computer node.
-      + When nsubfiles is a positive value: create "nsubfiles" subfiles.
-  + Rename APIs H5Pset/get_nonblocking to H5Pset/get_buffered. See PR #23.
-  + Deprecate H5S_CONTIG, as it serves the same purpose of H5S_BLOCK, which
-    describe a contiguous data space. See PR #22.
-
-* Run-time environment variables
-  + Environment variable `H5VL_LOG_NSUBFILES` has been changed to match the
-    argument "nsubfiles" in API `H5Pget/set_subfiling` described above.
-  + Add environment variable `H5VL_LOG_PASSTHRU_READ_WRITE`. See PR #33.
+  + none
 
 * API semantics updates
   + none
@@ -76,11 +31,7 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Updated error strings
-  + When the same file is opened more than once, the following error string
-    will be printed. See PR #38.
-    ```
-    The same file has been opened. Log VOL currently does not support multiple opens.
-    ```
+  + none
 
 * New error code
   + none
@@ -92,40 +43,13 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * Updated utility program
-  + `h5ldump` and `h5lreplay` now return error code on failure. See PR #16.
+  + none
 
 * Other updates:
-  + Wrap calls to HDF5 VOL lib state APIs around attribute APIs. See PR #41.
-  + Add a new use case of E3SM in case_studies/E3SM_IO.md. See commit 1803b11.
-  + Add a new use case of WRF in case_studies/WRF.md. See PR #34.
-  + Allow user object name starts with '_'. See PR #29.
-  + Support checking multiple file opens to the same file. An error will return
-    instead of corrupting the file. See PR #28.
-  + Error messages are printed only in debug mode. See PR #39.
-  + Move Log VOL data object creation to post open stage.
-    + HDF5 1.13.3 and above does not allow creating data objects in the file_create 
-      callback.
+  + none
 
 * Bug fixes
-  + Fix a bug for allowing to run ncdump when the two VOL environment variables
-    are set. See PR #35.
-  + Fix a bug for zero-sized write requests. In HDF5, the correct way to do
-    zero-size write is to call select API H5Sselect_none() using the dataset's
-    dataspace, instead of H5Screate(H5S_NULL). See detailed comments in PR #21.
-  + Fix a bug when reading interleaving regions within a log entry
-    + H5VL_log_dataset_readi_gen_rtypes produces an invalid file type due to
-      interleaving read regions not being detected
-  + Fix a bug in H5VL_log_link_create that uses the calling convention of an
-    older VOL interface
-  + Fix a bug in H5VL_log_filei_close that fails to update file attributes
-    property when subfiling is enabled. See commit 79e91ec.
-  + Fix a bug in encoding and decoding of de-duplicated metadata entries. See
-    commit 99d3fda.
-  + Fix a bug in H5VL_log_file_create that does not set underlying VOL when
-    subfiling is enabled. See commit 2532553.
-  + Fix a bug in metadata encoding for record writes. See commit 8b68e0f.
-  + Deduce internal attributes from attributes count in object info.
-  + Fix a memory bug in H5VL_log_str_to_info. See commit b832b3c.
+  + none
 
 * New example programs
   + none
@@ -134,19 +58,7 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * New test program
-  + tests/testcases/multi_open
-    + Test opening a second handle to the same file without closing the first
-      one.
-  + tests/basic/fill
-    + Test the fill mode feature on datasets.
-  + tests/dynamic/test_env
-    + Test changing the VOL environment variable between file create/open.
-  + tests/passthru_features
-    + Test opening and operating an existing regular HDF5 file.
-  + test Log VOL as a Pass-through VOL
-    + Testing Log VOL's behavior as a Pass-through VOL is done by
-      setting/unsetting relevant envrionment varibales in all the wrap_runs.sh
-      and parallel_run.sh scripts under tests folder.
+  + none
 
 * Conformity with HDF5 library
   + none
