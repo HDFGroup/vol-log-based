@@ -64,7 +64,6 @@ jobs:
             autoreconf -i
             ./configure --with-hdf5=${WORKDIR}/.local/hdf5/1.13.0 \
                         --enable-test-netcdf4=${WORKDIR}/.local/netcdf-c/4.7.4 \
-                        --enable-test-openpmd \
                         CFLAGS="-O0 -g" CXXFLAGS="-O0 -g -std=c++14" LIBS=-lstdc++
             make -j 4
             # Do NOT parallel build, cmake for external tests can fail

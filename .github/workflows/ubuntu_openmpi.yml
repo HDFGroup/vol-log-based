@@ -95,7 +95,6 @@ jobs:
             autoreconf -i
             ./configure --with-hdf5=${GITHUB_WORKSPACE}/HDF5 \
                         --enable-test-netcdf4=${GITHUB_WORKSPACE}/NetCDF \
-                        --enable-test-openpmd \
                         --enable-test-hdf5-iotest \
                         TESTMPIRUN="mpiexec --oversubscribe -n NP"
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
@@ -114,7 +113,7 @@ jobs:
             cat ${GITHUB_WORKSPACE}/tests/testcases/*.log
             cat ${GITHUB_WORKSPACE}/tests/nc4/*.log
             cat ${GITHUB_WORKSPACE}/tests/external/hdf5_iotest/*.log
-            cat ${GITHUB_WORKSPACE}/tests/external/openpmd/*.log
+            # cat ${GITHUB_WORKSPACE}/tests/external/openpmd/*.log
             cat ${GITHUB_WORKSPACE}/examples/*.log
             cat ${GITHUB_WORKSPACE}/examples/hdf5_examples/*.log
             cat ${GITHUB_WORKSPACE}/utils/*/*.log
