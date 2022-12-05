@@ -92,7 +92,6 @@ jobs:
             autoreconf -i
             ./configure --with-hdf5=${WORKDIR}/HDF5 \
                         --enable-test-netcdf4=${WORKDIR}/NetCDF \
-                        --enable-test-openpmd \
                         --enable-test-hdf5-iotest \
                         --with-mpi=${WORKDIR}/MPICH
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
@@ -113,7 +112,7 @@ jobs:
             cat ${WORKDIR}/tests/testcases/*.log
             cat ${WORKDIR}/tests/nc4/*.log
             cat ${WORKDIR}/tests/external/hdf5_iotest/*.log
-            cat ${WORKDIR}/tests/external/openpmd/*.log
+            # cat ${WORKDIR}/tests/external/openpmd/*.log
             cat ${WORKDIR}/examples/*.log
             cat ${WORKDIR}/examples/hdf5_examples/*.log
             cat ${WORKDIR}/utils/*/*.log
