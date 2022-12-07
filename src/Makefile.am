@@ -107,13 +107,13 @@ endif
 
 nodist_include_HEADERS = H5VL_log.h
 
-$(M4_SRCS:.m4=.cpp): Makefile H5VL_logi_profiling_timers.m4
-$(M4H_SRCS:.m4h=.hpp): Makefile H5VL_logi_profiling_timers.m4
+$(M4_SRCS:.m4=.cpp): Makefile 
+$(M4H_SRCS:.m4h=.hpp): Makefile 
 
-.m4.cpp: H5VL_logi_profiling_timers.m4
+.m4.cpp:
 	$(M4) $(AM_M4FLAGS) $(M4FLAGS) $< >$@
 
-.m4h.hpp: H5VL_logi_profiling_timers.m4
+.m4h.hpp:
 	$(M4) $(AM_M4FLAGS) $(M4FLAGS) $< >$@
 
 libH5VL_log_la_SOURCES = $(C_SRCS) $(CXX_SRCS) $(H_SRCS)
