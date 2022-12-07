@@ -54,9 +54,10 @@ jobs:
             rm -rf ${WORKDIR}/HDF5
             mkdir ${WORKDIR}/HDF5
             cd ${WORKDIR}/HDF5
-            wget -qc https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.2/src/hdf5-1.13.2.tar.gz
-            tar -zxf hdf5-1.13.2.tar.gz
-            cd hdf5-1.13.2
+            VERSION=1.13.3
+            wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-${VERSION}/src/hdf5-${VERSION}.tar.gz
+            tar -zxf hdf5-${VERSION}.tar.gz
+            cd hdf5-${VERSION}
             ./configure --prefix=${WORKDIR}/HDF5 \
                         --silent \
                         --disable-fortran \
@@ -76,8 +77,9 @@ jobs:
             rm -rf ${ABT_DIR}
             mkdir ${ABT_DIR}
             cd ${ABT_DIR}
-            git clone https://github.com/pmodels/argobots.git
-            cd argobots
+            wget -qc https://github.com/pmodels/argobots/archive/refs/tags/v1.1.tar.gz
+            tar -xf v1.1.tar.gz
+            cd argobots-1.1
             ./autogen.sh
             ./configure --prefix=${ABT_DIR} \
                         --silent \
@@ -96,8 +98,9 @@ jobs:
             rm -rf ${ASYNC_DIR}
             mkdir ${ASYNC_DIR}
             cd ${ASYNC_DIR}
-            git clone https://github.com/hpc-io/vol-async.git
-            cd vol-async
+            wget -qc https://github.com/hpc-io/vol-async/archive/refs/tags/v1.4.tar.gz
+            tar -xf v1.4.tar.gz
+            cd vol-async-1.4
             mkdir build
             cd build
             CC=${WORKDIR}/MPICH/bin/mpicc \
@@ -120,6 +123,7 @@ jobs:
             cd vol-cache
             mkdir build
             cd build
+            export LD_LIBRARY_PATH="$ABT_DIR/lib:$LD_LIBRARY_PATH"
             CC=${WORKDIR}/MPICH/bin/mpicc \
               CXX=${WORKDIR}/MPICH/bin/mpicxx \
               HDF5_VOL_DIR=${ASYNC_DIR} \
