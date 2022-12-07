@@ -19,6 +19,7 @@
     * HDF5 1.13.3 requires a version 3 connector.
     * Log VOL will expose the version 3 interface when the HDF5 version 
       is 1.13.3 and above.
+    * See https://www.hdfgroup.org/2022/10/release-of-hdf5-1-13-3-newsletter-188/
 
 * Experimental features
   + Use cache VOL and async VOL as the underlying VOL.
