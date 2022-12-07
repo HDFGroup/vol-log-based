@@ -121,12 +121,20 @@
     + Test the fill mode feature on datasets.
   + tests/dynamic/test_env
     + Test changing the VOL environment variable between file create/open.
-  + tests/passthru_features
+  + tests/read_regular
     + Test opening and operating an existing regular HDF5 file.
-  + test Log VOL as a Pass-through VOL
-    + Testing Log VOL's behavior as a Pass-through VOL is done by
-      setting/unsetting relevant envrionment varibales in all the wrap_runs.sh
-      and parallel_run.sh scripts under tests folder.
+  + tests/passthru
+    + Test Log VOL's behavior as a Pass-through VOL. It's expected that users
+      enable other VOLs as the underlying VOLs of Log VOL before running/testing
+      the programs under this folder.
+    + PR #44 provides an example of running Log VOL on top of Cache VOL and Async VOL.
+  + testing Log VOL as a Pass-through VOL.
+    + tests/testcases, tests/basic, tests/dynamic, and tests/read_regular
+      additionaly tests using Log VOL on top of the native VOL. Test programs
+      are re-used and no addtional test programs are added. Unlike tests/passthru
+      where we expect users to specify the underlying VOLs, all necessary
+      envrionment varibales are set in the wrap_runs.sh and parallel_run.sh
+      scripts. Running "make check" or "make ptest" is enough perform the test.
 
 ### Version 1.3.0 (May 05, 2022)
 * New optimization
