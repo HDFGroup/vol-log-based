@@ -1,4 +1,3 @@
-#include "H5VL_log.h"
 #include <hdf5.h>
 #include <mpi.h>
 #include <stdio.h>
@@ -110,8 +109,6 @@ err_out:;
     H5Fclose(fid);
   if (faplid >= 0)
     H5Pclose(faplid);
-  if (log_vlid >= 00)
-    H5VLclose(log_vlid);
 
   MPI_Finalize();
 
