@@ -9,9 +9,10 @@ set -e
 
 MPIRUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 
-# ensure these 2 environment variables are not set
-unset HDF5_VOL_CONNECTOR
-unset HDF5_PLUGIN_PATH
+if test "x${LOG_VOL_TEST_USE_ENV_VARS}" != "xyes" ; then
+   unset HDF5_VOL_CONNECTOR
+   unset HDF5_PLUGIN_PATH
+fi
 
 err=0
 for p in ${check_PROGRAMS} ; do
