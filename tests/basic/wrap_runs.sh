@@ -7,9 +7,10 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# ensure these 2 environment variables are not set
-unset HDF5_VOL_CONNECTOR
-unset HDF5_PLUGIN_PATH
+if test "x${LOG_VOL_TEST_USE_ENV_VARS}" != "xyes" ; then
+   unset HDF5_VOL_CONNECTOR
+   unset HDF5_PLUGIN_PATH
+fi
 
 for vol_type in "terminal" "passthru"; do
    outfile=`basename $1`

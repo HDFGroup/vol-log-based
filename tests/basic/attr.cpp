@@ -23,7 +23,13 @@ int main (int argc, char **argv) {
     hid_t faplid;
     hid_t log_vlid;
 
+#ifndef LOG_VOL_TEST_THREADING
     MPI_Init (&argc, &argv);
+#else
+    int mpi_required;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
+#endif
+
     MPI_Comm_size (MPI_COMM_WORLD, &np);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
@@ -45,7 +51,10 @@ int main (int argc, char **argv) {
     // MPI and collective metadata is required by LOG VOL
     H5Pset_fapl_mpio (faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
     H5Pset_all_coll_metadata_ops (faplid, 1);
+
+#ifndef LOG_VOL_TEST_USE_ENV_VARS
     H5Pset_vol (faplid, log_vlid, NULL);
+#endif
 
     // Create file
     fid = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);
