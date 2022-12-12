@@ -147,7 +147,9 @@ jobs:
                         --enable-test-threading \
                         --enable-test-env-vars
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
-            make -j 4
+            make -j 4 
+            make install
+            source ${LOGVOL_DIR}/bin/h5lenv.bash
             # Do NOT parallel build, cmake for external tests can fail
             make tests
             make check
