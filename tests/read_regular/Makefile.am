@@ -39,7 +39,7 @@ $(SEQ_SRCS): %.c : $$(wildcard %.patch)
 check_PROGRAMS = $(TESTPROGRAMS)
 
 EXTRA_DIST = wrap_runs.sh parallel_run.sh \
-             h5_attribute.patch h5_group.patch h5_chunk_read.patch \
+             h5_attribute.patch h5_group.patch h5_cmprss.patch \
 			 h5_extend_write.patch
              
 
