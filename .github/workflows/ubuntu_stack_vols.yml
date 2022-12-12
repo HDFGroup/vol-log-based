@@ -176,6 +176,7 @@ jobs:
             make check
             make ptest
             cd ${WORKDIR}/tests/basic
+            cp ${WORKDIR}/tests/passthru/cache_1.cfg .
             make clean
             make tests
             make check
@@ -200,6 +201,7 @@ jobs:
             make check
             make ptest
             cd ${WORKDIR}/tests/basic
+            cp ${WORKDIR}/tests/passthru/cache_1.cfg .
             make clean
             make tests
             make check
