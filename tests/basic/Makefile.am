@@ -16,6 +16,13 @@ AM_CPPFLAGS += -I${top_srcdir}/src
 AM_CPPFLAGS += -I${top_srcdir}/tests
 AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
+if LOG_VOL_TEST_THREADING
+AM_CPPFLAGS += -DLOG_VOL_TEST_THREADING
+endif
+if LOG_VOL_TEST_USE_ENV_VARS
+AM_CPPFLAGS += -DLOG_VOL_TEST_USE_ENV_VARS
+endif
+
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
 check_PROGRAMS =    file \
@@ -46,6 +53,9 @@ TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";
 TESTS_ENVIRONMENT += export TESTMPIRUN="$(TESTMPIRUN)";
 TESTS_ENVIRONMENT += export TESTPROGRAMS="$(TESTPROGRAMS)";
 TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
+if LOG_VOL_TEST_USE_ENV_VARS
+TESTS_ENVIRONMENT += export LOG_VOL_TEST_USE_ENV_VARS="yes";
+endif
 
 H5_FILES = $(check_PROGRAMS:%=$(TESTOUTDIR)/%.h5)
 
