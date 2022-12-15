@@ -7,13 +7,10 @@
     `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH`, NetCDF4 programs now can write
     data to files in log layout through Log VOL. See PR #15.
   + Support opening and operating an existing regular HDF5 file.
-  + Support using Log VOL as a Pass-through VOL.
-    * This feature adds the option of performing all writes using the
-      underlying VOL.
-    * When the Pass-through VOL is enabled, it uses collective MPI I/O to
-      perform file writes. See PR #42.
+  + Support using Log VOL as a pass-through VOL when performing writes.
+    * Whe performing writes, users can specify and choose other VOL connectors as the underlying VOLs of Log VOL. See PR #33.
+    * When the pass-through feature is enabled, it asks the underlying VOLs to use collective MPI I/O. See PR #42.
     * For its usage, refer to the User Guide in doc/usage.md.
-    * See PR #33.
   + Support VOL connector interface version 3.
     * HDF5 1.13.3 requires a version 3 connector.
     * Log VOL will expose the version 3 interface when the HDF5 version 
