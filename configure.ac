@@ -350,13 +350,13 @@ if test x$hdf5_ge_1_13_0 = xno; then
      H5VL_log requires HDF5 1.13.0 and later. Abort.
    -----------------------------------------------------------------------])
 fi
-AC_MSG_CHECKING([whether HDF5 version is 1.13.3])
+AC_MSG_CHECKING([whether HDF5 version is 1.13.3 or later])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <hdf5.h>
-#if (H5_VERS_MAJOR*1000000 + H5_VERS_MINOR*1000 + H5_VERS_RELEASE == 1013003)
-#error HDF5 version is 1.13.3
+#if (H5_VERS_MAJOR*1000000 + H5_VERS_MINOR*1000 + H5_VERS_RELEASE < 1013003)
+#error HDF5 version is older than 1.13.3
 #endif
-   ]])], [hdf5_ge_1_13_3=no], [hdf5_ge_1_13_3=yes])
+   ]])], [hdf5_ge_1_13_3=yes], [hdf5_ge_1_13_3=no])
 AC_MSG_RESULT([$hdf5_ge_1_13_3])
 if test x$hdf5_ge_1_13_3 = xyes; then
    AC_DEFINE(HDF5_GE_1133, 1, ["HDF5 version greater than 1.13.3"])
