@@ -6,9 +6,8 @@
   + Support NetCDF4. By setting the two VOL environment variables
     `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH`, NetCDF4 programs now can write
     data to files in log layout through Log VOL. See PR #15.
+  + Support opening and operating an existing regular HDF5 file.
   + Support using Log VOL as a Pass-through VOL.
-    * This feature adds the support of opening and operating an existing
-      regular HDF5 file.
     * This feature adds the option of performing all writes using the
       underlying VOL.
     * When the Pass-through VOL is enabled, it uses collective MPI I/O to
