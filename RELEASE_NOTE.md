@@ -29,6 +29,10 @@
 * New Limitations
   + Log VOL currently does not support multiple opens of the same file.
 
+* Update configure options
+  + `--enable-test-threading` will enable test cases under `tests/basic` folder to initialize MPI with multi-thread support. i.e. use `MPI_Init_thread` instead of `MPI_Init`.
+  + `--enable-test-env-vars` will enable test cases under `tests/basic` folder to use the user-provided environment variables `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH` to decide the underlying VOL connectors. If disabled, these test cases will ignore the above two environment variables and use Log VOL only.
+
 * New APIs
   + H5Pget_passthru_read_write. See PR #33.
     + Signature
