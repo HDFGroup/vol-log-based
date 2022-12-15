@@ -1,4 +1,4 @@
-name: Mac
+name: Mac with MPICH
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: Ubuntu_openmpi
+name: Ubuntu with OpenMPI
 
 on:
   push:
