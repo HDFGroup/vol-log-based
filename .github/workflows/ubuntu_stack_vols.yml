@@ -4,16 +4,27 @@ on:
   push:
     branches: [ master, dev ]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - 'docs/**'
-      - 'case_studies/**'
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.jpg'
+      - '**/*.png'
+      - 'docs/*'
+      - 'case_studies/*'
   pull_request:
     branches: [ master, dev ]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - 'case_studies/**'
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.jpg'
+      - '**/*.png'
+      - 'docs/*'
+      - 'case_studies/*'
+
+env:
+   MPICH_VERSION: 4.0.2
+   HDF5_VERSION: 1.13.3
+   ARGOBOTS_VERSION: 1.1
+   ASYNC_VOL_VERSION: 1.4
 
 jobs:
     build:
@@ -36,9 +47,9 @@ jobs:
             rm -rf ${GITHUB_WORKSPACE}/MPICH
             mkdir ${GITHUB_WORKSPACE}/MPICH
             cd ${GITHUB_WORKSPACE}/MPICH
-            wget -q https://www.mpich.org/static/downloads/4.0.2/mpich-4.0.2.tar.gz
-            gzip -dc mpich-4.0.2.tar.gz | tar -xf -
-            cd mpich-4.0.2
+            wget -q https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz
+            gzip -dc mpich-${MPICH_VERSION}.tar.gz | tar -xf -
+            cd mpich-${MPICH_VERSION}
             ./configure --prefix=${GITHUB_WORKSPACE}/MPICH \
                         --silent \
                         --enable-romio \
@@ -56,10 +67,9 @@ jobs:
             rm -rf ${GITHUB_WORKSPACE}/HDF5
             mkdir ${GITHUB_WORKSPACE}/HDF5
             cd ${GITHUB_WORKSPACE}/HDF5
-            VERSION=1.13.3
-            wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-${VERSION}/src/hdf5-${VERSION}.tar.gz
-            tar -zxf hdf5-${VERSION}.tar.gz
-            cd hdf5-${VERSION}
+            wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-${HDF5_VERSION}/src/hdf5-${HDF5_VERSION}.tar.gz
+            tar -zxf hdf5-${HDF5_VERSION}.tar.gz
+            cd hdf5-${HDF5_VERSION}
             ./configure --prefix=${GITHUB_WORKSPACE}/HDF5 \
                         --silent \
                         --disable-fortran \
@@ -80,9 +90,9 @@ jobs:
             rm -rf ${ABT_DIR}
             mkdir ${ABT_DIR}
             cd ${ABT_DIR}
-            wget -qc https://github.com/pmodels/argobots/archive/refs/tags/v1.1.tar.gz
-            tar -xf v1.1.tar.gz
-            cd argobots-1.1
+            wget -qc https://github.com/pmodels/argobots/archive/refs/tags/v${ARGOBOTS_VERSION}.tar.gz
+            tar -xf v${ARGOBOTS_VERSION}.tar.gz
+            cd argobots-${ARGOBOTS_VERSION}
             ./autogen.sh
             ./configure --prefix=${ABT_DIR} \
                         --silent \
@@ -102,9 +112,9 @@ jobs:
             rm -rf ${ASYNC_DIR}
             mkdir ${ASYNC_DIR}
             cd ${ASYNC_DIR}
-            wget -qc https://github.com/hpc-io/vol-async/archive/refs/tags/v1.4.tar.gz
-            tar -xf v1.4.tar.gz
-            cd vol-async-1.4
+            wget -qc https://github.com/hpc-io/vol-async/archive/refs/tags/v${ASYNC_VOL_VERSION}.tar.gz
+            tar -xf v${ASYNC_VOL_VERSION}.tar.gz
+            cd vol-async-${ASYNC_VOL_VERSION}
             mkdir build
             cd build
             CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc \
@@ -135,7 +145,7 @@ jobs:
               cmake .. -DCMAKE_INSTALL_PREFIX=${CAHCE_DIR}
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
             cd ${GITHUB_WORKSPACE}
-        - name: Build and test Log-layout based VOL
+        - name: Build and test Log VOL connectror
           if: ${{ success() }}
           run: |
             cd ${GITHUB_WORKSPACE}
@@ -147,8 +157,7 @@ jobs:
                         --enable-test-threading \
                         --enable-test-env-vars
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
-            make -j 4 
-            make install
+            make -j 4 install
             source ${LOGVOL_DIR}/bin/h5lenv.bash
             # Do NOT parallel build, cmake for external tests can fail
             make tests
