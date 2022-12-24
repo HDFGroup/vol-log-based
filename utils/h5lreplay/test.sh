@@ -49,14 +49,14 @@ else
    echo "Success: Output file ${outfile}.h5r is ${FILE_KIND}"
 fi
 
-${TESTSEQRUN} ${H5DIFF} ${TESTOUTDIR}/${outfile}.h5 ${TESTOUTDIR}/${outfile}.h5r
-
-if test "x$?" != x0 ; then
-   echo "Error: ${outfile}.h5r differs from ${outfile}.h5"
-   exit 1
-else
-   echo "Success: ${outfile}.h5r and ${outfile}.h5 are the same"
+if test "x$H5DIFF" != x ; then
+   ${TESTSEQRUN} ${H5DIFF} ${TESTOUTDIR}/${outfile}.h5 ${TESTOUTDIR}/${outfile}.h5r
+   if test "x$?" != x0 ; then
+      echo "Error: ${outfile}.h5r differs from ${outfile}.h5"
+      exit 1
+   else
+      echo "Success: ${outfile}.h5r and ${outfile}.h5 are the same"
+   fi
 fi
-
 
 exit 0
