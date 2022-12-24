@@ -1,6 +1,14 @@
---- ph5example.c	2022-05-05 01:14:28.573895812 -0500
-+++ ph5example_logvol.c	2022-05-22 17:57:03.585499931 -0500
-@@ -888,6 +888,9 @@
+--- ph5example.c	2022-12-24 17:10:24.423988722 -0600
++++ ph5example_logvol.c	2022-12-24 17:14:47.240314745 -0600
+@@ -51,6 +51,7 @@
+         printf("%s\n", x);
+ 
+ #define MPI_BANNER(mesg)                                                                                     \
++    if (0)                                                                                                   \
+     {                                                                                                        \
+         printf("--------------------------------\n");                                                        \
+         printf("Proc %d: ", mpi_rank);                                                                       \
+@@ -888,6 +889,9 @@
          mrc = MPI_File_delete(filenames[color], info);
          assert(mrc == MPI_SUCCESS);
      }
