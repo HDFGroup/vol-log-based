@@ -64,12 +64,17 @@
         goto err_out;                                                                              \
     }
 
-#define SHOW_TEST_INFO(A)                                                                      \
-    {                                                                                          \
-        if (rank == 0) {                                                                       \
-            std::cout << "*** TESTING CXX    " << basename (argv[0]) << ": " << A << " ---- "; \
-        }                                                                                      \
-    }
+#define SHOW_TEST_INFO(A) { \
+    if (rank == 0) { \
+        char *env = getenv("H5VL_LOG_PASSTHRU_READ_WRITE"); \
+        std::string vol; \
+        if (env != NULL && *env == '1') \
+            vol = std::string("passthru"); \
+        else \
+            vol = std::string("terminal"); \
+        std::cout << "*** TESTING CXX    " << basename (argv[0]) << ": (as " << vol << " VOL) " << A << " ---- "; \
+    } \
+}
 
 #define SHOW_TEST_RESULT                                                           \
     {                                                                              \

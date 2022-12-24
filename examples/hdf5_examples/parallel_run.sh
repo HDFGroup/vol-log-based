@@ -19,7 +19,7 @@ for p in ${PAR_TESTS} ; do
 
       export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
       export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
-      echo "*** TESTING $p ***"
+      # echo "*** TESTING $p ***"
       ${MPIRUN} ./${p} -c -f ${TESTOUTDIR}
 
       unset HDF5_VOL_CONNECTOR
@@ -28,15 +28,15 @@ for p in ${PAR_TESTS} ; do
       if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
          echo "Error: Output file $outfile is not Log VOL, but ${FILE_KIND}"
          err=1
-      else
-         echo "Success: Output file $outfile is ${FILE_KIND}"
+      # else
+      #    echo "Success: Output file $outfile is ${FILE_KIND}"
       fi
       FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k ${outfile2}`
       if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
          echo "Error: Output file $outfile2 is not Log VOL, but ${FILE_KIND}"
          err=1
-      else
-         echo "Success: Output file $outfile is ${FILE_KIND}"
+      # else
+      #    echo "Success: Output file $outfile is ${FILE_KIND}"
       fi
    fi
 done

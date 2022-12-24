@@ -45,24 +45,10 @@
 #include <cstring>
 #include <iostream>
 
-#define SHOW_TEST_INFO(A) {                                                                 \
-    if (rank == 0) {                                                                        \
-        std::cout << "*** TESTING CXX    " << basename (argv[0]) << ": " << A << std::endl; \
-    }                                                                                       \
-}
-
-#define SHOW_TEST_RESULT {                                                     \
-    MPI_Allreduce (MPI_IN_PLACE, &nerrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); \
-    if (rank == 0) {                                                           \
-        if (nerrs)                                                             \
-            std::cout << "fail with " << nerrs << " mismatches." << std::endl; \
-        else                                                                   \
-            std::cout << "pass" << std::endl;                                  \
-    }                                                                          \
-}
+#include "testutils.hpp"
 
 int main (int argc, char **argv) {
-    int err, nerrs = 0;
+    int err, nerrs = 0, verbose=0;
     int rank, np;
     unsigned int i, nidx;
     char buf[1024];
@@ -90,15 +76,18 @@ int main (int argc, char **argv) {
     SHOW_TEST_INFO ("Changing VOL environment variable")
 
     if (rank == 0) {
-        std::cout << "Envinroment variables for file create:" << std::endl;
+        if (verbose)
+            std::cout << "Envinroment variables for file create:" << std::endl;
 
         env = getenv ("HDF5_VOL_CONNECTOR");
         if (!env) env = const_cast<char *> ("");
-        std::cout << "HDF5_VOL_CONNECTOR = " << env << std::endl;
+        if (verbose)
+            std::cout << "HDF5_VOL_CONNECTOR = " << env << std::endl;
 
         env = getenv ("HDF5_PLUGIN_PATH");
         if (!env) env = const_cast<char *> ("");
-        std::cout << "HDF5_PLUGIN_PATH = " << env << std::endl;
+        if (verbose)
+            std::cout << "HDF5_PLUGIN_PATH = " << env << std::endl;
     }
 
     faplid = H5Pcreate (H5P_FILE_ACCESS);
@@ -112,7 +101,8 @@ int main (int argc, char **argv) {
 
     err = H5VLget_connector_name (fid, name1, 64);
     assert (err >= 0);
-    if (rank == 0) { std::cout << "VOL used is " << name1 << std::endl; }
+    if (rank == 0 && verbose)
+        std::cout << "VOL used is " << name1 << std::endl;
 
     err = H5Fclose (fid);
     assert (err >= 0);
@@ -122,15 +112,18 @@ int main (int argc, char **argv) {
     setenv ("HDF5_VOL_CONNECTOR", "pass_through under_vol=0;under_info={}", 1);
 
     if (rank == 0) {
-        std::cout << "Envinroment variables for file open:" << std::endl;
+        if (verbose)
+            std::cout << "Envinroment variables for file open:" << std::endl;
 
         env = getenv ("HDF5_VOL_CONNECTOR");
         assert (env);
-        std::cout << "HDF5_VOL_CONNECTOR = " << env << std::endl;
+        if (verbose)
+            std::cout << "HDF5_VOL_CONNECTOR = " << env << std::endl;
 
         env = getenv ("HDF5_PLUGIN_PATH");
         if (!env) env = const_cast<char *> ("");
-        std::cout << "HDF5_PLUGIN_PATH = " << env << std::endl;
+        if (verbose)
+            std::cout << "HDF5_PLUGIN_PATH = " << env << std::endl;
     }
 
     // Reset all plugin path
@@ -160,7 +153,8 @@ int main (int argc, char **argv) {
 
     err = H5VLget_connector_name (fid, name2, 64);
     assert (err >= 0);
-    if (rank == 0) { std::cout << "VOL used is " << name2 << std::endl; }
+    if (rank == 0 && verbose)
+        std::cout << "VOL used is " << name2 << std::endl;
 
     err = H5Fclose (fid);
     assert (err >= 0);

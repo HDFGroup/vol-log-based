@@ -4,21 +4,14 @@
  */
 /* $Id$ */
 
-#include <hdf5.h>
-#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <hdf5.h>
+#include <mpi.h>
+
+#include "testutils.hpp"
 
 #define N 10
-
-#define CHECK_ERR(A)                                                           \
-  {                                                                            \
-    if (A < 0) {                                                               \
-      printf("Error at line %d: code %ld\n", __LINE__, (long) A);              \
-      goto err_out;                                                            \
-      nerrs++;                                                                 \
-    }                                                                          \
-  }
 
 int main(int argc, char **argv) {
   herr_t err = 0;
@@ -98,6 +91,8 @@ int main(int argc, char **argv) {
                  buf);
   CHECK_ERR(err);
 
+  SHOW_TEST_INFO ("Writing hyperslab")
+
   /* Close everything */
 err_out:;
   if (memspace_id >= 0)
@@ -110,6 +105,8 @@ err_out:;
     H5Fclose(fid);
   if (faplid >= 0)
     H5Pclose(faplid);
+
+  SHOW_TEST_RESULT
 
   MPI_Finalize();
 
