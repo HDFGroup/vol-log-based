@@ -23,25 +23,25 @@
 int main(int argc, char **argv) {
   herr_t err = 0;
   int nerrs = 0;
-  htri_t ret;
   int i;
   int rank, np;
   int mpi_required = 0;
   const char *file_name;
-
-  // VOL IDs
-  hid_t log_vlid = -1;
 
   hid_t fid = -1;          // File ID
   hid_t did = -1;          // Dataset ID
   hid_t filespace_id = -1; // File space ID
   hid_t memspace_id = -1;  // Memory space ID
   hid_t faplid = -1;       // File Access Property List
-  hid_t dxplid = -1;       // Data transfer Property List
 
   int buf[N];
   hsize_t dims[2] = {0, N}; // dims[0] will be modified later
   hsize_t start[2], count[2];
+
+  // init MPI
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
+  MPI_Comm_size(MPI_COMM_WORLD, &np);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   if (argc > 2) {
         if (!rank) printf ("Usage: %s [filename]\n", argv[0]);
@@ -52,11 +52,6 @@ int main(int argc, char **argv) {
     } else {
         file_name = "test.h5";
     }
-
-  // init MPI
-  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
-  MPI_Comm_size(MPI_COMM_WORLD, &np);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   /* Set faplid to use LOG VOL */
   faplid = H5Pcreate(H5P_FILE_ACCESS);
