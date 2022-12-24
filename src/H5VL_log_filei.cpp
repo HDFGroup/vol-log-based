@@ -199,11 +199,8 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 }
 
 void H5VL_log_filei_post_create (H5VL_log_file_t *fp) {
-    herr_t err = 0;
     int mpierr;
     H5VL_loc_params_t loc;
-    H5VL_object_specific_args_t args;
-    hbool_t exists;
     int attbuf[H5VL_LOG_FILEI_NATTR];
     void *lib_state = NULL;
     H5VL_logi_err_finally finally (

@@ -48,7 +48,6 @@ void *H5VL_log_file_create (
     int mpierr;
     H5VL_log_info_t *info = NULL;
     H5VL_log_file_t *fp   = NULL;
-    H5VL_loc_params_t loc;
     hid_t uvlid;
     hid_t fdid;  // VFL driver ID
     hid_t ufcplid = H5I_INVALID_HID;
@@ -56,7 +55,6 @@ void *H5VL_log_file_create (
     void *under_vol_info;
     MPI_Comm comm    = MPI_COMM_SELF;
     MPI_Info mpiinfo = MPI_INFO_NULL;
-    int attbuf[H5VL_LOG_FILEI_NATTR];
     H5VL_logi_err_finally finally ([&ufcplid, &ufaplid, &fp] () -> void {
         if (fp && (ufaplid != H5I_INVALID_HID) && (ufaplid != fp->ufaplid)) H5Pclose (ufaplid);
         if (ufcplid != H5I_INVALID_HID) H5Pclose (ufcplid);

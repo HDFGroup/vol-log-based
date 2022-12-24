@@ -395,7 +395,6 @@ herr_t H5VL_log_dataset_read_2 (size_t count,
         CHECK_ERR
     }
 
-err_out:;
     return err;
 }
 
@@ -416,7 +415,6 @@ herr_t H5VL_log_dataset_write_2 (size_t count,
         CHECK_ERR
     }
 
-err_out:;
     return err;
 }
 
