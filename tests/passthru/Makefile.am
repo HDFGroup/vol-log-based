@@ -48,9 +48,6 @@ SH_LOG_COMPILER =
 
 TESTS = $(TESTPROGRAMS)
 
-# build check targets but not invoke
-tests-local: all $(check_PROGRAMS)
-
 ptest: $(check_PROGRAMS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
@@ -58,4 +55,8 @@ ptest: $(check_PROGRAMS)
 	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/parallel_run.sh 4 || exit 1
 
-.PHONY: ptest
+# build check targets but not invoke
+tests-local: all $(check_PROGRAMS)
+
+.PHONY: ptest tests
+

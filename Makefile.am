@@ -6,8 +6,8 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = src . tests examples utils doc
-DIST_SUBDIRS = src tests examples utils doc
+SUBDIRS = src utils doc tests examples
+DIST_SUBDIRS = src utils doc tests examples
 EXTRA_DIST =    m4/foreach_idx.m4 \
                 m4/foreach.m4 \
                 m4/list_len.m4 \
@@ -22,7 +22,12 @@ ptest:
 		$(MAKE) -C $$d ptest $$* || exit 1 ; \
 	done
 
-.PHONY: ptest
+tests-local:
+	@echo '|'
+	@echo '|  All test programs have been successfully built.'
+	@echo '|'
+
+.PHONY: ptest tests
 
 dist-hook:
 #	$(SED_I) -e "1,10s|_RELEASE_DATE_|@H5VL_LOG_RELEASE_DATE@|" $(distdir)/RELEASE_NOTE.md

@@ -23,4 +23,8 @@ ptest:
 		$(MAKE) -C $$d ptest $$* || exit 1 ; \
 	done
 
-.PHONY: ptest
+# build check targets but not invoke
+tests-local: all $(check_PROGRAMS)
+
+.PHONY: ptest tests
+

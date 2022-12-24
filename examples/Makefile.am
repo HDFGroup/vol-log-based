@@ -18,17 +18,17 @@ AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
-check_PROGRAMS_test = 	create_open \
-                        dwrite_n \
-                        dread_n \
-                        non_blocking 
+check_PROGRAMS_test = create_open \
+                      dwrite_n \
+                      dread_n \
+                      non_blocking 
 
-check_PROGRAMS =    ${check_PROGRAMS_test} \
-                    demo \
-                    demo_logvol \
-                    demo_buffered \
-                    demo_sblock \
-                    demo_dwrite_n
+check_PROGRAMS = ${check_PROGRAMS_test} \
+                 demo \
+                 demo_logvol \
+                 demo_buffered \
+                 demo_sblock \
+                 demo_dwrite_n
 
 EXTRA_DIST = wrap_runs.sh \
              parallel_run.sh \
@@ -60,9 +60,6 @@ SH_LOG_COMPILER =
 
 TESTS = $(TESTPROGRAMS)
 
-# build check targets but not invoke
-tests-local: all $(check_PROGRAMS)
-
 C_SUBDIRS = hdf5_examples
 
 DIST_SUBDIRS = $(C_SUBDIRS) 
@@ -81,4 +78,7 @@ ptest: $(check_PROGRAMS_test)
 		$(MAKE) -C $$d ptest $$* || exit 1 ; \
 	done
 
-.PHONY: ptest
+# build check targets but not invoke
+tests-local: all $(check_PROGRAMS)
+
+.PHONY: ptest tests

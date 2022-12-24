@@ -19,16 +19,15 @@ AM_CPPFLAGS += -DHDF5_PARALLEL
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
 # The following files will be downloaded from HDF5 library
-SEQ_SRCS = h5_attribute.c h5_group.c h5_extend_write.c \
-           h5_cmprss.c h5_subset.c
-
+SEQ_SRCS = h5_attribute.c \
+           h5_group.c \
+           h5_extend_write.c \
+           h5_cmprss.c \
+           h5_subset.c
 
 TESTPROGRAMS = $(SEQ_SRCS:.c=)
 
-
 HDF5_EXAMPLE_URL = https://raw.githubusercontent.com/HDFGroup/hdf5/develop/examples
-
-
 
 .SECONDEXPANSION:
 
@@ -40,9 +39,7 @@ check_PROGRAMS = $(TESTPROGRAMS)
 
 EXTRA_DIST = wrap_runs.sh parallel_run.sh \
              h5_attribute.patch h5_group.patch h5_cmprss.patch \
-			 h5_extend_write.patch
-             
-
+             h5_extend_write.patch
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead
@@ -73,9 +70,6 @@ SH_LOG_COMPILER =
 
 TESTS = $(TESTPROGRAMS)
 
-# build check targets but not invoke
-tests-local: all $(check_PROGRAMS)
-
 ptest: $(PAR_TESTS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
@@ -83,4 +77,8 @@ ptest: $(PAR_TESTS)
 	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/parallel_run.sh 4 || exit 1
 
-.PHONY: ptest
+# build check targets but not invoke
+tests-local: all $(check_PROGRAMS)
+
+.PHONY: ptest tests
+

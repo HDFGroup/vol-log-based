@@ -41,17 +41,12 @@ restart$(EXEEXT):
 	cd build && $(MAKE) -j4 restart
 	cp build/bin/restart .
 
-# build check targets but not invoke
-tests-local: all $(check_PROGRAMS)
-
 ptest: $(check_PROGRAMS)
 	@echo "==========================================================="
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
 	@echo "==========================================================="
 	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/test.sh 4 || exit 1
-
-.PHONY: ptest
 
 clean-local:
 	if [ -d "build" ]; then cd build && $(MAKE) clean ; fi
@@ -60,3 +55,9 @@ DISTCLEANFILES = qmcpack.tar.gz
 
 distclean-local:
 	-rm -rf build qmcpack
+
+# build check targets but not invoke
+tests-local: all $(check_PROGRAMS)
+
+.PHONY: ptest tests
+
