@@ -61,7 +61,7 @@
 * Run-time environment variables
   + Environment variable `H5VL_LOG_NSUBFILES` has been changed to match the
     argument "nsubfiles" in API `H5Pget/set_subfiling` described above.
-  + Add environment variable `H5VL_LOG_PASSTHRU_READ_WRITE`. See PR #33.
+  + Add environment variable `H5VL_LOG_PASSTHRU`. See PR #33, #51.
 
 * Updated error strings
   + When the same file is opened more than once, the following error string

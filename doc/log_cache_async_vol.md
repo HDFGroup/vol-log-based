@@ -118,7 +118,7 @@ mpicxx -o dwrite dwrite.cpp -g -O2 \
     export HDF5_PLUGIN_PATH=${LOGVOL_DIR}/lib:${CACHE_DIR}/lib:${ASYNC_DIR}/lib
     export LD_LIBRARY_PATH=${LOGVOL_DIR}/lib:${CACHE_DIR}/lib:${ASYNC_DIR}/lib:${ABT_DIR}/lib:${HDF5_DIR}/lib:${LD_LIBRARY_PATH}
     export HDF5_VOL_CONNECTOR="LOG under_vol=513;under_info={config=cache_1.cfg;under_vol=512;under_info={under_vol=0;under_info={}}}"
-    export H5VL_LOG_PASSTHRU_READ_WRITE=1
+    export H5VL_LOG_PASSTHRU=1
     ```
 
 

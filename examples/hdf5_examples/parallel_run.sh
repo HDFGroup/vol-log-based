@@ -39,9 +39,9 @@ for p in ${PAR_TESTS} ; do
             if test "x${cache_vol}" = xyes || test "x${async_vol}" = xyes ; then
                continue
             fi
-            unset H5VL_LOG_PASSTHRU_READ_WRITE
+            unset H5VL_LOG_PASSTHRU
          else
-            export H5VL_LOG_PASSTHRU_READ_WRITE=1
+            export H5VL_LOG_PASSTHRU=1
          fi
 
          outfile=${TESTOUTDIR}/ParaEg0.h5

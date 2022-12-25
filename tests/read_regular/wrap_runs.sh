@@ -19,13 +19,13 @@ for vol_type in "terminal" "passthru"; do
     outfile_log="${TESTOUTDIR}/${outfile}-${vol_type}-logvol.h5"
 
     if test "x${vol_type}" = xterminal ; then
-        unset H5VL_LOG_PASSTHRU_READ_WRITE
+        unset H5VL_LOG_PASSTHRU
     else
-        export H5VL_LOG_PASSTHRU_READ_WRITE=1
+        export H5VL_LOG_PASSTHRU=1
     fi
 
     ${TESTSEQRUN} ./$1 ${outfile_regular} ${outfile_log} > ${outfile}-${vol_type}.stdout.log
-    unset H5VL_LOG_PASSTHRU_READ_WRITE
+    unset H5VL_LOG_PASSTHRU
 
     FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k ${outfile_log}`
     if test "x${FILE_KIND}" != xHDF5 ; then

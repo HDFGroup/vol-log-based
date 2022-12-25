@@ -34,17 +34,17 @@ for p in ${PAR_TESTS} ; do
             continue
          fi
          outfile="${TESTOUTDIR}/${p}.nc"
-         unset H5VL_LOG_PASSTHRU_READ_WRITE
+         unset H5VL_LOG_PASSTHRU
       else
          outfile="${TESTOUTDIR}/${p}-passthru.nc"
-         export H5VL_LOG_PASSTHRU_READ_WRITE=1
+         export H5VL_LOG_PASSTHRU=1
       fi
 
       ${MPIRUN} ./${p} ${outfile}
 
       ${NCDUMP} ${outfile} > ${outfile}.dump
 
-      unset H5VL_LOG_PASSTHRU_READ_WRITE
+      unset H5VL_LOG_PASSTHRU
 
       if test "x${log_vol}" != xyes ; then
          continue
