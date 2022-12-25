@@ -1,3 +1,8 @@
+/*
+ *  Copyright (C) 2022, Northwestern University and Argonne National Laboratory
+ *  See COPYRIGHT notice in top-level directory.
+ */
+
 #pragma once
 #include <hdf5.h>
 #include <libgen.h>
@@ -97,3 +102,14 @@
 #define FUNC         "func"
 #define FALSE        0
 #define TRUE         1
+
+typedef struct {
+    int connector;
+    int log_env;
+    int cache_env;
+    int async_env;
+    int passthru;
+} vol_env;
+
+extern void check_env(vol_env *env);
+
