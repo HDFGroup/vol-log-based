@@ -4,7 +4,7 @@
 #
 # @configure_input@
 
-C_SUBDIRS = basic dynamic testcases external passthru read_regular
+C_SUBDIRS = common basic dynamic testcases external passthru read_regular
 
 DIST_SUBDIRS = $(C_SUBDIRS) nc4
 
@@ -15,8 +15,6 @@ if ENABLE_NETCDF4
 endif
 
 PTEST_SUBDIRS = $(SUBDIRS)
-
-EXTRA_DIST = testutils.hpp
 
 ptest:
 	@for d in $(PTEST_SUBDIRS) ; do \

@@ -8,7 +8,7 @@ SUFFIXES = .o .c
 
 AM_DEFAULT_SOURCE_EXT = .c
 
-AM_CPPFLAGS = -I${srcdir}
+AM_CPPFLAGS = -I${srcdir}/../common
 AM_CPPFLAGS += -I${top_srcdir}
 AM_CPPFLAGS += -I${top_srcdir}/src
 AM_CPPFLAGS += -I${top_srcdir}/tests
@@ -16,7 +16,10 @@ AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
 AM_CPPFLAGS += -DUSE_HDF5
 AM_CPPFLAGS += -DHDF5_PARALLEL
-LDADD = $(top_builddir)/src/libH5VL_log.la
+LDADD = $(top_builddir)/src/libH5VL_log.la ../common/libtestutils.la
+
+../common/libtestutils.la:
+	set -e; cd ../common && $(MAKE) $(MFLAGS) tests
 
 # The following files will be downloaded from HDF5 library
 SEQ_SRCS = h5_attribute.c \
