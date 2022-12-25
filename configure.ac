@@ -764,6 +764,7 @@ AC_CONFIG_FILES(Makefile \
                 tests/dynamic/Makefile \
                 tests/external/Makefile \
                 tests/passthru/Makefile \
+                cache.cfg \
                 tests/read_regular/Makefile \
                 tests/external/hdf5_iotest/config.sh \
                 tests/external/hdf5_iotest/Makefile \
