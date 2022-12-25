@@ -44,7 +44,9 @@ int main (int argc, char **argv) {
     int buf[M * M * N];
     H5VL_ncmpi_info_t pnc_vol_info;  // PnetCDF VOL callback
 
-    MPI_Init (&argc, &argv);
+    int mpi_required;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
+
     MPI_Comm_size (MPI_COMM_WORLD, &np);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
