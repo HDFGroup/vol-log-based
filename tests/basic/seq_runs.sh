@@ -6,7 +6,7 @@
 
 source $srcdir/../common/wrap_runs.sh
 
-log_vol_file_only=0
+log_vol_file_only=1
 
 export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
 export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
