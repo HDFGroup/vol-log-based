@@ -18,6 +18,10 @@ AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
+if LOG_VOL_TEST_THREADING
+AM_CPPFLAGS += -DLOG_VOL_TEST_THREADING
+endif
+
 check_PROGRAMS = 
 
 if ENABLE_SHARED
@@ -35,6 +39,7 @@ TESTPROGRAMS = $(check_PROGRAMS)
 # AM_TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";
 # AM_TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
 TESTS_ENVIRONMENT  = export SED="$(SED)";
+TESTS_ENVIRONMENT += export EGREP="$(EGREP)";
 TESTS_ENVIRONMENT += export srcdir="$(srcdir)";
 TESTS_ENVIRONMENT += export top_srcdir="$(top_srcdir)";
 TESTS_ENVIRONMENT += export top_builddir="$(top_builddir)";

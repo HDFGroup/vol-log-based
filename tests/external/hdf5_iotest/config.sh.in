@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export HDF5_ROOT=@HDF5_ROOT_PATH@
+export LD_LIBRARY_PATH="${HDF5_ROOT}/lib:${LD_LIBRARY_PATH}"
 
 cd hdf5-iotest
 ./autogen.sh
