@@ -12,7 +12,7 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 
 AM_CPPFLAGS = -I${srcdir}
 AM_CPPFLAGS += -I${top_srcdir}
-AM_CPPFLAGS += -I${top_srcdir}/tests
+AM_CPPFLAGS += -I${top_srcdir}/tests/common
 AM_CPPFLAGS += -I${top_srcdir}/src
 AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
