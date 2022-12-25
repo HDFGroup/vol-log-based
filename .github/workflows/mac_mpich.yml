@@ -28,7 +28,6 @@ jobs:
         - uses: actions/checkout@v3
         - name: Set up dependencies
           run: |
-            brew update
             brew instal automake autoconf libtool m4 open-mpi zlib
         - name: Install HDF5
           run: |
