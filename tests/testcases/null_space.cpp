@@ -26,7 +26,9 @@ int main (int argc, char **argv) {
     hid_t log_vlid      = -1;  // Logvol ID
     hsize_t dims[1]     = {N};
 
-    MPI_Init (&argc, &argv);
+    int mpi_required;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
+
     MPI_Comm_size (MPI_COMM_WORLD, &np);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
@@ -41,10 +43,6 @@ int main (int argc, char **argv) {
     }
     SHOW_TEST_INFO ("write with zero-sized file space by rank 0 only")
 
-    // Register LOG VOL plugin
-    log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
-    CHECK_ERR (log_vlid)
-
     faplid = H5Pcreate (H5P_FILE_ACCESS);
     CHECK_ERR (faplid)
 
@@ -54,9 +52,14 @@ int main (int argc, char **argv) {
     err = H5Pset_all_coll_metadata_ops (faplid, 1);
     CHECK_ERR (err)
 
-    // Use LOG VOL
-    err = H5Pset_vol (faplid, log_vlid, NULL);
-    CHECK_ERR (err)
+    /* check VOL related environment variables */
+    vol_env env;
+    check_env(&env);
+    if (env.connector == 0) {
+        // Register LOG VOL plugin
+        log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
+        H5Pset_vol (faplid, log_vlid, NULL);
+    }
 
     // Create file
     file_id = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);

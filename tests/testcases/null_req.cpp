@@ -30,7 +30,9 @@ int main (int argc, char **argv) {
     hsize_t start[2], count[2];
     int buf[N];
 
-    MPI_Init (&argc, &argv);
+    int mpi_required;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
+
     MPI_Comm_size (MPI_COMM_WORLD, &np);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
@@ -45,14 +47,19 @@ int main (int argc, char **argv) {
     }
     SHOW_TEST_INFO ("Call H5Dwrite with empty selection")
 
-    // Register LOG VOL plugin
-    log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
-
     faplid = H5Pcreate (H5P_FILE_ACCESS);
     // MPI and collective metadata is required by LOG VOL
     H5Pset_fapl_mpio (faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
     H5Pset_all_coll_metadata_ops (faplid, 1);
-    H5Pset_vol (faplid, log_vlid, NULL);
+
+    /* check VOL related environment variables */
+    vol_env env;
+    check_env(&env);
+    if (env.connector == 0) {
+        // Register LOG VOL plugin
+        log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
+        H5Pset_vol (faplid, log_vlid, NULL);
+    }
 
     // Create file
     fid = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);
