@@ -4,40 +4,67 @@
 # See COPYRIGHT notice in top-level directory.
 #
 
-# Exit immediately if a command exits with a non-zero status.
-set -e
-
 MPIRUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 # echo "MPIRUN = ${MPIRUN}"
 # echo "check_PROGRAMS=${check_PROGRAMS}"
 
+if test "x${HDF5_VOL_CONNECTOR}" != x ; then
+   async_vol=`echo "${HDF5_VOL_CONNECTOR}" | ${EGREP} -- "under_vol=512"`
+   if test "x$?" = x0 ; then
+      async_vol=yes
+   fi
+   cache_vol=`echo "${HDF5_VOL_CONNECTOR}" | ${EGREP} -- "under_vol=513"`
+   if test "x$?" = x0 ; then
+      cache_vol=yes
+   fi
+   log_vol=`echo "${HDF5_VOL_CONNECTOR}" | ${EGREP} -- "LOG "`
+   if test "x$?" = x0 ; then
+      log_vol=yes
+   fi
+fi
+
+# The test programs in this folder are not for stacking Log on top of Cache/Async VOLs
+if test "x${async_vol}" = xyes || test "x${cache_vol}" = xyes ; then
+   exit 0
+fi
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
 err=0
 for p in ${PAR_TESTS} ; do
    if test "x$p" = "xph5example" ; then
-      outfile=${TESTOUTDIR}/ParaEg0.h5
-      outfile2=${TESTOUTDIR}/ParaEg1.h5
+      for vol_type in "terminal" "passthru"; do
+         if test "x${vol_type}" = xterminal ; then
+            if test "x${cache_vol}" = xyes || test "x${async_vol}" = xyes ; then
+               continue
+            fi
+            unset H5VL_LOG_PASSTHRU_READ_WRITE
+         else
+            export H5VL_LOG_PASSTHRU_READ_WRITE=1
+         fi
 
-      export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
-      export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
-      # echo "*** TESTING $p ***"
-      ${MPIRUN} ./${p} -c -f ${TESTOUTDIR}
+         outfile=${TESTOUTDIR}/ParaEg0.h5
+         outfile2=${TESTOUTDIR}/ParaEg1.h5
 
-      unset HDF5_VOL_CONNECTOR
-      unset HDF5_PLUGIN_PATH
-      FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k ${outfile}`
-      if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
-         echo "Error: Output file $outfile is not Log VOL, but ${FILE_KIND}"
-         err=1
-      # else
-      #    echo "Success: Output file $outfile is ${FILE_KIND}"
-      fi
-      FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k ${outfile2}`
-      if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
-         echo "Error: Output file $outfile2 is not Log VOL, but ${FILE_KIND}"
-         err=1
-      # else
-      #    echo "Success: Output file $outfile is ${FILE_KIND}"
-      fi
+         # echo "*** TESTING $p ***"
+         ${MPIRUN} ./${p} -c -f ${TESTOUTDIR}
+
+	 if test "x${log_vol}" != xyes ; then
+            continue
+         fi
+
+         FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k ${outfile}`
+         if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
+            echo "Error: Output file $outfile is not Log VOL, but ${FILE_KIND}"
+            err=1
+         fi
+         FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k ${outfile2}`
+         if test "x${FILE_KIND}" != xHDF5-LogVOL ; then
+            echo "Error: Output file $outfile2 is not Log VOL, but ${FILE_KIND}"
+            err=1
+         fi
+      done
    fi
 done
 exit $err

@@ -49,7 +49,6 @@ for vol_type in "terminal" "passthru"; do
           err=1
        fi
     fi
-
 done
 exit $err
 

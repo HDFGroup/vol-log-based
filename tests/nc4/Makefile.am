@@ -80,11 +80,11 @@ hdf5internal.h:
 
 .SECONDEXPANSION:
 
-$(SEQ_SRCS): %.c : $$(wildcard %.patch.$(NETCDF_VERSION))
+$(SEQ_SRCS): %.c : $$(wildcard %.patch.$(NETCDF_VERSION)) err_macros.h
 	@DOWNLOAD_CMD@ $(NETCDF4_URL)/nc_test4/$@
 	if [ -f $(srcdir)/$(basename $@).patch.$(NETCDF_VERSION) ]; then patch -st $@ < $(srcdir)/$(basename $@).patch.$(NETCDF_VERSION); fi
 
-err_macros.h:
+err_macros.h: Makefile
 	@DOWNLOAD_CMD@ $(NETCDF4_URL)/include/$@
 
 ref_tst_dims.nc:
@@ -114,6 +114,7 @@ EXTRA_DIST = wrap_runs.sh parallel_run.sh nc_tests.h \
 # AM_TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";
 # AM_TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
 TESTS_ENVIRONMENT  = export SED="$(SED)";
+TESTS_ENVIRONMENT += export EGREP="$(EGREP)";
 TESTS_ENVIRONMENT += export top_builddir="$(top_builddir)";
 TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
 TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";

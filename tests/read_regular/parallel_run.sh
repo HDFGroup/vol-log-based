@@ -13,15 +13,19 @@ MPIRUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/1/g"`
 unset HDF5_VOL_CONNECTOR
 unset HDF5_PLUGIN_PATH
 
+err=0
 for p in ${check_PROGRAMS} ; do
     for vol_type in "terminal" "passthru"; do
         outfile_regular="${TESTOUTDIR}/${p}-${vol_type}-native.h5"
         outfile_log="${TESTOUTDIR}/${p}-${vol_type}-logvol.h5"
 
         if test "x${vol_type}" = xterminal ; then
-            unset H5VL_LOG_PASSTHRU_READ_WRITE
+	   if test "x${cache_vol}" = xyes || test "x${async_vol}" = xyes ; then
+              continue
+           fi
+           unset H5VL_LOG_PASSTHRU_READ_WRITE
         else
-            export H5VL_LOG_PASSTHRU_READ_WRITE=1
+           export H5VL_LOG_PASSTHRU_READ_WRITE=1
         fi
 
         ${MPIRUN} ./${p} ${outfile_regular} ${outfile_log} > ${p}-${vol_type}.stdout.log
@@ -51,5 +55,5 @@ for p in ${check_PROGRAMS} ; do
         fi
     done
 done
-exit 0
+exit $err
 

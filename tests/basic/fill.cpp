@@ -100,9 +100,12 @@ int main (int argc, char **argv) {
     count[1] = np;
     err      = H5Sselect_hyperslab (sid, H5S_SELECT_SET, start, NULL, count, NULL);
     CHECK_ERR (err)
+    dims[1] = np;
     msid = H5Screate_simple (1, dims + 1, dims + 1);
     CHECK_ERR (msid);
     err = H5Dwrite (did, H5T_NATIVE_INT, msid, sid, H5P_DEFAULT, buf);
+    CHECK_ERR (err)
+    err = H5Sclose (msid);
     CHECK_ERR (err)
 
     // Flush
@@ -116,6 +119,9 @@ int main (int argc, char **argv) {
     count[1] = np * 2;
     err      = H5Sselect_hyperslab (sid, H5S_SELECT_SET, start, NULL, count, NULL);
     CHECK_ERR (err)
+    dims[1] = np * 2;
+    msid = H5Screate_simple (1, dims + 1, dims + 1);
+    CHECK_ERR (msid);
     err = H5Dread (did, H5T_NATIVE_INT, msid, sid, H5P_DEFAULT, buf);
     CHECK_ERR (err)
     for (i = 0; i < np; i++) { EXP_VAL_EX (buf[i], (rank + i + 1), "buf[" << i << "]") }

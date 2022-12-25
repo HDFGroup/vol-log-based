@@ -60,7 +60,13 @@ int main (int argc, char **argv) {
     char name1[64];
     char name2[64];
 
+#ifndef LOG_VOL_TEST_THREADING
     MPI_Init (&argc, &argv);
+#else
+    int mpi_required;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
+#endif
+
     MPI_Comm_size (MPI_COMM_WORLD, &np);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
