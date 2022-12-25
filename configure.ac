@@ -760,6 +760,7 @@ AC_CONFIG_FILES(Makefile \
                 src/Makefile \
                 src/H5VL_log.h \
                 tests/Makefile \
+                tests/common/Makefile \
                 tests/basic/Makefile \
                 tests/dynamic/Makefile \
                 tests/external/Makefile \
