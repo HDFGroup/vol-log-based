@@ -57,15 +57,11 @@ int main (int argc, char **argv) {
     hid_t fid       = -1;  // File ID
     hid_t faplid   = -1;
     hid_t log_vlid = -1;  // Logvol ID
-    char name1[64];
-    char name2[64];
+    char name1[512];
+    char name2[512];
 
-#ifndef LOG_VOL_TEST_THREADING
-    MPI_Init (&argc, &argv);
-#else
     int mpi_required;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
-#endif
 
     MPI_Comm_size (MPI_COMM_WORLD, &np);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
@@ -83,7 +79,7 @@ int main (int argc, char **argv) {
 
     if (rank == 0) {
         if (verbose)
-            std::cout << "Envinroment variables for file create:" << std::endl;
+            std::cout << "\nEnvinroment variables for file create:" << std::endl;
 
         env = getenv ("HDF5_VOL_CONNECTOR");
         if (!env) env = const_cast<char *> ("");
@@ -105,10 +101,12 @@ int main (int argc, char **argv) {
     fid = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);
     assert (fid >= 0);
 
-    err = H5VLget_connector_name (fid, name1, 64);
+    err = H5VLget_connector_name (fid, name1, 512);
     assert (err >= 0);
-    if (rank == 0 && verbose)
-        std::cout << "VOL used is " << name1 << std::endl;
+    if (rank == 0 && verbose) {
+        std::cout << "Create file: " << file_name << std::endl;
+        std::cout << "H5VLget_connector_name is " << name1 << std::endl;
+    }
 
     err = H5Fclose (fid);
     assert (err >= 0);
@@ -157,10 +155,12 @@ int main (int argc, char **argv) {
     fid = H5Fopen (file_name, H5F_ACC_RDONLY, faplid);
     assert (fid >= 0);
 
-    err = H5VLget_connector_name (fid, name2, 64);
+    err = H5VLget_connector_name (fid, name2, 512);
     assert (err >= 0);
-    if (rank == 0 && verbose)
-        std::cout << "VOL used is " << name2 << std::endl;
+    if (rank == 0 && verbose) {
+        std::cout << "Open file: " << file_name << std::endl;
+        std::cout << "H5VLget_connector_name is " << name2 << std::endl;
+    }
 
     err = H5Fclose (fid);
     assert (err >= 0);
