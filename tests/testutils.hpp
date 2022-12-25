@@ -66,7 +66,7 @@
 
 #define SHOW_TEST_INFO(A) { \
     if (rank == 0) { \
-        char *env = getenv("H5VL_LOG_PASSTHRU_READ_WRITE"); \
+        char *env = getenv("H5VL_LOG_PASSTHRU"); \
         std::string vol; \
         if (env != NULL && *env == '1') \
             vol = std::string("passthru"); \

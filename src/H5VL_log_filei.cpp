@@ -422,7 +422,7 @@ void H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
     err = H5Pget_passthru_read_write (faplid, &ret);
     CHECK_ERR
     if (ret) { fp->config |= H5VL_FILEI_CONFIG_PASSTHRU_READ_WRITE; }
-    env = getenv ("H5VL_LOG_PASSTHRU_READ_WRITE");
+    env = getenv ("H5VL_LOG_PASSTHRU");
     if (env) {
         if (strcmp (env, "1") == 0) {
             fp->config |= H5VL_FILEI_CONFIG_PASSTHRU_READ_WRITE;

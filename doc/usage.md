@@ -117,9 +117,9 @@ performs all writes using MPI-IO. As a passthrough VOL connector, the Log VOL co
 The Log VOL connector performs as a terminal VOL by default.
 
 + Enable the Log VOL connector as a passthrough VOL connector through an environment variable
-  + Set the environment variable `H5VL_LOG_PASSTHRU_READ_WRITE` to `1`
+  + Set the environment variable `H5VL_LOG_PASSTHRU` to `1`
     ```shell
-    % export H5VL_LOG_PASSTHRU_READ_WRITE=1
+    % export H5VL_LOG_PASSTHRU=1
     ```
 + Enable the Log VOL connector as a passthrough VOL connector programmatically
   + Use the function `H5Pset_passthru_read_write`
