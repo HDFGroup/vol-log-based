@@ -141,6 +141,7 @@ jobs:
             export LD_LIBRARY_PATH="$ABT_DIR/lib:$LD_LIBRARY_PATH"
             CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc \
               CXX=${GITHUB_WORKSPACE}/MPICH/bin/mpicxx \
+              CFLAGS=-DNDEBUG \
               HDF5_VOL_DIR=${ASYNC_DIR} \
               cmake .. -DCMAKE_INSTALL_PREFIX=${CAHCE_DIR}
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
