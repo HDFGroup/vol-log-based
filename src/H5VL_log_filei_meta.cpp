@@ -63,6 +63,7 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
     hid_t mdsid  = -1;                        // metadata dataset data space ID
     hid_t dcplid = -1;                        // metadata dataset creation property ID
     hid_t dxplid = -1;                        // metadata dataset transfer property ID
+    hid_t fdid = -1;                          // file driver ID; used to perform passthru write
     hsize_t dsize;                            // Size of the metadata dataset = mdsize_all
     haddr_t mdoff;                            // File offset of the metadata dataset
     MPI_Datatype mmtype = MPI_DATATYPE_NULL;  // Memory datatype for writing the metadata
@@ -181,7 +182,6 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
         // set up transfer property list; using collective MPI IO
         dxplid = H5Pcreate(H5P_DATASET_XFER);
         CHECK_ID(dxplid);
-        H5Pset_dxpl_mpio(dxplid, H5FD_MPIO_COLLECTIVE);
 
         // Create dataset with under VOL
         sprintf (mdname, "%s_%d", H5VL_LOG_FILEI_DSET_META, fp->nmdset);
@@ -244,6 +244,13 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
             H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_METAFLUSH_WRITE);
         } else {
+            // set collective MPI IO only if H5FD_MPIO driver is used.
+            fdid = H5Pget_driver (fp->ufaplid);
+            CHECK_ID (fdid)
+            if (fdid == H5FD_MPIO) {
+                err = H5Pset_dxpl_mpio(dxplid, H5FD_MPIO_COLLECTIVE);
+                CHECK_ERR;
+            }
             hsize_t mstart = (hsize_t)rbuf[0], mbsize = (hsize_t)mdsize, one = 1;
 
             // file space:
