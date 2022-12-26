@@ -156,8 +156,12 @@ void *H5VL_log_unwrap_object (void *obj) {
         if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_unwrap_object(%p)\n", obj); }
 #endif
         if (!op->fp->is_log_based_file) {
-            uo = H5VLunwrap_object (op->uo, op->uvlid);
-            if (op->fp != op) delete op;
+            if (op->fp != op) {
+                uo = H5VLunwrap_object (op->uo, op->uvlid);
+                delete op;
+            } else {
+                uo = op->fp->wrapped_obj;
+            }
         } else if (op->fp != op) {
             uo = H5VLunwrap_object (op->uo, op->uvlid);
             delete op;
