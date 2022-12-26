@@ -4,17 +4,25 @@ on:
   push:
     branches: [ master, dev ]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - 'docs/**'
-      - 'case_studies/**'
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.jpg'
+      - '**/*.png'
+      - 'docs/*'
+      - 'case_studies/*'
   pull_request:
     branches: [ master, dev ]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - 'docs/**'
-      - 'case_studies/**'
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.jpg'
+      - '**/*.png'
+      - 'docs/*'
+      - 'case_studies/*'
+
+env:
+   HDF5_VERSION: 1.13.3
+   NETCDF_VERSION: 4.9.0
 
 jobs:
     build:
@@ -35,13 +43,10 @@ jobs:
           run: |
             cd ${GITHUB_WORKSPACE}
             echo "Install HDF5 on ${GITHUB_WORKSPACE}/HDF5"
-            rm -rf HDF5
-            mkdir HDF5
-            cd HDF5
-            VERSION=1.13.3
-            wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-${VERSION}/src/hdf5-${VERSION}.tar.gz
-            tar -zxf hdf5-${VERSION}.tar.gz
-            cd hdf5-${VERSION}
+            rm -rf HDF5 ; mkdir HDF5 ; cd HDF5
+            wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-${HDF5_VERSION}/src/hdf5-${HDF5_VERSION}.tar.gz
+            tar -zxf hdf5-${HDF5_VERSION}.tar.gz
+            cd hdf5-${HDF5_VERSION}
             ./configure --prefix=${GITHUB_WORKSPACE}/HDF5 \
                         --silent \
                         --enable-hl \
@@ -58,19 +63,15 @@ jobs:
         - name: Dump config.log if HDF5 fails to build
           if: ${{ failure() }}
           run: |
-            VERSION=1.13.2
-            cat ${GITHUB_WORKSPACE}/HDF5/hdf5-${VERSION}/config.log
+            cat ${GITHUB_WORKSPACE}/HDF5/hdf5-${HDF5_VERSION}/config.log
         - name: Install NetCDF
           run: |
             cd ${GITHUB_WORKSPACE}
             echo "Install NetCDF-C on ${GITHUB_WORKSPACE}/NetCDF"
-            rm -rf NetCDF
-            mkdir NetCDF
-            cd NetCDF
-            VERSION=4.9.0
-            wget -cq https://github.com/Unidata/netcdf-c/archive/refs/tags/v${VERSION}.tar.gz
-            tar -zxf v${VERSION}.tar.gz
-            cd netcdf-c-${VERSION}
+            rm -rf NetCDF ; mkdir NetCDF ; cd NetCDF
+            wget -cq https://github.com/Unidata/netcdf-c/archive/refs/tags/v${NETCDF_VERSION}.tar.gz
+            tar -zxf v${NETCDF_VERSION}.tar.gz
+            cd netcdf-c-${NETCDF_VERSION}
             ./configure --prefix=${GITHUB_WORKSPACE}/NetCDF \
                         --silent \
                         --disable-dap \
@@ -87,46 +88,50 @@ jobs:
         - name: Dump config.log if NetCDF4 fails to build
           if: ${{ failure() }}
           run: |
-            VERSION=4.9.0
-            cat ${GITHUB_WORKSPACE}/NetCDF/netcdf-c-${VERSION}/config.log            
-        - name: Test log VOL
+            cat ${GITHUB_WORKSPACE}/NetCDF/netcdf-c-${NETCDF_VERSION}/config.log            
+        - name: Configure Log VOL connector
           run: |
             cd ${GITHUB_WORKSPACE}
-            echo ">>>>>>>> autoreconf -i"
             autoreconf -i
-            echo ">>>>>>>> ./configure --with-hdf5=${GITHUB_WORKSPACE}/HDF5 \
-                        --enable-test-netcdf4=${GITHUB_WORKSPACE}/NetCDF \
-                        --enable-test-hdf5-iotest \
-                        TESTMPIRUN="mpiexec --oversubscribe -n NP""
             ./configure --with-hdf5=${GITHUB_WORKSPACE}/HDF5 \
                         --enable-test-netcdf4=${GITHUB_WORKSPACE}/NetCDF \
                         --enable-test-hdf5-iotest \
                         TESTMPIRUN="mpiexec --oversubscribe -n NP"
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
-            echo ">>>>>>>> make -j 4"
+        - name: Print config.log if error
+          if: ${{ failure() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            cat config.log
+        - name: Build Log VOL connector
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
             make -j 4
             # Do NOT parallel build, cmake for external tests can fail
-            echo ">>>>>>>> make tests"
             make tests
-            echo ">>>>>>>> make check"
-            make check
-            echo ">>>>>>>> make ptest"
-            make ptest
-            echo ">>>>>>>> make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${GITHUB_WORKSPACE}/HDF5""
-            make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${GITHUB_WORKSPACE}/HDF5"
-        - name: Print log
-          if: ${{ always() }}
+        - name: Serial-run test - make check
+          if: ${{ success() }}
           run: |
-            cat ${GITHUB_WORKSPACE}/config.log
-            ls -laht ${GITHUB_WORKSPACE}
-            [ -f ${GITHUB_WORKSPACE}/H5VL_log-1.4.0/_build/sub/config.log ] && cat ${GITHUB_WORKSPACE}/H5VL_log-1.4.0/_build/sub/config.log
-            cat ${GITHUB_WORKSPACE}/tests/basic/*.log
-            cat ${GITHUB_WORKSPACE}/tests/dynamic/*.log
-            cat ${GITHUB_WORKSPACE}/tests/testcases/*.log
-            cat ${GITHUB_WORKSPACE}/tests/nc4/*.log
-            cat ${GITHUB_WORKSPACE}/tests/external/hdf5_iotest/*.log
-            # cat ${GITHUB_WORKSPACE}/tests/external/openpmd/*.log
-            cat ${GITHUB_WORKSPACE}/examples/*.log
-            cat ${GITHUB_WORKSPACE}/examples/hdf5_examples/*.log
-            cat ${GITHUB_WORKSPACE}/utils/*/*.log
+            cd ${GITHUB_WORKSPACE}
+            make check
+        - name: Print test log files if error in make check
+          if: ${{ failure() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            cat tests/*/*.log
+            cat tests/*/*/*.log
+            cat examples/*.log
+            cat examples/*/*.log
+            cat utils/*/*.log
+        - name: Parallel-run test - make ptest
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            make ptest
+        - name: Test distribution - make distcheck
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${GITHUB_WORKSPACE}/HDF5"
 
