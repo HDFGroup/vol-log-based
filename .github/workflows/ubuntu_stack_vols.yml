@@ -74,7 +74,6 @@ jobs:
                         --disable-fortran \
                         --disable-tests \
                         --enable-parallel \
-                        --enable-threadsafe \
                         --enable-unsupported \
                         --enable-build-mode=production \
                         CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc
@@ -149,9 +148,7 @@ jobs:
             autoreconf -i
             ./configure --with-hdf5=${GITHUB_WORKSPACE}/HDF5 \
                         --prefix=${LOGVOL_DIR} \
-                        --with-mpi=${GITHUB_WORKSPACE}/MPICH \
-                        --enable-test-threading \
-                        --enable-test-env-vars
+                        --with-mpi=${GITHUB_WORKSPACE}/MPICH
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
             make -j 8 install
             source ${LOGVOL_DIR}/bin/h5lenv.bash

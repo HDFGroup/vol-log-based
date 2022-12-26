@@ -21,10 +21,6 @@ LDADD = $(top_builddir)/src/libH5VL_log.la ../common/libtestutils.la
 ../common/libtestutils.la:
 	set -e; cd ../common && $(MAKE) $(MFLAGS) tests
 
-if LOG_VOL_TEST_THREADING
-AM_CPPFLAGS += -DLOG_VOL_TEST_THREADING
-endif
-
 check_PROGRAMS = 
 
 if ENABLE_SHARED
