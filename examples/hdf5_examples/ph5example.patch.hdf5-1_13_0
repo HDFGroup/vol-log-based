@@ -8,6 +8,15 @@
      {                                                                                                        \
          printf("--------------------------------\n");                                                        \
          printf("Proc %d: ", mpi_rank);                                                                       \
+@@ -96,7 +97,7 @@
+ int verbose   = 0; /* verbose, default as no. */
+ int doread    = 1; /* read test */
+ int dowrite   = 1; /* write test */
+-int docleanup = 1; /* cleanup */
++int docleanup = 0; /* cleanup */
+ 
+ /* Prototypes */
+ void slab_set(hsize_t start[], hsize_t count[], hsize_t stride[], int mode);
 @@ -888,6 +889,9 @@
          mrc = MPI_File_delete(filenames[color], info);
          assert(mrc == MPI_SUCCESS);
@@ -18,3 +27,12 @@
  }
  
  /*
+@@ -972,7 +976,7 @@
+                     }
+                     break;
+                 case 'c':
+-                    docleanup = 0; /* no cleanup */
++                    docleanup = 1; /* do cleanup */
+                     break;
+                 case 'r':
+                     doread = 0;
