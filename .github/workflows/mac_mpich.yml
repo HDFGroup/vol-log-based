@@ -4,17 +4,21 @@ on:
   push:
     branches: [ master, dev ]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - 'docs/**'
-      - 'case_studies/**'
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.jpg'
+      - '**/*.png'
+      - 'docs/*'
+      - 'case_studies/*'
   pull_request:
     branches: [ master, dev ]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - 'docs/**'
-      - 'case_studies/**'
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.jpg'
+      - '**/*.png'
+      - 'docs/*'
+      - 'case_studies/*'
 
 env:
    MPICH_VERSION: 4.0.2

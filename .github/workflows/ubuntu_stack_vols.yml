@@ -195,13 +195,9 @@ jobs:
           if: ${{ always() }}
           run: |
             cd ${GITHUB_WORKSPACE}
-            cat ${GITHUB_WORKSPACE}/config.log
-            cat ${GITHUB_WORKSPACE}/tests/basic/*.log
-            cat ${GITHUB_WORKSPACE}/tests/dynamic/*.log
-            cat ${GITHUB_WORKSPACE}/tests/read_regular/*.log
-            cat ${GITHUB_WORKSPACE}/tests/passthru/*.log
-            cat ${GITHUB_WORKSPACE}/tests/testcases/*.log
-            cat ${GITHUB_WORKSPACE}/examples/*.log
-            cat ${GITHUB_WORKSPACE}/examples/hdf5_examples/*.log
-            cat ${GITHUB_WORKSPACE}/utils/*/*.log
-
+            cd ${GITHUB_WORKSPACE}
+            cat tests/*/*.log
+            cat tests/*/*/*.log
+            cat examples/*.log
+            cat examples/*/*.log
+            cat utils/*/*.log

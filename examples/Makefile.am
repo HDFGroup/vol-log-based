@@ -64,7 +64,7 @@ DIST_SUBDIRS = $(C_SUBDIRS)
 
 SUBDIRS = . $(C_SUBDIRS)
 
-PTEST_SUBDIRS = $(SUBDIRS)
+PTEST_SUBDIRS = $(C_SUBDIRS)
 
 ptest: $(check_PROGRAMS)
 	@echo "==========================================================="
