@@ -565,23 +565,6 @@ AM_CONDITIONAL(ENABLE_SHARED, [test x$enable_shared = xyes])
 
 AC_LANG_POP(C++)
 
-AC_ARG_ENABLE([test-threading],
-   [AS_HELP_STRING([--enable-test-threading],
-                  [If enabled, initialize MPI with multi-thread support in tset cases.
-                  @<:@default: disabled@:>@])],
-   [enable_test_threading=${enableval}], [enable_test_threading=no]
-)
-AM_CONDITIONAL(LOG_VOL_TEST_THREADING, [test "x$enable_test_threading" = xyes])
-
-AC_ARG_ENABLE([test-env-vars],
-   [AS_HELP_STRING([--enable-test-env-vars],
-                  [If enabled, test cases will use the HDF5_VOL_CONNECTOR and HDF5_PLUGIN_PATH provided by the user.
-                  If disabled, test cases will ignore the above two env variables and use the Log VOL connector only.
-                  @<:@default: disabled@:>@])],
-   [enable_test_env_vars=${enableval}], [enable_test_env_vars=no]
-)
-AM_CONDITIONAL(LOG_VOL_TEST_USE_ENV_VARS, [test "x$enable_test_env_vars" = xyes])
-
 if test "x$LIBS" = x ; then
    LIBS="-lhdf5"
 else
