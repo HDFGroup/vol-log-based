@@ -635,7 +635,7 @@ void H5VL_log_nb_flush_write_reqs (void *file) {
         H5VL_log_free (moffs);
     });
 
-    if (fp->config & H5VL_FILEI_CONFIG_PASSTHRU_READ_WRITE) {
+    if (fp->config & H5VL_FILEI_CONFIG_PASSTHRU) {
         perform_write_in_mpi = false;
     } else {
         perform_write_in_mpi = true;

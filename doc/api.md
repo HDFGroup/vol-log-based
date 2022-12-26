@@ -257,14 +257,17 @@ The function `H5Pget_subfiling` gets the subfiling setting in a file create prop
   + Returns:
     + This function returns `0` on success. Fail otherwise.
 
-### H5Pset_passthru_read_write
-The function `H5Pset_passthru_read_write` makes the Log VOL connector perform as a terminal VOL connector if `enable` is set to `false` and perform as a passthrough VOL connector otherwise. As a terminal VOL connector, the Log VOL connector
-performs all writes using MPI-IO. As a passthrough VOL connector, the Log VOL connector uses the underlying VOL to perform all writes.
-If users do not specify the underlying VOL, then the native VOL is used by default.
+### H5Pset_passthru
+The function `H5Pset_passthru` makes the Log VOL connector perform as a
+terminal VOL connector if `enable` is set to `false` and perform as a
+passthrough VOL connector otherwise. As a terminal VOL connector, the Log VOL
+connector performs all writes using MPI-IO. As a passthrough VOL connector, the
+Log VOL connector uses the underlying VOL to perform all writes.  If users do
+not specify the underlying VOL, then the native VOL is used by default.
 
 #### Usage:
 ```c
-herr_t H5Pset_passthru_read_write (hid_t faplid, hbool_t enable)
+herr_t H5Pset_passthru (hid_t faplid, hbool_t enable)
 ```
   + Inputs:
     + `faplid`: the id of the file access property list to set the setting.
@@ -274,14 +277,16 @@ herr_t H5Pset_passthru_read_write (hid_t faplid, hbool_t enable)
   + Returns:
     + This function returns `0` on success. Fail otherwise.
   
-### H5Pget_passthru_read_write
-The function `H5Pget_passthru_read_write` gets the setting of the Log VOL connector on
-whether it perform as a terminal VOL connector or a passthrough VOL connector. As a terminal VOL connector, the Log VOL connector
-performs all writes using MPI-IO. As a passthrough VOL connector, the Log VOL connector uses the underlying VOL to perform all writes.
+### H5Pget_passthru
+The function `H5Pget_passthru` gets the setting of the Log VOL connector on
+whether it perform as a terminal VOL connector or a passthrough VOL connector.
+As a terminal VOL connector, the Log VOL connector performs all writes using
+MPI-IO. As a passthrough VOL connector, the Log VOL connector uses the
+underlying VOL to perform all writes.
 
 #### Usage:
 ```c
-herr_t H5Pget_passthru_read_write (hid_t faplid, hbool_t *enable);
+herr_t H5Pget_passthru (hid_t faplid, hbool_t *enable);
 ```
   + Inputs:
     + `faplid`: the id of the file access property list to retrieve the setting.

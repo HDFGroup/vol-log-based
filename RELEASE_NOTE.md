@@ -30,15 +30,15 @@
   + `--enable-test-env-vars` will enable test cases under `tests/basic` folder to use the user-provided environment variables `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH` to decide the underlying VOL connectors. If disabled, these test cases will ignore the above two environment variables and use the Log VOL connector only.
 
 * New APIs
-  + H5Pget_passthru_read_write. See PR #33.
+  + H5Pget_passthru. See PR #33.
     + Signature
       ```c
-      herr_t H5Pget_passthru_read_write (hid_t faplid, hbool_t *enable);
+      herr_t H5Pget_passthru(hid_t faplid, hbool_t *enable);
       ```
-  + H5Pset_passthru_read_write. See PR #33.
+  + H5Pset_passthru. See PR #33.
     + Signature
       ```c
-      herr_t H5Pget_passthru_read_write (hid_t faplid, hbool_t *enable);
+      herr_t H5Pget_passthru(hid_t faplid, hbool_t *enable);
       ```
 
 * API syntax changes
