@@ -1,12 +1,12 @@
-### Log-based VOL utilities
+### the Log VOL connector utilities
 
 * h5lconfig
-  + Script for querying configuration and installation options used to build the log-based VOL
+  + Script for querying configuration and installation options used to build the Log VOL connector
   + Usage
     ```
       % ${logvol_install_path}/bin/h5lconfig --help
       h5lconfig is a utility program to display the build and installation
-      information of the log-based VOL library.
+      information of the Log VOL connector library.
 
       Usage: h5lconfig [OPTION]
 
@@ -14,24 +14,24 @@
 
         --help                      display this help message and exit
         --all                       display all options
-        --cc                        C compiler used to build log-based VOL
-        --cflags                    C compiler flags used to build log-based VOL
-        --cppflags                  C pre-processor flags used to build log-based VOL
-        --c++                       C++ compiler used to build log-based VOL
-        --cxxflags                  C++ compiler flags used to build log-based VOL
-        --ldflags                   Linker flags used to build log-based VOL
-        --libs                      Extra libraries used to build log-based VOL
+        --cc                        C compiler used to build the Log VOL connector
+        --cflags                    C compiler flags used to build the Log VOL connector
+        --cppflags                  C pre-processor flags used to build the Log VOL connector
+        --c++                       C++ compiler used to build the Log VOL connector
+        --cxxflags                  C++ compiler flags used to build the Log VOL connector
+        --ldflags                   Linker flags used to build the Log VOL connector
+        --libs                      Extra libraries used to build the Log VOL connector
         --profiling                 Whether internal profiling is enabled or not
-        --debug                     Whether log-based VOL is built with debug mode
+        --debug                     Whether the Log VOL connector is built with debug mode
         --prefix                    Installation directory
         --includedir                Installation directory containing header files
         --libdir                    Installation directory containing library files
         --version                   Library version
-        --release-date              Date of log-based VOL source was released
-        --config-date               Date of log-based VOL library was configured
+        --release-date              Date of the Log VOL connector source was released
+        --config-date               Date of the Log VOL connector library was configured
     ```
 * h5ldump
-  + Print the content of a log-based VOL output file
+  + Print the content of the Log VOL connector output file
   + This utility is sequential
   + Examples
     ```
@@ -75,7 +75,7 @@
               Number of metadata sections: 0
     ```
 * h5lreplay
-  + Convert log-based VOL output file into traditional HDF5 files
+  + Convert the Log VOL connector output file into a traditional HDF5 file
   + This utility support parallel run
   + Usage
     ```
@@ -100,7 +100,7 @@
       }
     ```
 * h5lenv
-  + Set up environment variables to use log-based VOL as the default VOL
+  + Set up environment variables to use the Log VOL connector as the default VOL
   + Applications that do not specify a VOL will use the VOL specified in the environment variables
   + Usage
     ```

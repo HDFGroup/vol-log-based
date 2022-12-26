@@ -74,7 +74,7 @@ void *H5VL_log_file_create (
         if (fp) {
             fp = NULL;
             RET_ERR (
-                "The same file has been opened. Log VOL currently does not support multiple opens.")
+                "The same file has been opened. The Log VOL connector currently does not support multiple opens.")
         }
 
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -223,7 +223,7 @@ void *H5VL_log_file_open (
         if (fp) {
             fp = NULL;
             RET_ERR (
-                "The same file has been opened. Log VOL currently does not support multiple opens.")
+                "The same file has been opened. The Log VOL connector currently does not support multiple opens.")
         }
 
         // Try get info about under VOL

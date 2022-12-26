@@ -1,6 +1,6 @@
-## Log-based VOL API compatibility
+## The Log VOL connector API compatibility
 
-This file contains the current status of log-based VOL on the official hdf5 vol test suit.
+This file contains the current status of the Log VOL connector on the official hdf5 vol test suit.
 
 The test ran on Ubuntu 20.04.1 LTS with MPICH 3.3.2 and HDF5 1.13.0.
 gcc 9.3.0 was used to compile HDF5, log-layout based VOL, and the vol-tests suit.
@@ -11,7 +11,7 @@ gcc 9.3.0 was used to compile HDF5, log-layout based VOL, and the vol-tests suit
 * Fail
   + vol-test suit reports at least one error in the section
 * Skip
-  + Test section being skipped manually due to features not supported by log-based VOL
+  + Test section being skipped manually due to features not supported by the Log VOL connector
 * Not tested
   + Sections not yet tested
 
@@ -26,17 +26,17 @@ gcc 9.3.0 was used to compile HDF5, log-layout based VOL, and the vol-tests suit
 | Test file close behavior                                          | Pass   |                                                             |
 | Test H5Iget_file_id                                               | Pass   |                                                             |
 | Test H5Fget_obj_ids for Jira Issue 8528                           | Pass   |                                                             |
-| Test file access permissions                                      | Fail   | Log-based VOL allows only one opened file handle at a time. |
+| Test file access permissions                                      | Fail   | the Log VOL connector allows only one opened file handle at a time. |
 | Test file access permission again                                 | Pass   |                                                             |
 | Test detecting HDF5 files correctly                               | Pass   |                                                             |
 | Test H5Fdelete                                                    | Pass   |                                                             |
 | Test opening objects with "." for a name                          | Pass   |                                                             |
-| Test opening files in an overlapping manner                       | Fail   | Log-based VOL allows only one opened file handle at a time. |
+| Test opening files in an overlapping manner                       | Fail   | the Log VOL connector allows only one opened file handle at a time. |
 | Test basic H5Fget_name() functionality                            | Pass   |                                                             |
-| Test opening root group from two files works properly             | Fail   | Log-based VOL allows only one opened file handle at a time. |
-| Test opening same group from two files works properly             | Fail   | Log-based VOL allows only one opened file handle at a time. |
-| Test opening same dataset from two files works properly           | Fail   | Log-based VOL allows only one opened file handle at a time. |
-| Test opening same named datatype from two files works properly    | Fail   | Log-based VOL allows only one opened file handle at a time. |
+| Test opening root group from two files works properly             | Fail   | the Log VOL connector allows only one opened file handle at a time. |
+| Test opening same group from two files works properly             | Fail   | the Log VOL connector allows only one opened file handle at a time. |
+| Test opening same dataset from two files works properly           | Fail   | the Log VOL connector allows only one opened file handle at a time. |
+| Test opening same named datatype from two files works properly    | Fail   | the Log VOL connector allows only one opened file handle at a time. |
 
 * GENERIC OBJECT FUNCTIONS
 
@@ -48,7 +48,7 @@ gcc 9.3.0 was used to compile HDF5, log-layout based VOL, and the vol-tests suit
 | Test incrementing and decrementing reference count | Pass   |                                                             |
 | Test object creation properties                    | Pass   |                                                             |
 | Test object link routine                           | Pass   |                                                             |
-| Test info for objects in the same file             | Fail   | Log-based VOL allows only one opened file handle at a time. |
+| Test info for objects in the same file             | Fail   | the Log VOL connector allows only one opened file handle at a time. |
 
 * DATASPACES
 
@@ -110,7 +110,7 @@ gcc 9.3.0 was used to compile HDF5, log-layout based VOL, and the vol-tests suit
 | Test many deleted attributes                                                        | Pass   |                                                             |
 | Test "self referential" attributes                                                  | Pass   |                                                             |
 | Test attributes on named datatypes                                                  | Pass   |                                                             |
-| Test opening/closing attributes through different file handles                      | Fail   | Log-based VOL allows only one opened file handle at a time. |
+| Test opening/closing attributes through different file handles                      | Fail   | the Log VOL connector allows only one opened file handle at a time. |
 | Test reading empty attribute                                                        | Pass   |                                                             |
 | Test attribute expanding object header with undecoded messages                      | Pass   |                                                             |
 | Test large attributes converting to dense storage                                   | Pass   |                                                             |

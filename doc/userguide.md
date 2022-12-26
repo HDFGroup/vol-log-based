@@ -1,4 +1,4 @@
-# Log-based VOL User Guide
+# The Log VOL connector User Guide
 
 [HDF5](https://www.hdfgroup.org/solutions/hdf5/) is a file format and an I/O
 library designed to handle large and complex data collections. HDF5 provides a
@@ -22,9 +22,9 @@ supercomputers grows, such communication cost increases as the number of
 compute nodes, and can becomes a performance bottleneck for parallel HDF5
 applications. 
 
-## Design of the log-based VOL
+## Design of the Log VOL connector
 
-The [log-based VOL](https://github.com/DataLib-ECP/vol-log-based) is an HDF5
+The [the Log VOL connector](https://github.com/DataLib-ECP/vol-log-based) is an HDF5
 Virtual Object Layer (VOL) plug-in that stores HDF5 datasets in a log-based
 storage layout, in contrast to the canonical order layout. The
 [Log-based storage layout](https://link.springer.com/chapter/10.1007/978-3-540-75416-9_34)
@@ -37,15 +37,15 @@ deferred to the reading stage. For applications that produce checkpoints for
 restarting purposes, the overhead can be totally avoided unless the program is
 actually interrupted. Log-based storage layout is an effective way for
 applications that care less about reading performance to trade read performance
-for write performance. Our design principle of log-based VOL is described in
+for write performance. Our design principle of the Log VOL connector is described in
 [doc/design.md](design.md).
 
 ## Documents
 * [doc/INSTALL.md](INSTALL.md) contains the compile and run instructions.
 * [doc/api.md](api.md) describes the new APIs introduced in this VOL.
-* [doc/usage.md](usage.md) shows examples of how to enable log-based VOL
+* [doc/usage.md](usage.md) shows examples of how to enable the Log VOL connector
   through the two VOL environment variables without changing the applications.
-  It also describes a way to explicitly use log-based VOL by editing the
+  It also describes a way to explicitly use the Log VOL connector by editing the
   application source codes.
 
 ### Current limitations
@@ -56,16 +56,16 @@ for write performance. Our design principle of log-based VOL is described in
   + Async I/O (a new feature of HDF5 in the future release) is not yet supported.
   + Virtual Datasets (VDS) feature is not supported.
   + Multiple opened instances of the same file is not supported.
-    + The log-based VOL caches some metadata of an opened file.
+    + the Log VOL connector caches some metadata of an opened file.
       The cached metadata is not synced among opened instances.
     + The file can be corrupted if the application open and operate multiple handles to the same file.
   + The names of (links to) objects cannot start with '_' character.
-    + Names starting with '_' are reserved for the log-based VOL for its internal data and metadata.
-  + The log-based VOL does not support all the HDF5 APIs.
+    + Names starting with '_' are reserved for the Log VOL connector for its internal data and metadata.
+  + The Log VOL connector does not support all the HDF5 APIs.
     See [doc/compatibility.md](compatibility.md) for a full list of supported and unsupported APIs.
   + All opened objects of a file must be closed before the file is closed.
-  + Log-based VOL does not recognize files written by the native VOL.
-    + The native VOL can read log-based VOL output files, but not vice-versa.
+  + The Log VOL connector does not recognize files written by the native VOL.
+    + The native VOL connector can read the Log VOL connector output files, but not vice-versa.
   + In H5Dwrite, the dataspace indicated by file_space_id must have the same dimensions as the dataset's dataspace.
     + file_space_id can be a selection, e.g., a subarray of the dataset's dataspace.
     + If a zero-sized request is indicated by a null dataspace, users must call H5Sselect_none to set a zero-sized selection of the dataspace.
@@ -76,7 +76,7 @@ for write performance. Our design principle of log-based VOL is described in
     + Logvol will return an error if users create a dataset using variable-length datatype.
   
 ### HDF5 VOL Connector ID
-* This log-based VOL has been registered with the HDF group with
+* This the Log VOL connector has been registered with the HDF group with
   [Connector Identifier 514](https://portal.hdfgroup.org/display/support/Registered+VOL+Connectors).
 
 ## References
@@ -85,7 +85,7 @@ for write performance. Our design principle of log-based VOL is described in
 * [HDF5 VOL RFC (PDF)](https://github.com/HDFGroup/hdf5doc/raw/vol_docs/RFCs/HDF5/VOL/RFC/RFC_VOL.pdf)
 
 ## Project funding supports:
-Ongoing development and maintenance of Log-based VOL are supported by the
+Ongoing development and maintenance of the Log VOL connector are supported by the
 Exascale Computing Project (17-SC-20-SC), a joint project of the U.S.
 Department of Energy's Office of Science and National Nuclear Security
 Administration, responsible for delivering a capable exascale ecosystem,
