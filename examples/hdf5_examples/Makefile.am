@@ -75,7 +75,8 @@ $(PAR_SRCS): %.c : $$(wildcard %.patch.$(HDF5_VERSION))
 
 check_PROGRAMS = $(TESTPROGRAMS)
 
-EXTRA_DIST = wrap_runs.sh \
+EXTRA_DIST = seq_runs.sh \
+             parallel_run.sh \
              h5_attribute.patch.$(HDF5_VERSION) \
              h5_interm_group.patch.$(HDF5_VERSION)
 
@@ -86,6 +87,8 @@ EXTRA_DIST = wrap_runs.sh \
 # AM_TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
 TESTS_ENVIRONMENT  = export SED="$(SED)";
 TESTS_ENVIRONMENT += export EGREP="$(EGREP)";
+TESTS_ENVIRONMENT += export srcdir="$(srcdir)";
+TESTS_ENVIRONMENT += export top_srcdir="$(top_srcdir)";
 TESTS_ENVIRONMENT += export top_builddir="$(top_builddir)";
 TESTS_ENVIRONMENT += export TESTOUTDIR="$(TESTOUTDIR)";
 TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";
@@ -93,14 +96,26 @@ TESTS_ENVIRONMENT += export TESTMPIRUN="$(TESTMPIRUN)";
 TESTS_ENVIRONMENT += export TESTPROGRAMS="$(TESTPROGRAMS)";
 TESTS_ENVIRONMENT += export PAR_TESTS="$(PAR_TESTS)";
 
-H5_FILES = $(check_PROGRAMS:%=$(TESTOUTDIR)/%.h5)
+H5_OUTPUT_FILES = Attributes.h5 \
+                  dset.h5 \
+                  group.h5 \
+                  groups.h5 \
+                  interm_group.h5 \
+                  ParaEg0.h5 \
+                  ParaEg1.h5 \
+                  SDS.h5 \
+                  Select.h5 \
+                  subset.h5
 
-CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.log
+H5_FILES = $(check_PROGRAMS:%=$(TESTOUTDIR)/%.h5) \
+           $(H5_OUTPUT_FILES:%=$(TESTOUTDIR)/%)
+
+CLEANFILES = $(H5_FILES) core core.*
 
 DISTCLEANFILES = $(SEQ_SRCS) $(PAR_SRCS)
 
 TEST_EXTENSIONS = .sh
-LOG_COMPILER = $(srcdir)/wrap_runs.sh
+LOG_COMPILER = $(srcdir)/seq_runs.sh
 SH_LOG_COMPILER =
 
 TESTS = $(TESTPROGRAMS)
