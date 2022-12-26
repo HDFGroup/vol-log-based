@@ -1,15 +1,15 @@
-# Running Log VOL on top of Cache VOL and Async VOL
+# Running the Log VOL Connector on top of the Cache and Async VOL Connectors
 * [Build Instructions](#build-instructions)
 * [Run Instructions](#run-instructions)
 * [Example Output](#example-output)
 
-This demo shows how to run Log VOL on top of [Cache VOL](https://github.com/hpc-io/vol-cache) and [Async VOL](https://github.com/hpc-io/vol-async). The test program we will use is the [dwrite.cpp](../tests/passthru/dwrite.cpp) under [src/tests/passthru](../tests/passthru) folder.
+This demo shows how to run the Log VOL connector on top of the [Cache VOL connector](https://github.com/hpc-io/vol-cache) and the [Async VOL copnnector](https://github.com/hpc-io/vol-async). The test program we will use is the [dwrite.cpp](../tests/passthru/dwrite.cpp) under [src/tests/passthru](../tests/passthru) folder.
 
-Cache VOL is an HDF5 plugin that incorporates fast storage layers (e.g, burst buffer, node-local storage) into parallel I/O workflow for caching and staging data to improve the I/O efficiency.
+The Cache VOL connector is an HDF5 plugin that incorporates fast storage layers (e.g, burst buffer, node-local storage) into parallel I/O workflow for caching and staging data to improve the I/O efficiency.
 
-Async VOL is another HDF5 plugin that takes advantage of an asynchronous interface by scheduling I/O as early as possible and overlaps computation or communication with I/O operations, which hides the cost associated with I/O and improves the overall performance.
+The Async VOL connector is another HDF5 plugin that takes advantage of an asynchronous interface by scheduling I/O as early as possible and overlaps computation or communication with I/O operations, which hides the cost associated with I/O and improves the overall performance.
 
-Log VOL, Cache VOL and Async VOL can be enabled by directly setting the environment variables without modifying test program's codes. This demo gives an instruction on how to install Cache VOL and Async VOL, and gives an demo of how to run the test program with them.
+The Log, Cache, and Async VOL connectors can be enabled by directly setting the environment variables without modifying test program's codes. This demo gives an instruction on how to install Cache VOL and Async VOL, and gives an demo of how to run the test program with them.
 
 ## Build Instructions
 ### Prerequisite
@@ -56,7 +56,7 @@ Log VOL, Cache VOL and Async VOL can be enabled by directly setting the environm
     % make install
     ```
 
-+ Async VOL
++ Async VOL connector
 
     ```shell
     # the following env variables will be used:
@@ -72,7 +72,7 @@ Log VOL, Cache VOL and Async VOL can be enabled by directly setting the environm
     % make install
     ```
 
-+ Cache VOL
++ Cache VOL connector
 
     ```shell
     # the following env variables will be used:
@@ -90,7 +90,7 @@ Log VOL, Cache VOL and Async VOL can be enabled by directly setting the environm
  
 
 ### Compile the Test Program
-We will use the [dwrite.cpp](../tests/passthru/dwrite.cpp) under [src/tests/passthru](../tests/passthru) folder to demonstrate how to compile a program. To compile the program, only the HDF5 library is necessary. Log VOL, Cache VOL and Async VOL will be used at runtime. 
+We will use the [dwrite.cpp](../tests/passthru/dwrite.cpp) under [src/tests/passthru](../tests/passthru) folder to demonstrate how to compile a program. To compile the program, only the HDF5 library is necessary. The Log, Cache, and Async VOL connectors will only be used at runtime. 
 
 Note that it is [required by Async VOL](https://hdf5-vol-async.readthedocs.io/en/latest/gettingstarted.html#explicit-mode) that a program should use `MPI_Init_thread` instead of `MPI_Init`.
 

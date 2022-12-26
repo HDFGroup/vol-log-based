@@ -1,6 +1,6 @@
-## Log-based VOL API compatibility
+## The Log VOL connector API compatibility
 
-Following tables contains list of log-based VOL's compatibility with HDF5 APIs.
+Following tables contains list of the Log VOL connector's compatibility with HDF5 APIs.
 APIs not listed below is assumed to be unsupported.
 
 See [doc/vol_test_fails.md](./vol_test_fails.md) for a comprehensive test result of log-layout based VOL on all HDF5 features.
@@ -11,7 +11,7 @@ See [doc/vol_test_fails.md](./vol_test_fails.md) for a comprehensive test result
   + Applications can expect exactly the same behavior as using the underlying VOL. 
   + The request is usually passed directly to the underlying VOL. 
 * High
-  + The primary purpose of the API is supported by the log-based VOL.
+  + The primary purpose of the API is supported by the Log VOL connector.
   + There may be some limitations that should not affect most applications.
   + The behavior may differ slightly from the underlying VOL.
 * Partial
@@ -35,8 +35,8 @@ See [doc/vol_test_fails.md](./vol_test_fails.md) for a comprehensive test result
 | H5Dopen              | High             | A dataset can only have one opened instance at a time. Operating multiple   dataset handle to the same dataset will result in undefined behavier.                                                                                                                                                   |
 | H5Dclose             | High             |                                                                                                                                                                                                                                                                                                     |
 | H5Dfill              | None             |                                                                                                                                                                                                                                                                                                     |
-| H5Dread              | Partial          | The API stages read request in the log-based VOL without actualy   performing read.                                                                                                                                                                                                                 |
-| H5Dwrite             | Partial          | The API stages write request in the log-based VOL without actualy writing   to the file. Application must call H5Fflush to ensure the data is written to   the file. The application should not overwrite unflushed write reqeusts   (writing to the same place twice), or the result is undefined. |
+| H5Dread              | Partial          | The API stages read request in the Log VOL connector without actualy   performing read.                                                                                                                                                                                                                 |
+| H5Dwrite             | Partial          | The API stages write request in the Log VOL connector without actualy writing   to the file. Application must call H5Fflush to ensure the data is written to   the file. The application should not overwrite unflushed write reqeusts   (writing to the same place twice), or the result is undefined. |
 | H5Dflush             | Repurposed       | Same as calling H5Fflush on the file containing the dataset                                                                                                                                                                                                                                         |
 | H5Drefresh           | None             |                                                                                                                                                                                                                                                                                                     |
 | H5Dgather            | None             |                                                                                                                                                                                                                                                                                                     |
@@ -71,7 +71,7 @@ See [doc/vol_test_fails.md](./vol_test_fails.md) for a comprehensive test result
 | H5Fget_vfd_handle               | None             |                                                                                                                                          |
 | H5Fget_filesize                 | Full      |                                                                                                                                          |
 | H5Fget_create_plist             | Full      |                                                                                                                                          |
-| H5Fget_access_plist             | High             | Log-based VOL may introduce additional file access property in the file   it creates                                                     |
+| H5Fget_access_plist             | High             | the Log VOL connector may introduce additional file access property in the file   it creates                                                     |
 | H5Fget_info                     | Full      |                                                                                                                                          |
 | H5Fget_info1 *                  | Full      |                                                                                                                                          |
 | H5Fget_info2                    | Full      |                                                                                                                                          |

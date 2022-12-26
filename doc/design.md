@@ -1,4 +1,4 @@
-## Design of log-based VOL
+## Design of the Log VOL connector
 
 Our design principle for the log-based driver is to store I/O requests contiguously in files, like logs appending one after another.
 Such strategy avoids the potentially high costs of inter-process communication required if data is to be stored in a canonical order.
@@ -47,14 +47,14 @@ It represents a single write operation to a dataset.
 
 A metadata log entry includes: (1) the ID of the dataset involved in the operation; (2) the selection in the dataset data space; (3) the offset of the data in the file; (4) the size of the data in the file; (5) the size of the metadata entry; and (6) flags that indicates the endianceness of the entry and other informations for future extension.
 The dataset dataspace selection is stored as a list of hyper-slabs (subarraies).
-If the selection has an iregular shape, the log-based VOL decomposes it into disjoint hyper-slabs.
+If the selection has an iregular shape, the Log VOL connector decomposes it into disjoint hyper-slabs.
 Element selections are treated as hyper-slab selections with unit sized hyper-slabs. 
 
 A data log entry contains the data of the part of the dataset selected in the operation.
 If the dataset space selection contains multiple hyper-slabs, the data is ordered according to the order of the hyper-slabs in the corresponding metadata log entry.
 That is, the data of the first hyper-slab, followed by the data of the second hyper-slab.
 If the memory space selection is not contiguous, the data is packed into a contiguous buffer.
-If the memory data type does not match the dataset data type, the log-based VOL converts the data into to the type of the target dataset.
+If the memory data type does not match the dataset data type, the Log VOL connector converts the data into to the type of the target dataset.
 After type conversion, the data went through the filter pipeline associates to the dataset before being written to the data log.
 
 ### Writing to datasets

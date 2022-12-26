@@ -1,4 +1,4 @@
-## Log-based VOL - Build Instructions
+## The Log VOL connector - Build Instructions
 
 ### Software Requirements
 * [HDF5 1.13.0](https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.2/src/hdf5-1.13.2.tar.gz)
@@ -27,7 +27,7 @@
   + The above example commands will install the HD5 library under the folder
     `${HOME}/HDF5/1.13.0`.
 
-### Building log-based VOL
+### Building the Log VOL connector
 * Obtain the source code package by either downloading the official release or
   cloning the github repository.
   + Download the latest official release version 1.1.0.
@@ -49,7 +49,7 @@
   ```
   + The above commands will install the log-vol library under the folder `${HOME}/Log_IO_VOL`.
 
-* Check log-based VOL build
+* Check the Log VOL connector build
   + Command `make tests` compiles the test programs (build only, no run).
   + Command `make check` runs test programs on a single process.
   + Command `make ptest` runs test programs on 4 MPI processes in parallel.
@@ -62,7 +62,7 @@
     ```
   + Important configure options
     + **--enable-shared** Shared libraries are required if users intent to enable
-      the log-based VOL through setting the two HDF5 VOL environment variables,
+      the Log VOL connector through setting the two HDF5 VOL environment variables,
       `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH`. [default: enabled].
       See [Usage Guide](usage.md) for details.
     + **--enable-zlib**  to enable metadata compression using zlib. [default:
@@ -70,20 +70,20 @@
     + **--enable-test-qmcpack** to enable tests using
       [QMCPACK](https://github.com/QMCPACK/qmcpack.git) [default: disabled].
       This option first downloads and builds QMCPACK. Its test program
-      `restart.c` will be used to test log-based VOL during `make check`.
+      `restart.c` will be used to test the Log VOL connector during `make check`.
     + **--enable-test-hdf5-iotest** to enable tests using
       [hdf5-iotest](https://github.com/HDFGroup/hdf5-iotest) [default:
       disabled]. This option first downloads and builds hdf5-iotest. Its test
-      program `hdf5_iotest.c` will be used to test log-based VOL during
+      program `hdf5_iotest.c` will be used to test the Log VOL connector during
       `make check`.
     + **--enable-test-openpmd** to enable tests using
       [OpenPMD](https://github.com/openPMD/openPMD-api) [default: disabled].
       This option first downloads and builds OpenPMD. Its test program
       `8a_benchmark_write_parallel.c` and `8b_benchmark_read_parallel.c` will
-      be used to test log-based VOL during `make check`.
+      be used to test the Log VOL connector during `make check`.
     + **--enable-test-netcdf4[=INC,LIB | =DIR]** to enable tests using
       [NetCDF-C](https://github.com/Unidata/netcdf-c) [default: disabled]. This
       option can be used to provide the NetCDF installation path(s). It first
       downloads a few test programs from NetCDF-C, which will be to test
-      log-based VOL during `make check`.
+      the Log VOL connector during `make check`.
 

@@ -576,7 +576,7 @@ AM_CONDITIONAL(LOG_VOL_TEST_THREADING, [test "x$enable_test_threading" = xyes])
 AC_ARG_ENABLE([test-env-vars],
    [AS_HELP_STRING([--enable-test-env-vars],
                   [If enabled, test cases will use the HDF5_VOL_CONNECTOR and HDF5_PLUGIN_PATH provided by the user.
-                  If disabled, test cases will ignore the above two env variables and use Log VOL only.
+                  If disabled, test cases will ignore the above two env variables and use the Log VOL connector only.
                   @<:@default: disabled@:>@])],
    [enable_test_env_vars=${enableval}], [enable_test_env_vars=no]
 )

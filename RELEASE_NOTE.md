@@ -5,29 +5,29 @@
   + Support fill mode. See commit 8aee024
   + Support NetCDF4. By setting the two VOL environment variables
     `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH`, NetCDF4 programs now can write
-    data to files in log layout through Log VOL. See PR #15.
+    data to files in log layout through the Log VOL connector. See PR #15.
   + Support opening and operating an existing regular HDF5 file.
-  + Support using Log VOL as a pass-through VOL when performing writes.
-    * Whe performing writes, users can specify and choose other VOL connectors as the underlying VOLs of Log VOL. See PR #33.
+  + Support using the Log VOL connector as a pass-through VOL connector when performing writes.
+    * Whe performing writes, users can specify and choose other VOL connectors as the underlying VOL connectors of the Log VOL connector. See PR #33.
     * When the pass-through feature is enabled, it asks the underlying VOLs to use collective MPI I/O. See PR #42.
     * For its usage, refer to the User Guide in doc/usage.md.
   + Support VOL connector interface version 3.
     * HDF5 1.13.3 requires a version 3 connector.
-    * Log VOL will expose the version 3 interface when the HDF5 version 
+    * The Log VOL connector will expose the version 3 interface when the HDF5 version 
       is 1.13.3 and above.
     * See https://www.hdfgroup.org/2022/10/release-of-hdf5-1-13-3-newsletter-188/
-  + Support of stacking Log VOL on top of Cache and Async VOL connectors.
+  + Support of stacking the Log VOL connector on top of the Cache and Async VOL connectors.
 
 * New optimization
   + Master file opened by rank 0 only when subfiling is enabled. This
     significantly improves the file close time. See commit 99f813a.
 
 * New Limitations
-  + Log VOL currently does not support multiple opens of the same file.
+  + The Log VOL connector currently does not support multiple opens of the same file.
 
 * Update configure options
   + `--enable-test-threading` will enable test cases under `tests/basic` folder to initialize MPI with multi-thread support. i.e. use `MPI_Init_thread` instead of `MPI_Init`.
-  + `--enable-test-env-vars` will enable test cases under `tests/basic` folder to use the user-provided environment variables `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH` to decide the underlying VOL connectors. If disabled, these test cases will ignore the above two environment variables and use Log VOL only.
+  + `--enable-test-env-vars` will enable test cases under `tests/basic` folder to use the user-provided environment variables `HDF5_VOL_CONNECTOR` and `HDF5_PLUGIN_PATH` to decide the underlying VOL connectors. If disabled, these test cases will ignore the above two environment variables and use the Log VOL connector only.
 
 * New APIs
   + H5Pget_passthru_read_write. See PR #33.
@@ -67,7 +67,7 @@
   + When the same file is opened more than once, the following error string
     will be printed. See PR #38.
     ```
-    The same file has been opened. Log VOL currently does not support multiple opens.
+    The same file has been opened. The Log VOL connector currently does not support multiple opens.
     ```
 
 * Updated utility program
@@ -81,7 +81,7 @@
   + Support checking multiple file opens to the same file. An error will return
     instead of corrupting the file. See PR #28.
   + Error messages are printed only in debug mode. See PR #39.
-  + Move Log VOL data object creation to post open stage.
+  + Move the Log VOL connector's data object creation to post open stage.
     + HDF5 1.13.3 and above does not allow creating data objects in the file_create 
       callback.
   + OpenPMD test temporarily disabled in git action script due to a bug in OpenPMD.
@@ -119,13 +119,13 @@
   + tests/read_regular
     + Test opening and operating an existing regular HDF5 file.
   + tests/passthru
-    + Test Log VOL's behavior as a Pass-through VOL. It's expected that users
-      enable other VOLs as the underlying VOLs of Log VOL before running/testing
+    + Test the Log VOL connector's behavior as a Pass-through VOL connector. It's expected that users
+      enable other VOL connectors as the underlying VOL connectors of the Log VOL connector before running/testing
       the programs under this folder.
-    + PR #44 provides an example of running Log VOL on top of Cache VOL and Async VOL.
-  + testing Log VOL as a Pass-through VOL.
+    + PR #44 provides an example of running the Log VOL connector on top of the Cache VOL and Async VOL connector.
+  + testing the Log VOL connector as a Pass-through VOL.
     + tests/testcases, tests/basic, tests/dynamic, and tests/read_regular
-      additionaly tests using Log VOL on top of the native VOL. Test programs
+      additionaly tests using the Log VOL connector on top of the native VOL. Test programs
       are re-used and no addtional test programs are added. Unlike tests/passthru
       where we expect users to specify the underlying VOLs, all necessary
       envrionment varibales are set in the wrap_runs.sh and parallel_run.sh

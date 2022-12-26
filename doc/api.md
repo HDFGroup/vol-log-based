@@ -1,7 +1,7 @@
-# Log-based VOL APIs
+# The Log VOL connector APIs
 
-This file explains new APIs introduced by the log-based VOL.
-While some of these APIs are optional to use, they provide applications the opportunity to fine-tune the log-based VOL for better performance.
+This file explains new APIs introduced by the Log VOL connector.
+While some of these APIs are optional to use, they provide applications the opportunity to fine-tune the Log VOL connector for better performance.
 
 ## Dataset APIs (H5D*)
 ### H5Dread_n
@@ -71,9 +71,9 @@ herr_t H5Dwrite_n ( hid_t     did,
 
 ## Properties APIs (H5P*)
 ### H5PSet_buffered
-The function `H5PSet_buffered` sets a boolean value that indicates whether data should be buffered internally in log-based VOL when an `H5Dwrite` call is made. 
+The function `H5PSet_buffered` sets a boolean value that indicates whether data should be buffered internally in the Log VOL connector when an `H5Dwrite` call is made. 
 
-If it is set to `false`, the log-based VOL does not keep a copy of the input write buffer used by `H5Dwrite`. Since `H5Flush` is when writes actually happen, the input buffer cannot be modified until an `H5Fflush` call is made. If it is set to `true`, a copy of the input buffer is saved internally and the user can modify the input buffer immediately after `H5Dwrite` returns.
+If it is set to `false`, the Log VOL connector does not keep a copy of the input write buffer used by `H5Dwrite`. Since `H5Flush` is when writes actually happen, the input buffer cannot be modified until an `H5Fflush` call is made. If it is set to `true`, a copy of the input buffer is saved internally and the user can modify the input buffer immediately after `H5Dwrite` returns.
 
 If not set, the default property is buffered.
 
@@ -83,7 +83,7 @@ If not set, the default property is buffered.
 ```
   + Inputs:
     + `plist`: the id of the dataset ransfer property list to attach the setting.
-    + `buffered`: a boolean value that indicates whether to keep a copy of the input write buffer of `H5Dwrite` calls in log-based VOL.
+    + `buffered`: a boolean value that indicates whether to keep a copy of the input write buffer of `H5Dwrite` calls in the Log VOL connector.
         + `true`: (default)
           + keep a copy. i.e. needs addtional memory  
           + the input buffer can be modified immediately after H5Dwrite returns
@@ -93,9 +93,9 @@ If not set, the default property is buffered.
   + Returns:
     + This function returns `0` on success. Fail otherwise.
 ### H5Pget_buffered
-The function `H5Pget_buffered` inquries whether data is buffered internally in log-based VOL when an `H5Dwrite` call is made, under the current setting. 
+The function `H5Pget_buffered` inquries whether data is buffered internally in the Log VOL connector when an `H5Dwrite` call is made, under the current setting. 
 
-If it is set to `false`, the log-based VOL does not keep a copy of the input write buffer used by `H5Dwrite`. Since `H5Flush` is when writes actually happen, the input buffer cannot be modified until an `H5Fflush` call is made. If it is set to `true`, a copy of the input buffer is saved internally and the user can modify the input buffer immediately after `H5Dwrite` returns.
+If it is set to `false`, the Log VOL connector does not keep a copy of the input write buffer used by `H5Dwrite`. Since `H5Flush` is when writes actually happen, the input buffer cannot be modified until an `H5Fflush` call is made. If it is set to `true`, a copy of the input buffer is saved internally and the user can modify the input buffer immediately after `H5Dwrite` returns.
 
 #### Usage:
 ```c
@@ -116,7 +116,7 @@ If it is set to `false`, the log-based VOL does not keep a copy of the input wri
 
 
 ### H5Pset_idx_buffer_size
-The function `H5Pset_idx_buffer_size` sets the amount of memory that the log-based VOL can use to index metadata for handling read requests. If the size of the metadata does not fit into the limit, `H5Dread` will be carried out in multiple rounds, and the performance can degrade significantly. The size must be enough to contain the largest metadata section in the file, or `H5Dread` will return an error. (A metadata section is the metadata written by one process in a file (open to close) session.)
+The function `H5Pset_idx_buffer_size` sets the amount of memory that the Log VOL connector can use to index metadata for handling read requests. If the size of the metadata does not fit into the limit, `H5Dread` will be carried out in multiple rounds, and the performance can degrade significantly. The size must be enough to contain the largest metadata section in the file, or `H5Dread` will return an error. (A metadata section is the metadata written by one process in a file (open to close) session.)
 
 #### Usage:
 ```c
@@ -130,7 +130,7 @@ The function `H5Pset_idx_buffer_size` sets the amount of memory that the log-bas
     + This function returns `0` on success. Fail otherwise.
 
 ### H5Pget_idx_buffer_size 
-The function `H5Pget_idx_buffer_size` gets the amount of memory that the log-based VOL can use to cache metadata for handling read requests. If the size of the metadata does not fit into the limit, `H5Dread` will be carried out in multiple rounds, and the performance can degrade significantly. The size must be enough to contain the largest metadata section in the file, or H5Dread will return an error. (A metadata section is the metadata written by one process in a file (open to close) session.)
+The function `H5Pget_idx_buffer_size` gets the amount of memory that the Log VOL connector can use to cache metadata for handling read requests. If the size of the metadata does not fit into the limit, `H5Dread` will be carried out in multiple rounds, and the performance can degrade significantly. The size must be enough to contain the largest metadata section in the file, or H5Dread will return an error. (A metadata section is the metadata written by one process in a file (open to close) session.)
 
 #### Usage:
 ```c
@@ -258,8 +258,8 @@ The function `H5Pget_subfiling` gets the subfiling setting in a file create prop
     + This function returns `0` on success. Fail otherwise.
 
 ### H5Pset_passthru_read_write
-The function `H5Pset_passthru_read_write` makes Log VOL perform as a terminal VOL if `enable` is set to `false` and makes Log VOL perform as a passthrough VOL if `enable` is set to `true`. As a terminal VOL, Log VOL
-performs all writes using MPI-IO. As a passthrough VOL, Log VOL uses the underlying VOL to perform all writes.
+The function `H5Pset_passthru_read_write` makes the Log VOL connector perform as a terminal VOL connector if `enable` is set to `false` and perform as a passthrough VOL connector otherwise. As a terminal VOL connector, the Log VOL connector
+performs all writes using MPI-IO. As a passthrough VOL connector, the Log VOL connector uses the underlying VOL to perform all writes.
 If users do not specify the underlying VOL, then the native VOL is used by default.
 
 #### Usage:
@@ -269,15 +269,15 @@ herr_t H5Pset_passthru_read_write (hid_t faplid, hbool_t enable)
   + Inputs:
     + `faplid`: the id of the file access property list to set the setting.
     + `enable`: whether passthrough VOL should be used.
-      + `ture`: Log VOL behaves as a passthrough VOL.
-      + `false`: Log VOL behaves as a terminal VOL.
+      + `ture`: the Log VOL connector behaves as a passthrough VOL.
+      + `false`: the Log VOL connector behaves as a terminal VOL.
   + Returns:
     + This function returns `0` on success. Fail otherwise.
   
 ### H5Pget_passthru_read_write
-The function `H5Pget_passthru_read_write` gets the setting of Log VOL on
-whether it perform as a terminal VOL or a passthrough VOL. As a terminal VOL, Log VOL
-performs all writes using MPI-IO. As a passthrough VOL, Log VOL uses the underlying VOL to perform all writes.
+The function `H5Pget_passthru_read_write` gets the setting of the Log VOL connector on
+whether it perform as a terminal VOL connector or a passthrough VOL connector. As a terminal VOL connector, the Log VOL connector
+performs all writes using MPI-IO. As a passthrough VOL connector, the Log VOL connector uses the underlying VOL to perform all writes.
 
 #### Usage:
 ```c
@@ -287,20 +287,20 @@ herr_t H5Pget_passthru_read_write (hid_t faplid, hbool_t *enable);
     + `faplid`: the id of the file access property list to retrieve the setting.
   + Outputs:
     + `enable`: whether passthrough VOL is used.
-      + `ture`: Log VOL behaves as a passthrough VOL.
-      + `false`: Log VOL behaves as a terminal VOL.
+      + `ture`: the Log VOL connector behaves as a passthrough VOL.
+      + `false`: the Log VOL connector behaves as a terminal VOL.
   + Returns:
     + This function returns `0` on success. Fail otherwise.
 
 ## Misc
 ### H5VL_log_register
-The function `H5VL_log_register` register the log-based VOL connector and return its ID. The returned ID can be used to set the file access properties so that `HDF5` knows whether or not to use Log-Based Vol. The returned ID must be closed by calling `H5VLclose` before file close.
+The function `H5VL_log_register` register the Log VOL connector connector and return its ID. The returned ID can be used to set the file access properties so that `HDF5` knows whether or not to use the Log VOL connector. The returned ID must be closed by calling `H5VLclose` before file close.
 #### Usage:
 ```c
   hid_t H5VL_log_register (void);
 ```
   + Returns:
-    + This function returns the non-negative ID for the log-based VOL connector on success, and returns `H5I_INVALID_HID` (`-1`) on failure.
+    + This function returns the non-negative ID for the Log VOL connector connector on success, and returns `H5I_INVALID_HID` (`-1`) on failure.
     
     
   + C example:
