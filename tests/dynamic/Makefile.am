@@ -28,7 +28,7 @@ if ENABLE_SHARED
                       test_env
 endif
 
-EXTRA_DIST = wrap_runs.sh seq_runs.sh parallel_run.sh
+EXTRA_DIST = seq_runs.sh parallel_run.sh
 
 TESTPROGRAMS = $(check_PROGRAMS)
 
