@@ -77,6 +77,7 @@ check_PROGRAMS = $(TESTPROGRAMS)
 
 EXTRA_DIST = seq_runs.sh \
              parallel_run.sh \
+             ph5example.patch.$(HDF5_VERSION) \
              h5_attribute.patch.$(HDF5_VERSION) \
              h5_interm_group.patch.$(HDF5_VERSION)
 
