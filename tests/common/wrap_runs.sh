@@ -4,6 +4,7 @@
 # See COPYRIGHT notice in top-level directory.
 #
 
+# check if Log, Cache, Async VOLs set in the env HDF5_VOL_CONNECTOR
 getenv_vol() {
    set +e
    if test "x${HDF5_VOL_CONNECTOR}" != x ; then
@@ -48,12 +49,10 @@ run_func() {
       outfile2="${TESTOUTDIR}/$4"
    fi
 
-   echo "----------------- ${TESTSEQRUN} ./$1 $outfile"
    ${TESTSEQRUN} ./$1 $outfile
 
    for f in ${outfile} ${outfile2} ; do
       FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k $f`
-      echo "----------------- h5ldump -k $f = $FILE_KIND"
       if test "x${FILE_KIND}" != x$outfile_kind ; then
          echo "Error (as $vol_type VOL): expecting file kind $outfile_kind but got ${FILE_KIND}"
          exit 1
@@ -61,6 +60,7 @@ run_func() {
    done
 }
 
+# Test all combinations of Log, Cache, Async, Passthru
 # $1 -- executable
 # $2 -- output file name
 # $3 -- 2nd output file name if there is any
@@ -69,39 +69,43 @@ test_func() {
    cache_vol=no
    log_vol=no
    getenv_vol
-   echo "log_vol=$log_vol cache_vol=$cache_vol async_vol=$async_vol"
+   # echo "log_vol=$log_vol cache_vol=$cache_vol async_vol=$async_vol"
 
    if test "x$cache_vol" = xyes || test "x$async_vol" = xyes ; then
-      # must enable passthru
+      # When stacking Log on top of other VOLs, we can only run Log as passthru
       export H5VL_LOG_PASSTHRU=1
       run_func $1 $log_vol_file_only $2 $3
    elif test "x$log_vol" = xyes ; then
-      # enable passthru
+      # test when Log is passthru
       unset H5VL_LOG_PASSTHRU
       run_func $1 $log_vol_file_only $2 $3
-      # enable terminal
+      # test when Log is terminal
       export H5VL_LOG_PASSTHRU=1
       run_func $1 $log_vol_file_only $2 $3
    else
+      # No env is set to use Log VOL
+
+      # First, set the env to test Log VOL
       export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
       export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
       log_vol=yes
 
-      # enable passthru
+      # test when Log is passthru
       unset H5VL_LOG_PASSTHRU
       run_func $1 $log_vol_file_only $2 $3
-      # enable terminal
+      # test when Log is terminal
       export H5VL_LOG_PASSTHRU=1
       run_func $1 $log_vol_file_only $2 $3
 
+      # Unset all env to test Log VOL
       unset HDF5_VOL_CONNECTOR
       unset HDF5_PLUGIN_PATH
       log_vol=no
 
-      # enable passthru
+      # test when Log is passthru
       unset H5VL_LOG_PASSTHRU
       run_func $1 $log_vol_file_only $2 $3
-      # enable terminal
+      # test when Log is terminal
       export H5VL_LOG_PASSTHRU=1
       run_func $1 $log_vol_file_only $2 $3
    fi

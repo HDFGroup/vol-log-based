@@ -115,8 +115,8 @@ jobs:
           run: |
             cd ${GITHUB_WORKSPACE}
             make check
-        - name: Print test log files if error in make check
-          if: ${{ failure() }}
+        - name: Print test log files
+          if: ${{ always() }}
           run: |
             cd ${GITHUB_WORKSPACE}
             cat tests/*/*.log
