@@ -1,19 +1,29 @@
-name: HDF5 1.13.2
+name: Ubuntu with MPICH
 
 on:
   push:
     branches: [ master, dev ]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - 'docs/**'
-      - 'case_studies/**'
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.jpg'
+      - '**/*.png'
+      - 'docs/*'
+      - 'case_studies/*'
   pull_request:
     branches: [ master, dev ]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - 'case_studies/**'
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.jpg'
+      - '**/*.png'
+      - 'docs/*'
+      - 'case_studies/*'
+
+env:
+   MPICH_VERSION: 4.0.2
+   HDF5_VERSION: 1.13.2
+   NETCDF_VERSION: 4.9.0
 
 jobs:
     build:
@@ -31,14 +41,12 @@ jobs:
             sudo apt-get install zlib1g-dev
         - name: Build MPICH
           run: |
-            WORKDIR=$(pwd)
-            rm -rf ${WORKDIR}/MPICH
-            mkdir ${WORKDIR}/MPICH
-            cd ${WORKDIR}/MPICH
-            wget -q https://www.mpich.org/static/downloads/4.0.2/mpich-4.0.2.tar.gz
-            gzip -dc mpich-4.0.2.tar.gz | tar -xf -
-            cd mpich-4.0.2
-            ./configure --prefix=${WORKDIR}/MPICH \
+            cd ${GITHUB_WORKSPACE}
+            rm -rf MPICH ; mkdir MPICH ; cd MPICH
+            wget -q https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz
+            gzip -dc mpich-${MPICH_VERSION}.tar.gz | tar -xf -
+            cd mpich-${MPICH_VERSION}
+            ./configure --prefix=${GITHUB_WORKSPACE}/MPICH \
                         --silent \
                         --enable-romio \
                         --with-file-system=ufs \
@@ -47,86 +55,81 @@ jobs:
                         CC=gcc
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
             make -s -j 4 distclean >> qout 2>&1
-            cd ${WORKDIR}
         - name: Install HDF5
           run: |
-            WORKDIR=$(pwd)
-            rm -rf ${WORKDIR}/HDF5
-            mkdir ${WORKDIR}/HDF5
-            cd ${WORKDIR}/HDF5
-            VERSION=1.13.2
-            wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-${VERSION}/src/hdf5-${VERSION}.tar.gz
-            tar -zxf hdf5-${VERSION}.tar.gz
-            cd hdf5-${VERSION}
-            ./configure --prefix=${WORKDIR}/HDF5 \
+            cd ${GITHUB_WORKSPACE}
+            rm -rf HDF5 ; mkdir HDF5 ; cd HDF5
+            wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-${HDF5_VERSION}/src/hdf5-${HDF5_VERSION}.tar.gz
+            tar -zxf hdf5-${HDF5_VERSION}.tar.gz
+            cd hdf5-${HDF5_VERSION}
+            ./configure --prefix=${GITHUB_WORKSPACE}/HDF5 \
                         --silent \
                         --disable-fortran \
                         --disable-tests \
                         --enable-parallel \
                         --enable-build-mode=production \
-                        CC=${WORKDIR}/MPICH/bin/mpicc
+                        CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
             make -s -j 4 distclean >> qout 2>&1
-            cd ${WORKDIR}
         - name: Install NetCDF
           run: |
-            WORKDIR=$(pwd)
-            rm -rf ${WORKDIR}/NetCDF
-            mkdir ${WORKDIR}/NetCDF
-            cd ${WORKDIR}/NetCDF
-            wget -qc https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.7.4.tar.gz
-            tar -zxf v4.7.4.tar.gz
-            cd netcdf-c-4.7.4
-            ./configure --prefix=${WORKDIR}/NetCDF \
+            cd ${GITHUB_WORKSPACE}
+            rm -rf /NetCDF ; mkdir NetCDF ; cd NetCDF
+            wget -qc https://github.com/Unidata/netcdf-c/archive/refs/tags/v${NETCDF_VERSION}.tar.gz
+            tar -zxf v${NETCDF_VERSION}.tar.gz
+            cd netcdf-c-${NETCDF_VERSION}
+            ./configure --prefix=${GITHUB_WORKSPACE}/NetCDF \
                         --silent \
                         --disable-dap \
-                        CC=${WORKDIR}/MPICH/bin/mpicc \
-                        CPPFLAGS="-I${WORKDIR}/HDF5/include" \
-                        LDFLAGS="-L${WORKDIR}//HDF5/lib" \
+                        CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc \
+                        CPPFLAGS="-I${GITHUB_WORKSPACE}/HDF5/include" \
+                        LDFLAGS="-L${GITHUB_WORKSPACE}//HDF5/lib" \
                         LIBS="-lhdf5"
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
             make -s -j 4 distclean >> qout 2>&1
-            cd ${WORKDIR}
-        - name: Build and test Log-layout based VOL
+        - name: Configure Log VOL connector
           run: |
-            WORKDIR=$(pwd)
-            echo ">>>>>>>> autoreconf -i"
+            cd ${GITHUB_WORKSPACE}
             autoreconf -i
-            echo ">>>>>>>> ./configure --with-hdf5=${WORKDIR}/HDF5 \
-                        --enable-test-netcdf4=${WORKDIR}/NetCDF \
+            ./configure --with-hdf5=${GITHUB_WORKSPACE}/HDF5 \
+                        --enable-test-netcdf4=${GITHUB_WORKSPACE}/NetCDF \
                         --enable-test-hdf5-iotest \
-                        --with-mpi=${WORKDIR}/MPICH"
-            ./configure --with-hdf5=${WORKDIR}/HDF5 \
-                        --enable-test-netcdf4=${WORKDIR}/NetCDF \
-                        --enable-test-hdf5-iotest \
-                        --with-mpi=${WORKDIR}/MPICH
+                        --with-mpi=${GITHUB_WORKSPACE}/MPICH
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
-            echo ">>>>>>>> make -j 4"
+        - name: Print config.log if error
+          if: ${{ failure() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            cat config.log
+        - name: Build Log VOL connector
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
             make -j 4
             # Do NOT parallel build, cmake for external tests can fail
-            echo ">>>>>>>> make tests"
             make tests
-            echo ">>>>>>>> make check"
-            make check
-            echo ">>>>>>>> make ptest"
-            make ptest
-            echo ">>>>>>>> make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${WORKDIR}/HDF5 --with-mpi=${WORKDIR}/MPICH""
-            make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${WORKDIR}/HDF5 --with-mpi=${WORKDIR}/MPICH"
-            cd ${WORKDIR}
-        - name: Print log
-          if: ${{ always() }}
+        - name: Serial-run test - make check
+          if: ${{ success() }}
           run: |
-            WORKDIR=$(pwd)
-            cat ${WORKDIR}/config.log
-            ls -laht ${WORKDIR}
-            [ -f ${WORKDIR}/H5VL_log-1.3.0/_build/sub/config.log ] && cat ${WORKDIR}/H5VL_log-1.3.0/_build/sub/config.log
-            cat ${WORKDIR}/tests/basic/*.log
-            cat ${WORKDIR}/tests/dynamic/*.log
-            cat ${WORKDIR}/tests/testcases/*.log
-            cat ${WORKDIR}/tests/nc4/*.log
-            cat ${WORKDIR}/tests/external/hdf5_iotest/*.log
-            # cat ${WORKDIR}/tests/external/openpmd/*.log
-            cat ${WORKDIR}/examples/*.log
-            cat ${WORKDIR}/examples/hdf5_examples/*.log
-            cat ${WORKDIR}/utils/*/*.log
+            cd ${GITHUB_WORKSPACE}
+            make check
+        - name: Print test log files if error in make check
+          if: ${{ failure() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            cat tests/*/*.log
+            cat tests/*/*/*.log
+            cat examples/*.log
+            cat examples/*/*.log
+            cat utils/*/*.log
+        - name: Parallel-run test - make ptest
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            make ptest
+        - name: Test distribution - make distcheck
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${GITHUB_WORKSPACE}/HDF5 --with-mpi=${GITHUB_WORKSPACE}/MPICH"
 
