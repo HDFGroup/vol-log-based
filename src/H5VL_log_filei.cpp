@@ -419,15 +419,15 @@ void H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
         }
     }
 
-    err = H5Pget_passthru_read_write (faplid, &ret);
+    err = H5Pget_passthru (faplid, &ret);
     CHECK_ERR
-    if (ret) { fp->config |= H5VL_FILEI_CONFIG_PASSTHRU_READ_WRITE; }
+    if (ret) { fp->config |= H5VL_FILEI_CONFIG_PASSTHRU; }
     env = getenv ("H5VL_LOG_PASSTHRU");
     if (env) {
         if (strcmp (env, "1") == 0) {
-            fp->config |= H5VL_FILEI_CONFIG_PASSTHRU_READ_WRITE;
+            fp->config |= H5VL_FILEI_CONFIG_PASSTHRU;
         } else {
-            fp->config &= ~H5VL_FILEI_CONFIG_PASSTHRU_READ_WRITE;
+            fp->config &= ~H5VL_FILEI_CONFIG_PASSTHRU;
         }
     }
 }
@@ -483,7 +483,7 @@ hid_t H5VL_log_filei_get_under_plist (hid_t faplid) {
         "H5VL_log_nb_buffer_size",      "H5VL_log_idx_buffer_size", "H5VL_log_metadata_merge",
         "H5VL_log_metadata_share",      "H5VL_log_metadata_zip",    "H5VL_log_sel_encoding",
         "H5VL_log_data_layout",         "H5VL_log_subfiling",       "H5VL_log_single_subfile_read",
-        "H5VL_log_passthru_read_write",
+        "H5VL_log_passthru",
     };
 
     try {

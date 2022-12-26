@@ -710,8 +710,8 @@ err_out:;
     return err;
 }
 
-#define PASSTHRU_READ_WRITE_PROPERTY_NAME "H5VL_log_passthru_read_write"
-herr_t H5Pset_passthru_read_write (hid_t faplid, hbool_t enable) {
+#define PASSTHRU_PROPERTY_NAME "H5VL_log_passthru"
+herr_t H5Pset_passthru (hid_t faplid, hbool_t enable) {
     herr_t err = 0;
     htri_t isfapl;
     htri_t pexist;
@@ -721,16 +721,16 @@ herr_t H5Pset_passthru_read_write (hid_t faplid, hbool_t enable) {
         CHECK_ID (isfapl);
         if (isfapl == 0) { ERR_OUT ("Not fcplid"); }
 
-        pexist = H5Pexist (faplid, PASSTHRU_READ_WRITE_PROPERTY_NAME);
+        pexist = H5Pexist (faplid, PASSTHRU_PROPERTY_NAME);
         CHECK_ID (pexist);
         if (!pexist) {
             hbool_t f = false;
-            err = H5Pinsert2 (faplid, PASSTHRU_READ_WRITE_PROPERTY_NAME, sizeof (hbool_t), &f, NULL,
+            err = H5Pinsert2 (faplid, PASSTHRU_PROPERTY_NAME, sizeof (hbool_t), &f, NULL,
                               NULL, NULL, NULL, NULL, NULL);
             CHECK_ERR;
         }
 
-        err = H5Pset (faplid, PASSTHRU_READ_WRITE_PROPERTY_NAME, &enable);
+        err = H5Pset (faplid, PASSTHRU_PROPERTY_NAME, &enable);
         CHECK_ERR;
     }
     H5VL_LOGI_EXP_CATCH_ERR;
@@ -738,7 +738,7 @@ herr_t H5Pset_passthru_read_write (hid_t faplid, hbool_t enable) {
 err_out:;
     return err;
 }
-herr_t H5Pget_passthru_read_write (hid_t faplid, hbool_t *enable) {
+herr_t H5Pget_passthru (hid_t faplid, hbool_t *enable) {
     herr_t err = 0;
     htri_t isfapl, pexist;
 
@@ -748,10 +748,10 @@ herr_t H5Pget_passthru_read_write (hid_t faplid, hbool_t *enable) {
         if (isfapl == 0) {
             ERR_OUT ("Not faplid");
         } else {
-            pexist = H5Pexist (faplid, PASSTHRU_READ_WRITE_PROPERTY_NAME);
+            pexist = H5Pexist (faplid, PASSTHRU_PROPERTY_NAME);
             CHECK_ID (pexist);
             if (pexist) {
-                err = H5Pget (faplid, PASSTHRU_READ_WRITE_PROPERTY_NAME, enable);
+                err = H5Pget (faplid, PASSTHRU_PROPERTY_NAME, enable);
                 CHECK_ERR;
             } else {
                 *enable = false;

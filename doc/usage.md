@@ -122,9 +122,9 @@ The Log VOL connector performs as a terminal VOL by default.
     % export H5VL_LOG_PASSTHRU=1
     ```
 + Enable the Log VOL connector as a passthrough VOL connector programmatically
-  + Use the function `H5Pset_passthru_read_write`
+  + Use the function `H5Pset_passthru`
     ```c
-    herr_t err = H5Pset_passthru_read_write (faplid, true);
+    herr_t err = H5Pset_passthru (faplid, true);
     ```
 + Specify the underlying VOL connector through an environment variable
   + Set the environment variable `HDF5_VOL_CONNECTOR`

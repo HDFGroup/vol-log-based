@@ -80,7 +80,7 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
         if (mmtype != MPI_DATATYPE_NULL) { MPI_Type_free (&mmtype); }
     });
 
-    if (fp->config & H5VL_FILEI_CONFIG_PASSTHRU_READ_WRITE) {
+    if (fp->config & H5VL_FILEI_CONFIG_PASSTHRU) {
         perform_write_in_mpi = false;
     } else {
         perform_write_in_mpi = true;
