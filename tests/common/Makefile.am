@@ -15,5 +15,5 @@ EXTRA_DIST = wrap_runs.sh
 # build check targets but not invoke
 tests-local: all $(check_LTLIBRARIES)
 
-.PHONY: tests
+.PHONY: tests ptest
 
