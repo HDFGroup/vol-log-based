@@ -13,12 +13,6 @@ source $srcdir/../common/wrap_runs.sh
 log_vol_file_only=1
 
 for p in ${check_PROGRAMS} ; do
-   export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
-   export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
-   test_func $p $log_vol_file_only
-
-   unset HDF5_VOL_CONNECTOR
-   unset HDF5_PLUGIN_PATH
-   test_func $p $log_vol_file_only
+   test_func $p
 done
 
