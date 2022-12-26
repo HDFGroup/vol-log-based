@@ -64,10 +64,16 @@ jobs:
             cd hdf5-${HDF5_VERSION}
             ./configure --prefix=${GITHUB_WORKSPACE}/HDF5 \
                         --silent \
-                        --disable-fortran \
-                        --disable-tests \
                         --enable-parallel \
                         --enable-build-mode=production \
+                        --enable-unsupported \
+                        --enable-threadsafe \
+                        --disable-doxygen-doc \
+                        --disable-doxygen-man \
+                        --disable-doxygen-html \
+                        --disable-tests \
+                        --disable-fortran \
+                        --disable-cxx \
                         CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
             make -s -j 4 distclean >> qout 2>&1
