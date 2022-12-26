@@ -41,9 +41,6 @@ int main (int argc, char **argv) {
     MPI_Comm_size (MPI_COMM_WORLD, &np);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
-    np   = 4;
-    rank = 3;
-
     if (argc > 2) {
         if (!rank) printf ("Usage: %s [filename]\n", argv[0]);
         MPI_Finalize ();
@@ -51,7 +48,7 @@ int main (int argc, char **argv) {
     } else if (argc > 1) {
         file_name = argv[1];
     } else {
-        file_name = "test.h5";
+        file_name = "fill.h5";
     }
     SHOW_TEST_INFO ("Blocking read on datasets")
 

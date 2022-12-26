@@ -45,7 +45,7 @@ int main (int argc, char **argv) {
     } else if (argc > 1) {
         file_name = argv[1];
     } else {
-        file_name = "test.h5";
+        file_name = "dset.h5";
     }
     SHOW_TEST_INFO ("Creating datasets")
 
