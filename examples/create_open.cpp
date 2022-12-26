@@ -4,7 +4,6 @@
  *  See COPYRIGHT notice in top-level directory.
  *
  *********************************************************************/
-/* $Id$ */
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * This example shows how to open file using Log-based VOL VOL.
@@ -14,18 +13,20 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include <libgen.h> /* basename() */
 #include <hdf5.h>
 #include <mpi.h>
 
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 
 #include "H5VL_log.h"
 
 int main (int argc, char **argv) {
     herr_t err;
-    int rank, np;
+    int rank, np, verbose=0;
     const char *file_name;
     hid_t log_vol_id;  // ID of log-based VOL
     hid_t file_id;     // File ID
@@ -40,7 +41,8 @@ int main (int argc, char **argv) {
     } else {
         file_name = "test.h5";
     }
-    if (rank == 0) printf ("Writing file_name = %s at rank 0 \n", file_name);
+    if (rank == 0 && verbose)
+        printf ("Writing file_name = %s at rank 0 \n", file_name);
 
     // Log-based VOL VOL require MPI-IO and parallel access
     // Set MPI-IO and parallel access proterty.
@@ -84,6 +86,8 @@ int main (int argc, char **argv) {
 
     err = H5Pclose (fapl_id);
     assert (err == 0);
+
+    std::cout << "*** TESTING CXX    " << basename(argv[0]) << " ---- pass" << std::endl;
 
     MPI_Finalize ();
 

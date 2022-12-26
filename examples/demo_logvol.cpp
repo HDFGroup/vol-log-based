@@ -4,17 +4,17 @@
  */
 /* $Id$ */
 
-#include <hdf5.h>
-#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <libgen.h> /* basename() */
+#include <mpi.h>
+#include <hdf5.h>
 
 #include "H5VL_log.h"
+#include <iostream>
 
-int buf[12];
 int main (int argc, char **argv) {
-    int i;
-    int rank;
+    int i, rank, buf[12];
     hid_t logvol_id, file_id, fapl_id, dataset_id, dset_space_id;
 
     MPI_Init (&argc, &argv);
@@ -35,16 +35,21 @@ int main (int argc, char **argv) {
     dataset_id = H5Dcreate2 (file_id, "D", H5T_STD_I32LE, dset_space_id,
                              H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-    hsize_t start[2] = {(hsize_t)rank / 3 * 3, ((hsize_t)rank % 3) * 4}, 
+    hsize_t start[2] = {(hsize_t)rank / 3 * 3, ((hsize_t)rank % 3) * 4},
             block[2] = {3, 4}, count[2] = {1, 1};
-    H5Sselect_hyperslab (dset_space_id, H5S_SELECT_SET, start, NULL, count, block);
-    H5Dwrite (dataset_id, H5T_NATIVE_INT, H5S_BLOCK, dset_space_id, H5P_DEFAULT, buf);
+    H5Sselect_hyperslab (dset_space_id, H5S_SELECT_SET, start, NULL,
+                         count, block);
+    H5Dwrite (dataset_id, H5T_NATIVE_INT, H5S_BLOCK, dset_space_id,
+              H5P_DEFAULT, buf);
 
     // Close objects
     H5Sclose (dset_space_id);
     H5Dclose (dataset_id);
     H5Fclose (file_id);
     H5Pclose (fapl_id);
+
+    std::cout << "*** TESTING CXX    " << basename(argv[0]) << " ---- pass" << std::endl;
+
     MPI_Finalize ();
     return 0;
 }

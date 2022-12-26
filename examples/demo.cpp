@@ -26,15 +26,15 @@ int main (int argc, char **argv) {
 
     hsize_t dim[2] = {9, 12};
     dset_space_id  = H5Screate_simple (2, dim, dim);
-    dataset_id = H5Dcreate2 (file_id, "D", H5T_STD_I32LE, dset_space_id, 
+    dataset_id = H5Dcreate2 (file_id, "D", H5T_STD_I32LE, dset_space_id,
                              H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-    hsize_t start[2] = {(hsize_t)rank / 3 * 3, ((hsize_t)rank % 3) * 4}, 
+    hsize_t start[2] = {(hsize_t)rank / 3 * 3, ((hsize_t)rank % 3) * 4},
             block[2] = {3, 4}, count[2] = {1, 1};
-    H5Sselect_hyperslab (dset_space_id, H5S_SELECT_SET, start, NULL, 
+    H5Sselect_hyperslab (dset_space_id, H5S_SELECT_SET, start, NULL,
                          count, block);
     mem_space_id = H5Screate_simple (2, block, block);
-    H5Dwrite (dataset_id, H5T_NATIVE_INT, mem_space_id, dset_space_id, 
+    H5Dwrite (dataset_id, H5T_NATIVE_INT, mem_space_id, dset_space_id,
               H5P_DEFAULT, buf);
 
     // Close objects
