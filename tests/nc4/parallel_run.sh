@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash -l
 #
 # Copyright (C) 2021, Northwestern University and Argonne National Laboratory
 # See COPYRIGHT notice in top-level directory.
