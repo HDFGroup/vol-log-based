@@ -121,11 +121,14 @@ jobs:
           if: ${{ always() }}
           run: |
             cd ${GITHUB_WORKSPACE}
-            cat tests/*/*.log
-            cat tests/*/*/*.log
-            cat examples/*.log
-            cat examples/*/*.log
-            cat utils/*/*.log
+            fname=`find . -type f -name "*.log"`
+            for f in $fname ; do \
+               bname=`basename $f` ; \
+               if test "x$bname" != xconfig.log ; then \
+                  echo "-------- dump $f -------------------------------------------" ; \
+                  cat $f ; \
+               fi ; \
+            done
         - name: Parallel-run test - make ptest
           if: ${{ success() }}
           run: |
