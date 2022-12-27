@@ -123,7 +123,7 @@ jobs:
           if: ${{ always() }}
           run: |
             cd ${GITHUB_WORKSPACE}
-            fname=`find . -type f -name "*.log"`
+            fname=`find tests utils examples -type f -name "*.log"`
             for f in $fname ; do \
                bname=`basename $f` ; \
                if test "x$bname" != xconfig.log ; then \
