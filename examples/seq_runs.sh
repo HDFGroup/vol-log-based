@@ -4,6 +4,8 @@
 # See COPYRIGHT notice in top-level directory.
 #
 
+RUN_CMD=${TESTSEQRUN}
+
 . $srcdir/../tests/common/wrap_runs.sh
 
 log_vol_file_only=1

@@ -4,6 +4,8 @@
 # See COPYRIGHT notice in top-level directory.
 #
 
+RUN_CMD=${TESTSEQRUN}
+
 . $srcdir/../common/wrap_runs.sh
 
 # Some output files may be HDF5 regular files

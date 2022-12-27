@@ -4,7 +4,7 @@
 # See COPYRIGHT notice in top-level directory.
 #
 
-MPIRUN=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
+RUN_CMD=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 # echo "MPIRUN = ${MPIRUN}"
 # echo "check_PROGRAMS=${check_PROGRAMS}"
 
