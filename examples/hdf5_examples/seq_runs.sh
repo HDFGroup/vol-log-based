@@ -4,6 +4,8 @@
 # See COPYRIGHT notice in top-level directory.
 #
 
+RUN_CMD=${TESTSEQRUN}
+
 . $top_srcdir/tests/common/wrap_runs.sh
 
 test_example_func() {
@@ -16,23 +18,26 @@ test_example_func() {
    # These examples CANNOT run the second time, because some programs add the
    # same attributes to the files created by other programs.
 
-echo ""
-echo "DISABLE passthru as it fails on non-MPI programs"
-unset H5VL_LOG_PASSTHRU
-echo ""
-
-   # must enable passthru when stacking Log on top of other VOLs
-   # export H5VL_LOG_PASSTHRU=1
+   # must enable passthru when stacking Log VOL on top of other VOLs
+   export H5VL_LOG_PASSTHRU=1
 
    if test "x$cache_vol" = xyes || test "x$async_vol" = xyes ; then
-return
+      if test "x$cache_vol" = xyes ; then
+         if test "x$async_vol" = xyes ; then
+            echo "---- Run Log + Cache + Async VOLs -------------"
+         else
+            echo "---- Run Log + Cache VOLs ---------------------"
+         fi
+      fi
       run_func $1 $log_vol_file_only $2 $3
    elif test "x$log_vol" = xyes ; then
+      echo "---- Run Log VOL as a passthrough connector ---------------------"
       run_func $1 $log_vol_file_only $2 $3
    else
       export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
       export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
       log_vol=yes
+      echo "---- Run Log VOL as a passthrough connector ---------------------"
       run_func $1 $log_vol_file_only $2 $3
    fi
 }
