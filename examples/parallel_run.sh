@@ -10,6 +10,15 @@ RUN_CMD=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 
 . $srcdir/../tests/common/wrap_runs.sh
 
+async_vol=no
+cache_vol=no
+log_vol=no
+getenv_vol
+if test "x$async_vol" = xyes ; then
+   # Skip Async I/O VOL as it requires to call MPI_Init_thread()
+   return 0
+fi
+
 log_vol_file_only=1
 
 for p in ${check_PROGRAMS} ; do
