@@ -49,9 +49,13 @@ run_func() {
       outfile2="${TESTOUTDIR}/$4"
    fi
 
-   tokens=( $RUN_CMD )
-   tokens[0]=`basename ${tokens[0]}`
-   echo "    ${tokens[*]} ./$1 $outfile"
+   if test "x$RUN_CMD" != x ; then
+      tokens=( $RUN_CMD )
+      tokens[0]=`basename ${tokens[0]}`
+      echo "    ${tokens[*]} ./$1 $outfile"
+   else
+      echo "    ./$1 $outfile"
+   fi
    ${RUN_CMD} ./$1 $outfile
 
    for f in ${outfile} ${outfile2} ; do
