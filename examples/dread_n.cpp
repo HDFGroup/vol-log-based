@@ -146,7 +146,8 @@ int main (int argc, char **argv) {
     err = H5VLclose (log_vlid);
     assert (err == 0);
 
-    std::cout << "*** TESTING CXX    " << basename(argv[0]) << " ---- pass" << std::endl;
+    if (rank == 0)
+        std::cout << "*** TESTING CXX    " << basename(argv[0]) << " ---- pass" << std::endl;
 
     MPI_Finalize ();
 

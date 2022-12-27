@@ -48,7 +48,8 @@ int main (int argc, char **argv) {
     H5Fclose (file_id);
     H5Pclose (fapl_id);
 
-    std::cout << "*** TESTING CXX    " << basename(argv[0]) << " ---- pass" << std::endl;
+    if (rank == 0)
+        std::cout << "*** TESTING CXX    " << basename(argv[0]) << " ---- pass" << std::endl;
 
     MPI_Finalize ();
     return 0;
