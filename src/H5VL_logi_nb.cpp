@@ -609,11 +609,12 @@ void H5VL_log_nb_flush_write_reqs (void *file) {
     MPI_Offset fsize_group;  // Total data size across all process sharing the same file
     MPI_Offset foff_all;     // File offsset of the data block of current process globally
     MPI_Offset foff_group;   // File offsset of the data block in the current group
-    void *ldp;               // Handle to the log dataset
+    void *ldp = NULL;               // Handle to the log dataset
     // void *vldp;				 // Handle to the log dataset
     hid_t ldsid  = -1;  // Space of the log dataset
     hid_t dcplid = -1;  // log dataset creation property ID
     hid_t dxplid = -1;  // log dataset transfer property ID
+    hid_t fdid = -1;    // file driver ID; used to perform passthru write
     // hid_t vldsid  = -1;			  // Space of the virtual log dataset in the main
     // file hid_t vdcplid = -1;	 // Virtual log dataset creation property list
     hsize_t start;  // Size for dataspace selection
@@ -741,7 +742,6 @@ void H5VL_log_nb_flush_write_reqs (void *file) {
             // set up transfer property list; using collective MPI IO
             dxplid = H5Pcreate(H5P_DATASET_XFER);
             CHECK_ID(dxplid);
-            H5Pset_dxpl_mpio(dxplid, H5FD_MPIO_COLLECTIVE);
 
             // Create dataset with under VOL
             H5VL_LOGI_PROFILING_TIMER_START;
@@ -807,6 +807,14 @@ void H5VL_log_nb_flush_write_reqs (void *file) {
                 }
                 H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_WRITE_REQS_WR);
             } else {
+                // set collective MPI IO only if H5FD_MPIO driver is used.
+                fdid = H5Pget_driver (fp->ufaplid);
+                CHECK_ID (fdid)
+                if (fdid == H5FD_MPIO) {
+                    err = H5Pset_dxpl_mpio(dxplid, H5FD_MPIO_COLLECTIVE);
+                    CHECK_ERR;
+                }
+
                 hsize_t mstart = (hsize_t)foff_group, mbsize = (hsize_t)fsize_local, one = 1;
 
                 // file space:
