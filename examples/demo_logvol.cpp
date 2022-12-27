@@ -2,27 +2,23 @@
  *  Copyright (C) 2022, Northwestern University and Argonne National Laboratory
  *  See COPYRIGHT notice in top-level directory.
  */
-/* $Id$ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <libgen.h> /* basename() */
 #include <mpi.h>
 #include <hdf5.h>
-
 #include "H5VL_log.h"
-#include <iostream>
 
 int main (int argc, char **argv) {
     int i, rank, buf[12];
-    hid_t logvol_id, file_id, fapl_id, dataset_id, dset_space_id;
+    hid_t file_id, fapl_id, dataset_id, dset_space_id;
+    hid_t logvol_id;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
     for(i = 0; i < 12; i++) buf[i] = rank;
-
-    #include "H5VL_log.h"
 
     fapl_id   = H5Pcreate (H5P_FILE_ACCESS);
     H5Pset_fapl_mpio (fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
