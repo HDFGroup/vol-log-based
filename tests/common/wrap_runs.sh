@@ -49,7 +49,8 @@ run_func() {
       outfile2="${TESTOUTDIR}/$4"
    fi
 
-   ${TESTSEQRUN} ./$1 $outfile
+   echo "---- ${RUN_CMD} ./$1 $outfile --------"
+   ${RUN_CMD} ./$1 $outfile
 
    for f in ${outfile} ${outfile2} ; do
       FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k $f`
@@ -72,14 +73,23 @@ test_func() {
    # echo "log_vol=$log_vol cache_vol=$cache_vol async_vol=$async_vol"
 
    if test "x$cache_vol" = xyes || test "x$async_vol" = xyes ; then
+      if test "x$cache_vol" = xyes ; then
+         if test "x$async_vol" = xyes ; then
+            echo "---- Run Log + Cache + Async VOLs -------------------------"
+         else
+            echo "---- Run Log + Cache VOLs ---------------------------------"
+         fi
+      fi
       # When stacking Log on top of other VOLs, we can only run Log as passthru
       export H5VL_LOG_PASSTHRU=1
       run_func $1 $log_vol_file_only $2 $3
    elif test "x$log_vol" = xyes ; then
       # test when Log is passthru
+      echo "---- Run Log VOL as a passthrough connector ---------------------"
       unset H5VL_LOG_PASSTHRU
       run_func $1 $log_vol_file_only $2 $3
       # test when Log is terminal
+      echo "---- Run Log VOL as a terminal connector ------------------------"
       export H5VL_LOG_PASSTHRU=1
       run_func $1 $log_vol_file_only $2 $3
    else
@@ -91,9 +101,11 @@ test_func() {
       log_vol=yes
 
       # test when Log is passthru
+      echo "---- Run Log VOL as a passthrough connector ---------------------"
       unset H5VL_LOG_PASSTHRU
       run_func $1 $log_vol_file_only $2 $3
       # test when Log is terminal
+      echo "---- Run Log VOL as a terminal connector ------------------------"
       export H5VL_LOG_PASSTHRU=1
       run_func $1 $log_vol_file_only $2 $3
 
@@ -103,9 +115,11 @@ test_func() {
       log_vol=no
 
       # test when Log is passthru
+      echo "---- Run Log VOL as a passthrough connector ---------------------"
       unset H5VL_LOG_PASSTHRU
       run_func $1 $log_vol_file_only $2 $3
       # test when Log is terminal
+      echo "---- Run Log VOL as a terminal connector ------------------------"
       export H5VL_LOG_PASSTHRU=1
       run_func $1 $log_vol_file_only $2 $3
    fi
