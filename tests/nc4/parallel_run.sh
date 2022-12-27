@@ -23,6 +23,11 @@ if test "x${HDF5_VOL_CONNECTOR}" != x ; then
    fi
 fi
 
+if test "x$cache_vol" = xyes || test "x$async_vol" = xyes ; then
+   # tests in this folder is not ready for stacking Log VOL on top of others
+   exit 0
+fi
+
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
