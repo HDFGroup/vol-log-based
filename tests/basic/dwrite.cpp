@@ -46,7 +46,7 @@ int main (int argc, char **argv) {
     } else {
         file_name = "dwrite.h5";
     }
-    SHOW_TEST_INFO ("Blocking write on datasets")
+    SHOW_TEST_INFO ("Blocking write")
 
     faplid = H5Pcreate (H5P_FILE_ACCESS);
     // MPI and collective metadata is required by LOG VOL

@@ -119,7 +119,7 @@ int main (int argc, char **argv) {
     assert (err == 0);
 
     if (rank == 0)
-        std::cout << "*** TESTING CXX    " << basename(argv[0]) << " ---- pass" << std::endl;
+        printf("  * TESTING CXX    %-48s ---- pass\n", basename(argv[0]));
 
     MPI_Finalize ();
 

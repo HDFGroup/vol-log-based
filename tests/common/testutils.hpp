@@ -4,6 +4,7 @@
  */
 
 #pragma once
+#include <stdio.h>
 #include <hdf5.h>
 #include <libgen.h>
 #include <mpi.h>
@@ -71,13 +72,13 @@
 
 #define SHOW_TEST_INFO(A) { \
     if (rank == 0) { \
-        char *env = getenv("H5VL_LOG_PASSTHRU"); \
-        std::string vol; \
+        char *env, msg[80]; \
+        env = getenv("H5VL_LOG_PASSTHRU"); \
         if (env != NULL && *env == '1') \
-            vol = std::string("passthru"); \
+            sprintf(msg,"%s: (as %s VOL) %s", basename(argv[0]),"passthru",A); \
         else \
-            vol = std::string("terminal"); \
-        std::cout << "*** TESTING CXX    " << basename (argv[0]) << ": (as " << vol << " VOL) " << A << " ---- "; \
+            sprintf(msg,"%s: (as %s VOL) %s", basename(argv[0]),"terminal",A); \
+        printf("  * TESTING CXX    %-48s ---- ", msg); \
     } \
 }
 

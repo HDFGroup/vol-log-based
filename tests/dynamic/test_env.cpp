@@ -22,7 +22,7 @@
  *    % mpicxx -g -o setenv setenv.cpp -lhdf5
  *
  *    % mpiexec -l -n 1 setenv setenv.nc
- *    % *** TESTING CXX    setenv: Changing VOL environment variable
+ *    % *** TESTING CXX    setenv: Change VOL env variable
  *    % Envinroment variables for file create:
  *    % HDF5_VOL_CONNECTOR = 
  *    % HDF5_PLUGIN_PATH = 
@@ -75,7 +75,7 @@ int main (int argc, char **argv) {
     } else {
         file_name = "test.h5";
     }
-    SHOW_TEST_INFO ("Changing VOL environment variable")
+    SHOW_TEST_INFO ("Change VOL env var")
 
     if (rank == 0) {
         if (verbose)

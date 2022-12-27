@@ -49,7 +49,7 @@ int main (int argc, char **argv) {
     H5Pclose (fapl_id);
 
     if (rank == 0)
-        std::cout << "*** TESTING CXX    " << basename(argv[0]) << " ---- pass" << std::endl;
+        printf("  * TESTING CXX    %-48s ---- pass\n", basename(argv[0]));
 
     MPI_Finalize ();
     return 0;

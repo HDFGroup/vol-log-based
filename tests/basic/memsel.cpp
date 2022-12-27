@@ -48,7 +48,7 @@ int main (int argc, char **argv) {
     } else {
         file_name = "memsel.h5";
     }
-    SHOW_TEST_INFO ("Memory space selection on dataset I/O")
+    SHOW_TEST_INFO ("Memory space hyperslab")
 
     faplid = H5Pcreate (H5P_FILE_ACCESS);
     // MPI and collective metadata is required by LOG VOL

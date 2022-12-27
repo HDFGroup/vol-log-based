@@ -49,7 +49,9 @@ run_func() {
       outfile2="${TESTOUTDIR}/$4"
    fi
 
-   echo "---- ${RUN_CMD} ./$1 $outfile --------"
+   tokens=( $RUN_CMD )
+   tokens[0]=`basename ${tokens[0]}`
+   echo "    ${tokens[*]} ./$1 $outfile"
    ${RUN_CMD} ./$1 $outfile
 
    for f in ${outfile} ${outfile2} ; do
@@ -72,12 +74,15 @@ test_func() {
    getenv_vol
    # echo "log_vol=$log_vol cache_vol=$cache_vol async_vol=$async_vol"
 
+   fmt="####### Running %-24s ####################################\n"
+   printf "${fmt}" $1
+
    if test "x$cache_vol" = xyes || test "x$async_vol" = xyes ; then
       if test "x$cache_vol" = xyes ; then
          if test "x$async_vol" = xyes ; then
-            echo "---- Run Log + Cache + Async VOLs -------------------------"
+            echo "  - Run Log + Cache + Async VOLs ---------------------------------------"
          else
-            echo "---- Run Log + Cache VOLs ---------------------------------"
+            echo "--- Run Log + Cache VOLs -----------------------------------------------"
          fi
       fi
       # When stacking Log on top of other VOLs, we can only run Log as passthru
@@ -85,42 +90,44 @@ test_func() {
       run_func $1 $log_vol_file_only $2 $3
    elif test "x$log_vol" = xyes ; then
       # test when Log is passthru
-      echo "---- Run Log VOL as a passthrough connector ---------------------"
-      unset H5VL_LOG_PASSTHRU
+      echo "  - Run Log VOL as a passthrough connector -----------------------------"
+      export H5VL_LOG_PASSTHRU=1
       run_func $1 $log_vol_file_only $2 $3
       # test when Log is terminal
-      echo "---- Run Log VOL as a terminal connector ------------------------"
-      export H5VL_LOG_PASSTHRU=1
+      echo "  - Run Log VOL as a terminal connector --------------------------------"
+      unset H5VL_LOG_PASSTHRU
       run_func $1 $log_vol_file_only $2 $3
    else
       # No env is set to use Log VOL
 
       # First, set the env to test Log VOL
+      echo " -- Set HDF5_VOL_CONNECTOR to \"LOG under_vol=0;under_info={}\" ----------"
       export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
       export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
       log_vol=yes
 
       # test when Log is passthru
-      echo "---- Run Log VOL as a passthrough connector ---------------------"
-      unset H5VL_LOG_PASSTHRU
-      run_func $1 $log_vol_file_only $2 $3
-      # test when Log is terminal
-      echo "---- Run Log VOL as a terminal connector ------------------------"
+      echo "  - Run Log VOL as a passthrough connector -----------------------------"
       export H5VL_LOG_PASSTHRU=1
       run_func $1 $log_vol_file_only $2 $3
+      # test when Log is terminal
+      echo "  - Run Log VOL as a terminal connector --------------------------------"
+      unset H5VL_LOG_PASSTHRU
+      run_func $1 $log_vol_file_only $2 $3
 
-      # Unset all env to test Log VOL
+      # Unset all env to test Log VOL (i.e. test programs will call H5Pset_vol)
+      echo " -- Unset HDF5_VOL_CONNECTOR -------------------------------------------"
       unset HDF5_VOL_CONNECTOR
       unset HDF5_PLUGIN_PATH
       log_vol=no
 
       # test when Log is passthru
-      echo "---- Run Log VOL as a passthrough connector ---------------------"
-      unset H5VL_LOG_PASSTHRU
+      echo "  - Run Log VOL as a passthrough connector -----------------------------"
+      export H5VL_LOG_PASSTHRU=1
       run_func $1 $log_vol_file_only $2 $3
       # test when Log is terminal
-      echo "---- Run Log VOL as a terminal connector ------------------------"
-      export H5VL_LOG_PASSTHRU=1
+      echo "  - Run Log VOL as a terminal connector --------------------------------"
+      unset H5VL_LOG_PASSTHRU
       run_func $1 $log_vol_file_only $2 $3
    fi
 }

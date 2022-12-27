@@ -45,7 +45,7 @@ int main (int argc, char **argv) {
     } else {
         file_name = "test.h5";
     }
-    SHOW_TEST_INFO ("Call H5Dwrite with empty selection")
+    SHOW_TEST_INFO ("Empty selection")
 
     faplid = H5Pcreate (H5P_FILE_ACCESS);
     // MPI and collective metadata is required by LOG VOL

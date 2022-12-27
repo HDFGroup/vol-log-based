@@ -41,7 +41,7 @@ int main (int argc, char **argv) {
     } else {
         file_name = "test.h5";
     }
-    SHOW_TEST_INFO ("write with zero-sized file space by rank 0 only")
+    SHOW_TEST_INFO ("H5Sselect_none 0")
 
     faplid = H5Pcreate (H5P_FILE_ACCESS);
     CHECK_ERR (faplid)
@@ -71,8 +71,8 @@ int main (int argc, char **argv) {
     CHECK_ERR (file_space_id);
 
     // Create a new dataset
-    dataset_id = H5Dcreate2 (file_id, "D", H5T_STD_I32LE, file_space_id, H5P_DEFAULT, H5P_DEFAULT,
-                             H5P_DEFAULT);
+    dataset_id = H5Dcreate2 (file_id, "D", H5T_STD_I32LE, file_space_id,
+                             H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     CHECK_ERR (dataset_id)
 
     // only rank 0 writes zero-sized data
