@@ -49,16 +49,21 @@ int main (int argc, char **argv) {
     SHOW_TEST_INFO ("Blocking write")
 
     faplid = H5Pcreate (H5P_FILE_ACCESS);
+    CHECK_ERR (faplid)
     // MPI and collective metadata is required by LOG VOL
-    H5Pset_fapl_mpio (faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
-    H5Pset_all_coll_metadata_ops (faplid, 1);
+    err = H5Pset_fapl_mpio (faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
+    CHECK_ERR (err)
+    err = H5Pset_all_coll_metadata_ops (faplid, 1);
+    CHECK_ERR (err)
 
     /* check VOL related environment variables */
     check_env(&env);
     if (env.connector == 0) {
         // Register LOG VOL plugin
         log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
-        H5Pset_vol (faplid, log_vlid, NULL);
+        CHECK_ERR (log_vlid)
+        err = H5Pset_vol (faplid, log_vlid, NULL);
+        CHECK_ERR (err)
     }
 
     // Create file
