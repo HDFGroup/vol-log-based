@@ -27,6 +27,7 @@ env:
 jobs:
     build:
       runs-on: ubuntu-latest
+      timeout-minutes: 60
       steps:
         - uses: actions/checkout@v3
         - name: Set up dependencies
@@ -125,7 +126,7 @@ jobs:
             for f in $fname ; do \
                bname=`basename $f` ; \
                if test "x$bname" != xconfig.log ; then \
-                  echo "-------- dump $f -------------------------------------------" ; \
+                  echo "-------- dump $f ----------------------------" ; \
                   cat $f ; \
                fi ; \
             done

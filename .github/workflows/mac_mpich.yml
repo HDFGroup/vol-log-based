@@ -28,6 +28,7 @@ env:
 jobs:
     build:
       runs-on: macos-latest
+      timeout-minutes: 60
       steps:
         - uses: actions/checkout@v3
         - name: Set up dependencies
