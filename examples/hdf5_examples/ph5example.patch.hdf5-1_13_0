@@ -36,3 +36,13 @@
                      break;
                  case 'r':
                      doread = 0;
+@@ -1026,7 +1030,8 @@
+     char mpi_name[MPI_MAX_PROCESSOR_NAME];
+     int  i, n;
+ 
+-    MPI_Init(&argc, &argv);
++    int mpi_required;
++    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
+     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+     MPI_Get_processor_name(mpi_name, &mpi_namelen);
