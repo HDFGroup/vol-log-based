@@ -40,25 +40,26 @@ run_func() {
    set -e
 
    if test "x$3" = x ; then
-      outfile=`basename $1`
-      outfile="${TESTOUTDIR}/$outfile.h5"
+      _outfile=`basename $1`
+      _outfile="${TESTOUTDIR}/$_outfile.h5"
    else
-      outfile="${TESTOUTDIR}/$3"
+      _outfile="${TESTOUTDIR}/$3"
    fi
    if test "x$4" != x ; then
-      outfile2="${TESTOUTDIR}/$4"
+      _outfile2="${TESTOUTDIR}/$4"
    fi
 
-   if test "x$RUN_CMD" != x ; then
-      tokens=( $RUN_CMD )
+   EXE_CMD=$RUN_CMD
+   if test "x$EXE_CMD" != x ; then
+      tokens=( $EXE_CMD )
       tokens[0]=`basename ${tokens[0]}`
-      echo "    ${tokens[*]} ./$1 $outfile"
+      echo "    ${tokens[*]} ./$1 $_outfile"
    else
-      echo "    ./$1 $outfile"
+      echo "    ./$1 $_outfile"
    fi
-   ${RUN_CMD} ./$1 $outfile
+   ${EXE_CMD} ./$1 $_outfile
 
-   for f in ${outfile} ${outfile2} ; do
+   for f in ${_outfile} ${_outfile2} ; do
       FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k $f`
       if test "x${FILE_KIND}" != x$outfile_kind ; then
          echo "Error (as $vol_type VOL): expecting file kind $outfile_kind but got ${FILE_KIND}"
