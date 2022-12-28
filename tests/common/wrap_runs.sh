@@ -54,13 +54,14 @@ run_func() {
       tokens=( $EXE_CMD )
       tokens[0]=`basename ${tokens[0]}`
       echo "    ${tokens[*]} ./$1 $_outfile"
+      ${tokens[*]} ./$1 $_outfile
    else
       echo "    ./$1 $_outfile"
+      ./$1 $_outfile
    fi
-   ${EXE_CMD} ./$1 $_outfile
 
    for f in ${_outfile} ${_outfile2} ; do
-      FILE_KIND=`${top_builddir}/utils/h5ldump/h5ldump -k $f`
+      FILE_KIND=`${TESTSEQRUN} ${top_builddir}/utils/h5ldump/h5ldump -k $f`
       if test "x${FILE_KIND}" != x$outfile_kind ; then
          echo "Error (as $vol_type VOL): expecting file kind $outfile_kind but got ${FILE_KIND}"
          exit 1
