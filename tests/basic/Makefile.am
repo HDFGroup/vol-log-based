@@ -22,16 +22,16 @@ LDADD = $(top_builddir)/src/libH5VL_log.la ../common/libtestutils.la
 ../common/libtestutils.la:
 	set -e; cd ../common && $(MAKE) $(MFLAGS) tests
 
-check_PROGRAMS =    file \
-                    group \
-                    attr \
-                    dset \
-                    dwrite \
-                    dread \
-                    fill \
-                    memsel
-                #   noclose
-                #   test
+check_PROGRAMS = attr \
+                 dread \
+                 dset \
+                 dwrite \
+                 file \
+                 fill \
+                 group \
+                 memsel \
+                 multiblockselection \
+                 multipointselection
 
 EXTRA_DIST = seq_runs.sh parallel_run.sh
 
