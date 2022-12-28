@@ -68,6 +68,11 @@ HDF5_URL = https://raw.githubusercontent.com/HDFGroup/hdf5/${HDF5_VERSION}
 $(SEQ_SRCS): %.c : $$(wildcard %.patch.$(HDF5_VERSION))
 	@DOWNLOAD_CMD@ $(HDF5_URL)/examples/$@
 	if [ -f ${srcdir}/$(basename $@).patch.$(HDF5_VERSION) ]; then patch -st $@ < ${srcdir}/$(basename $@).patch.$(HDF5_VERSION); fi
+	$(SED_I) -e "s|main(.*|main(int argc, char **argv)|g" $@
+	$(SED_I) -e "s|H5Fcreate(FILE|H5Fcreate(argv[1]|g" $@
+	$(SED_I) -e "s|H5Fcreate(H5FILE_NAME|H5Fcreate(argv[1]|g" $@
+	$(SED_I) -e "s|H5Fopen(FILE|H5Fopen(argv[1]|g" $@
+	$(SED_I) -e "s|H5Fopen(H5FILE_NAME|H5Fopen(argv[1]|g" $@
 
 $(PAR_SRCS): %.c : $$(wildcard %.patch.$(HDF5_VERSION))
 	@DOWNLOAD_CMD@ $(HDF5_URL)/examples/$@
