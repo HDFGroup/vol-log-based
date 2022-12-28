@@ -54,11 +54,10 @@ run_func() {
       tokens=( $EXE_CMD )
       tokens[0]=`basename ${tokens[0]}`
       echo "    ${tokens[*]} ./$1 $_outfile"
-      ${tokens[*]} ./$1 $_outfile
    else
       echo "    ./$1 $_outfile"
-      ./$1 $_outfile
    fi
+   $RUN_CMD ./$1 $_outfile
 
    for f in ${_outfile} ${_outfile2} ; do
       FILE_KIND=`${TESTSEQRUN} ${top_builddir}/utils/h5ldump/h5ldump -k $f`
