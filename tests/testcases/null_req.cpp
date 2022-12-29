@@ -55,7 +55,7 @@ int main (int argc, char **argv) {
     /* check VOL related environment variables */
     vol_env env;
     check_env(&env);
-    if (env.connector == 0) {
+    if (env.native_only == 0 && env.connector == 0) {
         // Register LOG VOL plugin
         log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
         H5Pset_vol (faplid, log_vlid, NULL);
@@ -80,7 +80,9 @@ int main (int argc, char **argv) {
     count[1] = 0;
     err      = H5Sselect_hyperslab (sid, H5S_SELECT_SET, start, NULL, count, NULL);
     CHECK_ERR (err)
-    msid = H5Screate_simple (1, dims + 1, dims + 1);
+    // create memory space of zero size
+    dims[0] = 0;
+    msid = H5Screate_simple (1, dims, NULL);
     CHECK_ERR (msid);
     err = H5Dwrite (did, H5T_NATIVE_INT, msid, sid, H5P_DEFAULT, buf);
     CHECK_ERR (err)
