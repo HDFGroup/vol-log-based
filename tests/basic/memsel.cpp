@@ -60,7 +60,7 @@ int main (int argc, char **argv) {
 
     /* check VOL related environment variables */
     check_env(&env);
-    if (env.connector == 0) {
+    if (env.native_only == 0 && env.connector == 0) {
         // Register LOG VOL plugin
         log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
         CHECK_ERR (log_vlid)

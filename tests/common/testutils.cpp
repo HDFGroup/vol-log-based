@@ -11,11 +11,18 @@
 void check_env(vol_env *env) {
     char *env_str;
 
-    env->connector = 0;
-    env->log_env   = 0;
-    env->cache_env = 0;
-    env->async_env = 0;
-    env->passthru  = 0;
+    env->native_only = 0;
+    env->connector   = 0;
+    env->log_env     = 0;
+    env->cache_env   = 0;
+    env->async_env   = 0;
+    env->passthru    = 0;
+
+    env_str = getenv("TEST_NATIVE_VOL_ONLY");
+    if (env_str != NULL && env_str[0] == '1') {
+        env->native_only = 1;
+        return;
+    }
 
     env_str = getenv("H5VL_LOG_PASSTHRU");
     if (env_str != NULL && env_str[0] == '1')

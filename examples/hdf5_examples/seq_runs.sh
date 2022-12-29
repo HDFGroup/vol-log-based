@@ -42,6 +42,13 @@ test_example_func() {
    fi
 }
 
+# Skip test if TEST_NATIVE_VOL_ONLY is set, because H5Pset_vol() is called in
+# each of the example programs
+if test "x$TEST_NATIVE_VOL_ONLY" = x1 ; then
+   echo "Skip test of $1, as env TEST_NATIVE_VOL_ONLY is set to 1"
+   exit 0
+fi
+
 log_vol_file_only=1
 
 if test "$1" = ./h5_crtdat || test "$1" = ./h5_crtatt  || test "$1" = ./h5_rdwt ; then

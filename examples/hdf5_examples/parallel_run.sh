@@ -9,6 +9,13 @@ RUN_CMD=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 
 . $srcdir/../../tests/common/wrap_runs.sh
 
+# Skip test if TEST_NATIVE_VOL_ONLY is set, because H5Pset_vol() is called in
+# each of the example programs
+if test "x$TEST_NATIVE_VOL_ONLY" = x1 ; then
+   echo "Skip test of $1, as env TEST_NATIVE_VOL_ONLY is set to 1"
+   exit 0
+fi
+
 log_vol_file_only=1
 
 # These example programs downloaded from HDF5 repo CANNOT run the second time,

@@ -105,6 +105,7 @@
 #define TRUE         1
 
 typedef struct {
+    int native_only;
     int connector;
     int log_env;
     int cache_env;

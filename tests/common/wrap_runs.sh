@@ -7,7 +7,12 @@
 # check if Log, Cache, Async VOLs set in the env HDF5_VOL_CONNECTOR
 getenv_vol() {
    set +e
-   if test "x${HDF5_VOL_CONNECTOR}" != x ; then
+   if test "x$TEST_NATIVE_VOL_ONLY" = x1 ; then
+      # disable all VOLs
+      async_vol=no
+      cache_vol=no
+      log_vol=no
+   elif test "x${HDF5_VOL_CONNECTOR}" != x ; then
       err=`echo "${HDF5_VOL_CONNECTOR}" | ${EGREP} -- "under_vol=512"`
       if test "x$?" = x0 ; then
          async_vol=yes
@@ -35,6 +40,10 @@ run_func() {
          outfile_kind=HDF5
       fi
    fi
+   # set TEST_NATIVE_VOL_ONLY to 1 to completely disable Log VOL
+   if test "x$TEST_NATIVE_VOL_ONLY" = x1 ; then
+      outfile_kind=HDF5
+   fi
 
    # Exit immediately if a command exits with a non-zero status.
    set -e
@@ -59,11 +68,15 @@ run_func() {
    fi
    $RUN_CMD ./$1 $_outfile
 
+   # set TEST_NATIVE_VOL_ONLY to 1 to completely disable Log VOL
    for f in ${_outfile} ${_outfile2} ; do
       FILE_KIND=`${TESTSEQRUN} ${top_builddir}/utils/h5ldump/h5ldump -k $f`
       if test "x${FILE_KIND}" != x$outfile_kind ; then
-         echo "Error (as $vol_type VOL): expecting file kind $outfile_kind but got ${FILE_KIND}"
+         echo "Error: expecting file kind $outfile_kind but got ${FILE_KIND}"
          exit 1
+      else
+         fname=`basename $f`
+         echo "    Success: output file '$fname' is expected kind ${FILE_KIND}"
       fi
    done
 }
@@ -105,20 +118,22 @@ test_func() {
    else
       # No env is set to use Log VOL
 
-      # First, set the env to test Log VOL
-      echo " -- Set HDF5_VOL_CONNECTOR to \"LOG under_vol=0;under_info={}\" ----------"
-      export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
-      export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
-      log_vol=yes
+      if test "x$TEST_NATIVE_VOL_ONLY" != x1 ; then
+         # First, set the env to test Log VOL
+         echo " -- Set HDF5_VOL_CONNECTOR to \"LOG under_vol=0;under_info={}\" ----------"
+         export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
+         export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
+         log_vol=yes
 
-      # test when Log is passthru
-      echo "  - Run Log VOL as a passthrough connector -----------------------------"
-      export H5VL_LOG_PASSTHRU=1
-      run_func $1 $log_vol_file_only $2 $3
-      # test when Log is terminal
-      echo "  - Run Log VOL as a terminal connector --------------------------------"
-      unset H5VL_LOG_PASSTHRU
-      run_func $1 $log_vol_file_only $2 $3
+         # test when Log is passthru
+         echo "  - Run Log VOL as a passthrough connector -----------------------------"
+         export H5VL_LOG_PASSTHRU=1
+         run_func $1 $log_vol_file_only $2 $3
+         # test when Log is terminal
+         echo "  - Run Log VOL as a terminal connector --------------------------------"
+         unset H5VL_LOG_PASSTHRU
+         run_func $1 $log_vol_file_only $2 $3
+      fi
 
       # Unset all env to test Log VOL (i.e. test programs will call H5Pset_vol)
       echo " -- Unset HDF5_VOL_CONNECTOR -------------------------------------------"
