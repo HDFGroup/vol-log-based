@@ -17,7 +17,7 @@ int main (int argc, char **argv) {
     const char *file_name;
     int i, rank, np, nerrs=0, buf[N];
     herr_t err;
-    hid_t fcpl_id=-1, log_vlid=H5I_INVALID_HID;
+    hid_t fapl_id=-1, log_vlid=H5I_INVALID_HID;
     hid_t file_id=-1, dspace_id=-1, dset_id=-1, mspace_id=-1, dxpl_id=-1;
     hsize_t dims[3], start[2];
     vol_env env;
@@ -41,13 +41,13 @@ int main (int argc, char **argv) {
     SHOW_TEST_INFO ("H5Sselect_elements")
 
     // Set MPI-IO and parallel access proterty.
-    fcpl_id = H5Pcreate (H5P_FILE_ACCESS);
-    CHECK_ERR (fcpl_id)
-    err = H5Pset_fapl_mpio (fcpl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+    fapl_id = H5Pcreate (H5P_FILE_ACCESS);
+    CHECK_ERR (fapl_id)
+    err = H5Pset_fapl_mpio (fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
     CHECK_ERR (err)
-    err = H5Pset_all_coll_metadata_ops (fcpl_id, 1);
+    err = H5Pset_all_coll_metadata_ops (fapl_id, 1);
     CHECK_ERR (err)
-    err = H5Pset_coll_metadata_write (fcpl_id, 1);
+    err = H5Pset_coll_metadata_write (fapl_id, 1);
     CHECK_ERR (err)
 
     // Collective I/O
@@ -58,16 +58,16 @@ int main (int argc, char **argv) {
 
     /* check VOL related environment variables */
     check_env(&env);
-    if (env.connector == 0) {
+    if (env.native_only == 0 && env.connector == 0) {
         // Register LOG VOL plugin
         log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
         CHECK_ERR (log_vlid)
-        err = H5Pset_vol (fcpl_id, log_vlid, NULL);
+        err = H5Pset_vol (fapl_id, log_vlid, NULL);
         CHECK_ERR (err)
     }
 
     // Create file
-    file_id = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, fcpl_id);
+    file_id = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
     CHECK_ERR (file_id)
 
     // Define dataset
@@ -104,7 +104,7 @@ int main (int argc, char **argv) {
     CHECK_ERR (err)
 
     // Open file
-    file_id = H5Fopen (file_name, H5F_ACC_RDONLY, fcpl_id);
+    file_id = H5Fopen (file_name, H5F_ACC_RDONLY, fapl_id);
     CHECK_ERR (file_id)
 
     // Open dataset
@@ -112,7 +112,7 @@ int main (int argc, char **argv) {
     CHECK_ERR (dset_id)
 
     for (i = 0; i < N; i++) { buf[i] = 0; }
-    err = H5Dread (dset_id, H5T_NATIVE_INT, H5S_BLOCK, dspace_id, dxpl_id, buf);
+    err = H5Dread (dset_id, H5T_NATIVE_INT, mspace_id, dspace_id, dxpl_id, buf);
     CHECK_ERR (err)
     err = H5Fflush (file_id, H5F_SCOPE_GLOBAL);
     CHECK_ERR (err)
@@ -133,11 +133,11 @@ err_out:
         err = H5Sclose (mspace_id);
         CHECK_ERR (err)
     }
-    if (mspace_id != -1) {
+    if (dset_id != -1) {
         err = H5Dclose (dset_id);
         CHECK_ERR (err)
     }
-    if (mspace_id != -1) {
+    if (file_id != -1) {
         err = H5Fclose (file_id);
         CHECK_ERR (err)
     }
@@ -145,11 +145,11 @@ err_out:
         err = H5VLclose (log_vlid);
         CHECK_ERR (err)
     }
-    if (mspace_id != -1) {
-        err = H5Pclose (fcpl_id);
+    if (fapl_id != -1) {
+        err = H5Pclose (fapl_id);
         CHECK_ERR (err)
     }
-    if (mspace_id != -1) {
+    if (dxpl_id != -1) {
         err = H5Pclose (dxpl_id);
         CHECK_ERR (err)
     }
