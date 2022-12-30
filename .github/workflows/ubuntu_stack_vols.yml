@@ -183,6 +183,48 @@ jobs:
           run: |
             cd ${GITHUB_WORKSPACE}
             make ptest
+        - name: Test Cache and Async VOL - make check
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            export ABT_DIR=${GITHUB_WORKSPACE}/Argobots
+            export ASYNC_DIR=${GITHUB_WORKSPACE}/Async
+            export CACHE_DIR=${GITHUB_WORKSPACE}/Cache
+            export HDF5_DIR=${GITHUB_WORKSPACE}/HDF5
+            export HDF5_ROOT=${HDF5_DIR}
+            export HDF5_PLUGIN_PATH=${CACHE_DIR}/lib:${ASYNC_DIR}/lib
+            export LD_LIBRARY_PATH=${CACHE_DIR}/lib:${ASYNC_DIR}/lib:${ABT_DIR}/lib:${HDF5_DIR}/lib:${LD_LIBRARY_PATH}
+            export HDF5_VOL_CONNECTOR="cache_ext config=${GITHUB_WORKSPACE}/cache.cfg;under_vol=512;under_info={under_vol=0;under_info={}}"
+            export TEST_NATIVE_VOL_ONLY=1
+            make check
+            unset TEST_NATIVE_VOL_ONLY
+        - name: Print log
+          if: ${{ always() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            fname=`find tests utils examples -type f -name "*.log"`
+            for f in $fname ; do \
+               bname=`basename $f` ; \
+               if test "x$bname" != xconfig.log ; then \
+                  echo "-------- dump $f ----------------------------" ; \
+                  cat $f ; \
+               fi ; \
+            done
+        - name: Test Cache and Async VOL - make ptest
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            export ABT_DIR=${GITHUB_WORKSPACE}/Argobots
+            export ASYNC_DIR=${GITHUB_WORKSPACE}/Async
+            export CACHE_DIR=${GITHUB_WORKSPACE}/Cache
+            export HDF5_DIR=${GITHUB_WORKSPACE}/HDF5
+            export HDF5_ROOT=${HDF5_DIR}
+            export HDF5_PLUGIN_PATH=${CACHE_DIR}/lib:${ASYNC_DIR}/lib
+            export LD_LIBRARY_PATH=${CACHE_DIR}/lib:${ASYNC_DIR}/lib:${ABT_DIR}/lib:${HDF5_DIR}/lib:${LD_LIBRARY_PATH}
+            export HDF5_VOL_CONNECTOR="cache_ext config=${GITHUB_WORKSPACE}/cache.cfg;under_vol=512;under_info={under_vol=0;under_info={}}"
+            export TEST_NATIVE_VOL_ONLY=1
+            make ptest
+            unset TEST_NATIVE_VOL_ONLY
         - name: Test stacking Log VOL on top of Cache VOL only - make check
           if: ${{ success() }}
           run: |
