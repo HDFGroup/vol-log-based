@@ -18,7 +18,13 @@ AM_CPPFLAGS += -DUSE_HDF5
 AM_CPPFLAGS += -DHDF5_PARALLEL
 LDADD = $(top_builddir)/src/libH5VL_log.la
 
-# The following files will be downloaded from HDF5 library
+# All Test programs will be downloaded from HDF5 library repo
+
+# Running dependentcy: (thus using -j option in 'make check' can fail)
+#     h5_crtatt.c  must run after h5_crtdat.c   (file dependency: dset.h5)
+#     h5_rdwt.c    must run after h5_crtdat.c   (file dependency: dset.h5)
+#     h5_crtgrpd.c must run after h5_crtgrpar.c (file dependency: groups.h5)
+#     h5_read.c    must run after h5_write.c    (file dependency: SDS.h5)
 SEQ_SRCS =  h5_crtdat.c \
             h5_crtatt.c \
             h5_crtgrp.c \
