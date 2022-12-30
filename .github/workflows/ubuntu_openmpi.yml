@@ -140,4 +140,9 @@ jobs:
           run: |
             cd ${GITHUB_WORKSPACE}
             make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${GITHUB_WORKSPACE}/HDF5"
+        - name: make distclean
+          if: ${{ always() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            make -s distclean
 

@@ -98,4 +98,9 @@ jobs:
             # make check
             # make ptest
             # make -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${GITHUB_WORKSPACE}/HDF5 --enable-shared CXXFLAGS='-O0 -g -std=c++14' LIBS=-lstdc++"
+        - name: make distclean
+          if: ${{ always() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            make -s distclean
 
