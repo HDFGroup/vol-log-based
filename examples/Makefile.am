@@ -67,9 +67,9 @@ SUBDIRS = . $(C_SUBDIRS)
 PTEST_SUBDIRS = $(C_SUBDIRS)
 
 ptest: $(check_PROGRAMS)
-	@echo "==========================================================="
+	@echo "============================================================================"
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
-	@echo "==========================================================="
+	@echo "============================================================================"
 	@$(TESTS_ENVIRONMENT) \
 	$(srcdir)/parallel_run.sh 4 || exit 1
 	@for d in $(PTEST_SUBDIRS) ; do \
