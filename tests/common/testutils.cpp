@@ -35,13 +35,13 @@ void check_env(vol_env *env) {
 
     env->connector = 1;
 
-    if (strcasestr(env_str, "LOG ") != NULL)
+    if (strcasestr(env_str, "under_vol=514") != NULL || strcasestr(env_str, "LOG ") != NULL)
         env->log_env = 1;
 
-    if (strcasestr(env_str, "under_vol=512") != NULL)
+    if (strcasestr(env_str, "under_vol=512") != NULL || strcasestr(env_str, "async ") != NULL)
         env->async_env = 1;
 
-    if (strcasestr(env_str, "under_vol=513") != NULL)
+    if (strcasestr(env_str, "under_vol=513") != NULL || strcasestr(env_str, "cache_ext ") != NULL)
         env->cache_env = 1;
 }
 

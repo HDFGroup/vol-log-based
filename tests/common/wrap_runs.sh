@@ -7,19 +7,26 @@
 # check if Log, Cache, Async VOLs set in the env HDF5_VOL_CONNECTOR
 getenv_vol() {
    set +e
-   if test "x$TEST_NATIVE_VOL_ONLY" = x1 ; then
-      # disable all VOLs
-      async_vol=no
-      cache_vol=no
-      log_vol=no
-   elif test "x${HDF5_VOL_CONNECTOR}" != x ; then
+   if test "x${HDF5_VOL_CONNECTOR}" != x ; then
       err=`echo "${HDF5_VOL_CONNECTOR}" | ${EGREP} -- "under_vol=512"`
+      if test "x$?" = x0 ; then
+         async_vol=yes
+      fi
+      err=`echo "${HDF5_VOL_CONNECTOR}" | ${EGREP} -- "async "`
       if test "x$?" = x0 ; then
          async_vol=yes
       fi
       err=`echo "${HDF5_VOL_CONNECTOR}" | ${EGREP} -- "under_vol=513"`
       if test "x$?" = x0 ; then
          cache_vol=yes
+      fi
+      err=`echo "${HDF5_VOL_CONNECTOR}" | ${EGREP} -- "cache_ext "`
+      if test "x$?" = x0 ; then
+         cache_vol=yes
+      fi
+      err=`echo "${HDF5_VOL_CONNECTOR}" | ${EGREP} -- "under_vol=514 "`
+      if test "x$?" = x0 ; then
+         log_vol=yes
       fi
       err=`echo "${HDF5_VOL_CONNECTOR}" | ${EGREP} -- "LOG "`
       if test "x$?" = x0 ; then
