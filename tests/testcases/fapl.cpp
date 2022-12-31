@@ -22,6 +22,7 @@ int main (int argc, char **argv) {
     hid_t faplid   = -1;
     hid_t faplid_custom   = H5I_INVALID_HID;
     hid_t log_vlid = -1;  // Logvol ID
+    vol_env env;
 
     int mpi_required;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
@@ -38,6 +39,9 @@ int main (int argc, char **argv) {
     } else {
         file_name = "test.h5";
     }
+
+    /* check VOL related environment variables */
+    check_env(&env);
     SHOW_TEST_INFO ("Creating files")
 
     faplid = H5Pcreate (H5P_FILE_ACCESS);
@@ -46,9 +50,6 @@ int main (int argc, char **argv) {
     H5Pset_fapl_mpio (faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
     H5Pset_all_coll_metadata_ops (faplid, 1);
 
-    /* check VOL related environment variables */
-    vol_env env;
-    check_env(&env);
     if (env.native_only == 0 && env.connector == 0) {
         // Register LOG VOL plugin
         log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);

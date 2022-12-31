@@ -29,6 +29,7 @@ int main(int argc, char **argv) {
     int buf[N];
     hsize_t dims[2] = {0, N}; // dims[0] will be modified later
     hsize_t start[2], count[2];
+    vol_env env;
 
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
@@ -43,6 +44,10 @@ int main(int argc, char **argv) {
     } else {
         file_name = "test.h5";
     }
+
+    /* check VOL related environment variables */
+    check_env(&env);
+    SHOW_TEST_INFO ("Writing hyperslab")
 
     /* Set file create property list to MPI */
     fcplid = H5Pcreate(H5P_FILE_ACCESS);
@@ -86,8 +91,6 @@ int main(int argc, char **argv) {
     err = H5Dwrite(did, H5T_NATIVE_INT, memspace_id, filespace_id, H5P_DEFAULT,
                    buf);
     CHECK_ERR(err);
-
-    SHOW_TEST_INFO ("Writing hyperslab")
 
     /* Close everything */
 err_out:;

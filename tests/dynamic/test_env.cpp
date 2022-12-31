@@ -48,17 +48,15 @@
 #include "testutils.hpp"
 
 int main (int argc, char **argv) {
-    int err, nerrs = 0, verbose=0;
-    int rank, np;
+    int rank, np, err, nerrs = 0, verbose=0;
     unsigned int i, nidx;
+    const char *env_str, *file_name;
     char buf[1024];
-    char *env;
-    const char *file_name;
-    hid_t fid       = -1;  // File ID
+    hid_t fid      = -1;  // File ID
     hid_t faplid   = -1;
     hid_t log_vlid = -1;  // Logvol ID
-    char name1[512];
-    char name2[512];
+    char name1[512], name2[512];
+    vol_env env;
 
     int mpi_required;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
@@ -75,21 +73,23 @@ int main (int argc, char **argv) {
     } else {
         file_name = "test.h5";
     }
+
+    check_env(&env);
     SHOW_TEST_INFO ("Change VOL env var")
 
     if (rank == 0) {
         if (verbose)
             std::cout << "\nEnvinroment variables for file create:" << std::endl;
 
-        env = getenv ("HDF5_VOL_CONNECTOR");
-        if (!env) env = const_cast<char *> ("");
+        env_str = getenv ("HDF5_VOL_CONNECTOR");
+        if (!env_str) env_str = const_cast<char *> ("");
         if (verbose)
-            std::cout << "HDF5_VOL_CONNECTOR = " << env << std::endl;
+            std::cout << "HDF5_VOL_CONNECTOR = " << env_str << std::endl;
 
-        env = getenv ("HDF5_PLUGIN_PATH");
-        if (!env) env = const_cast<char *> ("");
+        env_str = getenv ("HDF5_PLUGIN_PATH");
+        if (!env_str) env_str = const_cast<char *> ("");
         if (verbose)
-            std::cout << "HDF5_PLUGIN_PATH = " << env << std::endl;
+            std::cout << "HDF5_PLUGIN_PATH = " << env_str << std::endl;
     }
 
     faplid = H5Pcreate (H5P_FILE_ACCESS);
@@ -119,15 +119,15 @@ int main (int argc, char **argv) {
         if (verbose)
             std::cout << "Envinroment variables for file open:" << std::endl;
 
-        env = getenv ("HDF5_VOL_CONNECTOR");
-        assert (env);
+        env_str = getenv ("HDF5_VOL_CONNECTOR");
+        assert (env_str);
         if (verbose)
-            std::cout << "HDF5_VOL_CONNECTOR = " << env << std::endl;
+            std::cout << "HDF5_VOL_CONNECTOR = " << env_str << std::endl;
 
-        env = getenv ("HDF5_PLUGIN_PATH");
-        if (!env) env = const_cast<char *> ("");
+        env_str = getenv ("HDF5_PLUGIN_PATH");
+        if (!env_str) env_str = const_cast<char *> ("");
         if (verbose)
-            std::cout << "HDF5_PLUGIN_PATH = " << env << std::endl;
+            std::cout << "HDF5_PLUGIN_PATH = " << env_str << std::endl;
     }
 
     // Reset all plugin path

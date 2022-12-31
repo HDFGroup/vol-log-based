@@ -39,6 +39,8 @@ int main (int argc, char **argv) {
         file_name = "multiblockselection.h5";
     }
 
+    /* check VOL related environment variables */
+    check_env(&env);
     SHOW_TEST_INFO ("H5Sselect_hyperslab")
 
     // Set MPI-IO and parallel access proterty.
@@ -57,8 +59,6 @@ int main (int argc, char **argv) {
     err = H5Pset_dxpl_mpio (dxpl_id, H5FD_MPIO_COLLECTIVE);
     CHECK_ERR (err)
 
-    /* check VOL related environment variables */
-    check_env(&env);
     if (env.native_only == 0 && env.connector == 0) {
         // Register LOG VOL plugin
         log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);

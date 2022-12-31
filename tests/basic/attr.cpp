@@ -39,6 +39,9 @@ int main (int argc, char **argv) {
     } else {
         file_name = "attr.h5";
     }
+
+    /* check VOL related environment variables */
+    check_env(&env);
     SHOW_TEST_INFO ("Creating attributes")
 
     faplid = H5Pcreate (H5P_FILE_ACCESS);
@@ -48,8 +51,6 @@ int main (int argc, char **argv) {
     err = H5Pset_all_coll_metadata_ops (faplid, 1);
     CHECK_ERR (err)
 
-    /* check VOL related environment variables */
-    check_env(&env);
     if (env.native_only == 0 && env.connector == 0) {
         // Register LOG VOL plugin
         log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);

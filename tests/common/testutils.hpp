@@ -13,85 +13,82 @@
 #include <cstdlib>
 #include <iostream>
 
-#define CHECK_ERR(A)                                                  \
-    {                                                                 \
-        if (A < 0) {                                                  \
-            nerrs++;                                                  \
-            printf ("Error at line %d in %s:\n", __LINE__, __FILE__); \
-            goto err_out;                                             \
-        }                                                             \
-    }
-
-#define CHECK_ID(A)                                                                               \
-    {                                                                                             \
-        if (A < 0) {                                                                              \
-            nerrs++;                                                                              \
-            printf ("Error at line %d in %s: HDF5 object %s ID is invalid\n", __LINE__, __FILE__, \
-                    #A);                                                                          \
-            H5Eprint1 (stdout);                                                                   \
-            goto err_out;                                                                         \
-        }                                                                                         \
-    }
-
-#define EXP_ERR(A, B)                                                                           \
-    {                                                                                           \
-        if (A != B) {                                                                           \
-            nerrs++;                                                                            \
-            printf ("Error at line %d in %s: expecting %ld but got %d\n", __LINE__, __FILE__, A, \
-                    B);                                                                         \
-            goto err_out;                                                                       \
-        }                                                                                       \
-    }
-
-#define EXP_VAL(A, B)                                                                         \
-    {                                                                                         \
-        if (A != B) {                                                                         \
-            nerrs++;                                                                          \
-            std::cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " \
-                      << #A << " = " << (B) << ", but got " << (A) << std::endl;              \
-            goto err_out;                                                                     \
-        }                                                                                     \
-    }
-
-#define EXP_VAL_EX(A, B, C)                                                                        \
-    {                                                                                              \
-        if (A != B) {                                                                              \
-            nerrs++;                                                                               \
-            std::cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": expecting " << C \
-                      << " = " << (B) << ", but got " << (A) << std::endl;                         \
-            goto err_out;                                                                          \
-        }                                                                                          \
-    }
-
-#define RET_ERR(A)                                                                                 \
-    {                                                                                              \
-        nerrs++;                                                                                   \
-        std::cout << "Error at line " << __LINE__ << " in " << __FILE__ << ": " << A << std::endl; \
-        goto err_out;                                                                              \
-    }
-
-#define SHOW_TEST_INFO(A) { \
-    if (rank == 0) { \
-        char *env, msg[80]; \
-        env = getenv("H5VL_LOG_PASSTHRU"); \
-        if (env != NULL && *env == '1') \
-            sprintf(msg,"%s: (as %s VOL) %s", basename(argv[0]),"passthru",A); \
-        else \
-            sprintf(msg,"%s: (as %s VOL) %s", basename(argv[0]),"terminal",A); \
-        printf("  * TESTING CXX    %-48s ---- ", msg); \
-    } \
+#define CHECK_ERR(A) {                                                    \
+    if (A < 0) {                                                          \
+        nerrs++;                                                          \
+        printf ("Error at line %d in %s:\n", __LINE__, __FILE__);         \
+        goto err_out;                                                     \
+    }                                                                     \
 }
 
-#define SHOW_TEST_RESULT                                                           \
-    {                                                                              \
-        MPI_Allreduce (MPI_IN_PLACE, &nerrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); \
-        if (rank == 0) {                                                           \
-            if (nerrs)                                                             \
-                std::cout << "fail with " << nerrs << " mismatches." << std::endl; \
-            else                                                                   \
-                std::cout << "pass" << std::endl;                                  \
-        }                                                                          \
-    }
+#define CHECK_ID(A) {                                                     \
+    if (A < 0) {                                                          \
+        nerrs++;                                                          \
+        printf ("Error at line %d in %s: HDF5 object %s ID is invalid\n", \
+                __LINE__, __FILE__, #A);                                  \
+        H5Eprint1 (stdout);                                               \
+        goto err_out;                                                     \
+    }                                                                     \
+}
+
+#define EXP_ERR(A, B) {                                                   \
+    if (A != B) {                                                         \
+        nerrs++;                                                          \
+        printf("Error at line %d in %s: expecting %ld but got %d\n",      \
+               __LINE__, __FILE__, A, B);                                 \
+        goto err_out;                                                     \
+    }                                                                     \
+}
+
+#define EXP_VAL(A, B) {                                                   \
+    if (A != B) {                                                         \
+        nerrs++;                                                          \
+        std::cout << "Error at line " << __LINE__ << " in " << __FILE__   \
+                  << ": expecting " << #A << " = " << (B) << ", but got " \
+                  << (A) << std::endl;                                    \
+        goto err_out;                                                     \
+    }                                                                     \
+}
+
+#define EXP_VAL_EX(A, B, C) {                                             \
+    if (A != B) {                                                         \
+        nerrs++;                                                          \
+        std::cout << "Error at line " << __LINE__ << " in " << __FILE__   \
+                  << ": expecting " << C << " = " << (B) << ", but got "  \
+                  << (A) << std::endl;                                    \
+        goto err_out;                                                     \
+    }                                                                     \
+}
+
+#define RET_ERR(A) {                                                      \
+    nerrs++;                                                              \
+    std::cout << "Error at line " << __LINE__ << " in " << __FILE__       \
+              << ": " << A << std::endl;                                  \
+    goto err_out;                                                         \
+}
+
+#define SHOW_TEST_INFO(A) {                                                \
+    if (rank == 0) {                                                       \
+        char msg[80];                                                      \
+        if (env.native_only)                                               \
+            sprintf(msg,"%s: %s", basename(argv[0]),A);                    \
+        else if (env.passthru)                                             \
+            sprintf(msg,"%s: (as passthru VOL) %s", basename(argv[0]), A); \
+        else                                                               \
+            sprintf(msg,"%s: (as terminal VOL) %s", basename(argv[0]), A); \
+        printf("  * TESTING CXX    %-48s ---- ", msg);                     \
+    }                                                                      \
+}
+
+#define SHOW_TEST_RESULT {                                                    \
+    MPI_Allreduce(MPI_IN_PLACE, &nerrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); \
+    if (rank == 0) {                                                          \
+        if (nerrs)                                                            \
+            std::cout << "fail with " << nerrs << " mismatches." << std::endl;\
+        else                                                                  \
+            std::cout << "pass" << std::endl;                                 \
+    }                                                                         \
+}
 
 #define PASS_STR "pass\n"
 #define SKIP_STR "skip\n"
