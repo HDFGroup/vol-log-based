@@ -2,7 +2,6 @@
  *  Copyright (C) 2022, Northwestern University and Argonne National Laboratory
  *  See COPYRIGHT notice in top-level directory.
  */
-/* $Id$ */
 
 #include <hdf5.h>
 #include <mpi.h>
@@ -58,7 +57,7 @@ int main (int argc, char **argv) {
     fid = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);
     CHECK_ERR (fid)
 
-    // Open the same file, should fiail
+    // Open the same file, should fail
     H5E_BEGIN_TRY {
         fid2 = H5Fopen (file_name, H5F_ACC_RDONLY, faplid);
         EXP_ERR (fid2, H5I_INVALID_HID)
