@@ -27,6 +27,6 @@ for p in ${check_PROGRAMS} ; do
       echo ""
       continue
    fi
-   test_func $p
+   test_func ./$p
 done
 

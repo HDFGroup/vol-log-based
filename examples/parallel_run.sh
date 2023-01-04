@@ -29,6 +29,6 @@ fi
 log_vol_file_only=1
 
 for p in ${check_PROGRAMS} ; do
-   test_func $p
+   test_func ./$p
 done
 

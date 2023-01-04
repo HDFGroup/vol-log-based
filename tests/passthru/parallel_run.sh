@@ -13,6 +13,6 @@ RUN_CMD=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 log_vol_file_only=0
 
 for p in ${check_PROGRAMS} ; do
-   test_func $p
+   test_func ./$p
 done
 

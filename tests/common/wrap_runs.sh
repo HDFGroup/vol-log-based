@@ -69,11 +69,11 @@ run_func() {
    if test "x$EXE_CMD" != x ; then
       tokens=( $EXE_CMD )
       tokens[0]=`basename ${tokens[0]}`
-      echo "    ${tokens[*]} ./$1 $_outfile"
+      echo "    ${tokens[*]} $1 $_outfile"
    else
-      echo "    ./$1 $_outfile"
+      echo "    $1 $_outfile"
    fi
-   $RUN_CMD ./$1 $_outfile
+   $RUN_CMD $1 $_outfile
 
    # set TEST_NATIVE_VOL_ONLY to 1 to completely disable Log VOL
    for f in ${_outfile} ${_outfile2} ; do
