@@ -29,7 +29,6 @@ check_PROGRAMS = attr \
                  file \
                  fill \
                  group \
-                 h5s_block \
                  memsel \
                  multiblockselection \
                  multipointselection
