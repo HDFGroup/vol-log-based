@@ -144,3 +144,5 @@ tests-local: all $(check_PROGRAMS)
 
 .PHONY: ptest tests
 
+.NOTPARALLEL:
+
