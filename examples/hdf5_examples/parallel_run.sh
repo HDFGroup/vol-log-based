@@ -37,24 +37,24 @@ for p in ${PAR_TESTS} ; do
       fi
       # must enable passthru when stacking Log on top of other VOLs
       export H5VL_LOG_PASSTHRU=1
-      run_func $p $log_vol_file_only $outfile $outfile2
+      run_func ./$p $log_vol_file_only $outfile $outfile2
    elif test "x$log_vol" = xyes ; then
       echo "---- Run Log VOL as a passthrough connector ---------------------"
       export H5VL_LOG_PASSTHRU=1
-      run_func $p $log_vol_file_only $outfile $outfile2
+      run_func ./$p $log_vol_file_only $outfile $outfile2
       echo "---- Run Log VOL as a terminal connector ---------------------"
       unset H5VL_LOG_PASSTHRU
-      run_func $p $log_vol_file_only $outfile $outfile2
+      run_func ./$p $log_vol_file_only $outfile $outfile2
    else
       export HDF5_VOL_CONNECTOR="LOG under_vol=0;under_info={}"
       export HDF5_PLUGIN_PATH="${top_builddir}/src/.libs"
       log_vol=yes
       echo "---- Run Log VOL as a passthrough connector ---------------------"
       export H5VL_LOG_PASSTHRU=1
-      run_func $p $log_vol_file_only $outfile $outfile2
+      run_func ./$p $log_vol_file_only $outfile $outfile2
       echo "---- Run Log VOL as a terminal connector ---------------------"
       unset H5VL_LOG_PASSTHRU
-      run_func $p $log_vol_file_only $outfile $outfile2
+      run_func ./$p $log_vol_file_only $outfile $outfile2
    fi
 done
 
