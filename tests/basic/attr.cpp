@@ -2,12 +2,11 @@
  *  Copyright (C) 2022, Northwestern University and Argonne National Laboratory
  *  See COPYRIGHT notice in top-level directory.
  */
-/* $Id$ */
 
-#include <hdf5.h>
-#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <mpi.h>
+#include <hdf5.h>
 
 #include "H5VL_log.h"
 #include "testutils.hpp"
