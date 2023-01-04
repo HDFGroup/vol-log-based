@@ -38,7 +38,7 @@ int main (int argc, char **argv) {
 
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
 
-    file_id = H5Fcreate ("test.ht", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    file_id = H5Fcreate ("h5s_block.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     assert(file_id != -1);
 
     dims[0] = N;
