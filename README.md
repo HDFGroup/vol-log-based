@@ -1,19 +1,20 @@
-## Log-layout based VOL connector - an HDF5 VOL Plugin for storing datasets in a log-based layout
+## Log VOL - an HDF5 VOL connector for storing data in a time-log layout in files
 
-This software repository contains source codes implementing Log-layout based VOL connector, an
+This software repository contains source codes implementing Log VOL connector, an
 [HDF5](https://www.hdfgroup.org) Virtual Object Layer
 ([VOL](https://portal.hdfgroup.org/display/HDF5/Virtual+Object+Layer)) plugin
-that stores HDF5 datasets in a log-based storage layout in files. When using
-this VOL connector (later referred to as the Log VOL connector), multiple write
-requests from an MPI process are appended one after
-another (as logs) and stored in a contiguous block in the file. The contiguous
-blocks of multiple processes are appended one another following the processes'
-MPI rank order. Such log-based I/O strategy avoids the expensive inter-process
-communication which is required when storing data in the canonical order.
-Thus, exist HDF5 programs, using the Log VOL connector, can achieve a better
-parallel write performance with no changes to their codes. Files created by
-this VOL conform with the HDF5 file format, but require this VOL to read them
-back.
+that stores HDF5 datasets in a storage layout similar to the time log. When using
+the Log VOL connector, write requests from an MPI process are appended one after
+another (as logs) in a contiguous space in the file. The contiguous spaces of
+multiple processes are appended one after another following the increasing order
+of processes' MPI rank IDs. Such a log layout I/O strategy avoids the expensive
+inter-process communication required when storing data in the canonical order.
+One of the pwoerful features of HDF5 VOL is to allow applications to make use
+a VOL connector by setting two environment variables without changing the
+application source codes. Using the Log VOL connector, exist HDF5 programs can
+achieve a better parallel write performance with no changes to their codes.
+Files created by the Log VOL conform with the HDF5 file format specification,
+but require the Log VOL to read them back.
 
 * Current build status:
   * [![Ubuntu_mpich](https://github.com/DataLib-ECP/vol-log-based/actions/workflows/ubuntu_mpich.yml/badge.svg)](https://github.com/DataLib-ECP/vol-log-based/actions/workflows/ubuntu_mpich.yml)
