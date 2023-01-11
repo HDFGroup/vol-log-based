@@ -504,6 +504,7 @@ We also provide the example performance outputs from Perlmutter @ NERSC using:
 1. Environment Setting
    
     ```shell
+    % export H5VL_LOG_PASSTHRU=1
     % export HDF5_PLUGIN_PATH=${LOGVOL_DIR}/lib:${CACHE_DIR}/lib:${ASYNC_DIR}/lib
     % export LD_LIBRARY_PATH=${HDF5_PLUGIN_PATH}:${ABT_DIR}/lib:${HDF5_DIR}/lib:${LD_LIBRARY_PATH}
     % export HDF5_VOL_CONNECTOR="LOG under_vol=513;under_info={config=cache.cfg;under_vol=512;under_info={under_vol=0;under_info={}}}"
@@ -630,7 +631,11 @@ We also provide the example performance outputs from Perlmutter @ NERSC using:
         Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
         Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
         Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
+        ------- EXT CACHE VOL DATASET Write
+        ------- EXT CACHE VOL DATASET Write
         Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
+        ------- EXT CACHE VOL DATASET Write
+        ------- EXT CACHE VOL DATASET Write
         ==== Benchmarking F case =============================
         Total number of MPI processes      = 16
         Number of IO processes             = 16
@@ -655,16 +660,16 @@ We also provide the example performance outputs from Perlmutter @ NERSC using:
         No. I/O flush calls                =      1
         -----------------------------------------------------------
         Total write amount                         = 16.97 MiB = 0.02 GiB
-        Time of I/O preparing              min/max =   0.0009 /   0.0012
-        Time of file open/create           min/max =   0.0154 /   0.0156
-        Time of define variables           min/max =   1.9012 /   1.9013
-        Time of posting write requests     min/max =   0.7311 /   0.8013
+        Time of I/O preparing              min/max =   0.0010 /   0.0011
+        Time of file open/create           min/max =   0.0109 /   0.0111
+        Time of define variables           min/max =   1.8869 /   1.8869
+        Time of posting write requests     min/max =   0.7391 /   0.8164
         Time of write flushing             min/max =   0.0000 /   0.0000
-        Time of close                      min/max =   0.2182 /   0.2185
-        end-to-end time                    min/max =   2.9375 /   2.9379
+        Time of close                      min/max =   0.2177 /   0.2185
+        end-to-end time                    min/max =   2.9332 /   2.9340
         Emulate computation time (sleep)   min/max =   0.0000 /   0.0000
-        I/O bandwidth in MiB/sec (write-only)      = 6181435.3394
-        I/O bandwidth in MiB/sec (open-to-close)   = 5.7756
+        I/O bandwidth in MiB/sec (write-only)      = 4704197.5278
+        I/O bandwidth in MiB/sec (open-to-close)   = 5.7833
         -----------------------------------------------------------
         ==== Benchmarking F case =============================
         Total number of MPI processes      = 16
@@ -691,17 +696,17 @@ We also provide the example performance outputs from Perlmutter @ NERSC using:
         -----------------------------------------------------------
         Total write amount                         = 7.96 MiB = 0.01 GiB
         Time of I/O preparing              min/max =   0.0000 /   0.0000
-        Time of file open/create           min/max =   0.0136 /   0.0138
-        Time of define variables           min/max =   0.0377 /   0.0377
-        Time of posting write requests     min/max =   0.4393 /   0.5347
+        Time of file open/create           min/max =   0.0130 /   0.0131
+        Time of define variables           min/max =   0.0383 /   0.0384
+        Time of posting write requests     min/max =   0.4424 /   0.5422
         Time of write flushing             min/max =   0.0000 /   0.0000
-        Time of close                      min/max =   0.0299 /   0.0305
-        end-to-end time                    min/max =   0.6174 /   0.6180
+        Time of close                      min/max =   0.0309 /   0.0313
+        end-to-end time                    min/max =   0.6267 /   0.6271
         Emulate computation time (sleep)   min/max =   0.0000 /   0.0000
-        I/O bandwidth in MiB/sec (write-only)      = 2211145.5789
-        I/O bandwidth in MiB/sec (open-to-close)   = 12.8771
+        I/O bandwidth in MiB/sec (write-only)      = 1508609.7563
+        I/O bandwidth in MiB/sec (open-to-close)   = 12.6897
         -----------------------------------------------------------
-        read_decomp=0.09 e3sm_io_core=3.56 MPI init-to-finalize=3.65
+        read_decomp=0.10 e3sm_io_core=3.56 MPI init-to-finalize=3.66
         -----------------------------------------------------------
         ```
 
@@ -723,6 +728,10 @@ We also provide the example performance outputs from Perlmutter @ NERSC using:
         Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
         Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
         Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
+        Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
+        Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
+        ------- EXT CACHE VOL DATASET Write
+        ------- EXT CACHE VOL DATASET Write
         ==== Benchmarking G case =============================
         Total number of MPI processes      = 16
         Number of IO processes             = 16
@@ -751,19 +760,17 @@ We also provide the example performance outputs from Perlmutter @ NERSC using:
         -----------------------------------------------------------
         Total write amount                         = 182.12 MiB = 0.18 GiB
         Time of I/O preparing              min/max =   0.0002 /   0.0003
-        Time of file open/create           min/max =   0.0133 /   0.0135
-        Time of define variables           min/max =   0.3156 /   0.3157
-        Time of posting write requests     min/max =   0.7677 /   0.8147
+        Time of file open/create           min/max =   0.0128 /   0.0130
+        Time of define variables           min/max =   0.3356 /   0.3357
+        Time of posting write requests     min/max =   0.7691 /   0.8372
         Time of write flushing             min/max =   0.0000 /   0.0000
-        Time of close                      min/max =   0.2151 /   0.2157
-        end-to-end time                    min/max =   1.3768 /   1.3774
+        Time of close                      min/max =   0.2187 /   0.2190
+        end-to-end time                    min/max =   1.4158 /   1.4161
         Emulate computation time (sleep)   min/max =   0.0000 /   0.0000
-        I/O bandwidth in MiB/sec (write-only)      = 35564135.1667
-        I/O bandwidth in MiB/sec (open-to-close)   = 132.2233
+        I/O bandwidth in MiB/sec (write-only)      = 41401209.7864
+        I/O bandwidth in MiB/sec (open-to-close)   = 128.6077
         -----------------------------------------------------------
-        Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
-        Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
-        read_decomp=0.06 e3sm_io_core=1.38 MPI init-to-finalize=1.44
+        read_decomp=0.05 e3sm_io_core=1.42 MPI init-to-finalize=1.47
         -----------------------------------------------------------
         ```
 
@@ -802,7 +809,11 @@ We also provide the example performance outputs from Perlmutter @ NERSC using:
         Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
         Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
         Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
+        ------- EXT CACHE VOL DATASET Write
+        ------- EXT CACHE VOL DATASET Write
         Warning: An error occured in e3sm_io_driver_hdf5::inq_file_info in e3sm_io_driver_hdf5.cpp. Use MPI_INFO_NULL.
+        ------- EXT CACHE VOL DATASET Write
+        ------- EXT CACHE VOL DATASET Write
         ==== Benchmarking I case =============================
         Total number of MPI processes      = 16
         Number of IO processes             = 16
@@ -829,16 +840,16 @@ We also provide the example performance outputs from Perlmutter @ NERSC using:
         No. I/O flush calls                =     25
         -----------------------------------------------------------
         Total write amount                         = 835.94 MiB = 0.82 GiB
-        Time of I/O preparing              min/max =   0.0019 /   0.0020
-        Time of file open/create           min/max =   0.0140 /   0.0142
-        Time of define variables           min/max =   5.0018 /   5.0019
-        Time of posting write requests     min/max =  86.0841 /  97.6497
+        Time of I/O preparing              min/max =   0.0019 /   0.0021
+        Time of file open/create           min/max =   0.0134 /   0.0135
+        Time of define variables           min/max =   4.9734 /   4.9734
+        Time of posting write requests     min/max =  85.8112 / 101.2761
         Time of write flushing             min/max =   0.0000 /   0.0001
-        Time of close                      min/max =   3.0657 /   3.0675
-        end-to-end time                    min/max = 108.3540 / 108.3557
+        Time of close                      min/max =   3.3241 /   3.3314
+        end-to-end time                    min/max = 110.4072 / 110.4146
         Emulate computation time (sleep)   min/max =   0.0000 /   0.0000
-        I/O bandwidth in MiB/sec (write-only)      = 16047386.1969
-        I/O bandwidth in MiB/sec (open-to-close)   = 7.7148
+        I/O bandwidth in MiB/sec (write-only)      = 12885402.1862
+        I/O bandwidth in MiB/sec (open-to-close)   = 7.5709
         -----------------------------------------------------------
         ==== Benchmarking I case =============================
         Total number of MPI processes      = 16
@@ -866,18 +877,18 @@ We also provide the example performance outputs from Perlmutter @ NERSC using:
         No. I/O flush calls                =      1
         -----------------------------------------------------------
         Total write amount                         = 34.61 MiB = 0.03 GiB
-        Time of I/O preparing              min/max =   0.0011 /   0.0012
-        Time of file open/create           min/max =   0.0208 /   0.0209
-        Time of define variables           min/max =   6.9405 /   6.9406
-        Time of posting write requests     min/max =   1.8859 /   2.0818
+        Time of I/O preparing              min/max =   0.0011 /   0.0011
+        Time of file open/create           min/max =   0.0235 /   0.0238
+        Time of define variables           min/max =   6.8212 /   6.8212
+        Time of posting write requests     min/max =   1.8862 /   2.0785
         Time of write flushing             min/max =   0.0000 /   0.0000
-        Time of close                      min/max =   0.6230 /   0.6265
-        end-to-end time                    min/max =   9.6676 /   9.6710
+        Time of close                      min/max =   0.6206 /   0.6213
+        end-to-end time                    min/max =   9.5453 /   9.5460
         Emulate computation time (sleep)   min/max =   0.0000 /   0.0000
-        I/O bandwidth in MiB/sec (write-only)      = 20204449.6616
-        I/O bandwidth in MiB/sec (open-to-close)   = 3.5788
+        I/O bandwidth in MiB/sec (write-only)      = 34199824.4709
+        I/O bandwidth in MiB/sec (open-to-close)   = 3.6256
         -----------------------------------------------------------
-        read_decomp=0.07 e3sm_io_core=118.03 MPI init-to-finalize=118.09
+        read_decomp=0.07 e3sm_io_core=119.96 MPI init-to-finalize=120.03
         -----------------------------------------------------------
         ```
 
