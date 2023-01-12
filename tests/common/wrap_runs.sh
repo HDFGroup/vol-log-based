@@ -76,6 +76,7 @@ run_func() {
    $RUN_CMD $1 $_outfile
 
    # disable all VOLs to avoid debug message messing with the output of h5ldump
+   saved_HDF5_VOL_CONNECTOR=
    if test "x$HDF5_VOL_CONNECTOR" != x ; then
       saved_HDF5_VOL_CONNECTOR=$HDF5_VOL_CONNECTOR
       unset HDF5_VOL_CONNECTOR
