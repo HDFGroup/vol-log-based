@@ -75,7 +75,11 @@ run_func() {
    fi
    $RUN_CMD $1 $_outfile
 
-   # set TEST_NATIVE_VOL_ONLY to 1 to completely disable Log VOL
+   # disable all VOLs to avoid debug message messing with the output of h5ldump
+   if test "x$HDF5_VOL_CONNECTOR" != x ; then
+      saved_HDF5_VOL_CONNECTOR=$HDF5_VOL_CONNECTOR
+      unset HDF5_VOL_CONNECTOR
+   fi
    for f in ${_outfile} ${_outfile2} ; do
       FILE_KIND=`${TESTSEQRUN} ${top_builddir}/utils/h5ldump/h5ldump -k $f`
       if test "x${FILE_KIND}" != x$outfile_kind ; then
@@ -86,6 +90,10 @@ run_func() {
          echo "    Success: output file '$fname' is expected kind ${FILE_KIND}"
       fi
    done
+   # restore HDF5_VOL_CONNECTOR for next run
+   if test "x$saved_HDF5_VOL_CONNECTOR" != x ; then
+      export HDF5_VOL_CONNECTOR=$saved_HDF5_VOL_CONNECTOR
+   fi
 }
 
 # Test all combinations of Log, Cache, Async, Passthru
