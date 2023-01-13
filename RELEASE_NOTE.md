@@ -1,6 +1,6 @@
 ## Release Notes of the Log Layout Based HDF5 Virtual Object Layer
 
-### Version 1.4.0 (Dec 15, 2022)
+### Version 1.4.0 (Jan 12, 2023)
 * New features
   + Support fill mode. See commit 8aee024
   + Support NetCDF4. By setting the two VOL environment variables
