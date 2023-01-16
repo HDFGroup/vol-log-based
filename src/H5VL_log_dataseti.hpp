@@ -51,6 +51,10 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
                              hid_t plist_id,
                              void *buf,
                              void **req);
+
+void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &blocks,
+                                      std::vector<H5VL_log_copy_ctx> &overlaps,
+                                      H5VL_log_file_t *fp);
 /*
 herr_t H5VL_log_dataseti_writen (hid_t did,
                                   hid_t mem_type_id,

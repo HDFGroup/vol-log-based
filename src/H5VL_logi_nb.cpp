@@ -392,32 +392,34 @@ void H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
     }
 
     // Read data
-    if (intersecs.size () > 0) {
-        H5VL_LOGI_PROFILING_TIMER_START;
-        H5VL_log_dataset_readi_gen_rtypes (intersecs, &ftype, &mtype, overlaps);
-
-        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_DATASETI_READI_GEN_RTYPES);
-        mpierr = MPI_Type_commit (&mtype);
-        CHECK_MPIERR
-        mpierr = MPI_Type_commit (&ftype);
-        CHECK_MPIERR
-
-        mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, ftype, "native", MPI_INFO_NULL);
-        CHECK_MPIERR
-
-        mpierr = MPI_File_read_at_all (fp->fh, 0, MPI_BOTTOM, 1, mtype, &stat);
-        CHECK_MPIERR
-
-        // Restore the file view
-        mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
-        CHECK_MPIERR
+    if (fp->config & H5VL_FILEI_CONFIG_PASSTHRU) {
+        // perform read using underlying VOL.
+        H5VL_log_dataset_readi_passthru (intersecs, overlaps, fp);
     } else {
-        // File view guaranteed to be contiguous
-        // mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
-        // CHECK_MPIERR
+        // perform read using mpi
+        if (intersecs.size () > 0) {
+            H5VL_LOGI_PROFILING_TIMER_START;
+            H5VL_log_dataset_readi_gen_rtypes (intersecs, &ftype, &mtype, overlaps);
 
-        mpierr = MPI_File_read_at_all (fp->fh, 0, MPI_BOTTOM, 0, MPI_BYTE, &stat);
-        CHECK_MPIERR
+            H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_DATASETI_READI_GEN_RTYPES);
+            mpierr = MPI_Type_commit (&mtype);
+            CHECK_MPIERR
+            mpierr = MPI_Type_commit (&ftype);
+            CHECK_MPIERR
+
+            mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, ftype, "native", MPI_INFO_NULL);
+            CHECK_MPIERR
+
+            mpierr = MPI_File_read_at_all (fp->fh, 0, MPI_BOTTOM, 1, mtype, &stat);
+            CHECK_MPIERR
+
+            // Restore the file view
+            mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
+            CHECK_MPIERR
+        } else {
+            mpierr = MPI_File_read_at_all (fp->fh, 0, MPI_BOTTOM, 0, MPI_BYTE, &stat);
+            CHECK_MPIERR
+        }
     }
 
     // In case there is overlapping read, copy the overlapping part
