@@ -212,12 +212,12 @@ void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &bl
 
     dxplid = H5Pcreate (H5P_DATASET_XFER);
     CHECK_ID (dxplid);
-    fdid = H5Pget_driver (fp->ufaplid);
-    CHECK_ID (fdid)
-    if (fdid == H5FD_MPIO) {
-        err = H5Pset_dxpl_mpio (dxplid, H5FD_MPIO_COLLECTIVE);
-        CHECK_ERR;
-    }
+    // fdid = H5Pget_driver (fp->ufaplid);
+    // CHECK_ID (fdid)
+    // if (fdid == H5FD_MPIO) {
+    //     err = H5Pset_dxpl_mpio (dxplid, H5FD_MPIO_COLLECTIVE);
+    //     CHECK_ERR;
+    // }
 
     for (i = 0; i < fp->nldset; i++) {
         sprintf (dname, "%s_%d", H5VL_LOG_FILEI_DSET_DATA, i);
