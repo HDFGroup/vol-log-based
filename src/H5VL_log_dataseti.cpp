@@ -455,7 +455,7 @@ void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &bl
     }
 }
 
-void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> blocks,
+void H5VL_log_dataset_readi_gen_rtypes (std::vector<H5VL_log_idx_search_ret_t> &blocks,
                                         MPI_Datatype *ftype,
                                         MPI_Datatype *mtype,
                                         std::vector<H5VL_log_copy_ctx> &overlaps) {
