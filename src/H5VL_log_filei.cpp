@@ -657,18 +657,8 @@ void H5VL_log_filei_contig_buffer_alloc (H5VL_log_buffer_pool_t *p) {
 void H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid) {
     H5VL_LOGI_PROFILING_TIMER_START;
 
-    if (fp->wreqs.size () > 0) {
-        if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
-            H5VL_log_nb_flush_write_reqs_align (fp, dxplid);
-        } else {
-            H5VL_log_nb_flush_write_reqs (fp);
-        }
-    }
-
-    if (fp->rreqs.size () > 0) {
-        H5VL_log_nb_flush_read_reqs (fp, fp->rreqs, dxplid);
-        fp->rreqs.clear ();
-    }
+    H5VL_log_nb_flush_write_reqs (fp);
+    H5VL_log_nb_flush_read_reqs (fp, fp->rreqs, dxplid);
 
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_FLUSH);
 }
