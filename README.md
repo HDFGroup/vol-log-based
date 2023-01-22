@@ -31,8 +31,8 @@ but require the Log VOL to read them back.
 * [doc/api.md](doc/api.md) describes the new APIs introduced in this VOL.
 
 ### Applicaton Case Studies and Experimental Results
-* [E3SM I/O case study](case_studies/E3SM_IO.md) - [Energy Exascale Earth System Model (E3SM)](https://github.com/wrf-model/WRF).
-* [WRF I/O case study](case_studies/WRF.md) - [Weather Research and Forecasting Model (WRF)](https://github.com/wrf-model/WRF).
+* [E3SM I/O case study](case_studies/E3SM_IO.md) - Energy Exascale Earth System Model ([E3SM](https://github.com/E3SM-Project/E3SM)).
+* [WRF I/O case study](case_studies/WRF.md) - Weather Research and Forecasting Model ([WRF](https://github.com/wrf-model/WRF)).
 
 ### Developers
 * Wei-keng Liao <<wkliao@northwestern.edu>>
