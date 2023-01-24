@@ -18,9 +18,9 @@
     H5VLdataset_write (1, &(uo), uvlid, &(mtid), &(msid), &(dsid), dxplid, (const void**)&(buf), NULL)
 #else
 #define H5VL_log_under_dataset_read(uo, uvlid, mtid, msid, dsid, dxplid, buf, req) \
-    H5VLdataset_read (uo, uvlid, mtid, msid, dsid, dxplid, buf, NULL)
+    H5VLdataset_read (uo, uvlid, mtid, msid, dsid, dxplid, (void*)buf, NULL)
 #define H5VL_log_under_dataset_write(uo, uvlid, mtid, msid, dsid, dxplid, buf, req) \
-    H5VLdataset_write (uo, uvlid, mtid, msid, dsid, dxplid, buf, NULL)
+    H5VLdataset_write (uo, uvlid, mtid, msid, dsid, dxplid, (void*)buf, NULL)
 #endif
 
 // Utils
