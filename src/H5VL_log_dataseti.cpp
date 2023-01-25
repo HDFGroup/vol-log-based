@@ -90,28 +90,34 @@ void sortoffsets (int len, MPI_Aint *oa, MPI_Aint *ob, int *l) {
     sortoffsets (len - j - 1, oa + j + 1, ob + j + 1, l + j + 1);
 }
 
-void print_space (hid_t sid) {
-    const int ndims = H5Sget_simple_extent_ndims (sid);
-    hsize_t dims[ndims];
-    H5Sget_simple_extent_dims (sid, dims, NULL);
-    printf ("Sid has %d dims\n", ndims);
-    for (int i = 0; i < ndims; i++) { printf ("dims[%d]=%d\n", i, dims[i]); }
-}
-void helper_sel_space (hid_t sid,
+/*
+A log dataset contains multiple entries, one for each write req. An entry can
+be an ndim array. This helper function to select a hyperslab from the entry.
+
+sid: the id of the log dataset file spcae.
+start0: the starting pos of an entry w.r.t the beginning of the log dataset, in bytes.
+esize: the type size of an element in the ndim array, unit is byte.
+starts: the starting indexes of the hyperslab w.r.t the ndim entry.
+sizes: the dimensions of the ndim entry.
+counts: num of elemnets of the selected hyperslab block, which should be smaller than "sizes".
+ndim: num of dimension of the entry.
+*/
+herr_t sel_space (hid_t sid,
                        hsize_t start0,
                        hsize_t esize,
                        const int *starts,
                        const int *sizes,
                        const int *counts,
                        int ndim) {
+    herr_t err = 0;
     hsize_t start = 0, count = 1, block = 1, off = 1, stride = 1;
     int i;
 
     if (ndim == 0) {
         count = 1;
         block = counts[0] * esize;
-        H5Sselect_hyperslab (sid, H5S_SELECT_SET, &start0, NULL, &count, &block);
-        return;
+        err = H5Sselect_hyperslab (sid, H5S_SELECT_SET, &start0, NULL, &count, &block);
+        return err;
     }
     for (i = 0; i < ndim; i++) {
         start += starts[ndim - i - 1] * off;
@@ -122,32 +128,36 @@ void helper_sel_space (hid_t sid,
     start = start0 + start * esize;
     block = counts[ndim - 1] * esize;
     count = count / counts[ndim - 1];
-    // print_space(sid);
-    // printf("\tstart=%lu\n", start);
-    // printf("\tblock=%lu\n", block);
-    // printf("\tcount=%lu\n", count);
+
     if (count > 1) {
         stride = stride / sizes[0];  // - counts[ndim -1];
         stride *= esize;
-        // printf("\tstride=%lu\n", stride);
-        H5Sselect_hyperslab (sid, H5S_SELECT_SET, &start, &stride, &count, &block);
+        err = H5Sselect_hyperslab (sid, H5S_SELECT_SET, &start, &stride, &count, &block);
     } else {
-        H5Sselect_hyperslab (sid, H5S_SELECT_SET, &start, NULL, &count, &block);
+        err = H5Sselect_hyperslab (sid, H5S_SELECT_SET, &start, NULL, &count, &block);
     }
-    // printf("End helper_sel_space\n");
-    // printf("\tstart=%lu\n", start);
-    // printf("\tcount=%lu\n", count);
-    // printf("\tblock=%lu\n", block);
+    return err;
 }
 
-int helper_foff2logidx (haddr_t foff, haddr_t *doffs, int nldset) {
+/*
+Given a file offset (foff) whithin a log dataset, determine which log dataset
+it belongs to.
+
+foff: the file offset of interest, whithin a log dataset
+doffs: the array of file offsets. contains the starting pos (offset) of each log dset.
+nldset: number of log dataset. Also equals the lens of doffs.
+*/
+int foff2logidx (haddr_t foff, haddr_t *doffs, int nldset) {
     for (int i = nldset - 1; i >= 0; i--) {
         if (doffs[i] <= foff) { return i; }
     }
     return -1;
 }
 
-// Assume no overlaping read
+/*
+This function is the actual function that performs read using the underlying
+VOLs.
+*/
 void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &blocks,
                                         std::vector<H5VL_log_copy_ctx> &overlaps,
                                         H5VL_log_file_t *fp) {
@@ -171,16 +181,18 @@ void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &bl
                                       // dataspace of the block being broken down
     H5VL_log_copy_ctx ctx;  // Datastructure to record overlaps so we can copy the data to all the
                             // destination buffer
-    char dname[16];
-    void **ldps = NULL;
+    char dname[16];         // name of log dataset
+    void **ldps = NULL;     // array of all log datasets
     H5VL_loc_params_t loc;
-    haddr_t *doffs    = NULL;
-    hid_t *fspace_ids = NULL;
-    hid_t mspace_id;
-    hsize_t mbsize;
+    haddr_t *doffs    = NULL;  // Stores the file offset for each log dataset
+    hid_t *fspace_ids = NULL;  // Stores the file space ids for each log dataset
+    hid_t mspace_id;           // memory space id
+    hsize_t msize;             // The size of the memory space, along one dimension.
     H5VL_dataset_get_args_t args;
-    int log_dset;
-    hid_t dxplid = -1, fdid = -1;
+    int log_dset;       // the id of a log dataset.
+    hid_t dxplid = -1;  // dataset transfer property list id
+
+    // RAII to free resources
     H5VL_logi_err_finally finally (
         [&foffs, &moffs, &lens, &nt, &ldps, &fp, &doffs, &fspace_ids, &dxplid] () -> void {
             int i;
@@ -212,12 +224,6 @@ void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &bl
 
     dxplid = H5Pcreate (H5P_DATASET_XFER);
     CHECK_ID (dxplid);
-    // fdid = H5Pget_driver (fp->ufaplid);
-    // CHECK_ID (fdid)
-    // if (fdid == H5FD_MPIO) {
-    //     err = H5Pset_dxpl_mpio (dxplid, H5FD_MPIO_COLLECTIVE);
-    //     CHECK_ERR;
-    // }
 
     for (i = 0; i < fp->nldset; i++) {
         sprintf (dname, "%s_%d", H5VL_LOG_FILEI_DSET_DATA, i);
@@ -227,11 +233,10 @@ void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &bl
                                     dxplid, NULL);
         CHECK_PTR (ldps[i]);
 
-        // Get dataset file offset
+        // Get the file offset for this dataset, save in doffs[i]
         H5VL_logi_dataset_get_foff (fp, ldps[i], fp->uvlid, dxplid, &doffs[i]);
-        // doff2index[doffs[i]] = i;
-        // printf("doffs[%d]=%ld\n", i, doffs[i]);
 
+        // Get the file space, save in fspace_ids[i]
         args.op_type = H5VL_DATASET_GET_SPACE;
         err          = H5VLdataset_get (ldps[i], fp->uvlid, &args, dxplid, NULL);
         CHECK_ERR;
@@ -290,14 +295,15 @@ void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &bl
                     // Read raw data for filtered datasets
                     if (blocks[j].fsize >
                         0) {  // Don't need to read if read by other intersections already
-                        // printf("DEBUG: %s %d\n", __FILE__, __LINE__);
-                        log_dset = helper_foff2logidx (blocks[j].foff, doffs, fp->nldset);
+
+                        log_dset = foff2logidx (blocks[j].foff, doffs, fp->nldset);
+                        CHECK_ID(log_dset);
 
                         err = H5Sselect_all (fspace_ids[log_dset]);
                         CHECK_ERR;
 
-                        mbsize    = blocks[j].fsize;
-                        mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
+                        msize    = blocks[j].fsize;
+                        mspace_id = H5Screate_simple (1, &msize, &msize);
                         CHECK_ID (mspace_id);
 
                         err = H5VL_log_under_dataset_read (ldps[log_dset], fp->uvlid, H5T_STD_B8LE,
@@ -305,76 +311,57 @@ void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &bl
                                                            blocks[j].zbuf, NULL);
                         CHECK_ERR;
                         H5VL_log_Sclose (mspace_id);
-                        // foffs[nt]  = blocks[j].foff;
-                        // moffs[nt]  = (MPI_Aint) (blocks[j].zbuf);
-                        // lens[nt]   = blocks[j].fsize;
                         nt++;
                     }
                 } else {
                     foffs[nt] = blocks[j].foff + blocks[j].doff;
                     if (blocks[i].info->ndim) {
-                        // printf("DEBUG: %s %d\n", __FILE__, __LINE__);
+                        log_dset = foff2logidx (foffs[nt], doffs, fp->nldset);
+                        CHECK_ID (log_dset);
 
-                        log_dset = helper_foff2logidx (foffs[nt], doffs, fp->nldset);
-                        // printf("\tlog_dset %d\n", log_dset);
-                        // printf("\tblocks[j].foff %ld\n", blocks[j].foff);
-                        // printf("\tblocks[j].doff %ld\n", blocks[j].doff);
-                        // printf("\tndim %ld\n", blocks[i].info->ndim);
-                        // for (ii = 0; ii < blocks[i].info->ndim; ii ++) {
-                        //     printf("\t\tcount[%d] %ld\n", ii, blocks[j].count[ii]);
-                        //     printf("\t\tdstart[%d] %ld\n", ii, blocks[j].dstart[ii]);
-                        //     printf("\t\tdsize[%d] %ld\n", ii, blocks[j].dsize[ii]);
-                        //     printf("\t\tmstart[%d] %ld\n", ii, blocks[j].mstart[ii]);
-                        //     printf("\t\tmsize[%d] %ld\n", ii, blocks[j].msize[ii]);
-                        // }
+                        err = sel_space (fspace_ids[log_dset], foffs[nt] - doffs[log_dset],
+                                         blocks[i].info->esize, blocks[j].dstart, blocks[j].dsize,
+                                         blocks[j].count, blocks[i].info->ndim);
+                        CHECK_ERR;
 
-                        helper_sel_space (fspace_ids[log_dset], foffs[nt] - doffs[log_dset],
-                                          blocks[i].info->esize, blocks[j].dstart, blocks[j].dsize,
-                                          blocks[j].count, blocks[i].info->ndim);
-                        mbsize = blocks[i].info->esize;
+                        msize = blocks[i].info->esize;
                         for (ii = 0; ii < blocks[i].info->ndim; ii++) {
-                            mbsize *= blocks[j].msize[ii];
+                            msize *= blocks[j].msize[ii];
                         }
-                        mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
-                        helper_sel_space (mspace_id, 0, blocks[i].info->esize, blocks[j].mstart,
-                                          blocks[j].msize, blocks[j].count, blocks[i].info->ndim);
-                        // printf("DEBUG: %s %d\n", __FILE__, __LINE__);
+                        mspace_id = H5Screate_simple (1, &msize, &msize);
+                        err = sel_space (mspace_id, 0, blocks[i].info->esize, blocks[j].mstart,
+                                         blocks[j].msize, blocks[j].count, blocks[i].info->ndim);
+                        CHECK_ERR;
                         err = H5VL_log_under_dataset_read (ldps[log_dset], fp->uvlid, H5T_STD_B8LE,
                                                            mspace_id, fspace_ids[log_dset], dxplid,
                                                            blocks[j].xbuf, NULL);
-                        // printf("DEBUG: %s %d\n", __FILE__, __LINE__);
                         CHECK_ERR;
                         H5VL_log_Sclose (mspace_id);
-                        // lens[nt]  = 1;
+
                     } else {  // Special case for scalar entry
-                        // printf("DEBUG: %s %d\n", __FILE__, __LINE__);
-                        log_dset = helper_foff2logidx (foffs[nt], doffs, fp->nldset);
+                        log_dset = foff2logidx (foffs[nt], doffs, fp->nldset);
+                        CHECK_ID (log_dset);
+
                         lens[nt] = blocks[i].info->esize;
-                        helper_sel_space (fspace_ids[log_dset], foffs[nt] - doffs[log_dset], 1,
-                                          NULL, NULL, &lens[nt], 0);
-                        mbsize    = blocks[j].fsize;
-                        mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
+                        err = sel_space (fspace_ids[log_dset], foffs[nt] - doffs[log_dset], 1, NULL,
+                                         NULL, &lens[nt], 0);
+                        CHECK_ERR;
+
+                        msize     = blocks[j].fsize;
+                        mspace_id = H5Screate_simple (1, &msize, &msize);
 
                         err = H5VL_log_under_dataset_read (ldps[log_dset], fp->uvlid, H5T_STD_B8LE,
                                                            mspace_id, fspace_ids[log_dset], dxplid,
                                                            blocks[j].xbuf, NULL);
                         CHECK_ERR;
                         H5VL_log_Sclose (mspace_id);
-                        // ftypes[nt] = MPI_BYTE;
-                        // mtypes[nt] = MPI_BYTE;
                     }
-
-                    // foffs[nt] = blocks[j].foff + blocks[j].doff;
-                    // moffs[nt] = (MPI_Offset) (blocks[j].xbuf);
-                    // printf("foffs[%d]: %p\n", nt, foffs[nt]);
-                    // printf("moffs[%d]: %p\n", nt, moffs[nt]);
                     nt++;
                 }
 
                 j++;
             } else {
                 old_nt = nt;
-                // printf("DEBUG: %s %d\n", __FILE__, __LINE__);
                 for (; j <= i; j++) {  // Breakdown each interleaving blocks
                     fssize[blocks[i].info->ndim - 1] = blocks[j].info->esize;
                     mssize[blocks[i].info->ndim - 1] = blocks[j].info->esize;
@@ -397,9 +384,6 @@ void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &bl
                             foffs[nt] += fssize[k] * (blocks[j].dstart[k] + ctr[k]);
                             moffs[nt] += mssize[k] * (blocks[j].mstart[k] + ctr[k]);
                         }
-                        // nt2index[nt] = doff2index[blocks[j].doff];
-                        // ftypes[nt] = MPI_BYTE;
-                        // mtypes[nt] = MPI_BYTE;
                         nt++;
 
                         if (blocks[i].info->ndim < 2) break;  // Special case for < 2-D
@@ -436,13 +420,14 @@ void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &bl
                     }
                 }
                 for (k = old_nt; k < nt; k++) {
-                    // log_dset = nt2index[k];
-                    log_dset = helper_foff2logidx (foffs[k], doffs, fp->nldset);
-                    helper_sel_space (fspace_ids[log_dset], foffs[k] - doffs[log_dset], 1, NULL,
-                                      NULL, &lens[k], 0);
+                    log_dset = foff2logidx (foffs[k], doffs, fp->nldset);
+                    CHECK_ID (log_dset);
+                    err = sel_space (fspace_ids[log_dset], foffs[k] - doffs[log_dset], 1, NULL,
+                                     NULL, &lens[k], 0);
+                    CHECK_ERR;
 
-                    mbsize    = lens[k];
-                    mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
+                    msize     = lens[k];
+                    mspace_id = H5Screate_simple (1, &msize, &msize);
 
                     err = H5VL_log_under_dataset_read (ldps[log_dset], fp->uvlid, H5T_STD_B8LE,
                                                        mspace_id, fspace_ids[log_dset], dxplid,
