@@ -4,13 +4,13 @@ This is essentially a placeholder for the next release note ...
 (Copy the contents below to RELEASE_NOTE.md when making an official release.)
 
 * New features
-  + none
+  + Support Passthru mode for read. See PR #61.
 
 * New optimization
   + none
 
 * New Limitations
-  + none
+  + When performing passthru read, only independent MPI mode is supported. See PR #61.
 
 * Update configure options
   + none
@@ -58,7 +58,7 @@ This is essentially a placeholder for the next release note ...
   + none
 
 * New test program
-  + none
+  + tests/passthru/col_read.cpp. This test program tests the non-blocking read feature when passthru mode is enabled.
 
 * Conformity with HDF5 library
   + none
