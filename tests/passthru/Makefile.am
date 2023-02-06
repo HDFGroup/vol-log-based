@@ -21,7 +21,7 @@ LDADD = $(top_builddir)/src/libH5VL_log.la ../common/libtestutils.la
 ../common/libtestutils.la:
 	set -e; cd ../common && $(MAKE) $(MFLAGS) tests
 
-check_PROGRAMS =  dwrite
+check_PROGRAMS =  dwrite col_read
 
 EXTRA_DIST = seq_runs.sh parallel_run.sh
 
