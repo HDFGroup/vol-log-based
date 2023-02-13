@@ -141,7 +141,7 @@ int main (int argc, char **argv) {
     /* File space setting */
     err = H5Sselect_hyperslab (filespace_id, H5S_SELECT_SET, start, NULL, count, NULL);
     CHECK_ERR (err);
-    err = H5Dread (did, H5T_NATIVE_INT, memspace_id, filespace_id, dxplid, buf + 4);
+    err = H5Dread (did, H5T_NATIVE_INT, memspace_id, filespace_id, dxplid, buf + np);
 
     for (i = 0; i < dims[1]; i++) {
         expected = get_expected (i, rank, 1, env.log_env, np);
