@@ -20,14 +20,10 @@ hid_t H5VL_LOG_g = H5I_INVALID_HID;
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_register
  *
- * Purpose:     Register the pass-through VOL connector and retrieve an ID
- *              for it.
+ * Purpose:     Register the Log VOL connector and retrieve an ID for it.
  *
- * Return:      Success:    The ID for the pass-through VOL connector
+ * Return:      Success:    The ID for the Log VOL connector
  *              Failure:    -1
- *
- * Programmer:  Quincey Koziol
- *              Wednesday, November 28, 2018
  *
  *-------------------------------------------------------------------------
  */
