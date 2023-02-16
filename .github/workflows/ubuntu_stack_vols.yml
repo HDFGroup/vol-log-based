@@ -21,7 +21,7 @@ on:
       - 'case_studies/*'
 
 env:
-   MPICH_VERSION: 4.0.2
+   MPICH_VERSION: 4.1
    HDF5_VERSION: 1.14.0
    ARGOBOTS_VERSION: 1.1
    ASYNC_VOL_VERSION: 1.4
