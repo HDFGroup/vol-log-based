@@ -39,6 +39,8 @@ $(SEQ_SRCS): %.c : $$(wildcard %.patch)
 	@DOWNLOAD_CMD@ $(HDF5_URL)/$@
 	if [ -f ${srcdir}/$(basename $@).patch.$(HDF5_VERSION) ]; then patch -st $@ < ${srcdir}/$(basename $@).patch.$(HDF5_VERSION); fi
 
+BUILT_SOURCES = $(SEQ_SRCS) $(PAR_SRCS)
+
 check_PROGRAMS = $(TESTPROGRAMS)
 
 EXTRA_DIST = README.md \
@@ -63,7 +65,6 @@ TESTS_ENVIRONMENT += export TESTSEQRUN="$(TESTSEQRUN)";
 TESTS_ENVIRONMENT += export TESTMPIRUN="$(TESTMPIRUN)";
 TESTS_ENVIRONMENT += export TESTPROGRAMS="$(TESTPROGRAMS)";
 TESTS_ENVIRONMENT += export check_PROGRAMS="$(check_PROGRAMS)";
-TESTS_ENVIRONMENT += export PAR_TESTS="$(PAR_TESTS)";
 TESTS_ENVIRONMENT += export H5DIFF_PATH="$(H5DIFF_PATH)";
 
 H5_FILES = $(check_PROGRAMS:%=$(TESTOUTDIR)/%.h5)
@@ -72,7 +73,8 @@ CLEANFILES = $(H5_FILES) core core.* *.gcda *.gcno *.gcov gmon.out *.h5 *.nc  *.
 
 DISTCLEANFILES = $(SEQ_SRCS) $(PAR_SRCS) \
                  nc4internal.h err_macros.h \
-                 hdf5internal.h ref_tst_dims.nc
+                 hdf5internal.h ref_tst_dims.nc \
+                 *.orig
 
 TEST_EXTENSIONS = .sh
 LOG_COMPILER = $(srcdir)/wrap_runs.sh
@@ -80,7 +82,7 @@ SH_LOG_COMPILER =
 
 TESTS = $(TESTPROGRAMS)
 
-ptest: $(PAR_TESTS)
+ptest: $(check_PROGRAMS)
 	@echo "============================================================================"
 	@echo "    $(subdir): Parallel testing on 4 MPI processes"
 	@echo "============================================================================"
