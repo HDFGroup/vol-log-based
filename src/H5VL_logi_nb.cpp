@@ -547,40 +547,42 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
         (fp->config & H5VL_FILEI_CONFIG_SINGLE_SUBFILE_READ)) {
         H5VL_log_nb_perform_read (fp, reqs, dxplid);
     } else {
-        group_id = fp->group_id;  // Backup group ID
-        // Process our own subfile last so wew don't need to reopen it
-        for (i = 1; i <= fp->ngroup; i++) {
-            H5VL_LOGI_PROFILING_TIMER_START;
-            // Close the log group
-            err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
-            CHECK_ERR
-            // Close previous subfile with MPI
-            mpierr = MPI_File_close (&(fp->fh));
-            CHECK_MPIERR
-            // Close previous subfile
-            err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
-            CHECK_ERR
-            // Erase the index table of previous subfile
-            fp->idx->clear ();
-            fp->idxvalid = false;
+        // TODO: Fix subfile read
 
-            // Open the current subfile
-            fp->group_id = (group_id + i) % fp->ngroup;
-            H5VL_log_filei_open_subfile (fp, fp->flag, fp->ufaplid, fp->dxplid);
+        // group_id = fp->group_id;  // Backup group ID
+        // // Process our own subfile last so wew don't need to reopen it
+        // for (i = 1; i <= fp->ngroup; i++) {
+        //     H5VL_LOGI_PROFILING_TIMER_START;
+        //     // Close the log group
+        //     err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
+        //     CHECK_ERR
+        //     // Close previous subfile with MPI
+        //     mpierr = MPI_File_close (&(fp->fh));
+        //     CHECK_MPIERR
+        //     // Close previous subfile
+        //     err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
+        //     CHECK_ERR
+        //     // Erase the index table of previous subfile
+        //     fp->idx->clear ();
+        //     fp->idxvalid = false;
 
-            // Open the LOG group
-            loc.obj_type = H5I_FILE;
-            loc.type     = H5VL_OBJECT_BY_SELF;
-            fp->lgp      = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
-                                      H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
-            CHECK_PTR (fp->lgp)
-            // Open the file with MPI
-            mpierr = MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, fp->info,
-                                    &(fp->fh));
-            CHECK_MPIERR
+        //     // Open the current subfile
+        //     fp->group_id = (group_id + i) % fp->ngroup;
+        //     H5VL_log_filei_open_subfile (fp, fp->flag, fp->ufaplid, fp->dxplid);
 
-            H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS_SWITCH_SUBFILE);
-        }
+        //     // Open the LOG group
+        //     loc.obj_type = H5I_FILE;
+        //     loc.type     = H5VL_OBJECT_BY_SELF;
+        //     fp->lgp      = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
+        //                               H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
+        //     CHECK_PTR (fp->lgp)
+        //     // Open the file with MPI
+        //     mpierr = MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, fp->info,
+        //                             &(fp->fh));
+        //     CHECK_MPIERR
+
+        //     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS_SWITCH_SUBFILE);
+        // }
     }
 
     // Clear the request queue
