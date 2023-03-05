@@ -929,7 +929,8 @@ void H5VL_log_filei_open_subfile (H5VL_log_file_t *fp,
     err = H5Pset_fapl_mpio (fapl_id, fp->group_comm, MPI_INFO_NULL);
     CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_START;
-    fp->subname = fp->name + ".subfiles/" + fp->name + "." + std::to_string (fp->group_id);
+    fp->subname = fp->name + ".subfiles/" + std::string (basename ((char *)(fp->name.c_str ()))) +
+                  "." + std::to_string (fp->group_id);
     fp->sfp     = H5VLfile_open (fp->subname.c_str (), flags, fapl_id, dxpl_id, NULL);
     CHECK_PTR (fp->sfp)
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
