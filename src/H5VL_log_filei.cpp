@@ -859,7 +859,7 @@ void H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
     if (stat != 0) { RET_ERR ("Cannot create subfile dir") }
 
     // Create the subfiles with underlying VOL
-    err = H5Pset_fapl_mpio (fapl_id, fp->group_comm, MPI_INFO_NULL);
+    err = H5Pset_fapl_mpio (fapl_id, fp->group_comm, fp->info);
     CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_START;
     fp->subname = fp->name + ".subfiles/" + std::string (basename ((char *)(fp->name.c_str ()))) +
@@ -902,7 +902,7 @@ void H5VL_log_filei_open_subfile (H5VL_log_file_t *fp,
     if (stat != 0) { RET_ERR ("Cannot open subfile dir") }
 
     // Create the subfiles with underlying VOL
-    err = H5Pset_fapl_mpio (fapl_id, fp->group_comm, MPI_INFO_NULL);
+    err = H5Pset_fapl_mpio (fapl_id, fp->group_comm, fp->info);
     CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_START;
     fp->subname = fp->name + ".subfiles/" + std::string (basename ((char *)(fp->name.c_str ()))) +
