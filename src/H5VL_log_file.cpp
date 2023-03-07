@@ -450,6 +450,7 @@ herr_t H5VL_log_file_specific (void *file,
                     H5VL_log_filei_flush(fp, dxpl_id);
                 } else {
                     err = H5VLfile_specific (fp->uo, fp->uvlid, args, dxpl_id, req);
+                    CHECK_ERR
                 }
                 H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_SPECIFIC);
             } break;
@@ -458,6 +459,7 @@ herr_t H5VL_log_file_specific (void *file,
                     ERR_OUT ("Unsupported args->op_type")
                 } else {
                     err = H5VLfile_specific (fp->uo, fp->uvlid, args, dxpl_id, req);
+                    CHECK_ERR
                 }
             }
 
