@@ -3,7 +3,7 @@
  *  See COPYRIGHT notice in top-level directory.
  */
 
-#include <stdlib.h> /* getenv() */
+#include <stdlib.h> /* getenv(), atoi() */
 #include <string.h> /* strcasestr() */
 
 #include "testutils.hpp"
@@ -17,12 +17,17 @@ void check_env(vol_env *env) {
     env->cache_env   = 0;
     env->async_env   = 0;
     env->passthru    = 0;
+    env->nsubfiles   = -1;
 
     env_str = getenv("TEST_NATIVE_VOL_ONLY");
     if (env_str != NULL && env_str[0] == '1') {
         env->native_only = 1;
         return;
     }
+
+    env_str = getenv("H5VL_LOG_NSUBFILES");
+    if (env_str != NULL)
+        env->nsubfiles = atoi(env_str);
 
     env_str = getenv("H5VL_LOG_PASSTHRU");
     if (env_str != NULL && env_str[0] == '1')
