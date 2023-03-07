@@ -68,5 +68,9 @@ ptest: $(check_PROGRAMS)
 # build check targets but not invoke
 tests-local: all $(check_PROGRAMS)
 
-.PHONY: ptest tests
+clean-local: clean-local-check
+clean-local-check:
+	-rm -rf $(TESTOUTDIR)/*.h5.subfiles
+
+.PHONY: ptest tests clean-local-check
 
