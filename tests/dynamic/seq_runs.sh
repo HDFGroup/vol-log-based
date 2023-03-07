@@ -13,3 +13,7 @@ log_vol_file_only=0
 
 test_func $1
 
+# test subfiling feature by setting env variable H5VL_LOG_NSUBFILES
+export H5VL_LOG_NSUBFILES=-1
+test_func $1
+
