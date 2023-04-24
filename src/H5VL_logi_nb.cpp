@@ -482,19 +482,23 @@ void H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
         }
     }
 
+    H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_PERFORM_READ);
+}
+
+void H5VL_log_nb_perform_read_post_process(H5VL_log_file_t *fp, std::vector<H5VL_log_rreq_t *> &reqs, hid_t dxplid) {
+    int i;
+    herr_t err;
+    hsize_t esize;
+
     // Post processing
     for (auto &r : reqs) {
         // Type convertion
         if (r->dtype != r->mtype) {
-            // void *bg = NULL;
-
             esize = H5Tget_size (r->mtype);
             CHECK_ID (esize)
 
-            // if (H5Tget_class (r->mtype) == H5T_COMPOUND) bg = malloc (r->rsize * esize);
             err = H5Tconvert (r->dtype, r->mtype, r->rsize, r->xbuf, NULL, dxplid);
             CHECK_ERR
-            // free (bg);
 
             H5Tclose (r->dtype);
             H5Tclose (r->mtype);
@@ -515,10 +519,7 @@ void H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
             H5VL_log_filei_bfree (fp, r->xbuf);
         }
     }
-
-    H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_PERFORM_READ);
 }
-
 void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &reqs, hid_t dxplid) {
     herr_t err = 0;
     int mpierr;
@@ -553,44 +554,32 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
     if ((!(fp->config & H5VL_FILEI_CONFIG_SUBFILING)) ||
         (fp->config & H5VL_FILEI_CONFIG_SINGLE_SUBFILE_READ)) {
         H5VL_log_nb_perform_read (fp, reqs, dxplid);
+    } else if (fp->subfile_records) {
+        group_id = fp->group_id;  // Backup group ID
+
+        for (i = 1; i <= fp->ngroup; i++) {
+            fp->group_id = (group_id + i) % fp->ngroup;
+            fp->idx->clear ();
+            fp->idxvalid = false;
+            fp->fh = fp->subfile_records[fp->group_id].fh;
+            fp->sfp = fp->subfile_records[fp->group_id].uo;
+            fp->nldset = fp->subfile_records[fp->group_id].nldset;
+            fp->nmdset = fp->subfile_records[fp->group_id].nmdset;
+            fp->lgp = fp->subfile_records[fp->group_id].lgp;
+
+            H5VL_log_nb_perform_read (fp, reqs, dxplid);
+        }
+
+        // no need to restore group_id, fp->lgp, etc
+        // as the iteratation above ends with group_id = fp->group_id
     } else {
-        // TODO: Fix subfile read
-
-        // group_id = fp->group_id;  // Backup group ID
-        // // Process our own subfile last so wew don't need to reopen it
-        // for (i = 1; i <= fp->ngroup; i++) {
-        //     H5VL_LOGI_PROFILING_TIMER_START;
-        //     // Close the log group
-        //     err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
-        //     CHECK_ERR
-        //     // Close previous subfile with MPI
-        //     mpierr = MPI_File_close (&(fp->fh));
-        //     CHECK_MPIERR
-        //     // Close previous subfile
-        //     err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
-        //     CHECK_ERR
-        //     // Erase the index table of previous subfile
-        //     fp->idx->clear ();
-        //     fp->idxvalid = false;
-
-        //     // Open the current subfile
-        //     fp->group_id = (group_id + i) % fp->ngroup;
-        //     H5VL_log_filei_open_subfile (fp, fp->flag, fp->ufaplid, fp->dxplid);
-
-        //     // Open the LOG group
-        //     loc.obj_type = H5I_FILE;
-        //     loc.type     = H5VL_OBJECT_BY_SELF;
-        //     fp->lgp      = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
-        //                               H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
-        //     CHECK_PTR (fp->lgp)
-        //     // Open the file with MPI
-        //     mpierr = MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, fp->info,
-        //                             &(fp->fh));
-        //     CHECK_MPIERR
-
-        //     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_NB_FLUSH_READ_REQS_SWITCH_SUBFILE);
-        // }
+        // This means we are trying to read something in create mode.
+        // Currently this is not supported/implemented.
+        // Only support read an existing file (using file open mode)
+        // Do nothing.
     }
+
+    H5VL_log_nb_perform_read_post_process (fp, reqs, dxplid);
 
     // Clear the request queue
     for (auto rp : reqs) { delete rp; }
