@@ -33,6 +33,14 @@ typedef struct H5VL_log_cord_t {
     MPI_Offset cord[H5S_MAX_RANK];
 } H5VL_log_cord_t;
 
+typedef struct H5VL_log_subfile_record_t {
+    MPI_File fh;    // MPI file handle to the subfile
+    void* uo;       // Under VOL object of the subfile
+    int nldset;     // the number of log data datasets, of the subfile
+    int nmdset;     // the number of log metadata datasets , of the subfile
+    void* lgp;      // log group of the subfile
+} H5VL_log_subfile_record_t;
+
 using stcrtstat = struct stat;
 
 /* The log VOL file object */
@@ -117,6 +125,8 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
     bool is_log_based_file;  // indicate if a file is a regular file (false) or a log-based file
                              // (false)
+
+    H5VL_log_subfile_record_t *subfile_records;  // records of all subfiles, only used for reading
 
 #ifdef ENABLE_PROFILING
 #ifndef REPLAY_BUILD
