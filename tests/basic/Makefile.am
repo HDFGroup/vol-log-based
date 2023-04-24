@@ -32,6 +32,7 @@ check_PROGRAMS = attr \
                  memsel \
                  multiblockselection \
                  multipointselection \
+                 subfile_dread \
                  subfile_dwrite
 
 EXTRA_DIST = seq_runs.sh parallel_run.sh
