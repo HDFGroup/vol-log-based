@@ -935,9 +935,8 @@ void H5VL_log_filei_open_subfile (H5VL_log_file_t *fp,
     CHECK_PTR (fp->sfp)
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
 
-    // Att
-    H5VL_logi_get_att (fp, H5VL_LOG_FILEI_ATTR, H5T_NATIVE_INT32, attbuf, fp->dxplid);
-
+    // Update nldset and nmdset
+    H5VL_logi_get_att (fp->sfp, fp->uvlid, fp->type, H5VL_LOG_FILEI_ATTR, H5T_NATIVE_INT32, attbuf, fp->dxplid);
     fp->nldset = attbuf[1];
     fp->nmdset = attbuf[2];
 }
