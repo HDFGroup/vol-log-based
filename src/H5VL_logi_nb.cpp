@@ -417,7 +417,15 @@ void H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
             mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
             CHECK_MPIERR
         } else {
+            // MPI_File_set_view is collective call, so we need to call it even if there is no data
+            mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
+            CHECK_MPIERR
+
+            // read 0 bytes
             mpierr = MPI_File_read_at_all (fp->fh, 0, MPI_BOTTOM, 0, MPI_BYTE, &stat);
+            CHECK_MPIERR
+
+            mpierr = MPI_File_set_view (fp->fh, 0, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
             CHECK_MPIERR
         }
     }
