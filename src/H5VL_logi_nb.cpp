@@ -557,8 +557,8 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
     } else if (fp->subfile_records) {
         group_id = fp->group_id;  // Backup group ID
 
-        for (i = 1; i <= fp->ngroup; i++) {
-            fp->group_id = (group_id + i) % fp->ngroup;
+        for (i = 1; i <= fp->nsubfiles; i++) {
+            fp->group_id = (group_id + i) % fp->nsubfiles;
             fp->idx->clear ();
             fp->idxvalid = false;
             fp->fh = fp->subfile_records[fp->group_id].fh;
