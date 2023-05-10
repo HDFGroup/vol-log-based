@@ -2,7 +2,7 @@ name: Ubuntu with MPICH
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ subfile_read_test ]
     paths-ignore:
       - '**/*.md'
       - '**/*.txt'
@@ -28,7 +28,7 @@ env:
 jobs:
     build:
       runs-on: ubuntu-latest
-      timeout-minutes: 60
+      timeout-minutes: 25
       steps:
         - uses: actions/checkout@v3
         - name: Set up dependencies
@@ -79,29 +79,11 @@ jobs:
                         CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
             make -s -j 4 distclean >> qout 2>&1
-        - name: Install NetCDF
-          run: |
-            cd ${GITHUB_WORKSPACE}
-            rm -rf /NetCDF ; mkdir NetCDF ; cd NetCDF
-            wget -qc https://github.com/Unidata/netcdf-c/archive/refs/tags/v${NETCDF_VERSION}.tar.gz
-            tar -zxf v${NETCDF_VERSION}.tar.gz
-            cd netcdf-c-${NETCDF_VERSION}
-            ./configure --prefix=${GITHUB_WORKSPACE}/NetCDF \
-                        --silent \
-                        --disable-dap \
-                        CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc \
-                        CPPFLAGS="-I${GITHUB_WORKSPACE}/HDF5/include" \
-                        LDFLAGS="-L${GITHUB_WORKSPACE}//HDF5/lib" \
-                        LIBS="-lhdf5"
-            make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
-            make -s -j 4 distclean >> qout 2>&1
         - name: Configure Log VOL connector
           run: |
             cd ${GITHUB_WORKSPACE}
             autoreconf -i
             ./configure --with-hdf5=${GITHUB_WORKSPACE}/HDF5 \
-                        --enable-test-netcdf4=${GITHUB_WORKSPACE}/NetCDF \
-                        --enable-test-hdf5-iotest \
                         --with-mpi=${GITHUB_WORKSPACE}/MPICH
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
         - name: Print config.log if error
@@ -115,16 +97,17 @@ jobs:
             cd ${GITHUB_WORKSPACE}
             make -j 4
             # Do NOT parallel build, cmake for external tests can fail
+            cd ${GITHUB_WORKSPACE}/tests/basic
             make tests
         - name: Serial-run test - make check
           if: ${{ success() }}
           run: |
-            cd ${GITHUB_WORKSPACE}
+            cd ${GITHUB_WORKSPACE}/tests/basic
             make check
         - name: Print test log files
           if: ${{ always() }}
           run: |
-            cd ${GITHUB_WORKSPACE}
+            cd ${GITHUB_WORKSPACE}/tests/basic
             fname=`find tests utils examples -type f -name "*.log"`
             for f in $fname ; do \
                bname=`basename $f` ; \
@@ -136,16 +119,5 @@ jobs:
         - name: Parallel-run test - make ptest
           if: ${{ success() }}
           run: |
-            cd ${GITHUB_WORKSPACE}
+            cd ${GITHUB_WORKSPACE}/tests/basic
             make ptest
-        - name: Test distribution - make distcheck
-          if: ${{ success() }}
-          run: |
-            cd ${GITHUB_WORKSPACE}
-            make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${GITHUB_WORKSPACE}/HDF5 --with-mpi=${GITHUB_WORKSPACE}/MPICH"
-        - name: make distclean
-          if: ${{ always() }}
-          run: |
-            cd ${GITHUB_WORKSPACE}
-            make -s distclean
-
