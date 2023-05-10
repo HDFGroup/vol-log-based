@@ -24,6 +24,11 @@
         }                                                                    \
     }
 
+#define DEBUG_PRINT(COMM)                                                              \
+    {                                                                                  \
+        MPI_Barrier (COMM);                                                            \
+        if (rank == 0) { printf ("DEBUG: %s:%s:%d\n", __FILE__, __func__, __LINE__); } \
+    }
 int create_subfile (const char *file_name, int rank, int np, vol_env *env_ptr);
 int read_subfile (const char *file_name, int rank, int np, vol_env *env_ptr, MPI_Comm comm);
 int expected_buf_val (int rank, int np, int i, int is_write, int is_columwise);
@@ -55,12 +60,14 @@ int main (int argc, char **argv) {
     // pre-process: create a file with (np / 2) subfiles
     err = create_subfile (file_name, rank, np, &env);
     INDEP_CHECK_ERR (err, MPI_COMM_WORLD)
+    DEBUG_PRINT (MPI_COMM_WORLD);
 
     {  // test reading with np processes (i.e. nproc > nsubfiles)
         MPI_Barrier (MPI_COMM_WORLD);
         err = read_subfile (file_name, rank, np, &env, MPI_COMM_WORLD);
         INDEP_CHECK_ERR (err, MPI_COMM_WORLD)
     }
+    DEBUG_PRINT (MPI_COMM_WORLD);
 
     {  // test reading with np / 2 processes (i.e. nproc == nsubfiles)
         MPI_Barrier (MPI_COMM_WORLD);
@@ -68,6 +75,7 @@ int main (int argc, char **argv) {
         if (rank < (np + 1) / 2) { err = read_subfile (file_name, rank, np, &env, comm1); }
         INDEP_CHECK_ERR (err, MPI_COMM_WORLD)
     }
+    DEBUG_PRINT (MPI_COMM_WORLD);
 
     {  // test reading with np / 4 processes (i.e. nproc < nsubfiles)
         MPI_Barrier (MPI_COMM_WORLD);
@@ -75,6 +83,7 @@ int main (int argc, char **argv) {
         if (rank < (np + 3) / 4) { err = read_subfile (file_name, rank, np, &env, comm2); }
         INDEP_CHECK_ERR (err, MPI_COMM_WORLD)
     }
+    DEBUG_PRINT (MPI_COMM_WORLD);
 
     SHOW_TEST_RESULT
 err_out:;
@@ -120,6 +129,7 @@ int read_subfile (const char *file_name, int rank, int np, vol_env *env_ptr, MPI
         err = H5Pset_vol (fapl_id, log_vlid, NULL);
         CHECK_ERR (err)
     }
+    DEBUG_PRINT (comm);
 
     // Open file
     fid = H5Fopen (file_name, H5F_ACC_RDONLY, fapl_id);
@@ -135,6 +145,7 @@ int read_subfile (const char *file_name, int rank, int np, vol_env *env_ptr, MPI
 
     msid = H5Screate_simple (1, dims + 1, dims + 1);
     CHECK_ERR (msid);
+    DEBUG_PRINT (comm);
 
     {  // test1: read pattern same as write pattern
         // reset buffer
@@ -156,6 +167,7 @@ int read_subfile (const char *file_name, int rank, int np, vol_env *env_ptr, MPI
             if (buf[i] != expected_buf_val (rank, np, i, 1, 0)) { nerrs++; }
         }
         INDEP_CHECK_ERR ((-nerrs), comm);
+        DEBUG_PRINT (comm);
     }
 
     {  // test2: read pattern different from write pattern, but still row-wise.
@@ -179,6 +191,7 @@ int read_subfile (const char *file_name, int rank, int np, vol_env *env_ptr, MPI
         }
 
         INDEP_CHECK_ERR ((-nerrs), comm);
+        DEBUG_PRINT (comm);
     }
 
     {  // test3: read pattern different from write pattern, read column-wise.
@@ -201,6 +214,7 @@ int read_subfile (const char *file_name, int rank, int np, vol_env *env_ptr, MPI
             if (buf[i] != expected_buf_val (rank, np, i, 0, 1)) { nerrs++; }
         }
         INDEP_CHECK_ERR ((-nerrs), comm);
+        DEBUG_PRINT (comm);
     }
 
     {  // test4: each process read entire dataset
@@ -223,6 +237,7 @@ int read_subfile (const char *file_name, int rank, int np, vol_env *env_ptr, MPI
             if (buf[i] != ((i / np) * 100 + (i % np))) { nerrs++; }
         }
         INDEP_CHECK_ERR ((-nerrs), comm);
+        DEBUG_PRINT (comm);
     }
 
 err_out:;
