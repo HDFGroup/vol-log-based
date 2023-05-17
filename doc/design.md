@@ -127,5 +127,7 @@ To read a dataset, the log driver searches the metadata tables for any logged re
 For each intersected log, the entire log data is read into a buffer and then the intersected part is copied over to the user buffer.
 During the intersection check, the metadata log entries are visited in the order of their creation so that the requests written in the later time will overwrite the previous ones.
 This design essentially follows the sequential consistency semantics used in POSIX I/O.
-If the file is opened in read/write mode, a call to flush any pending write requests is required prior to the read to ensure data consistency among processes.
-The flow chart below depicts the steps the log driver handle read requests.
+If the file is opened in read/write mode, a call to flush any pending write
+requests is required prior to the read to ensure data consistency among
+processes.
+
