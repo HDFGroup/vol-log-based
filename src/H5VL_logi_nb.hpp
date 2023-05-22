@@ -45,7 +45,7 @@ class H5VL_log_wreq_t {
     MPI_Offset
         meta_off;  // Offset of the metadata related to the starting metadata block of the process
 
-    std::vector<H5VL_log_req_data_block_t> dbufs;  // Data buffers <xbuf, ubuf, size>
+    std::vector<H5VL_log_req_data_block_t> dbufs;  // Data buffers <ubuf, xbuf, size>
 
     size_t operator() () const;
     bool operator== (H5VL_log_wreq_t &rhs) const;

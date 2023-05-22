@@ -49,6 +49,7 @@ extern herr_t H5VL_log_filei_dset_visit (hid_t o_id,
                                          const char *name,
                                          const H5O_info_t *object_info,
                                          void *op_data);
+extern size_t H5VL_log_filei_get_num_pending_writes(H5VL_log_file_t *fp);
 extern void H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid);
 extern void H5VL_log_filei_metaflush (H5VL_log_file_t *fp);
 extern void H5VL_log_filei_metaupdate (H5VL_log_file_t *fp);

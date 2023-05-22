@@ -1044,6 +1044,7 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     H5VL_log_rreq_t *r;   // Request entry
     H5S_sel_type mstype;  // Type of selection in mem_space_id
     hbool_t rtype;        // Non-blocking?
+    size_t num_pending_writes = 0;
     void *lib_state = NULL;
     H5VL_logi_err_finally finally (
         [&lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
@@ -1119,8 +1120,13 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 
     // Flush it immediately if blocking, otherwise place into queue
     if (rtype != true) {
-        std::vector<H5VL_log_rreq_t *> tmp (1, r);
-        H5VL_log_nb_flush_read_reqs (dp->fp, tmp, plist_id);
+        num_pending_writes = H5VL_log_filei_get_num_pending_writes (dp->fp);
+        if (num_pending_writes > 0) {
+            ERR_OUT ("cannot read data when there are pending write requests.");
+        } else {
+            std::vector<H5VL_log_rreq_t *> tmp (1, r);
+            H5VL_log_nb_flush_read_reqs (dp->fp, tmp, plist_id);
+        }
     } else {
         dp->fp->rreqs.push_back (r);
     }
