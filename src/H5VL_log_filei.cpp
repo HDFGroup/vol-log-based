@@ -675,9 +675,6 @@ void H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid) {
     num_reqs[1] = fp->rreqs.size ();  // num of read requests
 
     MPI_Allreduce(MPI_IN_PLACE, num_reqs, 2, MPI_UNSIGNED_LONG, MPI_MAX, fp->comm);
-    if (num_reqs[0] > 0 && num_reqs[1] > 0) {
-        ERR_OUT ("cannot read data when there are pending write requests.");
-    }
 
     if (num_reqs[0] > 0) {
         H5VL_log_nb_flush_write_reqs (fp);
