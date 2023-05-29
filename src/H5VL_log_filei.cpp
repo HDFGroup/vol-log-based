@@ -397,7 +397,7 @@ void H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
     CHECK_ERR
     if (encoding == H5VL_LOG_ENCODING_OFFSET) { fp->config |= H5VL_FILEI_CONFIG_SEL_ENCODE; }
     */
-    fp->index_type = list;
+    fp->index_type = compact;
     env            = getenv ("H5VL_LOG_INDEX_TYPE");
     if (env) {
         if (strcmp (env, "compact") == 0) {
