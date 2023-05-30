@@ -1121,6 +1121,7 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     // Flush it immediately if blocking, otherwise place into queue
     if (rtype != true) {
         num_pending_writes = H5VL_log_filei_get_num_pending_writes (dp->fp);
+        MPI_Allreduce(MPI_IN_PLACE, &num_pending_writes, 1, MPI_UNSIGNED_LONG, MPI_MAX, dp->fp->comm);
         if (num_pending_writes > 0) {
             H5VL_log_nb_flush_write_reqs (dp->fp);
         }
