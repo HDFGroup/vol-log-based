@@ -456,8 +456,10 @@ void H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
     fp->idx->clear ();
 
     // Open the metadata dataset
+    loc.type     = H5VL_OBJECT_BY_SELF;
+    loc.obj_type = H5I_GROUP;
     sprintf (mdname, "%s_%d", H5VL_LOG_FILEI_DSET_META, md);
-    mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, "_idx", H5P_DATASET_ACCESS_DEFAULT,
+    mdp = H5VLdataset_open (fp->lgp, &loc, fp->uvlid, mdname, H5P_DATASET_ACCESS_DEFAULT,
                             fp->dxplid, NULL);
     CHECK_PTR (mdp)
 
@@ -508,7 +510,7 @@ void H5VL_log_filei_metaupdate_part (H5VL_log_file_t *fp, int &md, int &sec) {
         sec = 0;
         md++;
     }
-    if (md > fp->nmdset) { md = -1; }
+    if (md >= fp->nmdset) { md = -1; }
 
     // Allocate buffer for raw metadata
     buf = (char *)malloc (sizeof (char) * count);

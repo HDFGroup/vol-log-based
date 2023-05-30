@@ -40,6 +40,7 @@ H5VL_logi_compact_idx_t::H5VL_logi_compact_idx_entry_t::H5VL_logi_compact_idx_en
     : nsel (meta.sels.size ()), foff (meta.hdr.foff), fsize (meta.hdr.fsize), dsize (meta.dsize) {
     int encndim;
     hsize_t *start, *count;
+    hsize_t *start_src, *count_src;
 
     if (meta.hdr.flag & H5VL_LOGI_META_FLAG_REC) {
         encndim = ndim - 1;
@@ -53,8 +54,14 @@ H5VL_logi_compact_idx_t::H5VL_logi_compact_idx_entry_t::H5VL_logi_compact_idx_en
     start = (hsize_t *)(blocks);
     count = start + encndim;
     for (auto &sel : meta.sels) {
-        memcpy (start, sel.start, sizeof (hsize_t) * encndim);
-        memcpy (count, sel.count, sizeof (hsize_t) * encndim);
+        start_src = sel.start;
+        count_src = sel.count;
+        if (meta.hdr.flag & H5VL_LOGI_META_FLAG_REC) {
+            start_src += 1;
+            count_src += 1;
+        }
+        memcpy (start, start_src, sizeof (hsize_t) * encndim);
+        memcpy (count, count_src, sizeof (hsize_t) * encndim);
         start = count + encndim;
         count = start + encndim;
     }
@@ -113,6 +120,7 @@ void H5VL_logi_compact_idx_t::parse_block (char *block, size_t size) {
                 // Have to parse all entries for reference purpose
                 if (hdr_tmp->flag & H5VL_LOGI_META_FLAG_SEL_REF) {
                     MPI_Offset rec, roff;
+                    rec = -1; // rec must be initialized to -1, meaning non-record
 
                     // Check if it is a record entry
                     if (hdr_tmp->flag & H5VL_LOGI_META_FLAG_REC) {

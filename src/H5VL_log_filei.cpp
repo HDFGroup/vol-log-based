@@ -397,7 +397,7 @@ void H5VL_log_filei_parse_fapl (H5VL_log_file_t *fp, hid_t faplid) {
     CHECK_ERR
     if (encoding == H5VL_LOG_ENCODING_OFFSET) { fp->config |= H5VL_FILEI_CONFIG_SEL_ENCODE; }
     */
-    fp->index_type = list;
+    fp->index_type = compact;
     env            = getenv ("H5VL_LOG_INDEX_TYPE");
     if (env) {
         if (strcmp (env, "compact") == 0) {
@@ -654,11 +654,35 @@ void H5VL_log_filei_contig_buffer_alloc (H5VL_log_buffer_pool_t *p) {
     p->inf   = 0;
 }
 
+size_t H5VL_log_filei_get_num_pending_writes(H5VL_log_file_t *fp) {
+    size_t num, i;
+
+    num = fp->wreqs.size () - fp->nflushed;
+    for (i = 0; i < fp->mreqs.size (); i++) {
+        if (fp->mreqs[i] && (fp->mreqs[i]->nsel > 0)) {
+            num++;
+        }
+    }
+    return num;
+}
+
 void H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid) {
     H5VL_LOGI_PROFILING_TIMER_START;
+    size_t num_reqs[2] = {0};
+    int i;
 
-    H5VL_log_nb_flush_write_reqs (fp);
-    H5VL_log_nb_flush_read_reqs (fp, fp->rreqs, dxplid);
+    num_reqs[0] = H5VL_log_filei_get_num_pending_writes(fp);  // num of write requests
+    num_reqs[1] = fp->rreqs.size ();  // num of read requests
+
+    MPI_Allreduce(MPI_IN_PLACE, num_reqs, 2, MPI_UNSIGNED_LONG, MPI_MAX, fp->comm);
+
+    if (num_reqs[0] > 0) {
+        H5VL_log_nb_flush_write_reqs (fp);
+    }
+
+    if (num_reqs[1] > 0) {
+        H5VL_log_nb_flush_read_reqs (fp, fp->rreqs, dxplid);
+    }
 
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_FLUSH);
 }
