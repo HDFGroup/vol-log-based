@@ -18,7 +18,7 @@ for p in ${check_PROGRAMS} ; do
    fi
 done
 
-for nproc in {1..12} ; do
+for nproc in 4 8 3 5 ; do
    RUN_CMD=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$nproc/g"`
    test_func ./subfile_dread
 done

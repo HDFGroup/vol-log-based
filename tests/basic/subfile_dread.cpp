@@ -292,7 +292,7 @@ int create_subfile (const char *file_name, int rank, int np, vol_env *env_ptr) {
 
     for (i = 0; i < np; i++) { buf[i] = expected_buf_val (rank, np, i, 1, 0); }
 
-    // create a hyperslab of 1 x N
+    // create a hyperslab of 1 x np
     start[0] = rank;
     start[1] = 0;
     count[0] = 1;
