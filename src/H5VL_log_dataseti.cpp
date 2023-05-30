@@ -1046,6 +1046,7 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     hbool_t rtype;        // Non-blocking?
     size_t num_pending_writes = 0;
     void *lib_state = NULL;
+    H5FD_mpio_xfer_t xfer_mode;
     H5VL_logi_err_finally finally (
         [&lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -1120,11 +1121,16 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
 
     // Flush it immediately if blocking, otherwise place into queue
     if (rtype != true) {
-        num_pending_writes = H5VL_log_filei_get_num_pending_writes (dp->fp);
-        MPI_Allreduce(MPI_IN_PLACE, &num_pending_writes, 1, MPI_UNSIGNED_LONG, MPI_MAX, dp->fp->comm);
-        if (num_pending_writes > 0) {
-            H5VL_log_nb_flush_write_reqs (dp->fp);
+        // flush pending write requests if collective
+        err = H5Pget_dxpl_mpio (dp->fp->dxplid, &xfer_mode);
+        CHECK_ERR
+        if ((xfer_mode == H5FD_MPIO_COLLECTIVE) || dp->fp->np == 1) {
+            num_pending_writes = H5VL_log_filei_get_num_pending_writes (dp->fp);
+            MPI_Allreduce (MPI_IN_PLACE, &num_pending_writes, 1, MPI_UNSIGNED_LONG, MPI_MAX,
+                           dp->fp->comm);
+            if (num_pending_writes > 0) { H5VL_log_nb_flush_write_reqs (dp->fp); }
         }
+
         std::vector<H5VL_log_rreq_t *> tmp (1, r);
         H5VL_log_nb_flush_read_reqs (dp->fp, tmp, plist_id);
     } else {
