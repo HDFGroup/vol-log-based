@@ -20,6 +20,8 @@
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_util.hpp"
 
+#define DEBUG_PRINT {printf("\tDEBUG: %s:%d\n", __FILE__, __LINE__);}
+
 /********************* */
 /* Function prototypes */
 /********************* */
@@ -69,8 +71,9 @@ void *H5VL_log_file_create (
                     req);
         }
 #endif
-
+        DEBUG_PRINT
         fp = H5VL_log_filei_search (name);
+        DEBUG_PRINT
         if (fp) {
             fp = NULL;
             RET_ERR (
@@ -80,6 +83,7 @@ void *H5VL_log_file_create (
         H5VL_LOGI_PROFILING_TIMER_START;
         // Try get info about under VOL
         H5Pget_vol_info (fapl_id, (void **)&info);
+        DEBUG_PRINT
 
         if (info) {
             uvlid          = info->uvlid;
@@ -92,6 +96,7 @@ void *H5VL_log_file_create (
             CHECK_ID (uvlid)
             under_vol_info = NULL;
         }
+        DEBUG_PRINT
 
         // Make sure we have mpi enabled
         fdid = H5Pget_driver (fapl_id);
@@ -104,6 +109,7 @@ void *H5VL_log_file_create (
             comm    = MPI_COMM_SELF;
             mpiinfo = MPI_INFO_NULL;
         }
+        DEBUG_PRINT
 
         // Init file obj
         fp                    = new H5VL_log_file_t (uvlid);
@@ -127,6 +133,7 @@ void *H5VL_log_file_create (
         } else {
             fp->info = MPI_INFO_NULL;
         }
+        DEBUG_PRINT
         mpierr = MPI_Comm_rank (comm, &(fp->rank));
         CHECK_MPIERR
         mpierr = MPI_Comm_size (comm, &(fp->np));
@@ -135,42 +142,56 @@ void *H5VL_log_file_create (
         fp->name   = std::string (name);
         err        = H5Pget_nb_buffer_size (fapl_id, &(fp->bsize));
         CHECK_ERR
+        DEBUG_PRINT
         H5VL_log_filei_parse_fapl (fp, fapl_id);
-
+        DEBUG_PRINT
         H5VL_log_filei_parse_fcpl (fp, fcpl_id);
-
+        DEBUG_PRINT
         H5VL_log_filei_init_idx (fp);
+        DEBUG_PRINT
 
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_INIT);
 
         // Create the file with underlying VOL
         H5VL_LOGI_PROFILING_TIMER_START;
+        DEBUG_PRINT
         fp->ufaplid = H5VL_log_filei_get_under_plist (fapl_id);
+        DEBUG_PRINT
         err         = H5Pset_vol (fp->ufaplid, uvlid, under_vol_info);
+        DEBUG_PRINT
         CHECK_ERR
         err = H5Pset_all_coll_metadata_ops (fp->ufaplid, (hbool_t) false);
+        DEBUG_PRINT
         CHECK_ERR
         err = H5Pset_coll_metadata_write (fp->ufaplid, (hbool_t) true);
+        DEBUG_PRINT
         CHECK_ERR
         // err = H5Pset_alignment (fp->ufaplid, 4096, 4096);
         // CHECK_ERR
         ufcplid = H5VL_log_filei_get_under_plist (fcpl_id);
         CHECK_ID (ufcplid)
+        DEBUG_PRINT
 
         if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
+            DEBUG_PRINT
             ufaplid = H5Pcreate (H5P_FILE_ACCESS);
             CHECK_ID (ufaplid)
+            DEBUG_PRINT
             err = H5Pset_vol (ufaplid, uvlid, under_vol_info);
             CHECK_ERR
+            DEBUG_PRINT
             if (fp->rank) {
                 err = H5Pset_fapl_core (ufaplid, 16 * 1048576, false);
                 CHECK_ERR
             }
+            DEBUG_PRINT
         } else {
             ufaplid = fp->ufaplid;
         }
+        DEBUG_PRINT
         H5VL_LOGI_PROFILING_TIMER_START;
         fp->uo = H5VLfile_create (name, flags, ufcplid, ufaplid, dxpl_id, NULL);
+        DEBUG_PRINT
         CHECK_PTR (fp->uo)
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);

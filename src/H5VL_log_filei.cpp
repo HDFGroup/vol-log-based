@@ -45,6 +45,8 @@
         }                                  \
     } while (0)
 
+#define DEBUG_PRINT {printf("\t\tDEBUG: %s:%d\n", __FILE__, __LINE__);}
+
 std::map<decltype (stcrtstat::st_ino), H5VL_log_file_t *> files;
 H5VL_log_file_t *H5VL_log_filei_search (const char *path) {
     int err;
@@ -219,6 +221,7 @@ void H5VL_log_filei_post_create (H5VL_log_file_t *fp) {
 
     // Reset hdf5 context to allow group and attr operations within a file operation
     H5VL_logi_reset_lib_stat (lib_state);
+    DEBUG_PRINT
 
     // Figure out lustre configuration
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -235,12 +238,15 @@ void H5VL_log_filei_post_create (H5VL_log_file_t *fp) {
             }
         }
     }
+    DEBUG_PRINT
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_STRIPE);
 
     H5VL_LOGI_PROFILING_TIMER_START;
     if ((fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) ||
         (fp->config & H5VL_FILEI_CONFIG_SUBFILING)) {
+            DEBUG_PRINT
         H5VL_log_filei_calc_node_rank (fp);
+        DEBUG_PRINT
     } else {
         fp->group_rank = fp->rank;
         fp->group_np   = fp->np;
@@ -248,14 +254,16 @@ void H5VL_log_filei_post_create (H5VL_log_file_t *fp) {
         fp->group_id   = 0;
         fp->ngroup     = 1;
     }
+    DEBUG_PRINT
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP_RANK);
 
     H5VL_LOGI_PROFILING_TIMER_START;
     if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
         // Aligned write not supported in subfiles
         fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
-
+        DEBUG_PRINT
         H5VL_log_filei_create_subfile (fp, fp->flag, fp->ufaplid, fp->dxplid);
+        DEBUG_PRINT
     } else {
         fp->sfp     = fp->uo;
         fp->subname = fp->name;
@@ -266,23 +274,30 @@ void H5VL_log_filei_post_create (H5VL_log_file_t *fp) {
     H5VL_LOGI_PROFILING_TIMER_START;
     loc.obj_type = H5I_FILE;
     loc.type     = H5VL_OBJECT_BY_SELF;
+    DEBUG_PRINT
     fp->lgp      = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
                                         H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,
                                         H5P_GROUP_CREATE_DEFAULT, fp->dxplid, NULL);
+    DEBUG_PRINT
     CHECK_PTR (fp->lgp)
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
 
     if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
+        DEBUG_PRINT
         fp->fd = open (fp->name.c_str(), O_RDWR);
         if (fp->fd < 0) { ERR_OUT ("open fail") }
+        DEBUG_PRINT
     } else {
         fp->fd = -1;
     }
+    DEBUG_PRINT
 
     // Open the file with MPI
     H5VL_LOGI_PROFILING_TIMER_START;
+    DEBUG_PRINT
     mpierr =
         MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, fp->info, &(fp->fh));
+    DEBUG_PRINT
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FH);
     CHECK_MPIERR
 
@@ -936,7 +951,7 @@ void H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
     attbuf[0] = fp->ndset;
     attbuf[1] = fp->nldset;
     attbuf[2] = fp->nmdset;
-    attbuf[3] = fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
+    attbuf[3] = fp->config & ~(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
     attbuf[4] = fp->ngroup;
     H5VL_logi_add_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR, H5T_STD_I32LE,
                        H5T_NATIVE_INT32, H5VL_LOG_FILEI_NATTR, attbuf, dxpl_id, NULL);
