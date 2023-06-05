@@ -173,18 +173,19 @@ void *H5VL_log_file_create (
         DEBUG_PRINT
 
         if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
-            DEBUG_PRINT
-            ufaplid = H5Pcreate (H5P_FILE_ACCESS);
-            CHECK_ID (ufaplid)
-            DEBUG_PRINT
-            err = H5Pset_vol (ufaplid, uvlid, under_vol_info);
-            CHECK_ERR
-            DEBUG_PRINT
-            if (fp->rank) {
-                err = H5Pset_fapl_core (ufaplid, ((size_t)2) * ((size_t)1024), false);
-                CHECK_ERR
-            }
-            DEBUG_PRINT
+            // DEBUG_PRINT
+            // ufaplid = H5Pcreate (H5P_FILE_ACCESS);
+            // CHECK_ID (ufaplid)
+            // DEBUG_PRINT
+            // err = H5Pset_vol (ufaplid, uvlid, under_vol_info);
+            // CHECK_ERR
+            // DEBUG_PRINT
+            // if (fp->rank) {
+            //     err = H5Pset_fapl_core (ufaplid, ((size_t)2) * ((size_t)1024), false);
+            //     CHECK_ERR
+            // }
+            // DEBUG_PRINT
+            ufaplid = fp->ufaplid;
         } else {
             ufaplid = fp->ufaplid;
         }
