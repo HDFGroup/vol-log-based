@@ -14,6 +14,7 @@
 #include "testutils.hpp"
 
 #define N 10
+#define DEBUG_PRINT {printf("DEBUG: %s:%d\n", __FILE__, __LINE__);}
 
 int main(int argc, char **argv) {
     herr_t err = 0;
@@ -27,6 +28,7 @@ int main(int argc, char **argv) {
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    DEBUG_PRINT
 
     sprintf(file_name, "%s.h5", basename(argv[0]));
     if (argc > 2) {
@@ -37,16 +39,21 @@ int main(int argc, char **argv) {
     else if (argc > 1)
         strcpy(file_name, argv[1]);
 
+    DEBUG_PRINT
     /* check VOL related environment variables */
     check_env(&env);
     SHOW_TEST_INFO("subfileing write")
+    DEBUG_PRINT
 
     fapl_id = H5Pcreate(H5P_FILE_ACCESS);
     CHECK_ERR(fapl_id)
+    DEBUG_PRINT
     // MPI and collective metadata is required by LOG VOL
     err = H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+    DEBUG_PRINT
     CHECK_ERR(err)
     err = H5Pset_all_coll_metadata_ops(fapl_id, 1);
+    DEBUG_PRINT
     CHECK_ERR(err)
 
     if (env.native_only == 0 && env.connector == 0) {
@@ -56,27 +63,32 @@ int main(int argc, char **argv) {
         err = H5Pset_vol(fapl_id, log_vlid, NULL);
         CHECK_ERR(err)
     }
-
+    DEBUG_PRINT
     env_str = getenv("H5VL_LOG_NSUBFILES");
     if (env_str == NULL) {
         /* set the number of subfiles */
         fcpl_id = H5Pcreate(H5P_FILE_CREATE);
+        DEBUG_PRINT
         CHECK_ERR(fcpl_id)
         nsubfiles = np / 2;
         if (nsubfiles == 0) nsubfiles = -1;
         err = H5Pset_subfiling(fcpl_id, nsubfiles);
         CHECK_ERR(err)
     }
+    DEBUG_PRINT
 
     // Create file
     fid = H5Fcreate(file_name, H5F_ACC_TRUNC, fcpl_id, fapl_id);
     CHECK_ERR(fid)
+    DEBUG_PRINT
 
     // Create a dataset of 2D array of size np x N
     dims[0] = np;
     sid = H5Screate_simple(2, dims, dims);
+    DEBUG_PRINT
     CHECK_ERR(sid);
     did = H5Dcreate2(fid, "D", H5T_STD_I32LE, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    DEBUG_PRINT
     CHECK_ERR(did)
 
     for (i = 0; i < N; i++) { buf[i] = rank + i; }
@@ -88,25 +100,34 @@ int main(int argc, char **argv) {
     count[1] = N;
     err = H5Sselect_hyperslab(sid, H5S_SELECT_SET, start, NULL, count, NULL);
     CHECK_ERR(err)
+    DEBUG_PRINT
 
     msid = H5Screate_simple(1, dims + 1, dims + 1);
     CHECK_ERR(msid);
+    DEBUG_PRINT
 
     // Write to dataset in parallel
     err = H5Dwrite(did, H5T_NATIVE_INT, msid, sid, H5P_DEFAULT, buf);
     CHECK_ERR(err)
+    DEBUG_PRINT
 
     err = H5Fflush(fid, H5F_SCOPE_LOCAL);
     CHECK_ERR(err)
+    DEBUG_PRINT
 
 err_out:;
     if (msid >= 0) H5Sclose(msid);
     if (sid >= 0) H5Sclose(sid);
     if (did >= 0) H5Dclose(did);
+    DEBUG_PRINT
     if (fapl_id >= 0) H5Pclose(fapl_id);
+    DEBUG_PRINT
     if (fcpl_id != H5P_DEFAULT) H5Pclose(fcpl_id);
+    DEBUG_PRINT
     if (log_vlid != H5I_INVALID_HID) H5VLclose(log_vlid);
+    DEBUG_PRINT
     if (fid >= 0) H5Fclose(fid);
+    DEBUG_PRINT
 
     SHOW_TEST_RESULT
 
