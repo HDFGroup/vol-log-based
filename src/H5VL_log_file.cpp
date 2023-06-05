@@ -181,7 +181,7 @@ void *H5VL_log_file_create (
             CHECK_ERR
             DEBUG_PRINT
             if (fp->rank) {
-                err = H5Pset_fapl_core (ufaplid, 16 * 1048576, false);
+                err = H5Pset_fapl_core (ufaplid, ((size_t)2) * ((size_t)1024), false);
                 CHECK_ERR
             }
             DEBUG_PRINT

@@ -1036,11 +1036,11 @@ void H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
     if (fp->ngroup > 0) {
         mpierr =
             MPI_Comm_split (fp->comm, fp->rank * fp->ngroup / fp->np, fp->rank, &(fp->group_comm));
-            DEBUG_PRINT
+        DEBUG_PRINT
     } else { /* fp->ngroup < 0 */
         mpierr = MPI_Comm_split_type (fp->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,
                                       &(fp->group_comm));
-                                      DEBUG_PRINT
+        DEBUG_PRINT
     }
     CHECK_ERR
 
