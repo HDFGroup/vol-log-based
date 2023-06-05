@@ -1024,8 +1024,11 @@ void H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
         H5VL_log_free (group_ranks);
     });
 
+    DEBUG_PRINT
+
     group_ranks = (int *)malloc (sizeof (int) * fp->np);
     CHECK_PTR (group_ranks);
+    DEBUG_PRINT
 
     /* H5VL_FILEI_CONFIG_SUBFILING has been checked before entering this
      * subroutine in H5VL_log_filei_post_open(). Thus fp->ngroup is not 0.
@@ -1033,31 +1036,39 @@ void H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
     if (fp->ngroup > 0) {
         mpierr =
             MPI_Comm_split (fp->comm, fp->rank * fp->ngroup / fp->np, fp->rank, &(fp->group_comm));
+            DEBUG_PRINT
     } else { /* fp->ngroup < 0 */
         mpierr = MPI_Comm_split_type (fp->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,
                                       &(fp->group_comm));
+                                      DEBUG_PRINT
     }
     CHECK_ERR
 
     mpierr = MPI_Comm_rank (fp->group_comm, &(fp->group_rank));
+    DEBUG_PRINT
     CHECK_MPIERR
     mpierr = MPI_Comm_size (fp->group_comm, &(fp->group_np));
+    DEBUG_PRINT
     CHECK_MPIERR
 
     mpierr = MPI_Allgather (&(fp->group_rank), 1, MPI_INT, group_ranks, 1, MPI_INT, fp->comm);
+    DEBUG_PRINT
     CHECK_MPIERR
     // Assign group ID based on the global rank of group rank 0
     fp->group_id = 0;
     for (i = 0; i < fp->rank; i++) {
         if (group_ranks[i] == 0) { fp->group_id++; }
     }
+    DEBUG_PRINT
     // Calculate number of groups
     fp->ngroup = fp->group_id;
     for (; i < fp->np; i++) {
         if (group_ranks[i] == 0) { fp->ngroup++; }
     }
+    DEBUG_PRINT
     mpierr = MPI_Bcast (&(fp->group_id), 1, MPI_INT, 0, fp->group_comm);
     CHECK_MPIERR
+    DEBUG_PRINT
 
     if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
         // What ost it should write to
@@ -1087,6 +1098,7 @@ void H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
             }
         }
     }
+    DEBUG_PRINT
 }
 
 /*-------------------------------------------------------------------------
