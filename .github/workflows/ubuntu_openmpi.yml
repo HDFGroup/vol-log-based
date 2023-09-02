@@ -21,8 +21,8 @@ on:
       - 'case_studies/*'
 
 env:
-   HDF5_VERSION: 1.14.0
-   NETCDF_VERSION: 4.9.0
+   HDF5_VERSION: 1.14.2
+   NETCDF_VERSION: 4.9.2
 
 jobs:
     build:
