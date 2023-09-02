@@ -89,6 +89,10 @@ jobs:
             ./configure --prefix=${GITHUB_WORKSPACE}/NetCDF \
                         --silent \
                         --disable-dap \
+                        --disable-nczarr \
+                        --disable-nczarr-filters \
+                        --disable-filter-testing \
+                        --disable-byterange \
                         CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc \
                         CPPFLAGS="-I${GITHUB_WORKSPACE}/HDF5/include" \
                         LDFLAGS="-L${GITHUB_WORKSPACE}//HDF5/lib" \
