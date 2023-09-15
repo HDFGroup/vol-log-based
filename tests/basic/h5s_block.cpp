@@ -28,8 +28,12 @@
 #include <mpi.h>
 #include <hdf5.h>
 
+#ifdef TEST_H5VL_LOG
 #include "H5VL_log.h"
 #include "testutils.hpp"
+#else
+#include "common.hpp"
+#endif
 
 #define N 10
 
@@ -38,8 +42,6 @@ int main (int argc, char **argv) {
     int rank, np, nerrs=0, mpi_required, buf[N];
     herr_t err;
     hid_t file_id=-1, dspace_id=-1, dset_id=-1, mspace_id=-1, faplid=-1;
-    hid_t log_vlid = H5I_INVALID_HID;  // Logvol ID
-    vol_env env;
     hsize_t dims[2];
 
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
@@ -56,20 +58,25 @@ int main (int argc, char **argv) {
         file_name = "h5s_block.h5";
     }
 
-    /* check VOL related environment variables */
-    check_env(&env);
-    SHOW_TEST_INFO ("Test H5S_BLOCK")
-
     faplid = H5Pcreate(H5P_FILE_ACCESS);
     CHECK_ERR(faplid)
 
+#ifdef TEST_H5VL_LOG
+    /* check VOL related environment variables */
+    vol_env env;
+    check_env(&env);
     if (env.native_only == 0 && env.connector == 0) {
+        hid_t log_vlid=H5I_INVALID_HID;
         // Register LOG VOL plugin
         log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
-        CHECK_ERR(log_vlid)
-        err = H5Pset_vol(faplid, log_vlid, NULL);
-        CHECK_ERR(err)
+        CHECK_ERR (log_vlid)
+        err = H5Pset_vol (faplid, log_vlid, NULL);
+        CHECK_ERR (err)
+        err = H5VLclose (log_vlid);
+        CHECK_ERR (err)
     }
+#endif
+    SHOW_TEST_INFO ("Test H5S_BLOCK")
 
     file_id = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);
     CHECK_ERR(file_id)
@@ -91,7 +98,6 @@ err_out:
     if (dspace_id != -1) H5Sclose(dspace_id);
     if (file_id != -1) H5Fclose(file_id);
     if (faplid != -1) H5Pclose(faplid);
-    if (log_vlid != H5I_INVALID_HID) H5VLclose (log_vlid);
 
     SHOW_TEST_RESULT
 

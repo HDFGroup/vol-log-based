@@ -8,8 +8,12 @@
 #include <mpi.h>
 #include <hdf5.h>
 
+#ifdef TEST_H5VL_LOG
 #include "H5VL_log.h"
 #include "testutils.hpp"
+#else
+#include "common.hpp"
+#endif
 
 #define N 10
 
@@ -20,8 +24,6 @@ int main (int argc, char **argv) {
     const char *file_name;
     hid_t fid, gid, faid, gaid, sid;
     hid_t faplid;
-    hid_t log_vlid=H5I_INVALID_HID;
-    vol_env env;
 
     int mpi_required;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
@@ -39,10 +41,6 @@ int main (int argc, char **argv) {
         file_name = "attr.h5";
     }
 
-    /* check VOL related environment variables */
-    check_env(&env);
-    SHOW_TEST_INFO ("Creating attributes")
-
     faplid = H5Pcreate (H5P_FILE_ACCESS);
     // MPI and collective metadata is required by LOG VOL
     err = H5Pset_fapl_mpio (faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
@@ -50,13 +48,22 @@ int main (int argc, char **argv) {
     err = H5Pset_all_coll_metadata_ops (faplid, 1);
     CHECK_ERR (err)
 
+#ifdef TEST_H5VL_LOG
+    /* check VOL related environment variables */
+    vol_env env;
+    check_env(&env);
     if (env.native_only == 0 && env.connector == 0) {
+        hid_t log_vlid=H5I_INVALID_HID;
         // Register LOG VOL plugin
         log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
         CHECK_ERR (log_vlid)
         err = H5Pset_vol (faplid, log_vlid, NULL);
         CHECK_ERR (err)
+        err = H5VLclose (log_vlid);
+        CHECK_ERR (err)
     }
+#endif
+    SHOW_TEST_INFO ("Creating attributes")
 
     // Create file
     fid = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);
@@ -90,7 +97,6 @@ int main (int argc, char **argv) {
     CHECK_ERR (err)
 
 err_out:
-    if (log_vlid != H5I_INVALID_HID) H5VLclose (log_vlid);
     SHOW_TEST_RESULT
 
     MPI_Finalize ();

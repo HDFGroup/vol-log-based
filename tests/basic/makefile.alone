@@ -1,0 +1,48 @@
+#
+# Copyright (C) 2023, Northwestern University and Argonne National Laboratory
+# See COPYRIGHT notice in top-level directory.
+#
+# Example:
+# 	 make -f makefile.alone MPICXX=$HOME/MPICH/4.1.2/bin/mpicxx \
+# 	                        MPIEXEC=$HOME/MPICH/4.1.2/bin/mpiexec \
+# 	                        HDF5_DIR=$HOME/HDF5/1.14.2
+
+SUFFIXES = .o .cpp
+
+CXX         = $(MPICXX)
+DFLAGS      =
+OPTFLAGS    = -g -O0 -Wall
+INCFLAGS    = -I$(HDF5_DIR)/include
+CXXFLAGS    = $(OPTFLAGS) $(DFLAGS) $(INCFLAGS)
+LDFLAGS     = -L$(HDF5_DIR)/lib
+LDLIBS      = -lhdf5
+
+check_PROGRAMS = attr \
+                 dread \
+                 dset \
+                 dwrite \
+                 file \
+                 fill \
+                 group \
+                 memsel \
+                 multiblockselection \
+                 multipointselection
+
+all: $(check_PROGRAMS) cache.cfg
+
+cache.cfg: ../../cache.cfg.in
+	cp -f $< $@
+
+ptest:
+	@echo "==========================================================="
+	@echo "    Parallel testing on 4 MPI processes"
+	@echo "==========================================================="
+	@for f in $(check_PROGRAMS) ; do \
+	     $(MPIEXEC) -n 4 ./$$f || exit 1 ; \
+	done
+
+clean:
+	rm -f core.* *.o *.h5 $(check_PROGRAMS) cache.cfg
+
+.PHONY: clean
+

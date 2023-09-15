@@ -9,8 +9,12 @@
 #include <mpi.h>
 #include <hdf5.h>
 
+#ifdef TEST_H5VL_LOG
 #include "H5VL_log.h"
 #include "testutils.hpp"
+#else
+#include "common.hpp"
+#endif
 
 #define N 10
 
@@ -25,11 +29,9 @@ int main (int argc, char **argv) {
     hid_t sid      = -1;  // Dataset space ID
     hid_t msid     = -1;  // Memory space ID
     hid_t faplid   = -1;
-    hid_t log_vlid = H5I_INVALID_HID;  // Logvol ID
     hsize_t dims[2];
     hsize_t start[2], count[2];
     int **buf = NULL;
-    vol_env env;
 
     int mpi_required;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
@@ -47,10 +49,6 @@ int main (int argc, char **argv) {
         file_name = "memsel.h5";
     }
 
-    /* check VOL related environment variables */
-    check_env(&env);
-    SHOW_TEST_INFO ("Memory space hyperslab")
-
     faplid = H5Pcreate (H5P_FILE_ACCESS);
     CHECK_ERR (faplid)
     // MPI and collective metadata is required by LOG VOL
@@ -59,13 +57,22 @@ int main (int argc, char **argv) {
     err = H5Pset_all_coll_metadata_ops (faplid, 1);
     CHECK_ERR (err)
 
+#ifdef TEST_H5VL_LOG
+    /* check VOL related environment variables */
+    vol_env env;
+    check_env(&env);
     if (env.native_only == 0 && env.connector == 0) {
+        hid_t log_vlid=H5I_INVALID_HID;
         // Register LOG VOL plugin
         log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
         CHECK_ERR (log_vlid)
         err = H5Pset_vol (faplid, log_vlid, NULL);
         CHECK_ERR (err)
+        err = H5VLclose (log_vlid);
+        CHECK_ERR (err)
     }
+#endif
+    SHOW_TEST_INFO ("Memory space hyperslab")
 
     // Create file
     fid = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, faplid);
@@ -151,7 +158,6 @@ err_out:;
     if (did >= 0) H5Dclose (did);
     if (fid >= 0) H5Fclose (fid);
     if (faplid >= 0) H5Pclose (faplid);
-    if (log_vlid != H5I_INVALID_HID) H5VLclose (log_vlid);
 
     SHOW_TEST_RESULT
 
