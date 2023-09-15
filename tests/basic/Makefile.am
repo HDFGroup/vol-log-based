@@ -16,6 +16,7 @@ AM_CPPFLAGS += -I${top_srcdir}/src
 AM_CPPFLAGS += -I${top_srcdir}/tests
 AM_CPPFLAGS += -I${top_builddir}
 AM_CPPFLAGS += -I${top_builddir}/src
+AM_CPPFLAGS += -DTEST_H5VL_LOG
 
 LDADD = $(top_builddir)/src/libH5VL_log.la ../common/libtestutils.la
 

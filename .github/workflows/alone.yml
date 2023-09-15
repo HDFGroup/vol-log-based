@@ -1,0 +1,208 @@
+name: Tests VOLs implicitly
+
+on:
+  push:
+    branches: [ master, dev ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.jpg'
+      - '**/*.png'
+      - 'docs/*'
+      - 'case_studies/*'
+  pull_request:
+    branches: [ master, dev ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.jpg'
+      - '**/*.png'
+      - 'docs/*'
+      - 'case_studies/*'
+
+env:
+   MPICH_VERSION: 4.1.2
+   HDF5_VERSION: 1.14.2
+   ARGOBOTS_VERSION: 1.1
+   ASYNC_VOL_VERSION: 1.8
+
+jobs:
+    build:
+      runs-on: ubuntu-latest
+      timeout-minutes: 60
+      steps:
+        - uses: actions/checkout@v3
+        - name: Set up dependencies
+          run: |
+            sudo apt-get update
+            sudo apt-get -y install automake autoconf libtool libtool-bin m4 cmake
+            # The MPICH installed on github actions is too slow
+            # sudo apt-get install mpich
+            # mpicc -v
+            # zlib
+            sudo apt-get -y install zlib1g-dev
+        - name: Build MPICH
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            rm -rf ${GITHUB_WORKSPACE}/MPICH
+            mkdir ${GITHUB_WORKSPACE}/MPICH
+            cd ${GITHUB_WORKSPACE}/MPICH
+            wget -q https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz
+            gzip -dc mpich-${MPICH_VERSION}.tar.gz | tar -xf -
+            cd mpich-${MPICH_VERSION}
+            ./configure --prefix=${GITHUB_WORKSPACE}/MPICH \
+                        --silent \
+                        --enable-romio \
+                        --with-file-system=ufs \
+                        --with-device=ch3:sock \
+                        --disable-fortran \
+                        CC=gcc
+            make -s LIBTOOLFLAGS=--silent V=1 -j 8 install > qout 2>&1
+            make -s -j 8 distclean >> qout 2>&1
+        - name: Install HDF5
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            rm -rf ${GITHUB_WORKSPACE}/HDF5
+            mkdir ${GITHUB_WORKSPACE}/HDF5
+            cd ${GITHUB_WORKSPACE}/HDF5
+            VER_MAJOR=${HDF5_VERSION%.*}
+            wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${VER_MAJOR}/hdf5-${HDF5_VERSION}/src/hdf5-${HDF5_VERSION}.tar.gz
+            tar -zxf hdf5-${HDF5_VERSION}.tar.gz
+            cd hdf5-${HDF5_VERSION}
+            ./configure --prefix=${GITHUB_WORKSPACE}/HDF5 \
+                        --silent \
+                        --enable-parallel \
+                        --enable-build-mode=production \
+                        --enable-unsupported \
+                        --enable-threadsafe \
+                        --disable-doxygen-doc \
+                        --disable-doxygen-man \
+                        --disable-doxygen-html \
+                        --disable-tests \
+                        --disable-fortran \
+                        --disable-cxx \
+                        CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc
+            make -s LIBTOOLFLAGS=--silent V=1 -j 8 install > qout 2>&1
+            make -s -j 8 distclean >> qout 2>&1
+        - name: Install Argobots
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            ABT_DIR=${GITHUB_WORKSPACE}/Argobots
+            rm -rf ${ABT_DIR}
+            mkdir ${ABT_DIR}
+            cd ${ABT_DIR}
+            wget -qc https://github.com/pmodels/argobots/archive/refs/tags/v${ARGOBOTS_VERSION}.tar.gz
+            tar -xf v${ARGOBOTS_VERSION}.tar.gz
+            cd argobots-${ARGOBOTS_VERSION}
+            ./autogen.sh
+            ./configure --prefix=${ABT_DIR} \
+                        --silent \
+                        CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc \
+                        CXX=${GITHUB_WORKSPACE}/MPICH/bin/mpicxx
+            make -s LIBTOOLFLAGS=--silent V=1 -j 8 install > qout 2>&1
+            make -s -j 8 distclean >> qout 2>&1
+        - name: Install Async VOL
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            export ABT_DIR=${GITHUB_WORKSPACE}/Argobots
+            export HDF5_DIR=${GITHUB_WORKSPACE}/HDF5
+            export ASYNC_DIR=${GITHUB_WORKSPACE}/Async
+            export HDF5_ROOT=${HDF5_DIR}
+            rm -rf ${ASYNC_DIR}
+            mkdir ${ASYNC_DIR}
+            cd ${ASYNC_DIR}
+            wget -qc https://github.com/hpc-io/vol-async/archive/refs/tags/v${ASYNC_VOL_VERSION}.tar.gz
+            tar -xf v${ASYNC_VOL_VERSION}.tar.gz
+            cd vol-async-${ASYNC_VOL_VERSION}
+            mkdir build
+            cd build
+            CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc \
+              CXX=${GITHUB_WORKSPACE}/MPICH/bin/mpicxx \
+              cmake .. -DCMAKE_INSTALL_PREFIX=${ASYNC_DIR}
+            make -s LIBTOOLFLAGS=--silent V=1 -j 8 install > qout 2>&1
+        - name: Install Cache VOL
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            export ABT_DIR=${GITHUB_WORKSPACE}/Argobots
+            export HDF5_DIR=${GITHUB_WORKSPACE}/HDF5
+            export ASYNC_DIR=${GITHUB_WORKSPACE}/Async
+            export CAHCE_DIR=${GITHUB_WORKSPACE}/Cache
+            export HDF5_ROOT=${HDF5_DIR}
+            rm -rf ${CAHCE_DIR}
+            mkdir ${CAHCE_DIR}
+            cd ${CAHCE_DIR}
+            git clone https://github.com/hpc-io/vol-cache.git
+            cd vol-cache
+            mkdir build
+            cd build
+            export LD_LIBRARY_PATH="$ABT_DIR/lib:$LD_LIBRARY_PATH"
+            CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc \
+              CXX=${GITHUB_WORKSPACE}/MPICH/bin/mpicxx \
+              CFLAGS=-DNDEBUG \
+              HDF5_VOL_DIR=${ASYNC_DIR} \
+              cmake .. -DCMAKE_INSTALL_PREFIX=${CAHCE_DIR}
+            make -s LIBTOOLFLAGS=--silent V=1 -j 8 install > qout 2>&1
+        - name: build test program in folder tests/basic
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}/tests/basic
+            export HDF5_DIR=${GITHUB_WORKSPACE}/HDF5
+            export LD_LIBRARY_PATH=${HDF5_DIR}/lib:${LD_LIBRARY_PATH}
+            make -f makefile.alone V=1 \
+                    MPICXX=${GITHUB_WORKSPACE}/MPICH/bin/mpicxx
+        - name: run test program in folder tests/basic, HDF5 only
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}/tests/basic
+            export HDF5_DIR=${GITHUB_WORKSPACE}/HDF5
+            export LD_LIBRARY_PATH=${HDF5_DIR}/lib:${LD_LIBRARY_PATH}
+            make -f makefile.alone V=1 \
+                    MPIEXEC=${GITHUB_WORKSPACE}/MPICH/bin/mpiexec \
+                    ptest
+        - name: Test Cache VOL only
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}/tests/basic
+            export ABT_DIR=${GITHUB_WORKSPACE}/Argobots
+            export ASYNC_DIR=${GITHUB_WORKSPACE}/Async
+            export CACHE_DIR=${GITHUB_WORKSPACE}/Cache
+            export HDF5_DIR=${GITHUB_WORKSPACE}/HDF5
+            export HDF5_ROOT=${HDF5_DIR}
+            export LD_LIBRARY_PATH=${CACHE_DIR}/lib:${ASYNC_DIR}/lib:${ABT_DIR}/lib:${HDF5_DIR}/lib:${LD_LIBRARY_PATH}
+            export HDF5_PLUGIN_PATH=${CACHE_DIR}/lib
+            export HDF5_VOL_CONNECTOR="cache_ext config=${GITHUB_WORKSPACE}/tests/basic/cache.cfg;under_vol=0;under_info={}"
+            export MPICH_MAX_THREAD_SAFETY=multiple
+            export HDF5_USE_FILE_LOCKING=FALSE
+            export HDF5_ASYNC_DISABLE_DSET_GET=0
+            make -f makefile.alone V=1 \
+                    MPIEXEC=${GITHUB_WORKSPACE}/MPICH/bin/mpiexec \
+                    ptest
+        - name: Test Async and Cache VOLs
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}/tests/basic
+            export ABT_DIR=${GITHUB_WORKSPACE}/Argobots
+            export ASYNC_DIR=${GITHUB_WORKSPACE}/Async
+            export CACHE_DIR=${GITHUB_WORKSPACE}/Cache
+            export HDF5_DIR=${GITHUB_WORKSPACE}/HDF5
+            export HDF5_ROOT=${HDF5_DIR}
+            export HDF5_PLUGIN_PATH=${CACHE_DIR}/lib:${ASYNC_DIR}/lib
+            export LD_LIBRARY_PATH=${CACHE_DIR}/lib:${ASYNC_DIR}/lib:${ABT_DIR}/lib:${HDF5_DIR}/lib:${LD_LIBRARY_PATH}
+            export HDF5_VOL_CONNECTOR="cache_ext config=${GITHUB_WORKSPACE}/tests/basic/cache.cfg;under_vol=512;under_info={under_vol=0;under_info={}}"
+            export MPICH_MAX_THREAD_SAFETY=multiple
+            export HDF5_USE_FILE_LOCKING=FALSE
+            export HDF5_ASYNC_DISABLE_DSET_GET=0
+            make -f makefile.alone V=1 \
+                    MPIEXEC=${GITHUB_WORKSPACE}/MPICH/bin/mpiexec \
+                    ptest
+        - name: make clean
+          if: ${{ always() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}/tests/basic
+            make -f makefile.alone clean
+

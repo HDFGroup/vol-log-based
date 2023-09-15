@@ -8,8 +8,12 @@
 #include <mpi.h>
 #include <hdf5.h>
 
+#ifdef TEST_H5VL_LOG
 #include "H5VL_log.h"
 #include "testutils.hpp"
+#else
+#include "common.hpp"
+#endif
 
 #define N 10
 
@@ -17,10 +21,9 @@ int main (int argc, char **argv) {
     const char *file_name;
     int i, rank, np, nerrs=0, buf[N];
     herr_t err;
-    hid_t fapl_id=-1, log_vlid=H5I_INVALID_HID;
+    hid_t fapl_id=-1;
     hid_t file_id=-1, dspace_id=-1, dset_id=-1, mspace_id=-1, dxpl_id=-1;
     hsize_t dims[3], start[2];
-    vol_env env;
 
     int mpi_required;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_required);
@@ -38,10 +41,6 @@ int main (int argc, char **argv) {
         file_name = "multipointselection.h5";
     }
 
-    /* check VOL related environment variables */
-    check_env(&env);
-    SHOW_TEST_INFO ("H5Sselect_elements")
-
     // Set MPI-IO and parallel access proterty.
     fapl_id = H5Pcreate (H5P_FILE_ACCESS);
     CHECK_ERR (fapl_id)
@@ -58,13 +57,22 @@ int main (int argc, char **argv) {
     err = H5Pset_dxpl_mpio (dxpl_id, H5FD_MPIO_COLLECTIVE);
     CHECK_ERR (err)
 
+#ifdef TEST_H5VL_LOG
+    /* check VOL related environment variables */
+    vol_env env;
+    check_env(&env);
     if (env.native_only == 0 && env.connector == 0) {
+        hid_t log_vlid=H5I_INVALID_HID;
         // Register LOG VOL plugin
         log_vlid = H5VLregister_connector (&H5VL_log_g, H5P_DEFAULT);
         CHECK_ERR (log_vlid)
         err = H5Pset_vol (fapl_id, log_vlid, NULL);
         CHECK_ERR (err)
+        err = H5VLclose (log_vlid);
+        CHECK_ERR (err)
     }
+#endif
+    SHOW_TEST_INFO ("H5Sselect_elements")
 
     // Create file
     file_id = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
@@ -139,10 +147,6 @@ err_out:
     }
     if (file_id != -1) {
         err = H5Fclose (file_id);
-        CHECK_ERR (err)
-    }
-    if (log_vlid != H5I_INVALID_HID) {
-        err = H5VLclose (log_vlid);
         CHECK_ERR (err)
     }
     if (fapl_id != -1) {
