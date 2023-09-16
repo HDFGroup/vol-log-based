@@ -24,7 +24,7 @@ env:
    MPICH_VERSION: 4.1.2
    HDF5_VERSION: 1.14.2
    ARGOBOTS_VERSION: 1.1
-   ASYNC_VOL_VERSION: 1.8
+   ASYNC_VOL_VERSION: 1.8.1
 
 jobs:
     build:
