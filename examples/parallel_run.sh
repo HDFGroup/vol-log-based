@@ -14,8 +14,9 @@ async_vol=no
 cache_vol=no
 log_vol=no
 getenv_vol
-if test "x$async_vol" = xyes ; then
+if test "x$async_vol" = xyes || test "x$cache_vol" = xyes ; then
    # Skip Async I/O VOL as it requires to call MPI_Init_thread()
+   # Skip Cache VOL as it also requires to call MPI_Init_thread()
    exit 0
 fi
 
