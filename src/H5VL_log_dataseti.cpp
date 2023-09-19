@@ -162,7 +162,8 @@ void H5VL_log_dataset_readi_passthru (std::vector<H5VL_log_idx_search_ret_t> &bl
                                         std::vector<H5VL_log_copy_ctx> &overlaps,
                                         H5VL_log_file_t *fp) {
     herr_t err;
-    int32_t i, j, k, l, ii;
+    hsize_t ii;
+    int32_t i, j, k, l;
     int nblock = blocks.size ();  // Number of place to read
     std::vector<bool> newgroup (
         nblock,

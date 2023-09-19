@@ -524,7 +524,6 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
     int mpierr;
     int i;
     int group_id;  // Original group ID (subfile to access)
-    H5FD_mpio_xfer_t xfer_mode;
     H5VL_loc_params_t loc;
     H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
     H5VL_log_dset_info_t *dip;

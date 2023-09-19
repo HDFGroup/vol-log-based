@@ -669,7 +669,6 @@ size_t H5VL_log_filei_get_num_pending_writes(H5VL_log_file_t *fp) {
 void H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid) {
     H5VL_LOGI_PROFILING_TIMER_START;
     size_t num_reqs[2] = {0};
-    int i;
 
     num_reqs[0] = H5VL_log_filei_get_num_pending_writes(fp);  // num of write requests
     num_reqs[1] = fp->rreqs.size ();  // num of read requests

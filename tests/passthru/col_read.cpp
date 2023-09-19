@@ -21,8 +21,7 @@ int get_expected (int idx, int rank, int phase, int is_log, int np);
 int main (int argc, char **argv) {
     herr_t err = 0;
     int nerrs  = 0;
-    htri_t ret;
-    int i, ii;
+    hsize_t i;
     int rank, np;
     const char *file_name;
     int mpi_required = 0;
