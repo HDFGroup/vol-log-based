@@ -34,7 +34,7 @@ check_PROGRAMS = attr \
                  multiblockselection \
                  multipointselection
 
-EXTRA_DIST = seq_runs.sh parallel_run.sh
+EXTRA_DIST = seq_runs.sh parallel_run.sh vols_test.sh makefile.alone
 
 TESTPROGRAMS = $(check_PROGRAMS)
 

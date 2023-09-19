@@ -13,7 +13,8 @@ EXTRA_DIST =    m4/foreach_idx.m4 \
                 m4/list_len.m4 \
                 README.md \
                 COPYRIGHT \
-                RELEASE_NOTE.md
+                RELEASE_NOTE.md \
+                vol_test.sh
 
 PTEST_SUBDIRS = tests examples
 
