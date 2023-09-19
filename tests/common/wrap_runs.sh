@@ -118,10 +118,21 @@ test_func() {
          else
             echo "--- Run Log + Cache VOLs -----------------------------------------------"
          fi
+      else
+         echo "  - Run Log + Async VOLs ---------------------------------------"
       fi
       # When stacking Log on top of other VOLs, we can only run Log as passthru
       export H5VL_LOG_PASSTHRU=1
-      run_func $1 $log_vol_file_only $2 $3
+      isLogFile=0
+      if test "x$TEST_NATIVE_VOL_ONLY" != x1 && test "x$HDF5_VOL_CONNECTOR" = x ; then
+         isLogFile=1
+      elif test "x$log_vol" = xyes ; then
+         isLogFile=1
+      fi
+echo "  - TEST_NATIVE_VOL_ONLY=$TEST_NATIVE_VOL_ONLY ---------------------------------------"
+echo "  - HDF5_VOL_CONNECTOR=$HDF5_VOL_CONNECTOR ---------------------------------------"
+echo "  - isLogFile=$isLogFile ---------------------------------------"
+      run_func $1 $isLogFile $2 $3
    elif test "x$log_vol" = xyes ; then
       # test when Log is passthru
       echo "  - Run Log VOL as a passthrough connector -----------------------------"

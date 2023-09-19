@@ -22,14 +22,9 @@ test_example_func() {
    export H5VL_LOG_PASSTHRU=1
 
    if test "x$cache_vol" = xyes || test "x$async_vol" = xyes ; then
-      if test "x$cache_vol" = xyes ; then
-         if test "x$async_vol" = xyes ; then
-            echo "---- Run Log + Cache + Async VOLs -------------"
-         else
-            echo "---- Run Log + Cache VOLs ---------------------"
-         fi
-      fi
-      run_func $1 $log_vol_file_only $2 $3
+      # Skip as Async I/O VOL requires to call MPI_Init_thread()
+      # Skip as Cache VOL requires to call MPI_Init_thread()
+      return
    elif test "x$log_vol" = xyes ; then
       echo "---- Run Log VOL as a passthrough connector ---------------------"
       run_func $1 $log_vol_file_only $2 $3

@@ -9,7 +9,7 @@ RUN_CMD=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 
 . $srcdir/../../tests/common/wrap_runs.sh
 
-log_vol_file_only=1
+log_vol_file_only=0
 
 # These example programs downloaded from HDF5 repo CANNOT run the second time,
 # because some programs add the same attributes to the files created by other
