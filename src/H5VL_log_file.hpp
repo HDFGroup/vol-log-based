@@ -33,6 +33,14 @@ typedef struct H5VL_log_cord_t {
     MPI_Offset cord[H5S_MAX_RANK];
 } H5VL_log_cord_t;
 
+typedef struct H5VL_log_subfile_record_t {
+    MPI_File fh;    // MPI file handle to the subfile
+    void* uo;       // Under VOL object of the subfile
+    int nldset;     // the number of log data datasets, of the subfile
+    int nmdset;     // the number of log metadata datasets , of the subfile
+    void* lgp;      // log group of the subfile
+} H5VL_log_subfile_record_t;
+
 using stcrtstat = struct stat;
 
 /* The log VOL file object */
@@ -50,6 +58,10 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
     int group_np;         // Number of processes in the group
     int ngroup;           // Number of groups. NOTE: This value is only valid when
                           // H5VL_FILEI_CONFIG_SUBFILING is set in config
+    int nsubfiles;        // Number of subfiles. NOTE: This value is only valid when
+                          // H5VL_FILEI_CONFIG_SUBFILING is set in config. This is
+                          // used in case of H5Fopen, where ngroup might be different
+                          // from nsubfiles.
     int prev_rank;        // We only start writing after prev_rank finishes writing
     int next_rank;        // We have to notify next_rank to start writing after we finish
     int target_ost;       // What OST should we write to in aligned data layout
@@ -117,6 +129,8 @@ typedef struct H5VL_log_file_t : H5VL_log_obj_t {
 
     bool is_log_based_file;  // indicate if a file is a regular file (false) or a log-based file
                              // (false)
+
+    H5VL_log_subfile_record_t *subfile_records;  // records of all subfiles, only used for reading
 
 #ifdef ENABLE_PROFILING
 #ifndef REPLAY_BUILD

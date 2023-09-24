@@ -45,6 +45,8 @@
         }                                  \
     } while (0)
 
+#define DEBUG_PRINT {printf("\t\tDEBUG: %s:%d\n", __FILE__, __LINE__);}
+
 std::map<decltype (stcrtstat::st_ino), H5VL_log_file_t *> files;
 H5VL_log_file_t *H5VL_log_filei_search (const char *path) {
     int err;
@@ -131,7 +133,8 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     fp->nldset = attbuf[1];
     fp->nmdset = attbuf[2];
     fp->config = attbuf[3];
-    fp->ngroup = attbuf[3];
+    fp->ngroup = attbuf[4];
+    fp->nsubfiles = attbuf[4];
     fp->mreqs.resize (fp->ndset, NULL);       // Merge write reqeusts
     fp->dsets_info.resize (fp->ndset, NULL);  // Dataset info
     fp->group_rank = fp->rank;
@@ -170,20 +173,28 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     // Open the LOG group
     loc.obj_type = H5I_FILE;
     loc.type     = H5VL_OBJECT_BY_SELF;
-    H5VL_LOGI_PROFILING_TIMER_START
-    fp->lgp = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
-                              H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
+    if (fp->subfile_records) {
+        fp->lgp = fp->subfile_records[fp->group_id].lgp;
+    } else {
+        H5VL_LOGI_PROFILING_TIMER_START
+        fp->lgp = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
+                                H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
 
-    CHECK_PTR (fp->lgp)
-    H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
+        CHECK_PTR (fp->lgp)
+        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_OPEN);
+    }
 
     // Open the file with MPI
-    H5VL_LOGI_PROFILING_TIMER_START;
-    mpierr =
-        MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, fp->info, &(fp->fh));
+    if (fp->subfile_records) {
+        fp->fh = fp->subfile_records[fp->group_id].fh;
+    } else {
+        H5VL_LOGI_PROFILING_TIMER_START;
+        mpierr =
+            MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, fp->info, &(fp->fh));
 
-    H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FH);
-    CHECK_MPIERR
+        H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FH);
+        CHECK_MPIERR
+    }
 
     // Visit all dataasets for info
     args.op_type             = H5VL_OBJECT_VISIT;
@@ -210,6 +221,7 @@ void H5VL_log_filei_post_create (H5VL_log_file_t *fp) {
 
     // Reset hdf5 context to allow group and attr operations within a file operation
     H5VL_logi_reset_lib_stat (lib_state);
+    DEBUG_PRINT
 
     // Figure out lustre configuration
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -226,12 +238,15 @@ void H5VL_log_filei_post_create (H5VL_log_file_t *fp) {
             }
         }
     }
+    DEBUG_PRINT
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_STRIPE);
 
     H5VL_LOGI_PROFILING_TIMER_START;
     if ((fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) ||
         (fp->config & H5VL_FILEI_CONFIG_SUBFILING)) {
+            DEBUG_PRINT
         H5VL_log_filei_calc_node_rank (fp);
+        DEBUG_PRINT
     } else {
         fp->group_rank = fp->rank;
         fp->group_np   = fp->np;
@@ -239,14 +254,16 @@ void H5VL_log_filei_post_create (H5VL_log_file_t *fp) {
         fp->group_id   = 0;
         fp->ngroup     = 1;
     }
+    DEBUG_PRINT
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP_RANK);
 
     H5VL_LOGI_PROFILING_TIMER_START;
     if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {
         // Aligned write not supported in subfiles
         fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
-
+        DEBUG_PRINT
         H5VL_log_filei_create_subfile (fp, fp->flag, fp->ufaplid, fp->dxplid);
+        DEBUG_PRINT
     } else {
         fp->sfp     = fp->uo;
         fp->subname = fp->name;
@@ -257,23 +274,30 @@ void H5VL_log_filei_post_create (H5VL_log_file_t *fp) {
     H5VL_LOGI_PROFILING_TIMER_START;
     loc.obj_type = H5I_FILE;
     loc.type     = H5VL_OBJECT_BY_SELF;
+    DEBUG_PRINT
     fp->lgp      = H5VLgroup_create (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
                                         H5P_LINK_CREATE_DEFAULT, H5P_GROUP_CREATE_DEFAULT,
                                         H5P_GROUP_CREATE_DEFAULT, fp->dxplid, NULL);
+    DEBUG_PRINT
     CHECK_PTR (fp->lgp)
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_GROUP);
 
     if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
+        DEBUG_PRINT
         fp->fd = open (fp->name.c_str(), O_RDWR);
         if (fp->fd < 0) { ERR_OUT ("open fail") }
+        DEBUG_PRINT
     } else {
         fp->fd = -1;
     }
+    DEBUG_PRINT
 
     // Open the file with MPI
     H5VL_LOGI_PROFILING_TIMER_START;
+    DEBUG_PRINT
     mpierr =
         MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDWR, fp->info, &(fp->fh));
+    DEBUG_PRINT
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FH);
     CHECK_MPIERR
 
@@ -709,7 +733,7 @@ static inline void print_info (MPI_Info *info_used) {
 
 void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     herr_t err = 0;
-    int mpierr;
+    int mpierr, i;
     int attbuf[5];
     void *lib_state = NULL;
     H5VL_logi_err_finally finally (
@@ -768,10 +792,23 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     }
 
     // Close the log group
-    H5VL_LOGI_PROFILING_TIMER_START
-    err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
-    CHECK_ERR
-    H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_CLOSE);
+    if (fp->subfile_records) {
+        for (i = 0; i < fp->nsubfiles; i++) {
+            if (fp->subfile_records[i].lgp) {
+                H5VL_LOGI_PROFILING_TIMER_START
+                err = H5VLgroup_close (fp->subfile_records[i].lgp, fp->uvlid, fp->dxplid, NULL);
+                CHECK_ERR
+                H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_CLOSE);
+            }
+        }
+    } else {
+        if (fp->lgp) {
+            H5VL_LOGI_PROFILING_TIMER_START
+            err = H5VLgroup_close (fp->lgp, fp->uvlid, fp->dxplid, NULL);
+            CHECK_ERR
+            H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_CLOSE);
+        }
+    }
 
     H5VL_logi_restore_lib_stat (lib_state);
 
@@ -790,8 +827,19 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
 #endif
 
     // Close the file with MPI
-    mpierr = MPI_File_close (&(fp->fh));
-    CHECK_MPIERR
+    if (fp->subfile_records) {
+        for (i = 0; i < fp->nsubfiles; i++) {
+            if (fp->subfile_records[i].fh != MPI_FILE_NULL) {
+                mpierr = MPI_File_close (&(fp->subfile_records[i].fh));
+                CHECK_MPIERR
+            }
+        }
+    } else {
+        if (fp->fh != MPI_FILE_NULL) {
+            mpierr = MPI_File_close (&(fp->fh));
+            CHECK_MPIERR
+        }
+    }
 
     // Close the file with posix
     if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) { close (fp->fd); }
@@ -814,13 +862,19 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     H5VL_LOGI_PROFILING_TIMER_START;
     err = H5VLfile_close (fp->uo, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
     CHECK_ERR
-    if (fp->sfp && (fp->sfp != fp->uo)) {
-        err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
-        CHECK_ERR
+    if (fp->sfp && (fp->sfp != fp->uo)) {  // if subfiling is enabled
+        if (fp->subfile_records) {  // this means subfiles are opened not created, e.g. for read.
+            for (i = 0; i < fp->nsubfiles; i++) {
+                fp->sfp = fp->subfile_records[i].uo;
+                err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
+                CHECK_ERR
+            }
+            free (fp->subfile_records);
+        } else {
+            err = H5VLfile_close (fp->sfp, fp->uvlid, H5P_DATASET_XFER_DEFAULT, NULL);
+            CHECK_ERR
+        }
     }
-    H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CLOSE);
-
-    H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CLOSE);
 
 #ifdef ENABLE_PROFILING
     {
@@ -882,7 +936,7 @@ void H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
     if (stat != 0) { RET_ERR ("Cannot create subfile dir") }
 
     // Create the subfiles with underlying VOL
-    err = H5Pset_fapl_mpio (fapl_id, fp->group_comm, MPI_INFO_NULL);
+    err = H5Pset_fapl_mpio (fapl_id, fp->group_comm, fp->info);
     CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_START;
     fp->subname = fp->name + ".subfiles/" + std::string (basename ((char *)(fp->name.c_str ()))) +
@@ -896,7 +950,7 @@ void H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
     attbuf[0] = fp->ndset;
     attbuf[1] = fp->nldset;
     attbuf[2] = fp->nmdset;
-    attbuf[3] = fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
+    attbuf[3] = fp->config & ~(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
     attbuf[4] = fp->ngroup;
     H5VL_logi_add_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR, H5T_STD_I32LE,
                        H5T_NATIVE_INT32, H5VL_LOG_FILEI_NATTR, attbuf, dxpl_id, NULL);
@@ -908,7 +962,8 @@ void H5VL_log_filei_open_subfile (H5VL_log_file_t *fp,
                                   hid_t dxpl_id) {
     herr_t err = 0;
     int attbuf[5];
-    int stat;
+    int stat, i, mpierr;
+    H5VL_loc_params_t loc;
 
     // Open subfile dir
     if (fp->rank == 0) {
@@ -924,20 +979,37 @@ void H5VL_log_filei_open_subfile (H5VL_log_file_t *fp,
     MPI_Bcast (&stat, 1, MPI_INT, 0, fp->comm);
     if (stat != 0) { RET_ERR ("Cannot open subfile dir") }
 
-    // Create the subfiles with underlying VOL
-    err = H5Pset_fapl_mpio (fapl_id, fp->group_comm, MPI_INFO_NULL);
+    loc.obj_type = H5I_FILE;
+    loc.type     = H5VL_OBJECT_BY_SELF;
+
+    fp->subfile_records = (H5VL_log_subfile_record_t *) malloc (fp->nsubfiles * sizeof (H5VL_log_subfile_record_t));
+    err = H5Pset_fapl_mpio (fapl_id, fp->group_comm, fp->info);
     CHECK_ERR
-    H5VL_LOGI_PROFILING_TIMER_START;
-    fp->subname = fp->name + ".subfiles/" + fp->name + "." + std::to_string (fp->group_id);
-    fp->sfp     = H5VLfile_open (fp->subname.c_str (), flags, fapl_id, dxpl_id, NULL);
-    CHECK_PTR (fp->sfp)
-    H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
+    for (i = 0; i < fp->nsubfiles; i ++) {
+        fp->subname = fp->name + ".subfiles/" + std::string (basename ((char *)(fp->name.c_str ()))) +
+                  "." + std::to_string (i);
+        fp->sfp = H5VLfile_open (fp->subname.c_str (), flags, fapl_id, dxpl_id, NULL);
+        CHECK_PTR ((fp->sfp))
 
-    // Att
-    H5VL_logi_get_att (fp, H5VL_LOG_FILEI_ATTR, H5T_NATIVE_INT32, attbuf, fp->dxplid);
+        // Update nldset and nmdset
+        H5VL_logi_get_att (fp->sfp, fp->uvlid, fp->type, H5VL_LOG_FILEI_ATTR, H5T_NATIVE_INT32, attbuf, fp->dxplid);
+        fp->subfile_records[i].nldset = attbuf[1];
+        fp->subfile_records[i].nmdset = attbuf[2];
 
-    fp->nldset = attbuf[1];
-    fp->nmdset = attbuf[2];
+        fp->subfile_records[i].uo = fp->sfp;
+
+        mpierr = MPI_File_open (fp->group_comm, fp->subname.c_str (), MPI_MODE_RDONLY, fp->info, &(fp->subfile_records[i].fh));
+        CHECK_MPIERR
+
+        fp->subfile_records[i].lgp = H5VLgroup_open (fp->sfp, &loc, fp->uvlid, H5VL_LOG_FILEI_GROUP_LOG,
+                              H5P_GROUP_ACCESS_DEFAULT, fp->dxplid, NULL);
+    }
+
+    fp->subname = fp->name + ".subfiles/" + std::string (basename ((char *)(fp->name.c_str ()))) +
+                  "." + std::to_string (fp->group_id);
+    fp->sfp = fp->subfile_records[fp->group_id].uo;
+    fp->nldset = fp->subfile_records[fp->group_id].nldset;
+    fp->nmdset = fp->subfile_records[fp->group_id].nmdset;
 }
 
 void H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
@@ -951,8 +1023,11 @@ void H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
         H5VL_log_free (group_ranks);
     });
 
+    DEBUG_PRINT
+
     group_ranks = (int *)malloc (sizeof (int) * fp->np);
     CHECK_PTR (group_ranks);
+    DEBUG_PRINT
 
     /* H5VL_FILEI_CONFIG_SUBFILING has been checked before entering this
      * subroutine in H5VL_log_filei_post_open(). Thus fp->ngroup is not 0.
@@ -960,31 +1035,39 @@ void H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
     if (fp->ngroup > 0) {
         mpierr =
             MPI_Comm_split (fp->comm, fp->rank * fp->ngroup / fp->np, fp->rank, &(fp->group_comm));
+        DEBUG_PRINT
     } else { /* fp->ngroup < 0 */
         mpierr = MPI_Comm_split_type (fp->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,
                                       &(fp->group_comm));
+        DEBUG_PRINT
     }
     CHECK_ERR
 
     mpierr = MPI_Comm_rank (fp->group_comm, &(fp->group_rank));
+    DEBUG_PRINT
     CHECK_MPIERR
     mpierr = MPI_Comm_size (fp->group_comm, &(fp->group_np));
+    DEBUG_PRINT
     CHECK_MPIERR
 
     mpierr = MPI_Allgather (&(fp->group_rank), 1, MPI_INT, group_ranks, 1, MPI_INT, fp->comm);
+    DEBUG_PRINT
     CHECK_MPIERR
     // Assign group ID based on the global rank of group rank 0
     fp->group_id = 0;
     for (i = 0; i < fp->rank; i++) {
         if (group_ranks[i] == 0) { fp->group_id++; }
     }
+    DEBUG_PRINT
     // Calculate number of groups
     fp->ngroup = fp->group_id;
     for (; i < fp->np; i++) {
         if (group_ranks[i] == 0) { fp->ngroup++; }
     }
+    DEBUG_PRINT
     mpierr = MPI_Bcast (&(fp->group_id), 1, MPI_INT, 0, fp->group_comm);
     CHECK_MPIERR
+    DEBUG_PRINT
 
     if (fp->config & H5VL_FILEI_CONFIG_DATA_ALIGN) {
         // What ost it should write to
@@ -1014,6 +1097,7 @@ void H5VL_log_filei_calc_node_rank (H5VL_log_file_t *fp) {
             }
         }
     }
+    DEBUG_PRINT
 }
 
 /*-------------------------------------------------------------------------

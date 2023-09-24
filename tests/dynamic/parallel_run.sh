@@ -17,3 +17,9 @@ for p in ${check_PROGRAMS} ; do
    test_func ./$p
 done
 
+# test subfiling feature by setting env variable H5VL_LOG_NSUBFILES
+export H5VL_LOG_NSUBFILES=-1
+for p in ${check_PROGRAMS} ; do
+   test_func ./$p
+done
+

@@ -108,6 +108,7 @@ typedef struct {
     int cache_env;
     int async_env;
     int passthru;
+    int nsubfiles;
 } vol_env;
 
 extern void check_env(vol_env *env);

@@ -657,9 +657,9 @@ herr_t H5Pset_single_subfile_read (hid_t plist, hbool_t single_subfile_read) {
     htri_t pexist;
 
     try {
-        isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
+        isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
         CHECK_ID (isfapl)
-        if (isfapl == 0) ERR_OUT ("Not fcplid")
+        if (isfapl == 0) ERR_OUT ("Not faplid")
 
         pexist = H5Pexist (plist, SINGLE_SUBFILE_READ_PROPERTY_NAME);
         CHECK_ID (pexist)
@@ -684,7 +684,7 @@ herr_t H5Pget_single_subfile_read (hid_t plist, hbool_t *single_subfile_read) {
     htri_t isfapl, pexist;
 
     try {
-        isfapl = H5Pisa_class (plist, H5P_FILE_CREATE);
+        isfapl = H5Pisa_class (plist, H5P_FILE_ACCESS);
         CHECK_ID (isfapl)
         if (isfapl == 0)
             *single_subfile_read = false;  // Default property will not pass class check

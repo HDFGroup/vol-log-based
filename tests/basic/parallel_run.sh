@@ -13,6 +13,13 @@ RUN_CMD=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$1/g"`
 log_vol_file_only=1
 
 for p in ${check_PROGRAMS} ; do
-   test_func ./$p
+   if [ "x$p" != "xsubfile_dread" ]; then
+      test_func ./$p
+   fi
 done
 
+for nproc in 4 8 3 5 ; do
+   RUN_CMD=`echo ${TESTMPIRUN} | ${SED} -e "s/NP/$nproc/g"`
+   test_func ./subfile_dread
+done
+exit 0

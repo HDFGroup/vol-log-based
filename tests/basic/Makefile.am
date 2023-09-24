@@ -32,7 +32,9 @@ check_PROGRAMS = attr \
                  group \
                  memsel \
                  multiblockselection \
-                 multipointselection
+                 multipointselection \
+                 subfile_dread \
+                 subfile_dwrite
 
 EXTRA_DIST = seq_runs.sh parallel_run.sh vols_test.sh makefile.alone
 
@@ -73,5 +75,9 @@ ptest: $(check_PROGRAMS)
 # build check targets but not invoke
 tests-local: all $(check_PROGRAMS)
 
-.PHONY: ptest test
+clean-local: clean-local-check
+clean-local-check:
+	-rm -rf $(TESTOUTDIR)/*.h5.subfiles
+
+.PHONY: ptest test clean-local-check
 
