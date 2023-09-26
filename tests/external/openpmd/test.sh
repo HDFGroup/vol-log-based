@@ -25,7 +25,7 @@ ${RUN} ./8a_benchmark_write_parallel > 8a_benchmark_write_parallel.log
 # echo "${RUN} ./8b_benchmark_read_parallel ../samples/8a_parallel_3Db_0000001.h5 sy > 8b_benchmark_read_parallel.log"
 # ${RUN} ./8b_benchmark_read_parallel ../samples/8a_parallel_3Db_0000001.h5 sy > 8b_benchmark_read_parallel.log
 
-outfile=../samples/8a_parallel_3Db_0000001.h5
+outfile=../samples/8a_parallel_3Db.h5
 err=0
 unset HDF5_VOL_CONNECTOR
 unset HDF5_PLUGIN_PATH

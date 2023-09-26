@@ -83,6 +83,7 @@ jobs:
             autoreconf -i
             ./configure --with-hdf5=${GITHUB_WORKSPACE}/HDF5 \
                         --enable-test-netcdf4=${GITHUB_WORKSPACE}/NetCDF \
+                        --enable-test-openpmd \
                         CFLAGS="-O0 -g" CXXFLAGS="-O0 -g -std=c++14" LIBS=-lstdc++
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
         - name: Print config.log if error

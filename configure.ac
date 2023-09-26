@@ -675,7 +675,7 @@ if test "x${have_openpmd}" = xyes; then
    mkdir -p tests/external/openpmd
    cd tests/external/openpmd
    rm -rf ./openPMD-api
-   openpmd_version=0.14.5
+   openpmd_version=0.15.2
    rm -f openPMD-api.tar.gz
    ${download_cmd} https://github.com/openPMD/openPMD-api/archive/refs/tags/${openpmd_version}.tar.gz -O openPMD-api.tar.gz
    AC_MSG_RESULT([${openpmd_version}.tar.gz])
@@ -804,10 +804,29 @@ fi
 echo "\
 
    External test programs:
-              hdf5-iotest    - ${have_hdf5io}
-              NetCDF-4       - ${have_netcdf4}
-              QMCPACK        - ${have_qmcpack}
-              OpenPMD        - ${have_openpmd}
+              hdf5-iotest    - ${have_hdf5io}"
+if test "x${have_netcdf4}" = xyes ; then
+   echo "\
+              NetCDF-4       - ${have_netcdf4} (${netcdf_version})"
+else
+   echo "\
+              NetCDF-4       - ${have_netcdf4}"
+fi
+if test "x${have_qmcpack}" = xyes ; then
+   echo "\
+              QMCPACK        - ${have_qmcpack} (${qmcpack_version})"
+else
+   echo "\
+              QMCPACK        - ${have_qmcpack}"
+fi
+if test "x${have_openpmd}" = xyes ; then
+   echo "\
+              OpenPMD        - ${have_openpmd} (${openpmd_version})"
+else
+   echo "\
+              OpenPMD        - ${have_openpmd}"
+fi
+   echo "\
 
    Now run 'make' to build the executable.
 
