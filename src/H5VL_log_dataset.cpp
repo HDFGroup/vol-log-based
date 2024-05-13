@@ -282,7 +282,7 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_dataset_read_1 (void *dset,
+static herr_t H5VL_log_dataset_read_1 (void *dset,
                                 hid_t mem_type_id,
                                 hid_t mem_space_id,
                                 hid_t file_space_id,
@@ -334,7 +334,7 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-herr_t H5VL_log_dataset_write_1 (void *dset,
+static herr_t H5VL_log_dataset_write_1 (void *dset,
                                  hid_t mem_type_id,
                                  hid_t mem_space_id,
                                  hid_t file_space_id,
@@ -378,7 +378,7 @@ err_out:;
     return err;
 } /* end H5VL_log_dataset_write() */
 
-herr_t H5VL_log_dataset_read_2 (size_t count,
+herr_t H5VL_log_dataset_read (size_t count,
                                 void *dset[],
                                 hid_t mem_type_id[],
                                 hid_t mem_space_id[],
@@ -387,6 +387,10 @@ herr_t H5VL_log_dataset_read_2 (size_t count,
                                 void *buf[],
                                 void **req) {
     herr_t err = 0;
+    H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
+    H5VL_log_dset_info_t *dip = NULL;  // Dataset info
+    hid_t dsid;                        // Dataset space id
+    H5VL_log_selections *dsel = NULL;  // Selection blocks
     size_t i;
 
     for (i = 0; i < count; i++) {
@@ -398,7 +402,7 @@ herr_t H5VL_log_dataset_read_2 (size_t count,
     return err;
 }
 
-herr_t H5VL_log_dataset_write_2 (size_t count,
+herr_t H5VL_log_dataset_write (size_t count,
                                  void *dset[],
                                  hid_t mem_type_id[],
                                  hid_t mem_space_id[],

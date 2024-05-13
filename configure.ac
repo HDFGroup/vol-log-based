@@ -336,30 +336,19 @@ if test "x$have_hdf5" = xno ; then
       to specify the location of HDF5 installation. Abort.
       -----------------------------------------------------------------------])
 fi
-AC_MSG_CHECKING([whether HDF5 version is 1.13.0 (develop branch) or later])
+AC_MSG_CHECKING([whether the HDF5 version is equal to or greater than 1.14.0])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <hdf5.h>
-#if (H5_VERS_MAJOR*1000000 + H5_VERS_MINOR*1000 + H5_VERS_RELEASE < 1013000)
-#error HDF5 version is older than 1.13.0
+#if (H5_VERS_MAJOR*1000000 + H5_VERS_MINOR*1000 + H5_VERS_RELEASE < 1014000)
+#error HDF5 version is older than 1.14.0
 #endif
-   ]])], [hdf5_ge_1_13_0=yes], [hdf5_ge_1_13_0=no])
-AC_MSG_RESULT([$hdf5_ge_1_13_0])
-if test x$hdf5_ge_1_13_0 = xno; then
+   ]])], [hdf5_ge_1_14_0=yes], [hdf5_ge_1_14_0=no])
+AC_MSG_RESULT([$hdf5_ge_1_14_0])
+if test x$hdf5_ge_1_14_0 = xno; then
    AC_MSG_ERROR([
    -----------------------------------------------------------------------
-     H5VL_log requires HDF5 1.13.0 and later. Abort.
+     H5VL_log requires HDF5 1.14.0 and later. Abort.
    -----------------------------------------------------------------------])
-fi
-AC_MSG_CHECKING([whether HDF5 version is 1.13.3 or later])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <hdf5.h>
-#if (H5_VERS_MAJOR*1000000 + H5_VERS_MINOR*1000 + H5_VERS_RELEASE < 1013003)
-#error HDF5 version is older than 1.13.3
-#endif
-   ]])], [hdf5_ge_1_13_3=yes], [hdf5_ge_1_13_3=no])
-AC_MSG_RESULT([$hdf5_ge_1_13_3])
-if test x$hdf5_ge_1_13_3 = xyes; then
-   AC_DEFINE(HDF5_GE_1133, 1, ["HDF5 version greater than 1.13.3"])
 fi
 AC_MSG_CHECKING([whether HDF5 parallel I/O is enabled])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
