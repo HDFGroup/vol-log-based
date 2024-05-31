@@ -132,7 +132,7 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     fp->nmdset = attbuf[2];
     fp->config = attbuf[3];
     fp->ngroup = attbuf[3];
-    fp->mreqs.resize (fp->ndset, NULL);       // Merge write reqeusts
+    fp->mreqs.resize (fp->ndset, NULL);       // Merge write requests
     fp->dsets_info.resize (fp->ndset, NULL);  // Dataset info
     fp->group_rank = fp->rank;
     fp->group_comm = fp->comm;
@@ -222,7 +222,7 @@ void H5VL_log_filei_post_create (H5VL_log_file_t *fp) {
             fp->config &= ~H5VL_FILEI_CONFIG_DATA_ALIGN;
             if (fp->rank == 0) {
                 printf (
-                    "Warning: Cannot retrive stripping info, disable aligned data layout\n");
+                    "Warning: Cannot retrieve stripping info, disable aligned data layout\n");
             }
         }
     }

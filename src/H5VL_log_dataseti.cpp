@@ -94,12 +94,12 @@ void sortoffsets (int len, MPI_Aint *oa, MPI_Aint *ob, int *l) {
 A log dataset contains multiple entries, one for each write req. An entry can
 be an ndim array. This helper function to select a hyperslab from the entry.
 
-sid: the id of the log dataset file spcae.
+sid: the id of the log dataset file space.
 start0: the starting pos of an entry w.r.t the beginning of the log dataset, in bytes.
 esize: the type size of an element in the ndim array, unit is byte.
 starts: the starting indexes of the hyperslab w.r.t the ndim entry.
 sizes: the dimensions of the ndim entry.
-counts: num of elemnets of the selected hyperslab block, which should be smaller than "sizes".
+counts: num of elements of the selected hyperslab block, which should be smaller than "sizes".
 ndim: num of dimension of the entry.
 */
 herr_t sel_space (hid_t sid,
@@ -140,10 +140,10 @@ herr_t sel_space (hid_t sid,
 }
 
 /*
-Given a file offset (foff) whithin a log dataset, determine which log dataset
+Given a file offset (foff) within a log dataset, determine which log dataset
 it belongs to.
 
-foff: the file offset of interest, whithin a log dataset
+foff: the file offset of interest, within a log dataset
 doffs: the array of file offsets. contains the starting pos (offset) of each log dset.
 nldset: number of log dataset. Also equals the lens of doffs.
 */
@@ -1081,7 +1081,7 @@ void H5VL_log_dataseti_read (H5VL_log_dset_t *dp,
     r->dtype   = -1;
     r->mtype   = -1;
     r->esize   = dip->esize;
-    r->rsize   = dsel->get_sel_size ();  // Nomber of elements in selection
+    r->rsize   = dsel->get_sel_size ();  // Number of elements in selection
     r->sels    = dsel;
 
     // Non-blocking?

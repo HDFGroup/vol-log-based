@@ -23,7 +23,7 @@
 
 typedef struct H5VL_log_req_data_block_t {
     char *ubuf;   // User buffer
-    char *xbuf;   // I/O buffer, always continguous and the same format as the dataset
+    char *xbuf;   // I/O buffer, always contiguous and the same format as the dataset
     size_t size;  // size of xbuf
 } H5VL_log_req_data_block_t;
 
@@ -78,7 +78,7 @@ class H5VL_log_merged_wreq_t : public H5VL_log_wreq_t {
 
     void append (H5VL_log_dset_t *dp,
                  H5VL_log_req_data_block_t &db,
-                 H5VL_log_selections *sels);  // Append new requests into this reqeust
+                 H5VL_log_selections *sels);  // Append new requests into this request
     void reset (H5VL_log_dset_info_t &dset);
 
    private:
@@ -102,7 +102,7 @@ class H5VL_log_rreq_t {
     size_t rsize;  // Number of data elements in xbuf
     size_t esize;  // Size of a data element in xbuf
 
-    char *ubuf;  // I/O buffer, always continguous and the same format as the dataset
+    char *ubuf;  // I/O buffer, always contiguous and the same format as the dataset
     char *xbuf;  // User buffer
 
     MPI_Datatype ptype;  // Datatype that represetn memory space selection

@@ -48,7 +48,7 @@ bool H5VL_log_zip_compress (void *in, int in_len, void *out, int *out_len) {
     // If buffer not large enough
     if (defstream.avail_in > 0) { return false; }
 
-    // Size of comrpessed data
+    // Size of compressed data
     if (out_len != NULL) { *out_len = defstream.total_out; }
 
     return true;
@@ -104,7 +104,7 @@ void H5VL_log_zip_compress_alloc (void *in, int in_len, void **out, int *out_len
     zerr = deflateEnd (&defstream);
     if (zerr != Z_OK) { ERR_OUT ("deflateEnd fail") }
 
-    // Size of comrpessed data
+    // Size of compressed data
     if (out_len != NULL) { *out_len = defstream.total_out; }
 
     // Compressed data
@@ -196,7 +196,7 @@ void H5VL_log_zip_decompress_alloc (void *in, int in_len, void **out, int *out_l
     zerr = inflateEnd (&infstream);
     if (zerr != Z_OK) { ERR_OUT ("inflateEnd fail") }
 
-    // Size of comrpessed data
+    // Size of compressed data
     if (out_len != NULL) { *out_len = infstream.total_out; }
 
     // Compressed data

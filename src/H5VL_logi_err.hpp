@@ -97,7 +97,7 @@ inline bool H5VL_logi_debug_verbose () {
     {                                                                                       \
         if (!name || (name[0] == '_' && name[1] == '_')) {                                  \
             ERR_OUT (                                                                       \
-                "Object (link) name starting wiht \"__\" are reserved for log-based VOL's " \
+                "Object (link) name starting with \"__\" are reserved for log-based VOL's " \
                 "internal objects")                                                         \
         }                                                                                   \
     }

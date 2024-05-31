@@ -60,7 +60,7 @@ int main (int argc, char **argv) {
     assert (file_id >= 0);
 
     /*
-     * Use HDF5 as ususal.
+     * Use HDF5 as usual.
      * Log-based VOL VOL supports attribute, datasest, and group.
      */
 
@@ -73,7 +73,7 @@ int main (int argc, char **argv) {
     assert (file_id >= 0);
 
     /*
-     * Use HDF5 as ususal.
+     * Use HDF5 as usual.
      * Log-based VOL VOL supports attribute, datasest, and group.
      */
 

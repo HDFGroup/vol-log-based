@@ -8,7 +8,7 @@
     data to files in log layout through the Log VOL connector. See PR #15.
   + Support opening and operating an existing regular HDF5 file.
   + Support using the Log VOL connector as a pass-through VOL connector when performing writes.
-    * Whe performing writes, users can specify and choose other VOL connectors as the underlying VOL connectors of the Log VOL connector. See PR #33.
+    * When performing writes, users can specify and choose other VOL connectors as the underlying VOL connectors of the Log VOL connector. See PR #33.
     * When the pass-through feature is enabled, it asks the underlying VOLs to use collective MPI I/O. See PR #42.
     * For its usage, refer to the User Guide in doc/usage.md.
   + Support VOL connector interface version 3.
@@ -121,10 +121,10 @@
     + PR #44 provides an example of running the Log VOL connector on top of the Cache VOL and Async VOL connector.
   + testing the Log VOL connector as a Pass-through VOL.
     + tests/testcases, tests/basic, tests/dynamic, and tests/read_regular
-      additionaly tests using the Log VOL connector on top of the native VOL. Test programs
-      are re-used and no addtional test programs are added. Unlike tests/passthru
+      additionally tests using the Log VOL connector on top of the native VOL. Test programs
+      are re-used and no additional test programs are added. Unlike tests/passthru
       where we expect users to specify the underlying VOLs, all necessary
-      envrionment varibales are set in the wrap_runs.sh and parallel_run.sh
+      environment variables are set in the wrap_runs.sh and parallel_run.sh
       scripts. Running "make check" or "make ptest" is enough perform the test.
 
 ### Version 1.3.0 (May 05, 2022)
@@ -267,7 +267,7 @@
   + HDF5 example programs are now downloaded from HDF5 releases at make time.
     See PR #18.
 
-### Version 1.1.0 (Feburary 11, 2022)
+### Version 1.1.0 (February 11, 2022)
 * New features
   + Support multiple opened instance of the same dataset.
     + Commit 37eed305581653cbb1e021a3c23389a55043b2e5

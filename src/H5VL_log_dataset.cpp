@@ -87,7 +87,7 @@ void *H5VL_log_dataset_create (void *obj,
 
         // Logvol doesn't support variable len type
         is_var_type = H5Tis_variable_str (type_id);
-        if (is_var_type == true) { RET_ERR ("Variable length types are not supproted") }
+        if (is_var_type == true) { RET_ERR ("Variable length types are not supported") }
 
         // Unused
         // Create request handle
@@ -112,7 +112,7 @@ void *H5VL_log_dataset_create (void *obj,
         err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
         CHECK_ERR
 
-        dp->id = dp->fp->ndset;  // ID nees to be set before writing to attribute
+        dp->id = dp->fp->ndset;  // ID needs to be set before writing to attribute
 
         H5VL_LOGI_PROFILING_TIMER_START;
         zero_space = H5Screate (H5S_NULL);
@@ -679,7 +679,7 @@ herr_t H5VL_log_dataset_close (void *dset, hid_t dxpl_id, void **req) {
         CHECK_ERR
         H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VLDATASET_CLOSE);
 
-        // Flush and free merged reqeusts
+        // Flush and free merged requests
         // Dataset info is shared by all dataset instances
         // Deallocate them only at file close
         /*

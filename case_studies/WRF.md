@@ -58,7 +58,7 @@ This case study uses [the Weather Research and Forecasting (WRF) Model](https://
       ```
           ./compile em_les
       ```
-    Two executables (ideal.exe, and wrf.exe) will be built under `main` forlder. The two 
+    Two executables (ideal.exe, and wrf.exe) will be built under `main` folder. The two 
     executables should also exist in `test/em_les`, which are linked to those under `main` folder.
 
 * For more details, please refer to [WRF's official compilation tutorial](https://www2.mmm.ucar.edu/wrf/OnLineTutorial/compilation_tutorial.php?fbclid=IwAR3GIOcbAA4rwEjYAeeFDbaywNm4UvHz3CbeXtJbJRIaS9OF03BP5wfX-u8).

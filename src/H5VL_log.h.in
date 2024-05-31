@@ -61,7 +61,7 @@ hid_t H5VL_log_register (void);
 H5PL_type_t H5PLget_plugin_type (void);
 const void *H5PLget_plugin_info (void);
 
-// Varn
+// Warn
 herr_t H5Dwrite_n (hid_t did,
                    hid_t mem_type_id,
                    int n,

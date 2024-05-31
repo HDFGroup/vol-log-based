@@ -68,7 +68,7 @@ void h5lreplay_read_data (MPI_File fin,
                 bsize += esize;
             }
             if (zbsize < bsize) { zbsize = bsize; }
-            // Comrpessed size can be larger
+            // Compressed size can be larger
             if (bsize < (size_t) (req.hdr.fsize)) { bsize = req.hdr.fsize; }
             // Allocate buffer
             buf = (char *)malloc (bsize);

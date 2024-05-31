@@ -99,7 +99,7 @@ int main (int argc, char **argv) {
     err = H5Dwrite (did, H5T_NATIVE_INT, msid, sid, dxplid, buf);
     assert (err == 0);
 
-    // Flush the reqeusts
+    // Flush the requests
     err = H5Fflush (fid, H5F_SCOPE_GLOBAL);
     assert (err == 0);
 

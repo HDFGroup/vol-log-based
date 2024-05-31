@@ -164,7 +164,7 @@ inline void h5ldump_print_data (uint8_t *buf, size_t nelem, size_t esize, hid_t 
         case H5T_STRING:;
             h5ldump_print_data_core ((char *)buf, nelem, indent);
             break;
-        default:;  // Unknown type treate as bytes
+        default:;  // Unknown type treat as bytes
             h5ldump_print_data_core ((void *)buf, nelem * esize, indent);
     }
 }
@@ -176,7 +176,7 @@ void h5ldump_mdsec (
     uint8_t *bufp = buf;              // Current decoding location in buf
     H5VL_logi_meta_hdr *hdr;          // Header of current decoding entry
     H5VL_logi_metaentry_t block;      // Current metadata block
-    MPI_Offset dsteps[H5S_MAX_RANK];  // corrdinate to offset encoding info in ent
+    MPI_Offset dsteps[H5S_MAX_RANK];  // coordinate to offset encoding info in ent
     std::map<char *, std::vector<H5VL_logi_metasel_t>>
         bcache;            // Cache for deduplicated metadata entry
     uint8_t *dbuf = NULL;  // Data buffer
@@ -252,7 +252,7 @@ void h5ldump_mdsec (
         std::cout << std::string (indent, ' ') << "Flags: ";
         if (hdr->flag & H5VL_LOGI_META_FLAG_MUL_SEL) { std::cout << "multi-selection, "; }
         if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_ENCODE) { std::cout << "encoded, "; }
-        if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) { std::cout << "comrpessed, "; }
+        if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) { std::cout << "compressed, "; }
         if (hdr->flag & H5VL_LOGI_META_FLAG_REC) { std::cout << "record, "; }
         if (hdr->flag & H5VL_LOGI_META_FLAG_SEL_REF) { std::cout << "duplicate, "; }
         std::cout << std::endl;
