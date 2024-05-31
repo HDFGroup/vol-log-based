@@ -246,7 +246,7 @@ void H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
     this->hdr->flag      = flag;
     this->hdr->meta_size = this->mbufp - this->meta_buf;
 
-    // There is no aggreagated blocks yet.
+    // There is no aggregated blocks yet.
     // The input nsel means the number reserved, not the current number
     this->nsel = 0;
 

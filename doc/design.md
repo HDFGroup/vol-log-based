@@ -66,7 +66,7 @@ Users can also create their own property class through API H5Pregister2 to defin
 Performance of our log-based driver can be significantly enhanced if the multiple small I/O requests can be aggregated into fewer, large request.
 There are two approaches to achieve the effect of request aggregation.
 One is to buffer the write requests internally and later the buffered requests are aggregated and flushed together.
-This approach allows users to re-use their I/O buffers immediately after the write requests return.
+This approach allows users to reuse their I/O buffers immediately after the write requests return.
 The side effect is the increasing memory footprint.
 The other approach is non-blocking I/O.
 A new HDF5 data transfer property is defined to introduce a new I/O semantics that limit users from altering the buffer contents before the pending requests are flushed to the file system.

@@ -62,7 +62,7 @@ dnl
 dnl check the availability of one MPI executable in $2
 dnl
 dnl $2 can be a single command, This is the case when user set the environment.
-dnl The variable may contain the executable name followed by zeor or more
+dnl The variable may contain the executable name followed by zero or more
 dnl command-line options. In the latter case, we check the first string token,
 dnl the command name, and ignore the rest command-line options. For example,
 dnl UD_MPI_PATH_PROG([MPICC], [mpicc -O2])

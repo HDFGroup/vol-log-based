@@ -272,7 +272,7 @@ herr_t H5Pset_passthru (hid_t faplid, hbool_t enable)
   + Inputs:
     + `faplid`: the id of the file access property list to set the setting.
     + `enable`: whether passthrough VOL should be used.
-      + `ture`: the Log VOL connector behaves as a passthrough VOL.
+      + `true`: the Log VOL connector behaves as a passthrough VOL.
       + `false`: the Log VOL connector behaves as a terminal VOL.
   + Returns:
     + This function returns `0` on success. Fail otherwise.
@@ -292,7 +292,7 @@ herr_t H5Pget_passthru (hid_t faplid, hbool_t *enable);
     + `faplid`: the id of the file access property list to retrieve the setting.
   + Outputs:
     + `enable`: whether passthrough VOL is used.
-      + `ture`: the Log VOL connector behaves as a passthrough VOL.
+      + `true`: the Log VOL connector behaves as a passthrough VOL.
       + `false`: the Log VOL connector behaves as a terminal VOL.
   + Returns:
     + This function returns `0` on success. Fail otherwise.
