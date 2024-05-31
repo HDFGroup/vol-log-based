@@ -1,7 +1,7 @@
 ## The Log VOL connector - Build Instructions
 
 ### Software Requirements
-* [HDF5 1.13.0](https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.2/src/hdf5-1.13.2.tar.gz)
+* [Minimum HDF5 1.14](https://github.com/HDFGroup/hdf5/releases/latest/download/hdf5.tar.gz)
   + Configured with parallel I/O support (--enable-parallel)
 * MPI C and C++ compilers
   + The plugin uses the constant initializer; a C++ compiler supporting std 17 is required
@@ -12,20 +12,20 @@
   + [m4](https://www.gnu.org/software/m4/) 1.4.18
 
 ### Building HDF5 libraries
-* HDF5 1.13.0 and later (**required**)
-  + Download HDF5 official release version 1.13.0.
+* HDF5 1.14.0 and later (**required**)
+  + Download HDF5's official latest release.
     ```
-    % wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.2/src/hdf5-1.13.2.tar.gz
+    % wget https://github.com/HDFGroup/hdf5/releases/latest/download/hdf5.tar.gz
     ```
   + Configure HDF5 with parallel I/O enabled.
     ```
-    % tar -zxf hdf5-1_13_0.tar.gz
-    % cd hdf5-1_13_0.tar.gz
-    % ./configure --prefix=${HOME}/HDF5/1.13.0 --enable-parallel CC=mpicc
+    % tar -zxf hdf5.tar.gz
+    % cd hdf5-*
+    % ./configure --prefix=${HOME}/HDF5/latest --enable-parallel CC=mpicc
     % make -j4 install
     ```
   + The above example commands will install the HD5 library under the folder
-    `${HOME}/HDF5/1.13.0`.
+    `${HOME}/HDF5/latest`.
 
 ### Building the Log VOL connector
 * Obtain the source code package by either downloading the official release or
@@ -44,7 +44,7 @@
     ```
 * Example configure and make commands are given below.
   ```
-  % ./configure --prefix=${HOME}/Log_IO_VOL --with-hdf5=${HOME}/HDF5/1.13.0
+  % ./configure --prefix=${HOME}/Log_IO_VOL --with-hdf5=${HOME}/HDF5/latest
   % make -j 4 install
   ```
   + The above commands will install the log-vol library under the folder `${HOME}/Log_IO_VOL`.
