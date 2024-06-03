@@ -115,7 +115,7 @@ jobs:
             rm -rf ${ASYNC_DIR}
             mkdir ${ASYNC_DIR}
             cd ${ASYNC_DIR}
-            wget -qc https://github.com/hpc-io/vol-async/archive/refs/tags/v${ASYNC_VOL_VERSION}.tar.gz
+            wget -qc https://github.com/HDFGroup/vol-async/archive/refs/tags/v${ASYNC_VOL_VERSION}.tar.gz
             tar -xf v${ASYNC_VOL_VERSION}.tar.gz
             cd vol-async-${ASYNC_VOL_VERSION}
             mkdir build
