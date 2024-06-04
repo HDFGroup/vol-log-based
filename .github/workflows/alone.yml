@@ -185,8 +185,8 @@ jobs:
         - name: Setup tmate session
           uses: mxschmitt/action-tmate@v3
           if: ${{ failure() }}
-             with:
-             wait-timeout-minutes: 12
+          with:
+            wait-timeout-minutes: 12
         - name: Test Async and Cache VOLs
           if: ${{ success() }}
           run: |
