@@ -185,8 +185,6 @@ jobs:
           run: |
             cd ${GITHUB_WORKSPACE}
             make -s ptest
-        - name: Setup tmate session
-          uses: mxschmitt/action-tmate@v3
         - name: Test Cache and Async VOL - make check
           if: ${{ success() }}
           run: |
@@ -211,6 +209,11 @@ jobs:
             export TEST_NATIVE_VOL_ONLY=1
             make -s check
             unset TEST_NATIVE_VOL_ONLY
+        - name: Setup tmate session
+          uses: mxschmitt/action-tmate@v3
+          if: ${{ failure() }}
+             with:
+             wait-timeout-minutes: 10 
         - name: Print log
           if: ${{ always() }}
           run: |
