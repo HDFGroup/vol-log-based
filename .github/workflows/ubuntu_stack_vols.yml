@@ -213,7 +213,7 @@ jobs:
           uses: mxschmitt/action-tmate@v3
           if: ${{ failure() }}
              with:
-             wait-timeout-minutes: 10 
+             wait-timeout-minutes: 12 
         - name: Print log
           if: ${{ always() }}
           run: |
