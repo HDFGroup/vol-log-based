@@ -185,6 +185,8 @@ jobs:
           run: |
             cd ${GITHUB_WORKSPACE}
             make -s ptest
+        - name: Setup tmate session
+          uses: mxschmitt/action-tmate@v3
         - name: Test Cache and Async VOL - make check
           if: ${{ success() }}
           run: |
