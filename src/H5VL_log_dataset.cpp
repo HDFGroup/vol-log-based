@@ -377,10 +377,6 @@ herr_t H5VL_log_dataset_read (size_t count,
                                 void *buf[],
                                 void **req) {
     herr_t err = 0;
-    H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
-    H5VL_log_dset_info_t *dip = NULL;  // Dataset info
-    hid_t dsid;                        // Dataset space id
-    H5VL_log_selections *dsel = NULL;  // Selection blocks
     size_t i;
 
     for (i = 0; i < count; i++) {
