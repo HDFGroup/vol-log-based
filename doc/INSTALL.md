@@ -32,13 +32,13 @@
   cloning the github repository.
   + Download the latest official release version 1.1.0.
     ```
-    % wget https://github.com/DataLib-ECP/vol-log-based/archive/refs/tags/logvol.1.1.0.tar.gz
+    % wget https://github.com/HDFGroup/vol-log-based/archive/refs/tags/logvol.1.1.0.tar.gz
     % tar -zxf logvol.1.1.0.tar.gz
     % cd vol-log-based-logvol.1.1.0
     ```
   + Clone from the github repository.
     ```
-    % git clone https://github.com/DataLib-ECP/vol-log-based.git
+    % git clone https://github.com/HDFGroup/vol-log-based.git
     % cd log_io_vol
     % autoreconf -i
     ```

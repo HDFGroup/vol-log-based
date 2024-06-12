@@ -2,7 +2,7 @@
 * [Build Instructions](#build-instructions)
 * [Run Instructions](#run-e3sm-io)
 
-This demo uses [E3SM-IO](https://github.com/Parallel-NetCDF/E3SM-IO) to show how to run the Log VOL connector on top of the [Cache VOL connector](https://github.com/hpc-io/vol-cache) and the [Async VOL connector](https://github.com/HDFGroup/vol-async).
+This demo uses [E3SM-IO](https://github.com/Parallel-NetCDF/E3SM-IO) to show how to run the Log VOL connector on top of the [Cache VOL connector](https://github.com/HDFGroup/vol-cache) and the [Async VOL connector](https://github.com/HDFGroup/vol-async).
 
 E3SM-IO is an I/O benchmark suite that measures the performance I/O kernel of
 [E3SM](https://github.com/E3SM-Project/E3SM), a state-of-the-art Earth system modeling,
@@ -127,7 +127,7 @@ The Log, Cache, and Async VOL connectors can be enabled by directly setting the 
     % export LD_LIBRARY_PATH="$ABT_DIR/lib:$LD_LIBRARY_PATH"
 
     # download Cache VOL source codes and create a build folder
-    % git clone https://github.com/hpc-io/vol-cache.git
+    % git clone https://github.com/HDFGroup/vol-cache.git
     % cd vol-cache
     % mkdir build
     % cd build
@@ -151,7 +151,7 @@ The Log, Cache, and Async VOL connectors can be enabled by directly setting the 
     % cd ${LOGVOL_DIR}
 
     # download Log VOL source codes
-    % git clone git@github.com:DataLib-ECP/vol-log-based.git
+    % git clone git@github.com:HDFGroup/vol-log-based.git
     % cd vol-log-based
 
     # create configure file, output saved to log.autoreconf
