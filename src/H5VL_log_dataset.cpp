@@ -314,16 +314,6 @@ err_out:;
     return err;
 } /* end H5VL_log_dataset_read_elements() */
 
-/*-------------------------------------------------------------------------
- * Function:    H5VL_log_dataset_write
- *
- * Purpose:     Writes data elements from a buffer into a dataset.
- *
- * Return:      Success:    0
- *              Failure:    -1
- *
- *-------------------------------------------------------------------------
- */
 static herr_t H5VL_log_dataset_write_elements (void *dset,
                                  hid_t mem_type_id,
                                  hid_t mem_space_id,
@@ -402,6 +392,16 @@ herr_t H5VL_log_dataset_read (size_t count,
     return err;
 }
 
+/*-------------------------------------------------------------------------
+ * Function:    H5VL_log_dataset_write
+ *
+ * Purpose:     Writes data elements from a buffer into a dataset.
+ *
+ * Return:      Success:    0
+ *              Failure:    -1
+ *
+ *-------------------------------------------------------------------------
+ */
 herr_t H5VL_log_dataset_write (size_t count,
                                  void *dset[],
                                  hid_t mem_type_id[],
