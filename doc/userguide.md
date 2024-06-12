@@ -24,7 +24,7 @@ applications.
 
 ## Design of the Log VOL connector
 
-The [the Log VOL connector](https://github.com/DataLib-ECP/vol-log-based) is an HDF5
+The [the Log VOL connector](https://github.com/HDFGroup/vol-log-based) is an HDF5
 Virtual Object Layer (VOL) plug-in that stores HDF5 datasets in a log-based
 storage layout, in contrast to the canonical order layout. The
 [Log-based storage layout](https://link.springer.com/chapter/10.1007/978-3-540-75416-9_34)
