@@ -272,17 +272,7 @@ err_out:;
     return NULL;
 } /* end H5VL_log_dataset_open() */
 
-/*-------------------------------------------------------------------------
- * Function:    H5VL_log_dataset_read
- *
- * Purpose:     Reads data elements from a dataset into a buffer.
- *
- * Return:      Success:    0
- *              Failure:    -1
- *
- *-------------------------------------------------------------------------
- */
-static herr_t H5VL_log_dataset_read_1 (void *dset,
+static herr_t H5VL_log_dataset_read_elements (void *dset,
                                 hid_t mem_type_id,
                                 hid_t mem_space_id,
                                 hid_t file_space_id,
@@ -322,7 +312,7 @@ err_out:;
     // Note: dsel should be freed when the read request is deleted
     if (dsid != file_space_id) { H5Sclose (dsid); }
     return err;
-} /* end H5VL_log_dataset_read() */
+} /* end H5VL_log_dataset_read_elements() */
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_dataset_write
@@ -334,7 +324,7 @@ err_out:;
  *
  *-------------------------------------------------------------------------
  */
-static herr_t H5VL_log_dataset_write_1 (void *dset,
+static herr_t H5VL_log_dataset_write_elements (void *dset,
                                  hid_t mem_type_id,
                                  hid_t mem_space_id,
                                  hid_t file_space_id,
@@ -376,8 +366,18 @@ err_out:;
     if (dsel) { delete dsel; }
     if (dsid != file_space_id) { H5Sclose (dsid); }
     return err;
-} /* end H5VL_log_dataset_write() */
+} /* end H5VL_log_dataset_write_elements() */
 
+/*-------------------------------------------------------------------------
+ * Function:    H5VL_log_dataset_read
+ *
+ * Purpose:     Reads data elements from a dataset into a buffer.
+ *
+ * Return:      Success:    0
+ *              Failure:    -1
+ *
+ *-------------------------------------------------------------------------
+ */
 herr_t H5VL_log_dataset_read (size_t count,
                                 void *dset[],
                                 hid_t mem_type_id[],
@@ -394,7 +394,7 @@ herr_t H5VL_log_dataset_read (size_t count,
     size_t i;
 
     for (i = 0; i < count; i++) {
-        err = H5VL_log_dataset_read_1 (dset[i], mem_type_id[i], mem_space_id[i], file_space_id[i],
+        err = H5VL_log_dataset_read_elements (dset[i], mem_type_id[i], mem_space_id[i], file_space_id[i],
                                        plist_id, buf[i], NULL);
         CHECK_ERR
     }
@@ -414,7 +414,7 @@ herr_t H5VL_log_dataset_write (size_t count,
     size_t i;
 
     for (i = 0; i < count; i++) {
-        err = H5VL_log_dataset_write_1 (dset[i], mem_type_id[i], mem_space_id[i], file_space_id[i],
+        err = H5VL_log_dataset_write_elements (dset[i], mem_type_id[i], mem_space_id[i], file_space_id[i],
                                         plist_id, buf[i], NULL);
         CHECK_ERR
     }
