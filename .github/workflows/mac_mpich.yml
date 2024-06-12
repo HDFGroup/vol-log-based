@@ -22,7 +22,6 @@ on:
 
 env:
    MPICH_VERSION: 4.1.2
-   HDF5_VERSION: 1.14.2
    NETCDF_VERSION: 4.9.2
 
 jobs:
@@ -30,7 +29,7 @@ jobs:
       runs-on: macos-latest
       timeout-minutes: 60
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4.1.1
         - name: Set up dependencies
           run: |
             brew instal automake autoconf libtool m4 open-mpi zlib
@@ -38,10 +37,9 @@ jobs:
           run: |
             cd ${GITHUB_WORKSPACE}
             rm -rf HDF5 ; mkdir HDF5 ; cd HDF5
-            VER_MAJOR=${HDF5_VERSION%.*}
-            wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${VER_MAJOR}/hdf5-${HDF5_VERSION}/src/hdf5-${HDF5_VERSION}.tar.gz
-            tar -zxf hdf5-${HDF5_VERSION}.tar.gz
-            cd hdf5-${HDF5_VERSION}
+            wget -cq https://github.com/HDFGroup/hdf5/releases/latest/download/hdf5.tar.gz
+            tar -zxf hdf5.tar.gz
+            cd hdf5-*
             ./configure --prefix=${GITHUB_WORKSPACE}/HDF5 \
                         --silent \
                         --enable-parallel \

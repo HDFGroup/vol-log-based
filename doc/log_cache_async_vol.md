@@ -2,7 +2,7 @@
 * [Build Instructions](#build-instructions)
 * [Run Instructions](#run-e3sm-io)
 
-This demo uses [E3SM-IO](https://github.com/Parallel-NetCDF/E3SM-IO) to show how to run the Log VOL connector on top of the [Cache VOL connector](https://github.com/hpc-io/vol-cache) and the [Async VOL connector](https://github.com/hpc-io/vol-async).
+This demo uses [E3SM-IO](https://github.com/Parallel-NetCDF/E3SM-IO) to show how to run the Log VOL connector on top of the [Cache VOL connector](https://github.com/HDFGroup/vol-cache) and the [Async VOL connector](https://github.com/HDFGroup/vol-async).
 
 E3SM-IO is an I/O benchmark suite that measures the performance I/O kernel of
 [E3SM](https://github.com/E3SM-Project/E3SM), a state-of-the-art Earth system modeling,
@@ -30,7 +30,7 @@ The Log, Cache, and Async VOL connectors can be enabled by directly setting the 
     % export HDF5_ROOT=${HDF5_DIR}
     ```
 
-+ HDF5 1.13.3: `--enable-parallel`, `--enable-threadsafe`, and `--enable-unsupported` are [required by Async VOL](https://hdf5-vol-async.readthedocs.io/en/latest/gettingstarted.html#build-async-i-o-vol) at configure time.
++ Minimum HDF5 1.14: `--enable-parallel`, `--enable-threadsafe`, and `--enable-unsupported` are [required by Async VOL](https://hdf5-vol-async.readthedocs.io/en/latest/gettingstarted.html#build-async-i-o-vol) at configure time.
 
     ```shell
     # create a new folder "HDF5" under $WORKSPACE
@@ -38,9 +38,9 @@ The Log, Cache, and Async VOL connectors can be enabled by directly setting the 
     % cd ${HDF5_DIR}
     
     # download HDF5 source codes
-    % wget -cq https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.3/src/hdf5-1.13.3.tar.gz
-    % tar -zxf hdf5-1.13.3.tar.gz
-    % cd hdf5-1.13.3
+    % wget -cq https://github.com/HDFGroup/hdf5/releases/latest/download/hdf5.tar.gz
+    % tar -zxf hdf5.tar.gz
+    % cd hdf5-*
     
     # configure, output saved to log.config
     % ./configure --prefix=${HDF5_DIR} \
@@ -98,7 +98,7 @@ The Log, Cache, and Async VOL connectors can be enabled by directly setting the 
     % cd ${ASYNC_DIR}
 
     # download Async VOL source codes and create a build folder
-    % wget -qc https://github.com/hpc-io/vol-async/archive/refs/tags/v1.4.tar.gz
+    % wget -qc https://github.com/HDFGroup/vol-async/archive/refs/tags/v1.4.tar.gz
     % tar -xf v1.4.tar.gz
     % cd vol-async-1.4
     % mkdir build
@@ -127,7 +127,7 @@ The Log, Cache, and Async VOL connectors can be enabled by directly setting the 
     % export LD_LIBRARY_PATH="$ABT_DIR/lib:$LD_LIBRARY_PATH"
 
     # download Cache VOL source codes and create a build folder
-    % git clone https://github.com/hpc-io/vol-cache.git
+    % git clone https://github.com/HDFGroup/vol-cache.git
     % cd vol-cache
     % mkdir build
     % cd build
@@ -151,7 +151,7 @@ The Log, Cache, and Async VOL connectors can be enabled by directly setting the 
     % cd ${LOGVOL_DIR}
 
     # download Log VOL source codes
-    % git clone git@github.com:DataLib-ECP/vol-log-based.git
+    % git clone git@github.com:HDFGroup/vol-log-based.git
     % cd vol-log-based
 
     # create configure file, output saved to log.autoreconf

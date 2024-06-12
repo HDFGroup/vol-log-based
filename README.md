@@ -17,9 +17,9 @@ Files created by the Log VOL conform with the HDF5 file format specification,
 but require the Log VOL to read them back.
 
 * Current build status:
-  * [![Ubuntu_mpich](https://github.com/DataLib-ECP/vol-log-based/actions/workflows/ubuntu_mpich.yml/badge.svg)](https://github.com/DataLib-ECP/vol-log-based/actions/workflows/ubuntu_mpich.yml)
-  * [![Ubuntu with OpenMPI](https://github.com/DataLib-ECP/vol-log-based/actions/workflows/ubuntu_openmpi.yml/badge.svg)](https://github.com/DataLib-ECP/vol-log-based/actions/workflows/ubuntu_openmpi.yml)
-  * [![Mac with MPICH](https://github.com/DataLib-ECP/vol-log-based/actions/workflows/mac_mpich.yml/badge.svg)](https://github.com/DataLib-ECP/vol-log-based/actions/workflows/mac_mpich.yml)
+  * [![Ubuntu_mpich](https://github.com/HDFGroup/vol-log-based/actions/workflows/ubuntu_mpich.yml/badge.svg)](https://github.com/HDFGroup/vol-log-based/actions/workflows/ubuntu_mpich.yml)
+  * [![Ubuntu with OpenMPI](https://github.com/HDFGroup/vol-log-based/actions/workflows/ubuntu_openmpi.yml/badge.svg)](https://github.com/HDFGroup/vol-log-based/actions/workflows/ubuntu_openmpi.yml)
+  * [![Mac with MPICH](https://github.com/HDFGroup/vol-log-based/actions/workflows/mac_mpich.yml/badge.svg)](https://github.com/HDFGroup/vol-log-based/actions/workflows/mac_mpich.yml)
 
 ### HDF5 VOL Connector ID
 * This Log VOL connector has been registered with the HDF group with
