@@ -200,7 +200,7 @@ herr_t H5VL_log_object_get (void *obj,
                     break;
                 case H5VL_OBJECT_BY_IDX:
                 case H5VL_OBJECT_BY_TOKEN:
-                    RET_ERR ("Access by idx annd token is not supported")
+                    RET_ERR ("Access by idx and token is not supported")
                     break;
             }
         }
@@ -208,7 +208,7 @@ herr_t H5VL_log_object_get (void *obj,
         err = H5VLobject_get (op->uo, loc_params, op->uvlid, args, dxpl_id, req);
         CHECK_ERR
 
-        // Deduct internal attirbutes from num_attrs
+        // Deduct internal attributes from num_attrs
         if (args->op_type == H5VL_OBJECT_GET_INFO) {
             if (op->type == H5I_FILE) {
                 args->args.get_info.oinfo->num_attrs -= 1;
@@ -275,7 +275,7 @@ herr_t H5VL_log_object_specific (void *obj,
                 break;
             case H5VL_OBJECT_BY_IDX:
             case H5VL_OBJECT_BY_TOKEN:
-                RET_ERR ("Access by idx annd token is not supported")
+                RET_ERR ("Access by idx and token is not supported")
                 break;
         }
 
@@ -348,7 +348,7 @@ herr_t H5VL_log_object_optional (void *obj,
                     break;
                 case H5VL_OBJECT_BY_IDX:
                 case H5VL_OBJECT_BY_TOKEN:
-                    RET_ERR ("Access by idx annd token is not supported")
+                    RET_ERR ("Access by idx and token is not supported")
                     break;
             }
         }

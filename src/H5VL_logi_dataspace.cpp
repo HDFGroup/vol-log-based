@@ -169,7 +169,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
     int old_nreq;        // Number of non-interleaving sections in previous processed groups
     int nbreq;           // Number of non-interleaving sections in current block
     hssize_t nblock;     // Number of blocks in the selection (before breaking interleaving blocks)
-    H5S_sel_type stype;  // Tpye of selection (block list, point list ...)
+    H5S_sel_type stype;  // Type of selection (block list, point list ...)
     hsize_t **hstarts = NULL, **hends;  // Output buffer of H5Sget_select_hyper_nblocks
     int *group        = NULL;           // blocks with the same group number are interleaved
     htri_t isregular;                   // If hyperslab selection is regular
@@ -278,7 +278,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                 nreq = 0;
                 for (i = j = 0; i <= nblock; i++) {
                     if (group[i] != group[j]) {  // Within 1 group
-                        if (i - j == 1) {        // Sinlge block, no need to breakdown
+                        if (i - j == 1) {        // Single block, no need to breakdown
                             // offs[k] = nreq; // Record offset
                             nreq++;
                             j++;
@@ -302,7 +302,7 @@ H5VL_log_selections::H5VL_log_selections (hid_t dsid) {
                 nreq = 0;
                 for (i = j = 0; i <= nblock; i++) {
                     if (group[i] != group[j]) {  // Within 1 group
-                        if (i - j == 1) {        // Sinlge block, no need to breakdown
+                        if (i - j == 1) {        // Single block, no need to breakdown
                             for (k = 0; k < ndim; k++) {
                                 starts[nreq][k] = hstarts[j][k];
                                 counts[nreq][k] = hends[j][k] - hstarts[j][k] + 1;

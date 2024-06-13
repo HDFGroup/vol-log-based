@@ -205,7 +205,7 @@ void h5ldump_file (std::string path,
     int nmdset;                         // Number of metadata datasets
     int nsubfile;                       // Number of subfiles
     int config;                         // File config flags
-    int att_buf[H5VL_LOG_FILEI_NATTR];  // attirbute buffer
+    int att_buf[H5VL_LOG_FILEI_NATTR];  // attribute buffer
     H5VL_logi_err_finally finally ([&] () -> void {
         if (fh != MPI_FILE_NULL) { MPI_File_close (&fh); }
         if (aid >= 0) { H5Aclose (aid); }

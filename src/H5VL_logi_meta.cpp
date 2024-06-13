@@ -85,7 +85,7 @@ void H5VL_logi_metaentry_ref_decode (H5VL_log_dset_info_t &dset,
 void H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
                                  void *ent,
                                  H5VL_logi_metaentry_t &block) {
-    MPI_Offset dsteps[H5S_MAX_RANK];  // corrdinate to offset encoding info in ent
+    MPI_Offset dsteps[H5S_MAX_RANK];  // coordinate to offset encoding info in ent
     H5VL_logi_metaentry_decode (dset, ent, block, dsteps);
 }
 
@@ -157,10 +157,10 @@ void H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
         }
         bsize += esize * nsel;
 
-        // If the rest of the entry is comrpessed, decomrpess it
+        // If the rest of the entry is compressed, decomrpess it
         if (block.hdr.flag & H5VL_LOGI_META_FLAG_SEL_DEFLATE) {
 #ifdef ENABLE_ZLIB
-            int inlen;  // Size of comrpessed metadata
+            int inlen;  // Size of compressed metadata
             int clen;   // Size of decompressed metadata
 
             // Allocate decompression buffer
@@ -172,7 +172,7 @@ void H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
             clen  = bsize;
             H5VL_log_zip_decompress (bufp, inlen, zbuf, &clen);
 #else
-            RET_ERR ("Comrpessed Metadata Support Not Enabled")
+            RET_ERR ("Compressed Metadata Support Not Enabled")
 #endif
         } else {
             zbuf = bufp;
@@ -181,7 +181,7 @@ void H5VL_logi_metaentry_decode (H5VL_log_dset_info_t &dset,
 #endif
         }
     } else {
-        // Entries with single selection will never be comrpessed
+        // Entries with single selection will never be compressed
         nsel  = 1;
         bsize = sizeof (MPI_Offset) * 2 * encdim * nsel;
         zbuf  = bufp;

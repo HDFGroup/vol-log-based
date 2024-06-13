@@ -43,7 +43,7 @@ void H5VL_logi_filter_deflate (
     // If buffer not large enough
     if (defstream.avail_in > 0) { RET_ERR ("buffer too small") }
 
-    // Size of comrpessed data
+    // Size of compressed data
     *out_len = defstream.total_out;
 }
 

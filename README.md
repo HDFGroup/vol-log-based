@@ -30,7 +30,7 @@ but require the Log VOL to read them back.
 * [doc/design.md](doc/design.md) outlines the design of Log VOL connector.
 * [doc/api.md](doc/api.md) describes the new APIs introduced in this VOL.
 
-### Applicaton Case Studies and Experimental Results
+### Application Case Studies and Experimental Results
 * [E3SM I/O case study](case_studies/E3SM_IO.md) - Energy Exascale Earth System Model ([E3SM](https://github.com/E3SM-Project/E3SM)).
 * [WRF I/O case study](case_studies/WRF.md) - Weather Research and Forecasting Model ([WRF](https://github.com/wrf-model/WRF)).
 

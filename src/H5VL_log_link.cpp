@@ -206,7 +206,7 @@ herr_t H5VL_log_link_move (void *src_obj,
                     break;
                 case H5VL_OBJECT_BY_IDX:
                 case H5VL_OBJECT_BY_TOKEN:
-                    RET_ERR ("Access by idx annd token is not supported")
+                    RET_ERR ("Access by idx and token is not supported")
                     break;
             }
         }
@@ -222,7 +222,7 @@ herr_t H5VL_log_link_move (void *src_obj,
                     break;
                 case H5VL_OBJECT_BY_IDX:
                 case H5VL_OBJECT_BY_TOKEN:
-                    RET_ERR ("Access by idx annd token is not supported")
+                    RET_ERR ("Access by idx and token is not supported")
                     break;
             }
         }
@@ -306,7 +306,7 @@ herr_t H5VL_log_link_get (void *obj,
                     break;
                 case H5VL_OBJECT_BY_IDX:
                 case H5VL_OBJECT_BY_TOKEN:
-                    RET_ERR ("Access by idx annd token is not supported")
+                    RET_ERR ("Access by idx and token is not supported")
                     break;
             }
         }
@@ -387,7 +387,7 @@ herr_t H5VL_log_link_specific (void *obj,
                 break;
             case H5VL_OBJECT_BY_IDX:
             case H5VL_OBJECT_BY_TOKEN:
-                RET_ERR ("Access by idx annd token is not supported")
+                RET_ERR ("Access by idx and token is not supported")
                 break;
         }
 
@@ -473,7 +473,7 @@ herr_t H5VL_log_link_optional (void *obj,
                     break;
                 case H5VL_OBJECT_BY_IDX:
                 case H5VL_OBJECT_BY_TOKEN:
-                    RET_ERR ("Access by idx annd token is not supported")
+                    RET_ERR ("Access by idx and token is not supported")
                     break;
             }
         }

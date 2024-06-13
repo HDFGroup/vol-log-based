@@ -85,7 +85,7 @@ If not set, the default property is buffered.
     + `plist`: the id of the dataset ransfer property list to attach the setting.
     + `buffered`: a boolean value that indicates whether to keep a copy of the input write buffer of `H5Dwrite` calls in the Log VOL connector.
         + `true`: (default)
-          + keep a copy. i.e. needs addtional memory  
+          + keep a copy. i.e. needs additional memory
           + the input buffer can be modified immediately after H5Dwrite returns
         + `false`:
           + the input buffer shall not be modified immediately after `H5Dwrite`s.
@@ -106,7 +106,7 @@ If it is set to `false`, the Log VOL connector does not keep a copy of the input
   + Outs:
     + `buffered`: whether to keep a copy of the input write buffer of `H5Dwrite` calls under current setting indicated by `plist`.
         + `true`:
-          + keep a copy. i.e. needs addtional memory  
+          + keep a copy. i.e. needs additional memory
           + the input buffer can be modified immediately after H5Dwrite returns
         + `false`:
           + the input buffer shall not be modified immediately after `H5Dwrite`s.
@@ -199,7 +199,7 @@ The function `H5Pset_meta_zip` sets the whether to compress the metadata.
     + This function returns `0` on success. Fail otherwise.
 
 ### H5Pget_meta_zip 
-The function `H5Pget_meta_zip` gets the metadata comrpession setting in a file access property list.
+The function `H5Pget_meta_zip` gets the metadata compression setting in a file access property list.
 
 #### Usage:
 ```c
@@ -272,7 +272,7 @@ herr_t H5Pset_passthru (hid_t faplid, hbool_t enable)
   + Inputs:
     + `faplid`: the id of the file access property list to set the setting.
     + `enable`: whether passthrough VOL should be used.
-      + `ture`: the Log VOL connector behaves as a passthrough VOL.
+      + `true`: the Log VOL connector behaves as a passthrough VOL.
       + `false`: the Log VOL connector behaves as a terminal VOL.
   + Returns:
     + This function returns `0` on success. Fail otherwise.
@@ -292,7 +292,7 @@ herr_t H5Pget_passthru (hid_t faplid, hbool_t *enable);
     + `faplid`: the id of the file access property list to retrieve the setting.
   + Outputs:
     + `enable`: whether passthrough VOL is used.
-      + `ture`: the Log VOL connector behaves as a passthrough VOL.
+      + `true`: the Log VOL connector behaves as a passthrough VOL.
       + `false`: the Log VOL connector behaves as a terminal VOL.
   + Returns:
     + This function returns `0` on success. Fail otherwise.

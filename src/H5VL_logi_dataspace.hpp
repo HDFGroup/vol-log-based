@@ -46,7 +46,7 @@ class H5VL_log_selections {
     hsize_t **sels_arr = NULL;  // Allocated starts and counts pointer array, if present, need free
 
     void alloc (int nsel);    // Allocate space for starts and counts
-    void convert_to_deep ();  // Coverts a shallow copy to deep copy
+    void convert_to_deep ();  // Converts a shallow copy to deep copy
 };
 
 typedef struct H5VL_log_selection {

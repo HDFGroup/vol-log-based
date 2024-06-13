@@ -7,11 +7,11 @@ Internal helper functions used by the callback function are also implemented in 
 
 The source files are named according to the purpose of their content.
 The file implementing callback functions for each VOL sub-class are named `H5VL_log_<class_name>.cpp/hpp`.
-For eaxmple, functions in the attribute sub-class (H5VL_attr_class_t) are implemeted in `H5VL_log_att.cpp` with their signatures defined in `H5VL_log_att.hpp`. Callback functions defined in `H5VL_log_<class_name>.cpp/hpp` are functions required by HDF5 to implement any working VOL. 
+For eaxmple, functions in the attribute sub-class (H5VL_attr_class_t) are implemented in `H5VL_log_att.cpp` with their signatures defined in `H5VL_log_att.hpp`. Callback functions defined in `H5VL_log_<class_name>.cpp/hpp` are functions required by HDF5 to implement any working VOL.
 The source files containing internal helper functions used by the callbacks are named `H5VL_log_<class_name>i.cpp/hpp`.
 The letter 'i' in the file names means internal.
 For example, `H5VL_log_atti.cpp/hpp` contain functions used by attribute callback functions. 
-Functions and componenets that is not related to a particular sub-class are placed in source files named `H5VL_logi_<component_name>.cpp/hpp`.
+Functions and components that is not related to a particular sub-class are placed in source files named `H5VL_logi_<component_name>.cpp/hpp`.
 For example, `H5VL_logi_err.cpp/hpp` contain functions for error checking and handling.
 
 In the implementations, variables `uo` and `uvlid` are frequently used. An HDF5 VOL (log-based VOL or not) can be stacked upon another HDF5 VOL, and the log-based VOL must also be stacked upon another VOL (called "under VOL", e.g. the native HDF5 VOL). This means most of the log-based VOL callback functions need to pass a user's request to the "under VOL", whose `id` is specified `uvlid` (under VOL ID). `uo` is the corresponding object opened/used by the under VOL.
@@ -58,7 +58,7 @@ In the implementations, variables `uo` and `uvlid` are frequently used. An HDF5 
 * H5VL_log_obji.cpp/hpp
   + Internal functions used by `H5VL_log_obj.cpp/hpp` to handle HDF5 object operations.
 * H5VL_log_req.cpp/hpp
-  + VOL callback functions related to aysnc operations (`H5VL_request_class_t`)
+  + VOL callback functions related to async operations (`H5VL_request_class_t`)
   + Not fully implemented
   + Log-based VOL does not support async operation
 * H5VL_log_reqi.cpp/hpp
@@ -82,7 +82,7 @@ In the implementations, variables `uo` and `uvlid` are frequently used. An HDF5 
 * H5VL_logi_filter_deflate.cpp/hpp
   + Deflate (zlib) filter implementation
 * H5VL_logi_idx.cpp/hpp
-  + Difinition of metadata index class used to search for intersecting log entries for handling read reqeusts
+  + Definition of metadata index class used to search for intersecting log entries for handling read requests
 * H5VL_logi_idx_compact.cpp/hpp
   + Array based metadata index with optimizations to reduce memory footprint
 * H5VL_logi_idx_list.cpp/hpp

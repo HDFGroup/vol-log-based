@@ -11,7 +11,7 @@
 #include "H5VL_logi.hpp"
 #include "hdf5.h"
 
-// Wraper
+// Wrapper
 /*
 extern herr_t H5VL_logi_dataset_specific_wrapper (void *obj,
                                                                                                   hid_t

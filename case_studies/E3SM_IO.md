@@ -48,7 +48,7 @@ simulation, and prediction project. The I/O patterns of E3SM captured by the E3S
   decomposition map file comes with the E3SM-IO, along with two other cases, G and I.
 * Information about the decomposition maps is available in
   [datasets/README.md](https://github.com/Parallel-NetCDF/E3SM-IO/blob/master/datasets/README.md)
-* Details of comand-line options can be found in the E3SM-IO's
+* Details of command-line options can be found in the E3SM-IO's
   [INSTALL.md](https://github.com/Parallel-NetCDF/E3SM-IO/blob/master/INSTALL.md#run-command)
 
 ## Three cases from E3SM production runs
@@ -85,7 +85,7 @@ However, storing data in the canonical order requires inter-process communicatio
 in MPI collective I/O, which can be expensive.
 Given E3SM's data partitioning patterns containing large numbers of noncontiguous write
 requests, the communication cost can be very expensive.
-Therefor, it is expected the PnetCDF method performs slower than the log-layout based
+Therefore, it is expected the PnetCDF method performs slower than the log-layout based
 VOL, which stores data in the log layout, requiring no inter-process communications.
 
 [Scorpio](https://github.com/E3SM-Project/scorpio) implements an I/O option to use

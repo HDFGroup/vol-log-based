@@ -246,7 +246,7 @@ void H5VL_log_merged_wreq_t::init (H5VL_log_file_t *fp, int id, int nsel) {
     this->hdr->flag      = flag;
     this->hdr->meta_size = this->mbufp - this->meta_buf;
 
-    // There is no aggreagated blocks yet.
+    // There is no aggregated blocks yet.
     // The input nsel means the number reserved, not the current number
     this->nsel = 0;
 
@@ -353,7 +353,7 @@ void H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
     bool compound_zetype =
         false;  // If element type for packing the data is compound (need to be freed)
     std::vector<H5VL_log_idx_search_ret_t>
-        intersecs;  // Any intersection between selections in reqeusts and the metadata entries
+        intersecs;  // Any intersection between selections in requests and the metadata entries
     std::vector<H5VL_log_copy_ctx> overlaps;  // Any overlapping read regions
     std::map<MPI_Offset, char *> bufs;  // Temporary buffers for unfiltering filtered data blocks
     char *tbuf =
@@ -484,7 +484,7 @@ void H5VL_log_nb_perform_read (H5VL_log_file_t *fp,
 
     // Post processing
     for (auto &r : reqs) {
-        // Type convertion
+        // Type conversion
         if (r->dtype != r->mtype) {
             // void *bg = NULL;
 
@@ -547,7 +547,7 @@ void H5VL_log_nb_flush_read_reqs (void *file, std::vector<H5VL_log_rreq_t *> &re
         H5VL_log_nb_perform_read (fp, reqs, dxplid);
     } else {
         group_id = fp->group_id;  // Backup group ID
-        // Process our own subfile last so wew don't need to reopen it
+        // Process our own subfile last so we don't need to reopen it
         for (i = 1; i <= fp->ngroup; i++) {
             H5VL_LOGI_PROFILING_TIMER_START;
             // Close the log group
@@ -849,8 +849,8 @@ void H5VL_log_nb_flush_write_reqs (void *file) {
             (fp->nldset)++;
         }
 
-        // Create virtaul log dataset in the main file
-        // Virtual dataset property must be consistant across all processes
+        // Create virtual log dataset in the main file
+        // Virtual dataset property must be consistent across all processes
         // Expensive communication and HDF5 operations
         /*
         if (fp->config & H5VL_FILEI_CONFIG_SUBFILING) {

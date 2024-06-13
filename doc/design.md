@@ -45,7 +45,7 @@ Separating data and metadata allows the log-based driver to search through metad
 A record in the log is a pair of an entry in the data log and an entry in the metadata log.
 It represents a single write operation to a dataset.
 
-A metadata log entry includes: (1) the ID of the dataset involved in the operation; (2) the selection in the dataset data space; (3) the offset of the data in the file; (4) the size of the data in the file; (5) the size of the metadata entry; and (6) flags that indicates the endianceness of the entry and other informations for future extension.
+A metadata log entry includes: (1) the ID of the dataset involved in the operation; (2) the selection in the dataset data space; (3) the offset of the data in the file; (4) the size of the data in the file; (5) the size of the metadata entry; and (6) flags that indicates the endianceness of the entry and other information for future extension.
 The dataset dataspace selection is stored as a list of hyper-slabs (subarraies).
 If the selection has an iregular shape, the Log VOL connector decomposes it into disjoint hyper-slabs.
 Element selections are treated as hyper-slab selections with unit sized hyper-slabs. 
@@ -66,7 +66,7 @@ Users can also create their own property class through API H5Pregister2 to defin
 Performance of our log-based driver can be significantly enhanced if the multiple small I/O requests can be aggregated into fewer, large request.
 There are two approaches to achieve the effect of request aggregation.
 One is to buffer the write requests internally and later the buffered requests are aggregated and flushed together.
-This approach allows users to re-use their I/O buffers immediately after the write requests return.
+This approach allows users to reuse their I/O buffers immediately after the write requests return.
 The side effect is the increasing memory footprint.
 The other approach is non-blocking I/O.
 A new HDF5 data transfer property is defined to introduce a new I/O semantics that limit users from altering the buffer contents before the pending requests are flushed to the file system.
