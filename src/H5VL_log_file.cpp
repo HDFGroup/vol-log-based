@@ -88,7 +88,7 @@ void *H5VL_log_file_create (
             htri_t ret;
             ret = H5VLis_connector_registered_by_name ("native");
             if (ret != 1) { ERR_OUT ("Native VOL not found") }
-            uvlid = H5VLpeek_connector_id_by_name ("native");
+            uvlid = H5VLget_connector_id_by_name("native");
             CHECK_ID (uvlid)
             under_vol_info = NULL;
         }
@@ -173,6 +173,10 @@ void *H5VL_log_file_create (
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE);
+        if (under_vol_info == NULL) {
+            err = H5VLclose(uvlid);
+            CHECK_ERR
+        }
     }
     H5VL_LOGI_EXP_CATCH
 
@@ -236,7 +240,7 @@ void *H5VL_log_file_open (
             htri_t ret;
             ret = H5VLis_connector_registered_by_name ("native");
             if (ret != 1) { ERR_OUT ("Native VOL not found") }
-            uvlid = H5VLpeek_connector_id_by_name ("native");
+            uvlid = H5VLget_connector_id_by_name("native");
             CHECK_ID (uvlid)
             under_vol_info = NULL;
             // return NULL;
@@ -304,6 +308,12 @@ void *H5VL_log_file_open (
         H5VL_log_filei_register (fp);
 
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
+
+        if (under_vol_info == NULL) {
+            err = H5VLclose(uvlid);
+            CHECK_ERR
+        }
+
     }
     H5VL_LOGI_EXP_CATCH
 
@@ -430,7 +440,7 @@ herr_t H5VL_log_file_specific (void *file,
                     htri_t ret;
                     ret = H5VLis_connector_registered_by_name ("native");
                     if (ret != 1) { ERR_OUT ("Native VOL not found") }
-                    uvlid = H5VLpeek_connector_id_by_name ("native");
+                    uvlid = H5VLget_connector_id_by_name("native");
                     CHECK_ID (uvlid)
                     under_vol_info = NULL;
                 }
@@ -440,6 +450,10 @@ herr_t H5VL_log_file_specific (void *file,
                 err = H5VLfile_specific (NULL, uvlid, args, dxpl_id, req);
                 CHECK_ERR
                 H5Pclose (under_fapl_id);
+                if (under_vol_info == NULL) {
+                   err = H5VLclose(uvlid);
+                   CHECK_ERR
+                }
             } break;
             case H5VL_FILE_FLUSH: {
                 H5VL_LOGI_PROFILING_TIMER_START;

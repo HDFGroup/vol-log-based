@@ -38,9 +38,14 @@ void h5ldump_visit (std::string path, std::vector<H5VL_log_dset_info_t> &dsets) 
     });
 
     // Always use native VOL
-    nativevlid = H5VLpeek_connector_id_by_name ("native");
+    nativevlid = H5VLget_connector_id_by_name("native");
+    CHECK_ID (nativevlid)
     faplid     = H5Pcreate (H5P_FILE_ACCESS);
-    H5Pset_vol (faplid, nativevlid, NULL);
+    CHECK_ID (faplid)
+    err = H5Pset_vol (faplid, nativevlid, NULL);
+    CHECK_ERR
+    err = H5VLclose(nativevlid);
+    CHECK_ERR
 
     // Open the input file
     fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, faplid);

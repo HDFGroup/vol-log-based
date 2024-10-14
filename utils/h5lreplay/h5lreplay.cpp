@@ -176,16 +176,19 @@ void h5lreplay_core (std::string &inpath, std::string &outpath, int rank, int np
     });
 
     // Open the input and output file
-    nativevlid = H5VLpeek_connector_id_by_name ("native");
+    nativevlid = H5VLget_connector_id_by_name("native");
+    CHECK_ID (nativevlid)
     faplid     = H5Pcreate (H5P_FILE_ACCESS);
     CHECK_ID (faplid)
     err = H5Pset_fapl_mpio (faplid, MPI_COMM_WORLD, MPI_INFO_NULL);
     CHECK_ERR
     err = H5Pset_vol (faplid, nativevlid, NULL);
     CHECK_ERR
+    err = H5VLclose(nativevlid);
+    CHECK_ERR
 
     finid = H5Fopen (inpath.c_str (), H5F_ACC_RDONLY, faplid);
-    CHECK_ID (faplid)
+    CHECK_ID (finid)
     foutid = H5Fcreate (outpath.c_str (), H5F_ACC_TRUNC, H5P_DEFAULT, faplid);
     CHECK_ID (foutid)
     mpierr = MPI_File_open (MPI_COMM_WORLD, inpath.c_str (), MPI_MODE_RDONLY, MPI_INFO_NULL, &fin);

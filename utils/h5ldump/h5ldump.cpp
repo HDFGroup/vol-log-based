@@ -32,6 +32,7 @@ const char *hdf5sig = "\211HDF\r\n\032\n";
 const char ncsig[] = {'C', 'D', 'F'};
 
 inline std::string get_file_signature (std::string &path) {
+    herr_t err = 0;
     hid_t fid        = -1;  // File ID
     hid_t faplid     = -1;  // File access property ID
     hid_t nativevlid = -1;  // Native VOL ID
@@ -50,9 +51,14 @@ inline std::string get_file_signature (std::string &path) {
         fin.close ();
         if (!memcmp (hdf5sig, sig, 8)) {
             // Always use native VOL
-            nativevlid = H5VLpeek_connector_id_by_name ("native");
+            nativevlid = H5VLget_connector_id_by_name("native");
+            CHECK_ID (nativevlid)
             faplid     = H5Pcreate (H5P_FILE_ACCESS);
-            H5Pset_vol (faplid, nativevlid, NULL);
+            CHECK_ID (faplid)
+            err = H5Pset_vol (faplid, nativevlid, NULL);
+            CHECK_ERR
+            err = H5VLclose(nativevlid);
+            CHECK_ERR
 
             // Open the input file
             fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, faplid);
@@ -215,9 +221,15 @@ void h5ldump_file (std::string path,
     });
 
     // Always use native VOL
-    nativevlid = H5VLpeek_connector_id_by_name ("native");
+    nativevlid = H5VLget_connector_id_by_name("native");
+    CHECK_ID (nativevlid)
     faplid     = H5Pcreate (H5P_FILE_ACCESS);
-    H5Pset_vol (faplid, nativevlid, NULL);
+    CHECK_ID (faplid)
+    err = H5Pset_vol (faplid, nativevlid, NULL);
+    CHECK_ERR
+    err = H5VLclose(nativevlid);
+    CHECK_ERR
+
 
     // Open the input file
     fid = H5Fopen (path.c_str (), H5F_ACC_RDONLY, faplid);
