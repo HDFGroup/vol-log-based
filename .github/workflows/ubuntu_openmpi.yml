@@ -50,7 +50,9 @@ jobs:
             ./configure --prefix=${GITHUB_WORKSPACE}/HDF5 \
                         --silent \
                         --enable-parallel \
-                        --enable-build-mode=production \
+                        --enable-build-mode=debug \
+                        --enable-internal-debug=all \
+                        --enable-trace \
                         --enable-unsupported \
                         --enable-threadsafe \
                         --disable-doxygen-doc \
