@@ -20,6 +20,7 @@
 #include "H5VL_logi.hpp"
 #include "H5VL_logi_util.hpp"
 
+// A TEST
 /********************* */
 /* Function prototypes */
 /********************* */
