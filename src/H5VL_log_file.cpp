@@ -173,7 +173,7 @@ void *H5VL_log_file_create (
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLFILE_CREATE);
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE_FILE);
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_CREATE);
-        if (under_vol_info == NULL) {
+        if (!info) {
             err = H5VLclose(uvlid);
             CHECK_ERR
         }
@@ -309,7 +309,7 @@ void *H5VL_log_file_open (
 
         H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN);
 
-        if (under_vol_info == NULL) {
+        if (!info) {
             err = H5VLclose(uvlid);
             CHECK_ERR
         }
@@ -450,7 +450,7 @@ herr_t H5VL_log_file_specific (void *file,
                 err = H5VLfile_specific (NULL, uvlid, args, dxpl_id, req);
                 CHECK_ERR
                 H5Pclose (under_fapl_id);
-                if (under_vol_info == NULL) {
+                if (!info) {
                    err = H5VLclose(uvlid);
                    CHECK_ERR
                 }
