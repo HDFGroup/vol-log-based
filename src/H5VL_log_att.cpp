@@ -388,7 +388,7 @@ herr_t H5VL_log_attr_specific (void *obj,
                                void **req) {
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
     herr_t err         = 0;
-    H5VL_log_req_t *rp;
+    H5VL_log_req_t *rp = NULL;
     void **ureqp, *ureq;
     char *iname                   = NULL;  // Internal name of object
     const char *original_name     = NULL;  // Original value in loc_params before being remapped

@@ -406,7 +406,7 @@ herr_t H5VL_log_file_specific (void *file,
     H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
     void *lib_state     = NULL;
     H5VL_logi_err_finally finally (
-        [&lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
+                                   [&lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
 
     try {
 #ifdef LOGVOL_DEBUG

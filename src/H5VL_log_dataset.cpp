@@ -282,7 +282,7 @@ static herr_t H5VL_log_dataset_read_elements (void *dset,
     herr_t err                = 0;
     H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
     H5VL_log_dset_info_t *dip = NULL;  // Dataset info
-    hid_t dsid;                        // Dataset space id
+    hid_t dsid = H5I_INVALID_HID;      // Dataset space id
     H5VL_log_selections *dsel = NULL;  // Selection blocks
 
     try {
@@ -325,7 +325,7 @@ static herr_t H5VL_log_dataset_write_elements (void *dset,
     H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 
     H5VL_log_dset_info_t *dip = NULL;  // Dataset info
-    hid_t dsid;                        // Dataset space id
+    hid_t dsid = H5I_INVALID_HID;      // Dataset space id
     H5VL_log_selections *dsel = NULL;  // Selection blocks
 
     try {
