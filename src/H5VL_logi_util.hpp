@@ -121,20 +121,29 @@ inline char *H5VL_logi_name_remap (const char *name) {
     return ret;
 }
 
-inline void H5VL_logi_reset_lib_stat (void *&stat) {
+inline void H5VL_logi_reset_lib_stat (void *&stat, void *&context) {
     herr_t err = 0;
     err        = H5VLretrieve_lib_state (&stat);
     CHECK_ERR
+#if H5_VERSION_GE(2, 0, 0)
+    err = H5VLopen_lib_context (&context);
+#else
     err = H5VLstart_lib_state ();
+#endif
     CHECK_ERR
     err = H5VLrestore_lib_state (stat);
     CHECK_ERR
 }
 
-inline void H5VL_logi_restore_lib_stat (void *&stat) {
+inline void H5VL_logi_restore_lib_stat (void *&stat, void *&context) {
     herr_t err = 0;
+
     if (stat) {
+#if H5_VERSION_GE(2, 0, 0)
+        err = H5VLclose_lib_context (context);
+#else
         err = H5VLfinish_lib_state ();
+#endif
         CHECK_ERR
         err = H5VLrestore_lib_state (stat);
         CHECK_ERR

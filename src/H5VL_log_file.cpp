@@ -405,8 +405,9 @@ herr_t H5VL_log_file_specific (void *file,
     herr_t err          = 0;
     H5VL_log_file_t *fp = (H5VL_log_file_t *)file;
     void *lib_state     = NULL;
+    void *lib_context   = NULL;
     H5VL_logi_err_finally finally (
-                                   [&lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
+        [&lib_state, &lib_context] () -> void { H5VL_logi_restore_lib_stat (lib_state, lib_context); });
 
     try {
 #ifdef LOGVOL_DEBUG
@@ -459,7 +460,7 @@ herr_t H5VL_log_file_specific (void *file,
                 H5VL_LOGI_PROFILING_TIMER_START;
                 if (fp->is_log_based_file) {
                     // Reset hdf5 context to allow dataset operations within a file operation
-                    H5VL_logi_reset_lib_stat (lib_state);
+                  H5VL_logi_reset_lib_stat (lib_state, lib_context);
 
                     H5VL_log_filei_flush(fp, dxpl_id);
                 } else {

@@ -54,7 +54,7 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
         rbuf[2];  // [Local metadata offset within the metadata dataset, Global metadata size]
     MPI_Offset mdsize  = 0;  // Local metadata size
     MPI_Offset *mdoffs = NULL;
-    MPI_Offset *mdoffs_snd;
+    MPI_Offset *mdoffs_snd = NULL;
     MPI_Aint *offs = NULL;                    // Offset in MPI_Type_create_hindexed
     int *lens      = NULL;                    // Lens in MPI_Type_create_hindexed
     int nentry     = 0;                       // Number of metadata entries
