@@ -11,11 +11,6 @@ rm -rf build
 mkdir build
 cd build
 ../hdf5-iotest/configure --silent \
-                         CC=@MPICC@ CXX=@MPICXX@ \
-                         CFLAGS="@CFLAGS@" \
-                         CPPFLAGS="-I${HDF5_ROOT}/include" \
-                         LDFLAGS="-L${HDF5_ROOT}/lib" \
-                         LIBS="-lhdf5"
-
-
+                         CC=${HDF5_ROOT}/bin/h5pcc \
+                         CFLAGS="@CFLAGS@" 
 

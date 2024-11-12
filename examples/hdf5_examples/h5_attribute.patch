@@ -1,0 +1,45 @@
+--- h5_attribute.c	2024-11-12 16:49:52.466955555 -0600
++++ h5_attribute_logvol.c	2024-11-12 16:47:13.644521620 -0600
+@@ -41,7 +41,7 @@
+ /* Operator function */
+ 
+ int
+-main(void)
++main(int argc, char **argv)
+ {
+ 
+     hid_t file, dataset; /* File and dataset identifiers */
+@@ -79,7 +79,7 @@
+     /*
+      * Create a file.
+      */
+-    file = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
++    file = H5Fcreate(argv[1], H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+ 
+     /*
+      * Create the dataspace for the dataset in the file.
+@@ -167,7 +167,7 @@
+     /*
+      * Reopen the file.
+      */
+-    file = H5Fopen(H5FILE_NAME, H5F_ACC_RDONLY, H5P_DEFAULT);
++    file = H5Fopen(argv[1], H5F_ACC_RDONLY, H5P_DEFAULT);
+ 
+     /*
+      * Open the dataset.
+@@ -185,6 +185,7 @@
+ 
+     //! [H5Oget_info3_snip]
+ 
++#if 0
+     /*
+      * Find string attribute by iterating through all attributes
+      */
+@@ -203,6 +204,7 @@
+         ret = H5Aclose(attr);
+         ret = H5Tclose(atype);
+     }
++#endif
+ 
+     //! [H5Oget_info3_snip]
+     /*
