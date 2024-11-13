@@ -24,6 +24,6 @@ if grep -q "#define H5_VERS_MAJOR 1" ${HDF5_ROOT}/include/H5public.h; then
    export LIBS="-lhdf5"
 fi
 
-../hdf5-iotest/configure \
+../hdf5-iotest/configure --silent \
                          CC=${CC_DEF} \
                          CFLAGS="@CFLAGS@"
