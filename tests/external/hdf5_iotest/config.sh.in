@@ -25,9 +25,12 @@ else
    CC_DEF=${HDF5_ROOT}/bin/h5pcc
 fi
 
+echo "${CC_DEF}"
+echo "$LD_LIBRARY_PATH"
+
 ../hdf5-iotest/configure \
                          CC=${CC_DEF} \
                          CFLAGS="@CFLAGS@" 
 
 ls -aolF
-cat Makefile
+cat config.log
