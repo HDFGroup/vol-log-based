@@ -10,9 +10,10 @@ rm -rf build
 mkdir build
 cd build
 # The h5(p)cc wrapper correctly parses the hdf5-iotest compile command
-# only in HDF5 versions >= 2.0.0
+# only in HDF5 versions >= 2.0.0${HDF5_ROOT}/bin/h5pcc
+CC_DEF=${HDF5_ROOT}/bin/h5pcc
 if grep -q "#define H5_VERS_MAJOR 1" ${HDF5_ROOT}/include/H5public.h; then
-   CC_DEF=mpicc
+   CC_DEF=$(${HDF5_ROOT}/bin/h5pcc -show | head -n1 | awk '{print $1;}')
    LIB_APPEND=""
    if [ -d ${HDF5_ROOT}/lib64 ]; then
      LIB_APPEND="64"
@@ -21,8 +22,6 @@ if grep -q "#define H5_VERS_MAJOR 1" ${HDF5_ROOT}/include/H5public.h; then
    export LDFLAGS="-L${HDF5_ROOT}/lib${LIB_APPEND}"
    export CPPFLAGS="-I${HDF5_ROOT}/include"
    export LIBS="-lhdf5"
-else
-   CC_DEF=${HDF5_ROOT}/bin/h5pcc
 fi
 
 echo "${CC_DEF}"
