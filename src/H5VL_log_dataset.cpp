@@ -76,9 +76,10 @@ void *H5VL_log_dataset_create (void *obj,
     void **ureqp, *ureq;
     H5D_fill_value_t stat;
     void *lib_state = NULL;
+    void *lib_context = NULL;
     // char lname[1024];
     H5VL_logi_err_finally finally (
-        [&dcpl_id, &lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
+        [&dcpl_id, &lib_state, &lib_context] () -> void { H5VL_logi_restore_lib_stat (lib_state, lib_context); });
 
     try {
         H5VL_LOGI_PROFILING_TIMER_START;
@@ -160,7 +161,7 @@ void *H5VL_log_dataset_create (void *obj,
         H5VL_logi_get_filters (dcpl_id, dip->filters);
 
         // Reset hdf5 context to allow attr operations within a dataset operation
-        H5VL_logi_reset_lib_stat (lib_state);
+        H5VL_logi_reset_lib_stat (lib_state, lib_context);
 
         // Record dataset metadata as attributes
         H5VL_logi_add_att (dp, H5VL_LOG_DATASETI_ATTR_DIMS, H5T_STD_I64LE, H5T_NATIVE_INT64,
@@ -282,7 +283,7 @@ static herr_t H5VL_log_dataset_read_elements (void *dset,
     herr_t err                = 0;
     H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
     H5VL_log_dset_info_t *dip = NULL;  // Dataset info
-    hid_t dsid;                        // Dataset space id
+    hid_t dsid = H5I_INVALID_HID;      // Dataset space id
     H5VL_log_selections *dsel = NULL;  // Selection blocks
 
     try {
@@ -325,7 +326,7 @@ static herr_t H5VL_log_dataset_write_elements (void *dset,
     H5VL_log_dset_t *dp = (H5VL_log_dset_t *)dset;
 
     H5VL_log_dset_info_t *dip = NULL;  // Dataset info
-    hid_t dsid;                        // Dataset space id
+    hid_t dsid = H5I_INVALID_HID;      // Dataset space id
     H5VL_log_selections *dsel = NULL;  // Selection blocks
 
     try {

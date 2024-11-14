@@ -23,7 +23,7 @@ but require the Log VOL to read them back.
 
 ### HDF5 VOL Connector ID
 * This Log VOL connector has been registered with the HDF group with
-  [Connector Identifier 514](https://portal.hdfgroup.org/display/support/Registered+VOL+Connectors).
+  [Connector Identifier 514](https://support.hdfgroup.org/documentation/hdf5-docs/registered_vol_connectors.html).
  
 ### Documents
 * [doc/userguide.md](doc/userguide.md) contains the compile and run instructions.

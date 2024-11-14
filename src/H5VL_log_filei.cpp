@@ -114,8 +114,9 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     hbool_t exists;
     int attbuf[H5VL_LOG_FILEI_NATTR];
     void *lib_state = NULL;
+    void *lib_context = NULL;
     H5VL_logi_err_finally finally (
-        [&lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
+        [&lib_state, &lib_context] () -> void { H5VL_logi_restore_lib_stat (lib_state, lib_context); });
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
@@ -165,7 +166,7 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILE_OPEN_SUBFILE);
 
     // Reset hdf5 context to allow group operations within a file operation
-    H5VL_logi_reset_lib_stat (lib_state);
+    H5VL_logi_reset_lib_stat (lib_state, lib_context);
 
     // Open the LOG group
     loc.obj_type = H5I_FILE;
@@ -203,13 +204,14 @@ void H5VL_log_filei_post_create (H5VL_log_file_t *fp) {
     H5VL_loc_params_t loc;
     int attbuf[H5VL_LOG_FILEI_NATTR];
     void *lib_state = NULL;
+    void *lib_context = NULL;
     H5VL_logi_err_finally finally (
-        [&lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
+        [&lib_state, &lib_context] () -> void { H5VL_logi_restore_lib_stat (lib_state, lib_context); });
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
     // Reset hdf5 context to allow group and attr operations within a file operation
-    H5VL_logi_reset_lib_stat (lib_state);
+    H5VL_logi_reset_lib_stat (lib_state, lib_context);
 
     // Figure out lustre configuration
     H5VL_LOGI_PROFILING_TIMER_START;
@@ -712,8 +714,9 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     int mpierr;
     int attbuf[5];
     void *lib_state = NULL;
+    void *lib_context = NULL;
     H5VL_logi_err_finally finally (
-        [&lib_state] () -> void { H5VL_logi_restore_lib_stat (lib_state); });
+        [&lib_state, &lib_context] () -> void { H5VL_logi_restore_lib_stat (lib_state, lib_context); });
 
 #ifdef LOGVOL_DEBUG
     if (H5VL_logi_debug_verbose ()) { printf ("H5VL_log_filei_close(%p, ...)\n", fp); }
@@ -734,7 +737,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     H5VL_LOGI_PROFILING_TIMER_START;
 
     // Reset hdf5 context to allow file operations within other object close operations
-    H5VL_logi_reset_lib_stat (lib_state);
+    H5VL_logi_reset_lib_stat (lib_state, lib_context);
 
     if (fp->flag != H5F_ACC_RDONLY) {
         // Flush write requests
@@ -773,7 +776,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     CHECK_ERR
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VLGROUP_CLOSE);
 
-    H5VL_logi_restore_lib_stat (lib_state);
+    H5VL_logi_restore_lib_stat (lib_state, lib_context);
 
 #ifdef LOGVOL_PROFILING
     {
