@@ -151,3 +151,4 @@ jobs:
           run: |
             cd ${GITHUB_WORKSPACE}
             make -s distclean
+
