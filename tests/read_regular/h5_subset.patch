@@ -1,21 +1,22 @@
---- h5_cmprss.c	2022-11-09 16:07:15.956324190 -0600
-+++ h5_cmprss.c	2022-11-09 17:28:01.080362350 -0600
-@@ -16,16 +16,45 @@
+--- h5_subset.c	2024-11-12 15:44:34.965999016 -0600
++++ h5_subset_logvol.c	2024-11-12 15:44:16.229740896 -0600
+@@ -16,6 +16,7 @@
   */
  
  #include "hdf5.h"
 +#include "H5VL_log.h"
  
- #define FILE "cmprss.h5"
- #define RANK 2
- #define DIM0 100
- #define DIM1 20
+ #define FILENAME    "subset.h5"
+ #define DATASETNAME "IntArray"
+@@ -27,9 +28,37 @@
+ #define DIM0 8 /* size of dataset */
+ #define DIM1 10
  
 -int
--main()
+-main(void)
 -{
 +int helper(const char *file_name, bool use_log_vol);
- 
++
 +int main(int argc, char **argv) {
 +    herr_t err = 0;
 +    const char *file_name_base;
@@ -44,28 +45,22 @@
 +    MPI_Finalize();
 +    return err;
 +}
-+
 +int helper(const char *file_name, bool use_log_vol) {
-     hid_t file_id, dataset_id, dataspace_id; /* identifiers */
-     hid_t plist_id;
- 
-@@ -40,6 +69,7 @@
-     int i, j, numfilt;
-     int buf[DIM0][DIM1];
-     int rbuf[DIM0][DIM1];
+     hsize_t dims[2], dimsm[2];
+     int     data[DIM0][DIM1];          /* data to write */
+     int     sdata[DIM0_SUB][DIM1_SUB]; /* subset to write */
+@@ -51,8 +80,20 @@
+      * Then create a dataset and write data to it and close the file *
+      * and dataset.                                                  *
+      *****************************************************************/
+-
+-    file_id = H5Fcreate(FILENAME, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 +    hid_t fapl_id = H5P_DEFAULT, log_vol_id = 0;
- 
-     /* Uncomment these variables to use SZIP compression
-     unsigned szip_options_mask;
-@@ -47,7 +77,18 @@
-     */
- 
-     /* Create a file.  */
--    file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 +    file_id = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 +    H5Fclose(file_id);
 +
 +    fapl_id = H5Pcreate(H5P_FILE_ACCESS);
++
 +    if (use_log_vol) {
 +        H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 +        H5Pset_all_coll_metadata_ops(fapl_id, 1);
@@ -75,25 +70,24 @@
 +    }
 +    file_id = H5Fopen(file_name, H5F_ACC_RDWR, fapl_id);
  
-     /* Create dataset "Compressed Data" in the group using absolute name.  */
      dims[0]      = DIM0;
-@@ -87,7 +128,7 @@
-     status = H5Fclose(file_id);
+     dims[1]      = DIM1;
+@@ -86,7 +127,7 @@
+      * values to the dataset.
+      *****************************************************/
  
-     /* Now reopen the file and dataset in the file. */
--    file_id    = H5Fopen(FILE, H5F_ACC_RDWR, H5P_DEFAULT);
+-    file_id    = H5Fopen(FILENAME, H5F_ACC_RDWR, H5P_DEFAULT);
 +    file_id    = H5Fopen(file_name, H5F_ACC_RDWR, fapl_id);
-     dataset_id = H5Dopen2(file_id, "Compressed_Data", H5P_DEFAULT);
+     dataset_id = H5Dopen2(file_id, DATASETNAME, H5P_DEFAULT);
  
-     /* Retrieve filter information. */
-@@ -117,4 +158,10 @@
+     /* Specify size and shape of subset to write. */
+@@ -138,4 +179,9 @@
+     status = H5Sclose(dataspace_id);
      status = H5Dclose(dataset_id);
-     status = H5Pclose(plist_id);
      status = H5Fclose(file_id);
 +
 +    H5Pclose(fapl_id);
 +    if (log_vol_id > 0) {
 +        H5VLclose(log_vol_id);
 +    }
-+    return 0;
  }

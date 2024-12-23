@@ -30,14 +30,14 @@ SEQ_SRCS = h5_attribute.c \
 
 TESTPROGRAMS = $(SEQ_SRCS:.c=)
 
-HDF5_VERSION = 1_13_0
-HDF5_URL = https://raw.githubusercontent.com/HDFGroup/hdf5/hdf5-${HDF5_VERSION}/examples
+HDF5_VERSION = develop
+HDF5_URL = https://raw.githubusercontent.com/HDFGroup/hdf5/${HDF5_VERSION}/HDF5Examples/C/TUTR
 
 .SECONDEXPANSION:
 
 $(SEQ_SRCS): %.c : $$(wildcard %.patch)
 	@DOWNLOAD_CMD@ $(HDF5_URL)/$@
-	if [ -f ${srcdir}/$(basename $@).patch.$(HDF5_VERSION) ]; then patch -st $@ < ${srcdir}/$(basename $@).patch.$(HDF5_VERSION); fi
+	if [ -f ${srcdir}/$(basename $@).patch ]; then patch -st $@ < ${srcdir}/$(basename $@).patch; fi
 
 BUILT_SOURCES = $(SEQ_SRCS) $(PAR_SRCS)
 
@@ -46,11 +46,11 @@ check_PROGRAMS = $(TESTPROGRAMS)
 EXTRA_DIST = README.md \
              wrap_runs.sh \
              parallel_run.sh \
-             h5_attribute.patch.1_13_0 \
-             h5_cmprss.patch.1_13_0 \
-             h5_extend_write.patch.1_13_0 \
-             h5_group.patch.1_13_0 \
-             h5_subset.patch.1_13_0
+	     h5_attribute.patch \
+	     h5_cmprss.patch \
+	     h5_extend_write.patch \
+	     h5_group.patch \
+	     h5_subset.patch
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead

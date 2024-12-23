@@ -66,31 +66,31 @@ nodist_h5_subset_SOURCES = h5_subset.c
 nodist_ph5example_SOURCES = ph5example.c
 endif
 
-HDF5_VERSION = hdf5-1_13_0
+HDF5_VERSION = develop
 HDF5_URL = https://raw.githubusercontent.com/HDFGroup/hdf5/${HDF5_VERSION}
 
 .SECONDEXPANSION:
 
-$(SEQ_SRCS): %.c : $$(wildcard %.patch.$(HDF5_VERSION))
-	@DOWNLOAD_CMD@ $(HDF5_URL)/examples/$@
-	if [ -f ${srcdir}/$(basename $@).patch.$(HDF5_VERSION) ]; then patch -st $@ < ${srcdir}/$(basename $@).patch.$(HDF5_VERSION); fi
+$(SEQ_SRCS): %.c : $$(wildcard %.patch)
+	@DOWNLOAD_CMD@ $(HDF5_URL)/HDF5Examples/C/TUTR/$@
+	if [ -f ${srcdir}/$(basename $@).patch ]; then patch -st $@ < ${srcdir}/$(basename $@).patch; fi
 	$(SED_I) -e "s|main(.*|main(int argc, char **argv)|g" $@
-	$(SED_I) -e "s|H5Fcreate(FILE|H5Fcreate(argv[1]|g" $@
+	$(SED_I) -e "s|H5Fcreate(FILENAME|H5Fcreate(argv[1]|g" $@
 	$(SED_I) -e "s|H5Fcreate(H5FILE_NAME|H5Fcreate(argv[1]|g" $@
-	$(SED_I) -e "s|H5Fopen(FILE|H5Fopen(argv[1]|g" $@
+	$(SED_I) -e "s|H5Fopen(FILENAME|H5Fopen(argv[1]|g" $@
 	$(SED_I) -e "s|H5Fopen(H5FILE_NAME|H5Fopen(argv[1]|g" $@
 
-$(PAR_SRCS): %.c : $$(wildcard %.patch.$(HDF5_VERSION))
-	@DOWNLOAD_CMD@ $(HDF5_URL)/examples/$@
-	if [ -f ${srcdir}/$(basename $@).patch.$(HDF5_VERSION) ]; then patch -st $@ < ${srcdir}/$(basename $@).patch.$(HDF5_VERSION); fi
+$(PAR_SRCS): %.c : $$(wildcard %.patch)
+	@DOWNLOAD_CMD@ $(HDF5_URL)/HDF5Examples/C/H5PAR/$@
+	if [ -f ${srcdir}/$(basename $@).patch ]; then patch -st $@ < ${srcdir}/$(basename $@).patch; fi
 
 check_PROGRAMS = $(TESTPROGRAMS)
 
 EXTRA_DIST = seq_runs.sh \
              parallel_run.sh \
-             ph5example.patch.$(HDF5_VERSION) \
-             h5_attribute.patch.$(HDF5_VERSION) \
-             h5_interm_group.patch.$(HDF5_VERSION)
+	     ph5example.patch \
+	     h5_attribute.patch \
+	     h5_interm_group.patch
 
 # autimake 1.11.3 has not yet implemented AM_TESTS_ENVIRONMENT
 # For newer versions, we can use AM_TESTS_ENVIRONMENT instead

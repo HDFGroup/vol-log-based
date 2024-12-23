@@ -32,7 +32,7 @@ jobs:
         - name: Set up dependencies
           run: |
             sudo apt-get update
-            sudo apt-get install automake autoconf libtool libtool-bin m4
+            sudo apt-get install automake autoconf libtool libtool-bin m4 uuid-dev
             # zlib
             sudo apt-get install zlib1g-dev
             # mpi
@@ -59,6 +59,7 @@ jobs:
                         --disable-tests \
                         --disable-fortran \
                         --disable-cxx \
+                        --enable-shared --disable-static \
                         CC=mpicc
             make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
             make -s -j 4 distclean >> qout 2>&1
