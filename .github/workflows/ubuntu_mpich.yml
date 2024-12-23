@@ -104,7 +104,7 @@ jobs:
             autoreconf -i
             ./configure --with-hdf5=${GITHUB_WORKSPACE}/HDF5 \
                         --enable-test-netcdf4=${GITHUB_WORKSPACE}/NetCDF \
-                        --disable-test-hdf5-iotest \
+                        --enable-test-hdf5-iotest \
                         --with-mpi=${GITHUB_WORKSPACE}/MPICH
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
         - name: Print config.log if error
@@ -151,4 +151,8 @@ jobs:
           run: |
             cd ${GITHUB_WORKSPACE}
             make -s distclean
+
+        - name: Setup tmate session
+          if: ${{ failure() }}
+          uses: mxschmitt/action-tmate@v3
 
