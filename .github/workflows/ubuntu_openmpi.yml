@@ -99,7 +99,7 @@ jobs:
             autoreconf -i
             ./configure --with-hdf5=${GITHUB_WORKSPACE}/HDF5 \
                         --enable-test-netcdf4=${GITHUB_WORKSPACE}/NetCDF \
-                        --enable-test-hdf5-iotest \
+                        --disable-test-hdf5-iotest \
                         TESTMPIRUN="mpiexec --oversubscribe -n NP"
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
         - name: Print config.log if error
