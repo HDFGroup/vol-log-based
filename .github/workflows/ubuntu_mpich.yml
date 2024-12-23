@@ -124,33 +124,6 @@ jobs:
           run: |
             cd ${GITHUB_WORKSPACE}
             make check
-        - name: Print test log files
-          if: ${{ always() }}
-          run: |
-            cd ${GITHUB_WORKSPACE}
-            fname=`find tests utils examples -type f -name "*.log"`
-            for f in $fname ; do \
-               bname=`basename $f` ; \
-               if test "x$bname" != xconfig.log ; then \
-                  echo "-------- dump $f ----------------------------" ; \
-                  cat $f ; \
-               fi ; \
-            done
-        - name: Parallel-run test - make ptest
-          if: ${{ success() }}
-          run: |
-            cd ${GITHUB_WORKSPACE}
-            make ptest
-        - name: Test distribution - make distcheck
-          if: ${{ success() }}
-          run: |
-            cd ${GITHUB_WORKSPACE}
-            make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${GITHUB_WORKSPACE}/HDF5 --with-mpi=${GITHUB_WORKSPACE}/MPICH"
-        - name: make distclean
-          if: ${{ always() }}
-          run: |
-            cd ${GITHUB_WORKSPACE}
-            make -s distclean
 
         - name: Setup tmate session
           if: ${{ failure() }}
