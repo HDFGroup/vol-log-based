@@ -110,8 +110,12 @@ void *H5VL_log_dataset_create (void *obj,
 
         // Create anchor dataset
         // TODO: native VOL will not save filter information when layout is contiguous
-        err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
-        CHECK_ERR
+        // As of HDF5 2.0, H5Pset* routines fail when used on default property lists,
+        // and the default is contiguous anyway.
+        if(dcpl_id != H5P_DATASET_CREATE_DEFAULT) {
+          err = H5Pset_layout (dcpl_id, H5D_CONTIGUOUS);
+          CHECK_ERR
+        }
 
         dp->id = dp->fp->ndset;  // ID needs to be set before writing to attribute
 
