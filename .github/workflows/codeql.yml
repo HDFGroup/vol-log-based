@@ -62,17 +62,6 @@ jobs:
         - name: Set up dependencies
           run: |
             sudo apt-get update
-            sudo apt-get -y install automake autoconf libtool libtool-bin m4 cmake
-            # The MPICH installed on github actions is too slow
-            # sudo apt-get install mpich
-            # mpicc -v
-            # zlib
-            ## sudo apt-get -y install zlib1g-dev
-            make -s -j 8 distclean >> qout 2>&1
-
-        - name: Set up dependencies
-          run: |
-            sudo apt-get update
             sudo apt-get install automake autoconf libtool libtool-bin m4 uuid-dev
             # The MPICH installed on github actions is too slow
             # sudo apt-get install mpich
