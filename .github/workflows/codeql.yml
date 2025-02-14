@@ -67,7 +67,7 @@ jobs:
             # sudo apt-get install mpich
             # mpicc -v
             # zlib
-            sudo apt-get -y install zlib1g-dev
+            ## sudo apt-get -y install zlib1g-dev
             make -s -j 8 distclean >> qout 2>&1
 
         - name: Set up dependencies
@@ -167,11 +167,11 @@ jobs:
                         --with-mpi=${GITHUB_WORKSPACE}/MPICH
             # Do NOT test QMCPACK, as it requires FFTW which fails to build
 
-        - name: Print config.log if error
-          if: ${{ failure() }}
-          run: |
-            cd ${GITHUB_WORKSPACE}
-            cat config.log
+#        - name: Print config.log if error
+#          if: ${{ failure() }}
+#          run: |
+#            cd ${GITHUB_WORKSPACE}
+#            cat config.log
 
         - name: Build Log VOL connector
           if: ${{ success() }}
@@ -212,11 +212,11 @@ jobs:
             cd ${GITHUB_WORKSPACE}
             make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${GITHUB_WORKSPACE}/HDF5 --with-mpi=${GITHUB_WORKSPACE}/MPICH"
 
-        - name: make distclean
-          if: ${{ always() }}
-          run: |
-            cd ${GITHUB_WORKSPACE}
-            make -s distclean
+#        - name: make distclean
+#          if: ${{ always() }}
+#          run: |
+#            cd ${GITHUB_WORKSPACE}
+#            make -s distclean
 
         - name: Perform CodeQL Analysis
           uses: github/codeql-action/analyze@v3
