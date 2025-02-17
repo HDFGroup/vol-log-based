@@ -132,7 +132,6 @@ void *H5VL_log_dataset_create (void *obj,
         // Construct new dataset info
         try {
           dip = new H5VL_log_dset_info_t ();
-          CHECK_PTR (dip)
         }
         catch (const std::bad_alloc&) {
           err = -1;
@@ -312,7 +311,6 @@ static herr_t H5VL_log_dataset_read_elements (void *dset,
 
         try {
           dsel = new H5VL_log_selections (dsid);
-          CHECK_PTR (dsel)
         }
         catch (const std::bad_alloc&) {
           err = -1;
@@ -363,7 +361,6 @@ static herr_t H5VL_log_dataset_write_elements (void *dset,
         }
         dsel = new H5VL_log_selections (dsid);
         H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
-        CHECK_PTR (dsel)
 
         // H5S_All means using file space
         if (mem_space_id == H5S_ALL) mem_space_id = dsid;
@@ -625,7 +622,6 @@ herr_t H5VL_log_dataset_optional (void *obj,
             try {
               dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
                                               varnarg->counts);
-              CHECK_PTR (dsel)
             }
             catch (const std::bad_alloc&) {
               err = -1;
@@ -640,7 +636,6 @@ herr_t H5VL_log_dataset_optional (void *obj,
             try {
               dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
                                               varnarg->counts);
-              CHECK_PTR (dsel)
             }
             catch (const std::bad_alloc&) {
               err = -1;

@@ -75,7 +75,6 @@ herr_t H5VL_log_get_wrap_ctx (const void *obj, void **wrap_ctx) {
         /* Allocate new VOL object wrapping context for the pass through connector */
         try {
           ctx = new H5VL_log_wrap_ctx_t ();
-          CHECK_PTR (ctx)
         }
         catch (const std::bad_alloc&) {
           err = -1;
