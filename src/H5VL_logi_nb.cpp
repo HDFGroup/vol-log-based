@@ -166,7 +166,7 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 }
 
 H5VL_log_wreq_t::~H5VL_log_wreq_t () {
-    if (meta_buf) { free (meta_buf); }
+    free (meta_buf);
 }
 
 void H5VL_log_wreq_t::resize (size_t size) {
@@ -829,9 +829,10 @@ void H5VL_log_nb_flush_write_reqs (void *file) {
 
                 // mem space
                 char *mbuff = (char *)malloc (mbsize);
-                for (int i = 0, mstart = 0; i < cnt; i++) {
-                    memcpy (mbuff + mstart, (void *)moffs[i], mlens[i]);
-                    mstart += mlens[i];
+                hsize_t copy_offset;
+                for (int j = 0, copy_offset = 0; j < cnt; j++) {
+                    memcpy (mbuff + copy_offset, (void *)moffs[j], mlens[j]);
+                    copy_offset += mlens[j];
                 }
                 hid_t mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
 

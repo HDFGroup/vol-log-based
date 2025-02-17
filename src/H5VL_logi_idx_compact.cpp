@@ -68,7 +68,7 @@ H5VL_logi_compact_idx_t::H5VL_logi_compact_idx_entry_t::H5VL_logi_compact_idx_en
 }
 
 H5VL_logi_compact_idx_t::H5VL_logi_compact_idx_entry_t::~H5VL_logi_compact_idx_entry_t () {
-    if (nsel >= 0 && (this->blocks)) { free (this->blocks); }
+    if (nsel >= 0) { free (this->blocks); }
 }
 
 H5VL_logi_compact_idx_t::H5VL_logi_compact_idx_t (H5VL_log_file_t *fp) : H5VL_logi_idx_t (fp) {}

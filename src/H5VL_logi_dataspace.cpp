@@ -431,13 +431,13 @@ err_out:
         free (hstarts[0]);
         free (hstarts);
     }
-    if (group) { free (group); }
+    free (group);
 
     if (err) { throw "Can not retrieve selections"; }
 }
 
 H5VL_log_selections::~H5VL_log_selections () {
-    if (dims) { free (dims); }
+    free (dims);
     if (sels_arr) {
         if (starts[0]) { free (starts[0]); }
         free (starts);
