@@ -55,6 +55,7 @@ class H5VL_log_wreq_t {
 
     H5VL_log_wreq_t ();
     H5VL_log_wreq_t (const H5VL_log_wreq_t &obj);
+    H5VL_log_wreq_t& operator=(const H5VL_log_wreq_t &obj);
     H5VL_log_wreq_t (void *dp, H5VL_log_selections *sels);
     ~H5VL_log_wreq_t ();
 };
