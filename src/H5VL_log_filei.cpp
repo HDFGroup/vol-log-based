@@ -899,7 +899,7 @@ void H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
     attbuf[0] = fp->ndset;
     attbuf[1] = fp->nldset;
     attbuf[2] = fp->nmdset;
-    attbuf[3] = fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
+    attbuf[3] = fp->config & ~(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
     attbuf[4] = fp->ngroup;
     H5VL_logi_add_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR, H5T_STD_I32LE,
                        H5T_NATIVE_INT32, H5VL_LOG_FILEI_NATTR, attbuf, dxpl_id, NULL);

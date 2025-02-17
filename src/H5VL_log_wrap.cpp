@@ -63,7 +63,7 @@ err_out:;
 herr_t H5VL_log_get_wrap_ctx (const void *obj, void **wrap_ctx) {
     herr_t err         = 0;
     H5VL_log_obj_t *op = (H5VL_log_obj_t *)obj;
-    H5VL_log_wrap_ctx_t *ctx;
+    H5VL_log_wrap_ctx_t *ctx = nullptr;
 
     try {
 #ifdef LOGVOL_DEBUG
@@ -73,8 +73,14 @@ herr_t H5VL_log_get_wrap_ctx (const void *obj, void **wrap_ctx) {
 #endif
 
         /* Allocate new VOL object wrapping context for the pass through connector */
-        ctx = new H5VL_log_wrap_ctx_t ();
-        CHECK_PTR (ctx)
+        try {
+          ctx = new H5VL_log_wrap_ctx_t ();
+          CHECK_PTR (ctx)
+        }
+        catch (const std::bad_alloc&) {
+          err = -1;
+        }
+        CHECK_ERR
 
         /* Increment reference count on underlying VOL ID, and copy the VOL info */
         ctx->uvlid = op->uvlid;

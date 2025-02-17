@@ -33,7 +33,7 @@
 H5VL_log_wreq_t::H5VL_log_wreq_t () {}
 H5VL_log_wreq_t::H5VL_log_wreq_t (const H5VL_log_wreq_t &rhs) {
     meta_buf = (char *)malloc (rhs.hdr->meta_size);
-    if (!meta_buf) throw "OOM";
+    if (!meta_buf) throw std::bad_alloc();
     hdr     = (H5VL_logi_meta_hdr *)meta_buf;
     sel_buf = meta_buf + (rhs.sel_buf - rhs.meta_buf);
     memcpy (meta_buf, rhs.meta_buf, rhs.hdr->meta_size);

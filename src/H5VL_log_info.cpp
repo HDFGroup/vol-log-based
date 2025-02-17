@@ -184,7 +184,9 @@ herr_t H5VL_log_str_to_info (const char *str, void **_info) {
 #endif
 
     /* Retrieve the underlying VOL connector value and info */
-    sscanf (str, "under_vol=%u;", &under_vol_value);
+    if(sscanf (str, "under_vol=%u;", &under_vol_value) != 1) {
+      return -1; // Failed to parse the input string
+    };
     uvlid                = H5VLregister_connector_by_value ((H5VL_class_value_t)under_vol_value,
                                              H5P_VOL_INITIALIZE_DEFAULT);
     under_vol_info_start = strchr (str, '{');
