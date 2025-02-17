@@ -65,7 +65,7 @@ void *H5VL_log_dataset_create (void *obj,
     int i;
     H5VL_log_obj_t *op        = (H5VL_log_obj_t *)obj;
     H5VL_log_dset_t *dp       = NULL;
-    H5VL_log_dset_info_t *dip = NULL;  // Dataset info
+    H5VL_log_dset_info_t *dip = nullptr;  // Dataset info
     // H5VL_link_create_args_t args;
     // H5VL_loc_params_t loc;
     hid_t zero_space = -1;
@@ -130,8 +130,13 @@ void *H5VL_log_dataset_create (void *obj,
         H5Sclose (zero_space);
 
         // Construct new dataset info
-        dip = new H5VL_log_dset_info_t ();
-        CHECK_PTR (dip)
+        try {
+          dip = new H5VL_log_dset_info_t ();
+        }
+        catch (const std::bad_alloc&) {
+          err = -1;
+          ERR_OUT ("Memory allocation failed")
+        }
 
         dip->dtype = H5Tcopy (type_id);
         CHECK_ID (dip->dtype)
@@ -288,7 +293,7 @@ static herr_t H5VL_log_dataset_read_elements (void *dset,
     H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
     H5VL_log_dset_info_t *dip = NULL;  // Dataset info
     hid_t dsid = H5I_INVALID_HID;      // Dataset space id
-    H5VL_log_selections *dsel = NULL;  // Selection blocks
+    H5VL_log_selections *dsel = nullptr;  // Selection blocks
 
     try {
         if (!dp->fp->is_log_based_file) {
@@ -303,7 +308,15 @@ static herr_t H5VL_log_dataset_read_elements (void *dset,
         } else {
             dsid = file_space_id;
         }
-        dsel = new H5VL_log_selections (dsid);
+
+        try {
+          dsel = new H5VL_log_selections (dsid);
+        }
+        catch (const std::bad_alloc&) {
+          err = -1;
+          ERR_OUT ("Memory allocation failed")
+        }
+
         H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
 
         // H5S_All means using file space
@@ -348,7 +361,6 @@ static herr_t H5VL_log_dataset_write_elements (void *dset,
         }
         dsel = new H5VL_log_selections (dsid);
         H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
-        CHECK_PTR (dsel)
 
         // H5S_All means using file space
         if (mem_space_id == H5S_ALL) mem_space_id = dsid;
@@ -607,19 +619,29 @@ herr_t H5VL_log_dataset_optional (void *obj,
 
         if (args->op_type == H5Dwrite_n_op_val) {
             H5VL_LOGI_PROFILING_TIMER_START;
-            dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
-                                            varnarg->counts);
+            try {
+              dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
+                                              varnarg->counts);
+            }
+            catch (const std::bad_alloc&) {
+              err = -1;
+              ERR_OUT ("Memory allocation failed")
+            }
             H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
-            CHECK_PTR (dsel)
 
             H5VL_log_dataseti_write (dp, varnarg->mem_type_id, H5S_BLOCK, dsel, dxpl_id,
                                      varnarg->buf, req);
         } else if (args->op_type == H5Dread_n_op_val) {
             H5VL_LOGI_PROFILING_TIMER_START;
-            dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
-                                            varnarg->counts);
+            try {
+              dsel = new H5VL_log_selections (dip->ndim, dip->dims, varnarg->n, varnarg->starts,
+                                              varnarg->counts);
+            }
+            catch (const std::bad_alloc&) {
+              err = -1;
+              ERR_OUT ("Memory allocation failed")
+            }
             H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOGI_GET_DATASPACE_SELECTION);
-            CHECK_PTR (dsel)
 
             H5VL_log_dataseti_read (dp, varnarg->mem_type_id, H5S_BLOCK, dsel, dxpl_id,
                                     varnarg->buf, req);

@@ -33,11 +33,23 @@
 H5VL_log_wreq_t::H5VL_log_wreq_t () {}
 H5VL_log_wreq_t::H5VL_log_wreq_t (const H5VL_log_wreq_t &rhs) {
     meta_buf = (char *)malloc (rhs.hdr->meta_size);
-    if (!meta_buf) throw "OOM";
+    if (!meta_buf) throw std::bad_alloc();
     hdr     = (H5VL_logi_meta_hdr *)meta_buf;
     sel_buf = meta_buf + (rhs.sel_buf - rhs.meta_buf);
     memcpy (meta_buf, rhs.meta_buf, rhs.hdr->meta_size);
 }
+H5VL_log_wreq_t& H5VL_log_wreq_t::operator=(const H5VL_log_wreq_t &rhs) {
+    if (this != &rhs) {
+        free(meta_buf);
+        meta_buf = (char *)malloc(rhs.hdr->meta_size);
+        if (!meta_buf) throw std::bad_alloc();
+        hdr = (H5VL_logi_meta_hdr *)meta_buf;
+        sel_buf = meta_buf + (rhs.sel_buf - rhs.meta_buf);
+        memcpy(meta_buf, rhs.meta_buf, rhs.hdr->meta_size);
+    }
+    return *this;
+}
+
 
 H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
     H5VL_log_dset_t *dp       = (H5VL_log_dset_t *)dset;
@@ -154,7 +166,7 @@ H5VL_log_wreq_t::H5VL_log_wreq_t (void *dset, H5VL_log_selections *sels) {
 }
 
 H5VL_log_wreq_t::~H5VL_log_wreq_t () {
-    if (meta_buf) { free (meta_buf); }
+    free (meta_buf);
 }
 
 void H5VL_log_wreq_t::resize (size_t size) {
@@ -817,9 +829,10 @@ void H5VL_log_nb_flush_write_reqs (void *file) {
 
                 // mem space
                 char *mbuff = (char *)malloc (mbsize);
-                for (int i = 0, mstart = 0; i < cnt; i++) {
-                    memcpy (mbuff + mstart, (void *)moffs[i], mlens[i]);
-                    mstart += mlens[i];
+                hsize_t copy_offset = 0;
+                for (int k = 0; k < cnt; k++) {
+                    memcpy (mbuff + copy_offset, (void *)moffs[k], mlens[k]);
+                    copy_offset += mlens[k];
                 }
                 hid_t mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
 

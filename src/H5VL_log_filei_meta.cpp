@@ -259,9 +259,10 @@ void H5VL_log_filei_metaflush (H5VL_log_file_t *fp) {
 
             // mem space
             char *mbuff = (char *)malloc (mdsize);
-            for (int i = 0, mstart = 0; i < nentry; i++) {
-                memcpy (mbuff + mstart, (void *)offs[i], lens[i]);
-                mstart += lens[i];
+            hsize_t copy_pos;
+            for (int j = 0, copy_pos = 0; j < nentry; j++) {
+                memcpy (mbuff + copy_pos, (void *)offs[j], lens[j]);
+                copy_pos += lens[j];
             }
             hid_t mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
 

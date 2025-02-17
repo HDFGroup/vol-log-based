@@ -986,18 +986,18 @@ void H5VL_log_dataseti_write (H5VL_log_dset_t *dp,
     // Filtering
     H5VL_LOGI_PROFILING_TIMER_START;
     if (dip->filters.size ()) {
-        char *buf = NULL;
+        char *buf_filter = NULL;
         int csize = 0;
 
-        H5VL_logi_filter (dip->filters, db.xbuf, db.size, (void **)&buf, &csize);
+        H5VL_logi_filter (dip->filters, db.xbuf, db.size, (void **)&buf_filter, &csize);
 
         if (db.xbuf != db.ubuf) { H5VL_log_filei_bfree (dp->fp, db.xbuf); }
 
         // Copy to xbuf
         // xbuf is managed buffer, buf is not, can't assign directly
         H5VL_log_filei_balloc (dp->fp, csize, (void **)(&(db.xbuf)));
-        memcpy (db.xbuf, buf, csize);
-        free (buf);
+        memcpy (db.xbuf, buf_filter, csize);
+        free (buf_filter);
         db.size = csize;
     }
     H5VL_LOGI_PROFILING_TIMER_STOP (dp->fp, TIMER_H5VL_LOG_DATASET_WRITE_FILTER);
