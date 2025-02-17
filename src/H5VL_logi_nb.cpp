@@ -829,10 +829,10 @@ void H5VL_log_nb_flush_write_reqs (void *file) {
 
                 // mem space
                 char *mbuff = (char *)malloc (mbsize);
-                hsize_t copy_offset = 0;
+                hsize_t copy_pos = 0;
                 for (int k = 0; k < cnt; k++) {
-                    memcpy (mbuff + copy_offset, (void *)moffs[k], mlens[k]);
-                    copy_offset += mlens[k];
+                    memcpy (mbuff + copy_pos, (void *)moffs[k], mlens[k]);
+                    copy_pos += mlens[k];
                 }
                 hid_t mspace_id = H5Screate_simple (1, &mbsize, &mbsize);
 
