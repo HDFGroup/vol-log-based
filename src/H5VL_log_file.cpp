@@ -187,7 +187,7 @@ err_out:;
 fn_exit:;
     if (comm != MPI_COMM_SELF) { MPI_Comm_free (&comm); }
     if (mpiinfo != MPI_INFO_NULL) { MPI_Info_free (&mpiinfo); }
-    if (info) { free (info); }
+    free (info);
 
     return (void *)fp;
 } /* end H5VL_log_file_create() */
@@ -324,7 +324,7 @@ err_out:;
 fn_exit:;
     if (comm != MPI_COMM_SELF) { MPI_Comm_free (&comm); }
     if (mpiinfo != MPI_INFO_NULL) { MPI_Info_free (&mpiinfo); }
-    if (info) { free (info); }
+    free (info);
     return (void *)fp;
 } /* end H5VL_log_file_open() */
 

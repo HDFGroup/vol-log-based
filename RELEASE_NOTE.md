@@ -122,7 +122,7 @@
   + testing the Log VOL connector as a Pass-through VOL.
     + tests/testcases, tests/basic, tests/dynamic, and tests/read_regular
       additionally tests using the Log VOL connector on top of the native VOL. Test programs
-      are re-used and no additional test programs are added. Unlike tests/passthru
+      are reused and no additional test programs are added. Unlike tests/passthru
       where we expect users to specify the underlying VOLs, all necessary
       environment variables are set in the wrap_runs.sh and parallel_run.sh
       scripts. Running "make check" or "make ptest" is enough perform the test.

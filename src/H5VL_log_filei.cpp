@@ -120,7 +120,7 @@ void H5VL_log_filei_post_open (H5VL_log_file_t *fp) {
 
     H5VL_LOGI_PROFILING_TIMER_START;
 
-    // check for exisitence of __int_att;
+    // check for existence of __int_att;
     // if inexists, mark as regular file and return directly.
     exists = H5VL_logi_exists_att (fp, H5VL_LOG_FILEI_ATTR, fp->dxplid);
     CHECK_LOG_INTERNAL_EXIST (exists);
@@ -687,7 +687,7 @@ void H5VL_log_filei_flush (H5VL_log_file_t *fp, hid_t dxplid) {
 
     H5VL_LOGI_PROFILING_TIMER_STOP (fp, TIMER_H5VL_LOG_FILEI_FLUSH);
 }
-
+#if 0 // UNUSED
 static inline void print_info (MPI_Info *info_used) {
     int i, nkeys;
 
@@ -708,7 +708,7 @@ static inline void print_info (MPI_Info *info_used) {
     }
     printf ("-----------------------------------------------------------\n");
 }
-
+#endif
 void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     herr_t err = 0;
     int mpierr;
@@ -805,7 +805,7 @@ void H5VL_log_filei_close (H5VL_log_file_t *fp) {
     // Free dataset info
     for (auto info : fp->dsets_info) {
         if (info) {
-            if (info->fill) { free (info->fill); }
+            free (info->fill);
             delete info;
         }
     }
@@ -899,7 +899,7 @@ void H5VL_log_filei_create_subfile (H5VL_log_file_t *fp,
     attbuf[0] = fp->ndset;
     attbuf[1] = fp->nldset;
     attbuf[2] = fp->nmdset;
-    attbuf[3] = fp->config & !(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
+    attbuf[3] = fp->config & ~(H5VL_FILEI_CONFIG_SUBFILING);  // No subfiling flag in a subfile
     attbuf[4] = fp->ngroup;
     H5VL_logi_add_att (fp->sfp, fp->uvlid, H5I_FILE, H5VL_LOG_FILEI_ATTR, H5T_STD_I32LE,
                        H5T_NATIVE_INT32, H5VL_LOG_FILEI_NATTR, attbuf, dxpl_id, NULL);

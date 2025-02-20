@@ -472,7 +472,7 @@ herr_t H5VL_log_attr_specific (void *obj,
     H5VL_LOGI_EXP_CATCH_ERR
 
 err_out:;
-    if (ctx) { free (ctx); }
+    free (ctx);
     if (iname && iname != original_name) { free (iname); }
     // Restore name in loc_param
     if (original_name) {

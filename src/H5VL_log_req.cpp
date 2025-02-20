@@ -23,15 +23,15 @@
 /********************* */
 /* Function prototypes */
 /********************* */
-const H5VL_request_class_t H5VL_log_request_g {
-    H5VL_log_request_wait,   /* wait */
-    H5VL_log_request_notify, /* notify */
-    H5VL_log_request_cancel, /* cancel */
-    //    H5VL_log_request_specific_reissue,                     /* specific_reissue */
-    H5VL_log_request_specific, /* specific */
-    H5VL_log_request_optional, /* optional */
-    H5VL_log_request_free      /* free */
-};
+//const H5VL_request_class_t H5VL_log_request_g {
+//    H5VL_log_request_wait,   /* wait */
+//    H5VL_log_request_notify, /* notify */
+//    H5VL_log_request_cancel, /* cancel */
+//    //    H5VL_log_request_specific_reissue,                     /* specific_reissue */
+//    H5VL_log_request_specific, /* specific */
+//    H5VL_log_request_optional, /* optional */
+//    H5VL_log_request_free      /* free */
+//};
 
 /*-------------------------------------------------------------------------
  * Function:    H5VL_log_request_wait
