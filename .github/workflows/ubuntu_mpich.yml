@@ -25,15 +25,21 @@ env:
    NETCDF_VERSION: 4.9.2
 
 jobs:
-    build:
+
+#################################################
+# Testing with the latest HDF5 release
+#################################################
+
+   vol-log-based-hdf5-lastest:
       runs-on: ubuntu-latest
       timeout-minutes: 60
+
       steps:
         - uses: actions/checkout@v4.1.1
         - name: Set up dependencies
           run: |
             sudo apt-get update
-            sudo apt-get install automake autoconf libtool libtool-bin m4 uuid-dev
+            sudo apt-get install automake autoconf libtool libtool-bin m4 uuid-dev cmake
             # The MPICH installed on github actions is too slow
             # sudo apt-get install mpich
             # mpicc -v
@@ -61,23 +67,15 @@ jobs:
             rm -rf HDF5 ; mkdir HDF5 ; cd HDF5
             wget -cq https://github.com/HDFGroup/hdf5/releases/latest/download/hdf5.tar.gz
             tar -zxf hdf5.tar.gz
-            cd hdf5-*
-            ./configure --prefix=${GITHUB_WORKSPACE}/HDF5 \
-                        --silent \
-                        --enable-parallel \
-                        --enable-build-mode=production \
-                        --enable-unsupported \
-                        --enable-threadsafe \
-                        --disable-doxygen-doc \
-                        --disable-doxygen-man \
-                        --disable-doxygen-html \
-                        --disable-tests \
-                        --disable-fortran \
-                        --disable-cxx \
-                        --enable-shared --disable-static \
-                        CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc
-            make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
-            make -s -j 4 distclean >> qout 2>&1
+            ln -sf hdf5-* hdf5
+            cd hdf5
+            mkdir build
+            cd build
+            cmake -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/HDF5 -DHDF5_ENABLE_PARALLEL=ON -DHDF5_ENABLE_THREADSAFE=ON \
+               -DHDF5_ALLOW_UNSUPPORTED=ON -DBUILD_TESTING=OFF -DHDF5_BUILD_HL_LIB=OFF \
+               -DHDF5_BUILD_EXAMPLES=OFF -DHDF5_BUILD_TOOLS:BOOL=OFF \
+               -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=${GITHUB_WORKSPACE}/MPICH/bin/mpicc ..
+            make -j2 install
         - name: Install NetCDF
           run: |
             cd ${GITHUB_WORKSPACE}
@@ -152,3 +150,130 @@ jobs:
             cd ${GITHUB_WORKSPACE}
             make -s distclean
 
+#######################################
+# Testing using HDF5's "develop" branch
+#######################################
+
+   vol-log-based-hdf5-develop:
+      runs-on: ubuntu-latest
+      timeout-minutes: 60
+
+      steps:
+        
+        - name: Checkout HDF5 develop
+          uses: actions/checkout@v4.1.1
+          with:
+            repository: HDFGroup/hdf5
+            path: hdf5
+
+        - uses: actions/checkout@v4.1.1
+        - name: Set up dependencies
+          run: |
+            sudo apt-get update
+            sudo apt-get install automake autoconf libtool libtool-bin m4 uuid-dev cmake
+            # The MPICH installed on github actions is too slow
+            # sudo apt-get install mpich
+            # mpicc -v
+            # zlib
+            sudo apt-get install zlib1g-dev
+        - name: Build MPICH
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            rm -rf MPICH ; mkdir MPICH ; cd MPICH
+            wget -q https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz
+            gzip -dc mpich-${MPICH_VERSION}.tar.gz | tar -xf -
+            cd mpich-${MPICH_VERSION}
+            ./configure --prefix=${GITHUB_WORKSPACE}/MPICH \
+                        --silent \
+                        --enable-romio \
+                        --with-file-system=ufs \
+                        --with-device=ch3:sock \
+                        --disable-fortran \
+                        CC=gcc
+            make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
+            make -s -j 4 distclean >> qout 2>&1
+        - name: Install HDF5 develop
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            rm -rf HDF5 ; mkdir HDF5
+            cd hdf5
+            mkdir build
+            cd build
+            cmake -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/HDF5 -DHDF5_ENABLE_PARALLEL=ON -DHDF5_ENABLE_THREADSAFE=ON \
+               -DHDF5_ALLOW_UNSUPPORTED=ON -DBUILD_TESTING=OFF -DHDF5_BUILD_HL_LIB=OFF \
+               -DHDF5_BUILD_EXAMPLES=OFF -DHDF5_BUILD_TOOLS:BOOL=OFF \
+               -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=${GITHUB_WORKSPACE}/MPICH/bin/mpicc ..
+            make -j2 install
+        - name: Install NetCDF
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            rm -rf /NetCDF ; mkdir NetCDF ; cd NetCDF
+            wget -qc https://github.com/Unidata/netcdf-c/archive/refs/tags/v${NETCDF_VERSION}.tar.gz
+            tar -zxf v${NETCDF_VERSION}.tar.gz
+            cd netcdf-c-${NETCDF_VERSION}
+            ./configure --prefix=${GITHUB_WORKSPACE}/NetCDF \
+                        --silent \
+                        --disable-dap \
+                        --disable-nczarr \
+                        --disable-nczarr-filters \
+                        --disable-filter-testing \
+                        --disable-byterange \
+                        CC=${GITHUB_WORKSPACE}/MPICH/bin/mpicc \
+                        CPPFLAGS="-I${GITHUB_WORKSPACE}/HDF5/include" \
+                        LDFLAGS="-L${GITHUB_WORKSPACE}//HDF5/lib" \
+                        LIBS="-lhdf5"
+            make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
+            make -s -j 4 distclean >> qout 2>&1
+        - name: Configure Log VOL connector
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            autoreconf -i
+            ./configure --with-hdf5=${GITHUB_WORKSPACE}/HDF5 \
+                        --enable-test-netcdf4=${GITHUB_WORKSPACE}/NetCDF \
+                        --enable-test-hdf5-iotest \
+                        --with-mpi=${GITHUB_WORKSPACE}/MPICH
+            # Do NOT test QMCPACK, as it requires FFTW which fails to build
+        - name: Print config.log if error
+          if: ${{ failure() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            cat config.log
+        - name: Build Log VOL connector
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            make -j 4
+            # Do NOT parallel build, cmake for external tests can fail
+            make tests
+        - name: Serial-run test - make check
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            make check
+        - name: Print test log files
+          if: ${{ always() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            fname=`find tests utils examples -type f -name "*.log"`
+            for f in $fname ; do \
+               bname=`basename $f` ; \
+               if test "x$bname" != xconfig.log ; then \
+                  echo "-------- dump $f ----------------------------" ; \
+                  cat $f ; \
+               fi ; \
+            done
+        - name: Parallel-run test - make ptest
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            make ptest
+        - name: Test distribution - make distcheck
+          if: ${{ success() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            make -j4 -s V=1 LIBTOOLFLAGS=--silent distcheck DISTCHECK_CONFIGURE_FLAGS="--silent --with-hdf5=${GITHUB_WORKSPACE}/HDF5 --with-mpi=${GITHUB_WORKSPACE}/MPICH"
+        - name: make distclean
+          if: ${{ always() }}
+          run: |
+            cd ${GITHUB_WORKSPACE}
+            make -s distclean

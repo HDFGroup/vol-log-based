@@ -32,7 +32,7 @@ jobs:
         - name: Set up dependencies
           run: |
             sudo apt-get update
-            sudo apt-get install automake autoconf libtool libtool-bin m4 uuid-dev
+            sudo apt-get install automake autoconf libtool libtool-bin m4 uuid-dev cmake
             # zlib
             sudo apt-get install zlib1g-dev
             # mpi
@@ -46,27 +46,15 @@ jobs:
             rm -rf HDF5 ; mkdir HDF5 ; cd HDF5
             wget -cq https://github.com/HDFGroup/hdf5/releases/latest/download/hdf5.tar.gz
             tar -zxf hdf5.tar.gz
-            cd hdf5-*
-            ./configure --prefix=${GITHUB_WORKSPACE}/HDF5 \
-                        --silent \
-                        --enable-parallel \
-                        --enable-build-mode=production \
-                        --enable-unsupported \
-                        --enable-threadsafe \
-                        --disable-doxygen-doc \
-                        --disable-doxygen-man \
-                        --disable-doxygen-html \
-                        --disable-tests \
-                        --disable-fortran \
-                        --disable-cxx \
-                        --enable-shared --disable-static \
-                        CC=mpicc
-            make -s LIBTOOLFLAGS=--silent V=1 -j 4 install > qout 2>&1
-            make -s -j 4 distclean >> qout 2>&1
-        - name: Dump config.log if HDF5 fails to build
-          if: ${{ failure() }}
-          run: |
-            cat ${GITHUB_WORKSPACE}/HDF5/hdf5-${HDF5_VERSION}/config.log
+            ln -sf hdf5-* hdf5
+            cd hdf5
+            mkdir build
+            cd build
+            cmake -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/HDF5 -DHDF5_ENABLE_PARALLEL=ON -DHDF5_ENABLE_THREADSAFE=ON \
+               -DHDF5_ALLOW_UNSUPPORTED=ON -DBUILD_TESTING=OFF -DHDF5_BUILD_HL_LIB=OFF \
+               -DHDF5_BUILD_EXAMPLES=OFF -DHDF5_BUILD_TOOLS:BOOL=OFF \
+               -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=${GITHUB_WORKSPACE}/MPICH/bin/mpicc ..
+            make -j2 install
         - name: Install NetCDF
           run: |
             cd ${GITHUB_WORKSPACE}
