@@ -80,7 +80,7 @@ jobs:
         - name: Set up dependencies
           run: |
             sudo apt-get update
-            sudo apt-get install automake autoconf libtool libtool-bin m4 uuid-dev
+            sudo apt-get install automake autoconf libtool libtool-bin m4 uuid-dev cmake
             # The MPICH installed on github actions is too slow
             # sudo apt-get install mpich
             # mpicc -v
