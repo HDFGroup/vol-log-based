@@ -46,7 +46,7 @@ jobs:
             cmake -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/HDF5 -DHDF5_ENABLE_PARALLEL=ON -DHDF5_ENABLE_THREADSAFE=ON \
                -DHDF5_ALLOW_UNSUPPORTED=ON -DBUILD_TESTING=OFF -DHDF5_BUILD_HL_LIB=OFF \
                -DHDF5_BUILD_EXAMPLES=OFF -DHDF5_BUILD_TOOLS:BOOL=OFF \
-               -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=${GITHUB_WORKSPACE}/MPICH/bin/mpicc ..
+               -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=mpicc ..
             make -j2 install
         - name: Install NetCDF
           run: |
