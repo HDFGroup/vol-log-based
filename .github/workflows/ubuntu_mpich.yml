@@ -75,7 +75,7 @@ jobs:
                -DHDF5_ALLOW_UNSUPPORTED=ON -DBUILD_TESTING=OFF -DHDF5_BUILD_HL_LIB=OFF \
                -DHDF5_BUILD_EXAMPLES=OFF -DHDF5_BUILD_TOOLS:BOOL=OFF \
                -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=${GITHUB_WORKSPACE}/MPICH/bin/mpicc ..
-            make -j2 installecho "OS_NAME=linux" >> $GITHUB_ENV
+            make -j2 install echo "OS_NAME=linux" >> $GITHUB_ENV
             echo "FC=mpif90" >> $GITHUB_ENV
             echo "F77=mpif90" >> $GITHUB_ENV
             echo "LD_LIBRARY_PATH=${{ github.workspace }}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
