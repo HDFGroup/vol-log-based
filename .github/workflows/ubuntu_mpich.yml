@@ -23,7 +23,6 @@ on:
 env:
    MPICH_VERSION: 4.1.2
    NETCDF_VERSION: 4.9.2
-   LD_LIBRARY_PATH: ${{ github.workspace }}/HDF5/lib/
 
 jobs:
 
@@ -79,6 +78,7 @@ jobs:
             make -j2 installecho "OS_NAME=linux" >> $GITHUB_ENV
             echo "FC=mpif90" >> $GITHUB_ENV
             echo "F77=mpif90" >> $GITHUB_ENV
+            echo "LD_LIBRARY_PATH=${{ github.workspace }}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
         - name: Install NetCDF
           run: |
