@@ -82,6 +82,8 @@ jobs:
 
         - name: Install NetCDF
           run: |
+            echo $LD_LIBRARY_PATH
+            ls -R ${GITHUB_WORKSPACE}/HDF5
             cd ${GITHUB_WORKSPACE}
             rm -rf /NetCDF ; mkdir NetCDF ; cd NetCDF
             wget -qc https://github.com/Unidata/netcdf-c/archive/refs/tags/v${NETCDF_VERSION}.tar.gz
